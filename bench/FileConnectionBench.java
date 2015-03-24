@@ -12,24 +12,28 @@ public class FileConnectionBench {
 
   void runBenchmark() {
     try {
-      long start, time;
-
-      start = JVM.monotonicTimeMillis();
+      long start;
 
       String privateDir = System.getProperty("fileconn.dir.private");
       String filename = String.valueOf(System.currentTimeMillis());
+
+      start = JVM.monotonicTimeMillis();
       FileConnection file = (FileConnection)Connector.open(privateDir + filename);
       System.out.println("Writing to file " + privateDir + filename);
       file.create();
+      System.out.println("FileConnection.open/create time: " + (JVM.monotonicTimeMillis() - start));
 
+      start = JVM.monotonicTimeMillis();
       OutputStream out = file.openOutputStream();
+      System.out.println("FileConnection.openOutputStream time: " + (JVM.monotonicTimeMillis() - start));
+
+      start = JVM.monotonicTimeMillis();
       for (int i = 0; i < 1000; i++) {
         out.write(b);
       }
-      out.close();
+      System.out.println("OutputStream.write time: " + (JVM.monotonicTimeMillis() - start));
 
-      time = JVM.monotonicTimeMillis() - start;
-      System.out.println("FileConnection.write time: " + time);
+      out.close();
     } catch (Exception e) {
       System.out.println("Unexpected exception: " + e);
       e.printStackTrace();
