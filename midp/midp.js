@@ -172,10 +172,6 @@ var MIDP = (function() {
   Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
   };
 
-  Native["com/sun/midp/main/AppIsolateMIDletSuiteLoader.allocateReservedResources0.()Z"] = function() {
-    return 1;
-  };
-
   Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
     var value;
     switch (J2ME.fromJavaString(key)) {
@@ -1190,7 +1186,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
-    console.warn("com/sun/j2me/content/AppProxy.isInSvmMode.()Z not implemented");
+    // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;
   };
 

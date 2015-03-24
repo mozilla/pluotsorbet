@@ -1,6 +1,6 @@
 .PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks
-BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*") config.ts
-JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.ts
+JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 VERSION ?=$(shell date +%s)
@@ -94,43 +94,43 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
+bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
-	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out build/j2me.js
+	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 
-build/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
+bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME AOT Compiler"
-	node tools/tsc.js --sourcemap --target ES5 references-jsc.ts -d --out build/j2me-jsc.js
+	node tools/tsc.js --sourcemap --target ES5 references-jsc.ts -d --out bld/j2me-jsc.js
 
-build/jsc.js: jsc.ts build/j2me-jsc.js
+bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
-	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out build/jsc.js
+	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out bld/jsc.js
 
-j2me: build/j2me.js build/jsc.js
+j2me: bld/j2me.js bld/jsc.js
 
-aot: build/classes.jar.js
-build/classes.jar.js: java/classes.jar build/jsc.js aot-methods.txt
+aot: bld/classes.jar.js
+bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt
 	@echo "Compiling ..."
-	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > build/classes.jar.js
+	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
 
-build/tests.jar.js: tests/tests.jar build/jsc.js aot-methods.txt
-	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > build/tests.jar.js
+bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
+	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 
-build/program.jar.js: program.jar build/jsc.js aot-methods.txt
-	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > build/program.jar.js
+bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
+	js bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
 
 tools/closure.jar:
 	wget -O $@ https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar
 
-closure: build/classes.jar.js build/j2me.js tools/closure.jar
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
-		&& mv build/j2me.cc.js build/j2me.js
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js \
-		&& mv build/classes.jar.cc.js build/classes.jar.js
+closure: bld/classes.jar.js bld/j2me.js tools/closure.jar
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
+		&& mv bld/j2me.cc.js bld/j2me.js
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
+		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
-shumway: build/shumway.js
-build/shumway.js: $(SHUMWAY_SRCS)
-	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
+shumway: bld/shumway.js
+bld/shumway.js: $(SHUMWAY_SRCS)
+	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out bld/shumway.js
 
 # We should update config/build.js everytime to generate the new VERSION number
 # based on current time.
@@ -166,7 +166,7 @@ benchmarks: java tests
 	make -C bench
 
 clean:
-	rm -rf build
+	rm -rf bld
 	rm -f $(PREPROCESS_DESTS)
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean

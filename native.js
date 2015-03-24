@@ -642,56 +642,6 @@ Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function() {
 Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(newPriority) {
 };
 
-var links = {};
-var waitingForLinks = {};
-
-Native["com/sun/midp/links/LinkPortal.getLinkCount0.()I"] = function() {
-    var ctx = $.ctx;
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        var isolateId = ctx.runtime.isolate.id;
-
-        if (!links[isolateId]) {
-            waitingForLinks[isolateId] = function() {
-                resolve(links[isolateId].length);
-            }
-
-            return;
-        }
-
-        resolve(links[isolateId].length);
-    }));
-};
-
-Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] = function(linkArray) {
-    var isolateId = $.ctx.runtime.isolate.id;
-
-    for (var i = 0; i < links[isolateId].length; i++) {
-        linkArray[i].nativePointer = links[isolateId][i].nativePointer;
-        linkArray[i].sender = links[isolateId][i].sender;
-        linkArray[i].receiver = links[isolateId][i].receiver;
-    }
-};
-
-Native["com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V"] = function(id, linkArray) {
-    links[id] = linkArray;
-
-    if (waitingForLinks[id]) {
-        waitingForLinks[id]();
-    }
-};
-
-Native["com/sun/midp/links/Link.init0.(II)V"] = function(sender, receiver) {
-    this.sender = sender;
-    this.receiver = receiver;
-    this.nativePointer = util.id();
-};
-
-Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V"] = function(linkMessage, link) {
-    // TODO: Implement when something hits send0
-    console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
-    asyncImpl("V", new Promise(function(){}));
-};
-
 Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V"] = function(data) {
     this.decoded = new TextDecoder("UTF-8").decode(data);
 };
@@ -832,8 +782,8 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(cbuf, of
   var outputCount = 0;
   var count = 0;
   var localPendingSurrogate = this.pendingSurrogate;
-  while (count < length) {
-    inputChar = 0xffff & cbuf[offset + count];
+  while (count < len) {
+    inputChar = 0xffff & cbuf[off + count];
     if (0 != localPendingSurrogate) {
       if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
         //000u uuuu xxxx xxxx xxxx xxxx
