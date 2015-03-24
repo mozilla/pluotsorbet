@@ -32,11 +32,10 @@ java/midp/com/sun/midp/io/j2me/sms/Protocol.java
 java/midp/com/sun/midp/io/j2me/storage/RandomAccessStream.java
 java/midp/com/sun/midp/jsr/JSRInitializer.java
 java/midp/com/sun/midp/lcdui/GraphicsAccess.java
-java/midp/com/sun/midp/main/IsolateUtil.java
 java/midp/com/sun/midp/midletsuite/MIDletSuiteImpl.java
 java/midp/com/sun/midp/rms/RecordStoreFile.java
 java/midp/com/sun/midp/rms/RecordStoreSharedDBHeader.java
-java/midp/com/sun/midp/security/SecurityInitializer.java
+java/custom/com/sun/midp/security/SecurityInitializer.java
 java/midp/com/sun/mmedia/Configuration.java
 java/midp/com/sun/mmedia/DefaultConfiguration.java
 java/midp/com/sun/mmedia/DirectPlayer.java
