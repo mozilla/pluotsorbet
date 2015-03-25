@@ -492,7 +492,7 @@ var currentlyFocusedTextEditor;
         var b = (pixel >> 16) & 0xff;
         var g = (pixel >> 8) & 0xff;
         var r = pixel & 0xff;
-        var style = "rgba(" + r + "," + g + "," + b + "," + 1 + ")";
+        var style = util.rgbaToCSS(r, g, b, 1);
         c.fillStyle = c.strokeStyle = style;
     }
 
