@@ -20,6 +20,7 @@ JSR_179 ?= 1
 export JSR_179
 
 MAIN_JS_SRCS = \
+  libs/compiled-method-cache.js \
   config/default.js \
   config/midlet.js \
   config/build.js \
