@@ -33,6 +33,9 @@
   <!--<script type="text/javascript" src="bld/program.jar.js" defer></script>-->
   <!--<script type="text/javascript" src="bld/tests.jar.js" defer></script>-->
 
+  <!-- Load the rest of the scripts from the combined script main-all.js
+     - to improve startup and runtime performance.  See Makefile for the list
+     - of files that get combined into this one. -->
   <script type="text/javascript" src="bld/main-all.js" defer></script>
 </head>
 

@@ -178,6 +178,10 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
 	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out bld/jsc.js
 
+# Some scripts use ES6 features, so we have to specify ES6 as the in-language
+# (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
+# out-language) in order for Closure to compile them, even though for now
+# we're optimizing "WHITESPACE_ONLY".
 bld/main-all.js: $(MAIN_JS_SRCS) tools/closure.jar .checksum
 	java -jar tools/closure.jar --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
