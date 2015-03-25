@@ -50,7 +50,7 @@ SLIMERJS_VERSION=0.10.0pre
 OLD_SLIMERJS_VERSION := $(shell [ -f build_tools/.slimerjs_version ] && cat build_tools/.slimerjs_version)
 $(shell [ "$(SLIMERJS_VERSION)" != "$(OLD_SLIMERJS_VERSION)" ] && echo $(SLIMERJS_VERSION) > build_tools/.slimerjs_version)
 
-SOOT_VERSION=25Mar2012
+SOOT_VERSION=25Mar2015
 OLD_SOOT_VERSION := $(shell [ -f build_tools/.soot_version ] && cat build_tools/.soot_version)
 $(shell [ "$(SOOT_VERSION)" != "$(OLD_SOOT_VERSION)" ] && echo $(SOOT_VERSION) > build_tools/.soot_version)
 
@@ -153,8 +153,8 @@ tests: java jasmin
 LANG_FILES=$(shell find l10n -name "*.xml")
 LANG_DESTS=$(LANG_FILES:%.xml=java/%.json) java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 
-java/classes.jar: java build_tools/soot-trunk.jar
-java: $(LANG_DESTS)
+java/classes.jar: java
+java: $(LANG_DESTS) build_tools/soot-trunk.jar
 	make -C java
 
 $(LANG_DESTS): $(LANG_FILES)
