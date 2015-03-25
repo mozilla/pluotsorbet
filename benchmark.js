@@ -218,7 +218,7 @@ var Benchmark = (function() {
     sampleMemoryToStorage: function() {
       var mem = sampleMemory();
       for (var p in mem) {
-        storage.current[p] = mem[p];
+        storage.current[p].push(mem[p]);
       }
       saveStorage();
     },
