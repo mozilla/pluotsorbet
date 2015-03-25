@@ -1030,7 +1030,7 @@ module J2ME {
     }
 
     emitCheckCast(cpi: number) {
-      var object = this.peek(Kind.Reference)
+      var object = this.peek(Kind.Reference);
       if (this.isPrivileged) {
         return;
       }
