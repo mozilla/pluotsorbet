@@ -26,9 +26,9 @@ import gnu.testlet.TestHarness;
 
 public class StringTest implements Testlet
 {
-  public int getExpectedPass() { return 121; }
+  public int getExpectedPass() { return 122; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 5; }
+  public int getExpectedKnownFail() { return 0; }
 
   protected static TestHarness harness;
 	public void test_Basics()
@@ -519,7 +519,7 @@ public class StringTest implements Testlet
 		harness.check(!( ! "to".concat("get").concat("her").equals("together")), 
 			"test_concat - 3");
 
-		harness.todo(!( "hi".concat("") != "hi"), 
+		harness.check(!( "hi".concat("") != "hi"), 
 			"test_concat - 4");
 
 		String str1 = "".concat("there");
@@ -620,17 +620,17 @@ public class StringTest implements Testlet
 
 		try {
 			String str = String.valueOf(data , -1 , 4 );
-			harness.todo(false, "test_valueOf - 4");
+			harness.fail("test_valueOf - 4");
 		}catch ( IndexOutOfBoundsException e ){}
 
 		try {
 			String str = String.valueOf(data , 1 , 5 );
-			harness.todo(false, "test_valueOf - 5");
+			harness.fail("test_valueOf - 5");
 		}catch ( IndexOutOfBoundsException e ){}
 
 		try {
 			String str = String.valueOf(data , 1 , -5 );
-			harness.todo(false, "test_valueOf - 6");
+			harness.fail("test_valueOf - 6");
 		}catch ( IndexOutOfBoundsException e ){}
 
 		try {
@@ -718,7 +718,7 @@ public class StringTest implements Testlet
 	    source = "laura";
 	    dest = source.trim();
 	    if (dest != source) {
-		harness.todo(false, "Error - test_trim - 4");
+		harness.fail("Error - test_trim - 4");
 		System.out.println("Expected strings to be equal");
 	    }
 	    source = "l        ";
