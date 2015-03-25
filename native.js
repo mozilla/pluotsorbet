@@ -561,23 +561,11 @@ Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang
     return obj;
 };
 
-Override["com/sun/cldc/io/ResourceInputStream.available.()I"] = function() {
-    var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
-
-    if (!handle) {
-        throw $.newIOException();
-    }
-
+Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(handle) {
     return handle.data.length - handle.pos;
 };
 
-Override["com/sun/cldc/io/ResourceInputStream.read.()I"] = function() {
-    var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
-
-    if (!handle) {
-        throw $.newIOException();
-    }
-
+Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(handle) {
     return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
 };
 
@@ -652,57 +640,6 @@ Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function() {
 };
 
 Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(newPriority) {
-};
-
-var links = {};
-var waitingForLinks = {};
-
-Native["com/sun/midp/links/LinkPortal.getLinkCount0.()I"] = function() {
-    var ctx = $.ctx;
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        var isolateId = ctx.runtime.isolate.id;
-
-        if (!links[isolateId]) {
-            waitingForLinks[isolateId] = function() {
-                resolve(links[isolateId].length);
-            }
-
-            return;
-        }
-
-        resolve(links[isolateId].length);
-    }));
-};
-
-Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] = function(linkArray) {
-    var isolateId = $.ctx.runtime.isolate.id;
-
-    for (var i = 0; i < links[isolateId].length; i++) {
-        var nativePointer = links[isolateId][i].klass.classInfo.getField("I.nativePointer.I").get(links[isolateId][i]);
-        linkArray[i].klass.classInfo.getField("I.nativePointer.I").set(linkArray[i], nativePointer);
-        linkArray[i].sender = links[isolateId][i].sender;
-        linkArray[i].receiver = links[isolateId][i].receiver;
-    }
-};
-
-Native["com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V"] = function(id, linkArray) {
-    links[id] = linkArray;
-
-    if (waitingForLinks[id]) {
-        waitingForLinks[id]();
-    }
-};
-
-Native["com/sun/midp/links/Link.init0.(II)V"] = function(sender, receiver) {
-    this.sender = sender;
-    this.receiver = receiver;
-    this.klass.classInfo.getField("I.nativePointer.I").set(this, util.id());
-};
-
-Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V"] = function(linkMessage, link) {
-    // TODO: Implement when something hits send0
-    console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
-    asyncImpl("V", new Promise(function(){}));
 };
 
 Native["java/io/DataOutputStream.UTFToBytes.(Ljava/lang/String;)[B"] = function(jStr) {
@@ -949,14 +886,4 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
     if (!release) {
         eval(J2ME.fromJavaString(src));
     }
-};
-
-Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
-  var internedStrings = J2ME.internedStrings;
-  var internedString = internedStrings.getByRange(this.value, this.offset, this.count);
-  if (internedString !== null) {
-    return internedString;
-  }
-  internedStrings.put(this.value.subarray(this.offset, this.offset + this.count), this);
-  return this;
 };
