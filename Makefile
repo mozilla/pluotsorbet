@@ -6,6 +6,7 @@ RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
+DEVICE ?= 0
 
 # Sensor support
 JSR_256 ?= 1
@@ -23,6 +24,13 @@ MAIN_JS_SRCS = \
   libs/compiled-method-cache.js \
   config/default.js \
   config/midlet.js \
+  $(NULL)
+
+ifeq ($(DEVICE),1)
+  MAIN_JS_SRCS += config/device.js
+endif
+
+MAIN_JS_SRCS += \
   config/build.js \
   config/urlparams.js \
   libs/console.js \
@@ -239,7 +247,7 @@ certs:
 	make -C certs
 
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs j2me aot
+app: config-build java certs j2me aot bld/main-all.js
 	tools/package.sh
 
 benchmarks: java tests
