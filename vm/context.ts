@@ -100,6 +100,7 @@ module J2ME {
 
     constructor(methodInfo: MethodInfo, local: any [], localBase: number) {
       frameCount ++;
+      this.stack = [];
       this.reset(methodInfo, local, localBase);
     }
 
@@ -109,7 +110,7 @@ module J2ME {
       this.code = methodInfo ? methodInfo.codeAttribute.code : null;
       this.pc = 0;
       this.opPC = 0;
-      this.stack = [];
+      this.stack.length = 0;
       this.local = local;
       this.localBase = localBase;
       this.lockObject = null;
