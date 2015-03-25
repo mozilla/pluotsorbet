@@ -24,13 +24,6 @@ MAIN_JS_SRCS = \
   config/midlet.js \
   config/build.js \
   config/urlparams.js \
-  $(NULL)
-
-ifneq ($(BENCHMARK),0)
-	MAIN_JS_SRCS += benchmark.js libs/ttest.js
-endif
-
-MAIN_JS_SRCS += \
   libs/console.js \
   libs/promise-6.0.0.js \
   polyfill/canvas-toblob.js \
@@ -71,19 +64,6 @@ MAIN_JS_SRCS += \
   midp/gfx.js \
   midp/text_editor.js \
   midp/localmsg.js \
-  $(NULL)
-
-ifeq ($(JSR_179),1)
-	MAIN_JS_SRCS += midp/location.js
-endif
-
-MAIN_JS_SRCS += midp/media.js
-
-ifeq ($(JSR_256),1)
-	MAIN_JS_SRCS += midp/sensor.js
-endif
-
-MAIN_JS_SRCS += \
   midp/socket.js \
   midp/sms.js \
   midp/codec.js \
@@ -91,9 +71,24 @@ MAIN_JS_SRCS += \
   midp/device_control.js \
   midp/background.js \
   midp/gestures.js \
+  midp/media.js \
   game-ui.js \
-  main.js \
   $(NULL)
+
+ifeq ($(JSR_179),1)
+	MAIN_JS_SRCS += midp/location.js
+endif
+
+ifeq ($(JSR_256),1)
+	MAIN_JS_SRCS += midp/sensor.js
+endif
+
+ifeq ($(BENCHMARK),1)
+	MAIN_JS_SRCS += benchmark.js libs/ttest.js
+endif
+
+# Add main.js last, as it depends on some of the other scripts.
+MAIN_JS_SRCS += main.js
 
 # Create a checksum file to monitor the changes of the Makefile configuration.
 # If the configuration has changed, we update the checksum file to let the files
