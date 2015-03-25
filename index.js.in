@@ -721,6 +721,12 @@ DumbPipe.registerOpener("windowOpen", function(message, sender) {
   window.open(message);
 });
 
+// #if BENCHMARK == "true"
+DumbPipe.registerOpener("gcReload", function(message, sender) {
+  window.location = window.location.href.replace("index.html", "gc.html");
+});
+// #endif
+
 DumbPipe.registerOpener("reload", function(message, sender) {
   window.location.reload();
 });
