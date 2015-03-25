@@ -887,3 +887,13 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
         eval(J2ME.fromJavaString(src));
     }
 };
+
+Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
+  var internedStrings = J2ME.internedStrings;
+  var internedString = internedStrings.getByRange(this.value, this.offset, this.count);
+  if (internedString !== null) {
+    return internedString;
+  }
+  internedStrings.put(this.value.subarray(this.offset, this.offset + this.count), this);
+  return this;
+};
