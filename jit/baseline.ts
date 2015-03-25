@@ -1031,12 +1031,21 @@ module J2ME {
 
     emitCheckCast(cpi: number) {
       var object = this.peek(Kind.Reference);
+      if (this.isPrivileged) {
+        return;
+      }
       var classInfo = this.lookupClass(cpi);
       var call = "CCK";
       if (classInfo.isInterface) {
         call = "CCI";
       }
-      this.blockEmitter.writeLn(call + "(" + object + "," + this.localClassConstant(classInfo) + ");");
+      var classConstant = this.localClassConstant(classInfo);
+      call = call + "(" + object + "," + classConstant + ")"
+      if (inlineRuntimeCalls) {
+        this.blockEmitter.writeLn("(!" + object + ")||" + object + ".klass===" + classConstant + "||" + call + ";");
+      } else {
+        this.blockEmitter.writeLn(call + ";");
+      }
     }
 
     emitInstanceOf(cpi: number) {
@@ -1046,7 +1055,12 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "IOI";
       }
-      this.emitPush(Kind.Int, call + "(" + object + "," + this.localClassConstant(classInfo) + ")|0", Precedence.BitwiseOR);
+      var classConstant = this.localClassConstant(classInfo);
+      call = call + "(" + object + "," + classConstant + ")|0";
+      if (inlineRuntimeCalls) {
+        call = "((" + object + "&&" + object + ".klass===" + classConstant + ")||" + call + ")|0";
+      }
+      this.emitPush(Kind.Int, call, Precedence.BitwiseOR);
     }
 
     emitArrayLength() {
