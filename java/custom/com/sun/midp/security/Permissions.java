@@ -229,6 +229,7 @@ public final class Permissions {
      *     for each permission supported
      */
     public static byte[][] forDomain(String name) {
+        // The 2 additional permissions are the two hardcoded MIPS and AMS permissions.
         NUMBER_OF_PERMISSIONS = PermissionsStrings.PERMISSION_STRINGS.length + 2;
 
         byte[] maximums = new byte[NUMBER_OF_PERMISSIONS];
