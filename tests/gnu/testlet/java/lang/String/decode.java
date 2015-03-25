@@ -26,9 +26,9 @@ import java.io.UnsupportedEncodingException;
 
 public class decode implements Testlet
 {
-  public int getExpectedPass() { return 17; }
+  public int getExpectedPass() { return 20; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 7; }
+  public int getExpectedKnownFail() { return 4; }
 
   public void test (TestHarness harness)
     {
@@ -116,13 +116,13 @@ public class decode implements Testlet
         {(byte)0x00, (byte)'a'};
 
       // UTF-16: Big endian assumed without BOM
-      harness.todo(decodeTest(leWithBOM, "UTF-16", "a"));
+      harness.check(decodeTest(leWithBOM, "UTF-16", "a"));
       harness.check(!decodeTest(leWithoutBOM, "UTF-16", "a"));
       harness.check(decodeTest(beWithBOM, "UTF-16", "a"));
       harness.check(decodeTest(beWithoutBOM, "UTF-16", "a"));
 
       // UTF-16LE: BOM should not be used
-      harness.todo(!decodeTest(leWithBOM, "UTF-16LE", "a"));
+      harness.check(!decodeTest(leWithBOM, "UTF-16LE", "a"));
       harness.check(decodeTest(leWithoutBOM, "UTF-16LE", "a"));
       harness.check(!decodeTest(beWithBOM, "UTF-16LE", "a"));
       harness.check(!decodeTest(beWithoutBOM, "UTF-16LE", "a"));
@@ -130,7 +130,7 @@ public class decode implements Testlet
       // UTF-16BE: BOM should not be used
       harness.check(!decodeTest(leWithBOM, "UTF-16BE", "a"));
       harness.check(!decodeTest(leWithoutBOM, "UTF-16BE", "a"));
-      harness.todo(!decodeTest(beWithBOM, "UTF-16BE", "a"));
+      harness.check(!decodeTest(beWithBOM, "UTF-16BE", "a"));
       harness.check(decodeTest(beWithoutBOM, "UTF-16BE", "a"));
 
       // UnicodeLittle: Little endian assumed without BOM

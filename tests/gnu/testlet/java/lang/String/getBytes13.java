@@ -27,9 +27,9 @@ import java.io.UnsupportedEncodingException;
 
 public class getBytes13 implements Testlet
 {
-  public int getExpectedPass() { return 1; }
+  public int getExpectedPass() { return 3; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 8; }
+  public int getExpectedKnownFail() { return 6; }
 
   protected static final byte[] ABC1 = new byte[] {97, 98, 99};
   protected static final byte[] ABC2 = new byte[] {-2, -1,  0, 97,  0, 98,  0, 99};
@@ -44,8 +44,8 @@ public class getBytes13 implements Testlet
     test1Encoding (harness, "ASCII",                 "abc", ABC1, false, true);
     test1Encoding (harness, "Cp1252",                "abc", ABC1, false, true);
     test1Encoding (harness, "ISO8859_1",             "abc", ABC1, false, true);
-    test1Encoding (harness, "UTF8",                  "abc", ABC1, false, false);
-    test1Encoding (harness, "UTF-16",                "abc", ABC2, true, false);
+    test1Encoding (harness, "UTF-8",                 "abc", ABC1, false, false);
+    test1Encoding (harness, "UTF-16",                "abc", ABC2, false, false);
     test1Encoding (harness, "UnicodeBig",            "abc", ABC2, false, true);
     test1Encoding (harness, "UnicodeBigUnmarked",    "abc", ABC3, false, true);
     test1Encoding (harness, "UnicodeLittle",         "abc", ABC4, false, true);
