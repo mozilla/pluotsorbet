@@ -132,12 +132,12 @@ var MIDP = (function() {
 
   Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(state) {
     var suiteId = (config.midletClassName === "internal") ? -1 : 1;
-    state.klass.classInfo.getField("I.suiteId.I").set(state, suiteId);
-    state.klass.classInfo.getField("I.midletClassName.Ljava/lang/String;").set(state, J2ME.newString(config.midletClassName));
+    state.suiteId = suiteId;
+    state.midletClassName = J2ME.newString(config.midletClassName);
     var args = config.args;
-    state.klass.classInfo.getField("I.arg0.Ljava/lang/String;").set(state, J2ME.newString((args.length > 0) ? args[0] : ""));
-    state.klass.classInfo.getField("I.arg1.Ljava/lang/String;").set(state, J2ME.newString((args.length > 1) ? args[1] : ""));
-    state.klass.classInfo.getField("I.arg2.Ljava/lang/String;").set(state, J2ME.newString((args.length > 2) ? args[2] : ""));
+    state.arg0 = J2ME.newString((args.length > 0) ? args[0] : "");
+    state.arg1 = J2ME.newString((args.length > 1) ? args[1] : "");
+    state.arg2 = J2ME.newString((args.length > 2) ? args[2] : "");
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {
@@ -170,10 +170,6 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
-  };
-
-  Native["com/sun/midp/main/AppIsolateMIDletSuiteLoader.allocateReservedResources0.()Z"] = function() {
-    return 1;
   };
 
   Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
@@ -538,7 +534,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function() {
-    this.klass.classInfo.getField("I.pushInterruptSetting.B").set(this, 1);
+    this.pushInterruptSetting = 1;
     console.warn("com/sun/midp/midletsuite/SuiteSettings.load.()V incomplete");
   };
 
@@ -548,7 +544,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function() {
     // The MIDlet has to be trusted for opening SSL connections using port 443.
-    this.klass.classInfo.getField("I.trusted.Z").set(this, 1);
+    this.trusted = 1;
     console.warn("com/sun/midp/midletsuite/InstallInfo.load.()V incomplete");
   };
 
@@ -894,7 +890,7 @@ var MIDP = (function() {
     var value = MIDP.localizedStrings[id];
 
     if (!value) {
-      throw $.newIllegalStateException();
+      throw $.newIllegalStateException("String with ID (" + id + ") doesn't exist");
     }
 
     return J2ME.newString(value);
@@ -1190,7 +1186,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
-    console.warn("com/sun/j2me/content/AppProxy.isInSvmMode.()Z not implemented");
+    // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;
   };
 

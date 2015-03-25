@@ -1810,6 +1810,9 @@ module J2ME {
   }
 
   export function isAssignableTo(from: Klass, to: Klass): boolean {
+    if (from === to) {
+      return true;
+    }
     if (to.isInterfaceKlass) {
       return from.interfaces.indexOf(to) >= 0;
     } else if (to.isArrayKlass) {

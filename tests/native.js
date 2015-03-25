@@ -163,3 +163,17 @@ Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)
 // Many tests create FileConnection objects to files with the "/" root,
 // so add it to the list of valid roots.
 MIDP.fsRoots.push("/");
+
+Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(label) {
+  if (typeof Benchmark !== "undefined") {
+    asyncImpl("V", Benchmark.sampleMemory().then(function(memory) {
+      var keys = ["totalSize", "domSize", "styleSize", "jsObjectsSize", "jsStringsSize", "jsOtherSize", "otherSize"];
+      var rows = [];
+      rows.push(keys);
+      rows.push(keys.map(function(k) { return memory[k] }));
+      var RIGHT = Benchmark.RIGHT;
+      var alignment = [RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT];
+      console.log((J2ME.fromJavaString(label) || "Memory sample") + ":\n" + Benchmark.prettyTable(rows, alignment));
+    }));
+  }
+};
