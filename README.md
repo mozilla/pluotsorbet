@@ -146,7 +146,7 @@ One way to profile j2me.js is to use the JS profiler available in Firefox Dev To
 
 The j2me.js VM has several profiling tools. The simplest feature is to use counters. `runtime.ts` defines several: `runtimeCounter`, `nativeCounter`, etc ... these are only available in debug builds.
 
-To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view accumulated counts, allow the application to run for some time and then click the `Dump Counters` button. If you want reset the counter count any time by clicking `Clear Counters`.
+To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view accumulated counts, allow the application to run for some time and then click the `Dump Counters` button. If you want, reset the counter count any time by clicking `Clear Counters`.
 
 - Counting events:
   ```
@@ -169,7 +169,7 @@ To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view 
   }
   ```
 
-- Counting events with calleer context: This is useful to understand which call sites are the most common. 
+- Counting events with caller context: This is useful to understand which call sites are the most common. 
   ```
   function readBytes(fileName, length) {
     runtimeCounter && runtimeCounter.count("readBytes " + arguments.callee.caller.name);
@@ -203,7 +203,7 @@ You must pair the calls to `enter` and `leave` but you don't necessarily need to
 
 The `name` argument can be any string and it specifies a event type. The timeline view will draw different types of events in different colors. It will also give you some statistics about the number of times a certain event type was seen, how long it took, etc.. 
 
-The `details` argumenet is an object whose properties are shown when you hover over a timeline segment in the profiler view. You can specify this object when you call `timeline.enter` or when you call `timeline.leave`. Usually, you have more information when you call `leave` so that's a more convenient place to put it.
+The `details` argument is an object whose properties are shown when you hover over a timeline segment in the profiler view. You can specify this object when you call `timeline.enter` or when you call `timeline.leave`. Usually, you have more information when you call `leave` so that's a more convenient place to put it.
 
 The way in which you come up with event names can produce different results. In the `profilingWrapper` function, the `key` is used to specify the event type.
 
@@ -225,7 +225,7 @@ The tooltip displays:
 - `all total` and `all self`: cumulative total and self times for all events with this name.
 - the remaining fields show the custom data specified in the `details` object.
 
-If you build with `PROFILE=2` the timeline will be saved to a text file instead of shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt` which you can later pull this with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
+If you build with `PROFILE=2` the timeline will be saved to a text file instead of shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt` which you can later pull with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
 
 ## Benchmarks
 
