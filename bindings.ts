@@ -23,6 +23,15 @@ module J2ME {
         }
       }
     },
+    "java/lang/String": {
+      fields: {
+        instanceSymbols: {
+          "value.[C": "value",
+          "offset.I": "offset",
+          "count.I": "count"
+        }
+      }
+    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
@@ -281,7 +290,7 @@ module J2ME {
     }
   };
 
-  export var BindingsMap = new Uint8Hashtable(50);
+  export var BindingsMap = new TypedArrayHashtable(50);
 
   // Create a map of the classes that have bindings.
   for (var k in Bindings) {
@@ -328,7 +337,12 @@ module J2ME {
     }
 
     export interface String extends java.lang.Object {
-      str: string;
+      value: Uint16Array;
+      offset: number;
+      count: number;
+      _offset: number;
+      _count: number
+      _value: string;
     }
 
     export interface Thread extends java.lang.Object {
