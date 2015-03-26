@@ -26,7 +26,6 @@ MAIN_JS_SRCS = \
   polyfill/canvas-toblob.js \
   polyfill/fromcodepoint.js \
   polyfill/codepointat.js \
-  polyfill/IndexedDB-getAll-shim.js \
   polyfill/map.js \
   polyfill/contains.js \
   polyfill/find.js \
