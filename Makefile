@@ -21,17 +21,6 @@ JSR_179 ?= 1
 export JSR_179
 
 MAIN_JS_SRCS = \
-  config/default.js \
-  config/midlet.js \
-  $(NULL)
-
-ifeq ($(DEVICE),1)
-  MAIN_JS_SRCS += config/device.js
-endif
-
-MAIN_JS_SRCS += \
-  config/build.js \
-  config/urlparams.js \
   libs/console.js \
   libs/promise-6.0.0.js \
   polyfill/canvas-toblob.js \

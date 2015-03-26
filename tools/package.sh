@@ -40,6 +40,9 @@ cp -R polyfill $PACKAGE_DIR/.
 # copy entire contents of config dir
 cp -R config $PACKAGE_DIR/.
 
+# Merge app.js into a config file that gets loaded.
+cat $PACKAGE_DIR/config/app.js >> $PACKAGE_DIR/config/midlet.js && rm $PACKAGE_DIR/config/app.js
+
 # copy entire contents of midp dir
 cp -R midp $PACKAGE_DIR/.
 if [ "$JSR_256" == "0" ]; then

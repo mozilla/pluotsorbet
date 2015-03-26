@@ -11,6 +11,13 @@
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
 
+  <!-- Load config scripts separately because compiled-method-cache.js
+     - depends on the configuration to be loaded. -->
+  <script type="text/javascript" src="config/default.js" defer></script>
+  <script type="text/javascript" src="config/midlet.js" defer></script>
+  <script type="text/javascript" src="config/build.js" defer></script>
+  <script type="text/javascript" src="config/urlparams.js" defer></script>
+
   <!-- #if PROFILE > 0 -->
   <!-- Load bld/shumway.js separately because it needs to load before j2me.js,
      - which immediately checks for its presence. -->
