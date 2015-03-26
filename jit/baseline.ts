@@ -1132,7 +1132,8 @@ module J2ME {
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {
-      emitter.writeLn("if(" + object + "._lock.level===1&&" + object + "._lock.ready.length===0)" + object + "._lock.level=0;else MX(" + object + ");");
+      emitter.writeLn("lk=" + object + "._lock;");
+      emitter.writeLn("if(lk.level===1&&lk.ready.length===0)lk.level=0;else MX(" + object + ");");
     }
 
     emitStackOp(opcode: Bytecodes) {
