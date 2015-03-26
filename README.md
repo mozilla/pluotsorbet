@@ -273,14 +273,6 @@ e.g.:
 
     Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(src, srcOffset, dst, dstOffset, length) {...};
 
-If you need to implement a method in JS but you can't declare it `native` in Java, use `Override`.
-
-e.g.:
-
-    Override["java/lang/Math.min.(II)I"] = function(a, b) {
-      return Math.min(a, b);
-    };
-
 If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in vm/runtime.ts, e.g.:
 
     throw $.newNullPointerException("Cannot copy to/from a null array.");
@@ -288,7 +280,7 @@ If raising a Java `Exception`, throw new instance of Java `Exception` class as d
 If you need implement a native method with async JS calls, the following steps are required:
 
 1. Add the method to the `yieldMap` in jit/analyze.ts
-2. Use `asyncImpl` in override.js to return the asnyc value with a `Promise`.
+2. Use `asyncImpl` in native.js to return the asnyc value with a `Promise`.
 
 e.g:
 

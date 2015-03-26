@@ -83,6 +83,8 @@ class ByteArrayInputStream extends InputStream {
      */
     protected int count;
 
+    native void init(byte buf[], int offset, int length);
+
     /**
      * Creates a <code>ByteArrayInputStream</code>
      * so that it  uses <code>buf</code> as its
@@ -96,9 +98,7 @@ class ByteArrayInputStream extends InputStream {
      * @param   buf   the input buffer.
      */
     public ByteArrayInputStream(byte buf[]) {
-        this.buf = buf;
-        this.pos = 0;
-        this.count = buf.length;
+        init(buf, 0, buf.length);
     }
 
     /**
@@ -122,10 +122,7 @@ class ByteArrayInputStream extends InputStream {
      * @param   length   the maximum number of bytes to read from the buffer.
      */
     public ByteArrayInputStream(byte buf[], int offset, int length) {
-        this.buf = buf;
-        this.pos = offset;
-        this.count = Math.min(offset + length, buf.length);
-        this.mark = offset;
+        init(buf, offset, length);
     }
 
     /**
@@ -141,9 +138,7 @@ class ByteArrayInputStream extends InputStream {
      * @return  the next byte of data, or <code>-1</code> if the end of the
      *          stream has been reached.
      */
-    public synchronized int read() {
-        return (pos < count) ? (buf[pos++] & 0xff) : -1;
-    }
+    native public synchronized int read();
 
     /**
      * Reads up to <code>len</code> bytes of data into an array of bytes
@@ -170,26 +165,7 @@ class ByteArrayInputStream extends InputStream {
      *          <code>-1</code> if there is no more data because the end of
      *          the stream has been reached.
      */
-    public synchronized int read(byte b[], int off, int len) {
-        if (b == null) {
-            throw new NullPointerException();
-        } else if ((off < 0) || (off > b.length) || (len < 0) ||
-                   ((off + len) > b.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (pos >= count) {
-            return -1;
-        }
-        if (pos + len > count) {
-            len = count - pos;
-        }
-        if (len <= 0) {
-            return 0;
-        }
-        System.arraycopy(buf, pos, b, off, len);
-        pos += len;
-        return len;
-    }
+    native public synchronized int read(byte b[], int off, int len);
 
     /**
      * Skips <code>n</code> bytes of input from this input stream. Fewer
@@ -203,16 +179,7 @@ class ByteArrayInputStream extends InputStream {
      * @param   n   the number of bytes to be skipped.
      * @return  the actual number of bytes skipped.
      */
-    public synchronized long skip(long n) {
-        if (pos + n > count) {
-            n = count - pos;
-        }
-        if (n < 0) {
-            return 0;
-        }
-        pos += n;
-        return n;
-    }
+    native public synchronized long skip(long n);
 
     /**
      * Returns the number of bytes that can be read from this input
@@ -224,9 +191,7 @@ class ByteArrayInputStream extends InputStream {
      * @return  the number of bytes that can be read from the input stream
      *          without blocking.
      */
-    public synchronized int available() {
-        return count - pos;
-    }
+    native public synchronized int available();
 
     /**
      * Tests if ByteArrayInputStream supports mark/reset.
@@ -245,18 +210,14 @@ class ByteArrayInputStream extends InputStream {
      *
      * @since   JDK1.1
      */
-    public void mark(int readAheadLimit) {
-        mark = pos;
-    }
+    native public void mark(int readAheadLimit);
 
     /**
      * Resets the buffer to the marked position.  The marked position
      * is the beginning unless another position was marked.
      * The value of <code>pos</code> is set to 0.
      */
-    public synchronized void reset() {
-        pos = mark;
-    }
+    native public synchronized void reset();
 
     /**
      * Closes this input stream and releases any system resources
