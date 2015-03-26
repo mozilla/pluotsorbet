@@ -217,13 +217,7 @@ public final class Font {
      * Gets the default font of the system.
      * @return the default font
      */
-    public static Font getDefaultFont() {
-        synchronized (Display.LCDUILock) {
-            if (DEFAULT_FONT == null)
-                DEFAULT_FONT = new Font(FACE_SYSTEM, STYLE_PLAIN, SIZE_MEDIUM);
-            return DEFAULT_FONT;
-        }
-    }
+    native public static Font getDefaultFont();
 
     /**
      * Obtains an object representing a font having the specified face, style,
