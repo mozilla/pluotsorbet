@@ -25,9 +25,9 @@ import gnu.testlet.TestHarness;
 
 public class indexOf implements Testlet
 {
-  public int getExpectedPass() { return 15; }
+  public int getExpectedPass() { return 16; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 1; }
+  public int getExpectedKnownFail() { return 0; }
 
   public void test (TestHarness harness)
     {
@@ -52,7 +52,7 @@ public class indexOf implements Testlet
       harness.check (b.lastIndexOf(' '), 8);
       harness.check (b.lastIndexOf(' ', 1), 0);
       harness.check (b.lastIndexOf(' ', 10), 8);
-      harness.todo (b.lastIndexOf(' ', -1), -1);
+      harness.check (b.lastIndexOf(' ', -1), -1);
       harness.check (b.lastIndexOf(' ', b.length()), 8);
     }
 }
