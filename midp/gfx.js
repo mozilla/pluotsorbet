@@ -451,6 +451,10 @@ var currentlyFocusedTextEditor;
         }
     }
 
+    // withTextAnchor() can be hot. This variable lets it return two values
+    // without creating a new array every time.
+    var withTextAnchorRet = [0, 0];
+
     function withTextAnchor(g, c, anchor, x, y, str) {
         withFont(g.currentFont, c);
 
@@ -475,7 +479,8 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
         }
 
-        return [x, y];
+        withTextAnchorRet[0] = x;
+        withTextAnchorRet[1] = y;
     }
 
     function withPixel(g, c) {
@@ -1038,9 +1043,9 @@ var currentlyFocusedTextEditor;
                 var match0 = match[0];
                 lastIndex = match.index + match0.length;
 
-                var pair = withTextAnchor(g, c, anchor, x, y, text);
-                var textX = pair[0];
-                var textY = pair[1];
+                withTextAnchor(g, c, anchor, x, y, text);
+                var textX = withTextAnchorRet[0]
+                var textY = withTextAnchorRet[1];
 
                 c.fillText(text, textX, textY);
 
@@ -1057,9 +1062,9 @@ var currentlyFocusedTextEditor;
         // Now handle all the text after the final emoji. If there were no
         // emojis present, this is the entire string.
         if (finalText) {
-            var pair = withTextAnchor(g, c, anchor, x, y, finalText);
-            var textX = pair[0];
-            var textY = pair[1];
+            withTextAnchor(g, c, anchor, x, y, finalText);
+            var textX = withTextAnchorRet[0];
+            var textY = withTextAnchorRet[1];
 
             c.fillText(finalText, textX, textY);
         }
@@ -1083,9 +1088,9 @@ var currentlyFocusedTextEditor;
 
         var c = this.context2D;
 
-        var pair = withTextAnchor(this, c, anchor, x, y, chr);
-        x = pair[0];
-        y = pair[1];
+        withTextAnchor(this, c, anchor, x, y, chr);
+        x = withTextAnchorRet[0];
+        y = withTextAnchorRet[1];
 
         withPixel(this, c);
 
