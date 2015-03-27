@@ -13,7 +13,7 @@ mkdir $PACKAGE_DIR/libs
 mkdir $PACKAGE_DIR/polyfill
 
 # setup the root
-# TODO: Only copy benchmark.js/gc.html/gc.js if BENCHMARK=1.
+# TODO: only copy benchmark.js/gc.html/gc.js if BENCHMARK=1.
 
 cp *.html *.webapp $PACKAGE_DIR/.
 
@@ -57,6 +57,7 @@ cat config/app.js >> $PACKAGE_DIR/config/midlet.js
 cp -R style $PACKAGE_DIR/.
 
 # setup tests dir, for now just the jar and js files
+# TODO: only copy these files if we're building for testing.
 mkdir $PACKAGE_DIR/tests
 cp tests/tests.jar $PACKAGE_DIR/tests/.
 cp tests/*.js $PACKAGE_DIR/tests/.
