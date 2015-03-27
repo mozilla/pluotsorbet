@@ -3,8 +3,6 @@ html {
   padding: 0;
   font-family: sans-serif;
   font-size: 10px;
-  height: 100%;
-  overflow: hidden;
 }
 
 body {
@@ -14,73 +12,17 @@ body {
   height: 100%;
 }
 
-#display-container {
-  position: relative;
-  float: right;
-  width: 240px;
-  height: 100%;
-}
-
 #display {
-  position: relative;
+  position: fixed;
   top: 0px;
   right: 0px;
   border-bottom: 1px solid #ababab;
-  width: 100%;
+  width: 240px;
   height: 320px;
   z-index: 1;
   background: black;
 }
 
-/* Set the display size. */
-.size-320x240 #display-container {
-  width: 320px !important;
-}
-
-.size-320x240 #pageContainer {
-  width: calc(100% - 320px) !important;
-}
-
-.size-320x240 #display {
-  height: 240px !important;
-}
-
-.size-320x240 #settings {
-  height: calc(100% - 240px) !important;
-}
-
-
-.size-320x480 #display-container {
-  width: 320px !important;
-}
-
-.size-320x480 #pageContainer {
-  width: calc(100% - 320px) !important;
-}
-
-.size-320x480 #display {
-  height: 480px !important;
-}
-
-.size-320x480 #settings {
-  height: calc(100% - 480px) !important;
-}
-
-.size-480x320 #display-container {
-  width: 480px !important;
-}
-
-.size-480x320 #pageContainer {
-  width: calc(100% - 480px) !important;
-}
-
-.size-480x320 #display {
-  height: 320px !important;
-}
-
-.size-480x320 #settings {
-  height: calc(100% - 320px) !important;
-}
 /* Float the back button to the bottom right corner */
 #back-button {
   position: absolute;
@@ -109,9 +51,12 @@ button {
 #settings {
   background: #f4f4f4;
   box-sizing: border-box;
+  position: fixed;
+  bottom: 0;
+  top: 0;
   right: 1px;
-  width: 100%;
-  height: calc(100% - 320px);
+  width: 240px;
+  padding: 320px 0 0;
   border-left: 1px solid #ababab;
   overflow-y: auto;
 }
@@ -134,7 +79,6 @@ button {
   padding-top: 0.2rem;
   padding-bottom: 0.2rem;
   font-size: 12px;
-  text-align: center;
 }
 
 .log-item-log {
@@ -159,7 +103,7 @@ button {
 #gamepad button {
   display: none;
   position: absolute;
-  z-index: 102;
+  z-index: 2;
   height: 40px;
   width: 40px;
 }
@@ -172,7 +116,7 @@ button {
 
 .gamepad body > #gamepad {
   display: block;
-  z-index: 102;
+  z-index: 2;
 }
 
 .gamepad body > #gamepad button {
@@ -185,15 +129,10 @@ button {
   display: none;
 }
 
-.autosize #display-container {
-  position: absolute;
-  display: block;
-  overflow: hidden;
-  width: 100%;
-  height: 100%;
-}
-
 .autosize #display {
+  overflow: hidden;
+  display: block;
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -202,10 +141,6 @@ button {
   padding: 0;
   border: none;
   background: black;
-}
-
-.autosize #settings {
-  display: none;
 }
 
 /* Prevent scrolling. */
@@ -227,16 +162,6 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   overflow: auto;
 }
 
-#image-launcher {
-  position: absolute;
-  z-index: 102;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  background: none center center / contain no-repeat #000;
-}
-
 .lcdui-alert menu,
 .download-progress-dialog menu {
   text-align: center;
@@ -244,7 +169,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 
 .splash-screen {
   display: none;
-  z-index: 102;
+  z-index: 2;
   background: #2d2d2d;
   overflow: hidden;
   color: #fff;
@@ -270,7 +195,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 #background-screen {
-  z-index: 102;
+  z-index: 2;
   position: absolute;
   top: 0;
   right: 0;
@@ -283,8 +208,8 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 .debug-mode #background-screen {
-  width: 100%;
-  height: 100%;
+  width: 240px;
+  height: 320px;
 }
 
 .autosize #background-screen {
@@ -309,14 +234,14 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 .debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt,
 .debug-mode form[role="dialog"][data-type="confirm"].nokia-fileui-prompt,
 .debug-mode form[role="dialog"][data-type="confirm"].download-progress-dialog {
-  position: absolute;
+  position: fixed;
   top: 0px;
   right: 0px;
   left: auto;
   bottom: auto;
-  width: 100%;
-  height: 100%;
-  z-index: 102;
+  width: 240px;
+  height: 320px;
+  z-index: 2;
   background: black;
   box-sizing: border-box;
 }
@@ -335,9 +260,9 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 .debug-mode .splash-screen {
-  position: absolute;
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  width: 240px;
+  height: 320px;
   top: 0px;
   right: 0px;
   left: auto;
@@ -346,14 +271,12 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 #pageContainer {
-  position: relative;
+  position: absolute;
   background-color: #333333;
   top: 0;
   left: 0;
-  width: calc(100% - 240px);
-  height: 100%;
-  float: left;
-  overflow: hidden;
+  right: 240px;
+  bottom: 0;
 }
 
 #consoleContainer {
