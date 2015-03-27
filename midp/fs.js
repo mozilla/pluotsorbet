@@ -602,6 +602,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.write: ignored file");
         asyncImpl("I", Promise.resolve(len));
+        return;
     }
 
     var fd = this.nativeDescriptor;
