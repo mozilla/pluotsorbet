@@ -562,7 +562,7 @@ module J2ME {
         this.bodyEmitter.writeLn("var " + local.join(",") + ";");
       }
       if (!this.methodInfo.isStatic) {
-        this.bodyEmitter.writeLn(this.getLocal(0) + "=this;");
+        this.bodyEmitter.writeLn("var ins="+ this.getLocal(0) + "=this;");
       }
       var stack = this.stack;
       for (var i = 0; i < this.methodInfo.codeAttribute.max_stack; i++) {
@@ -581,7 +581,7 @@ module J2ME {
       }
 
       this.lockObject = this.methodInfo.isSynchronized ?
-        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : this.getLocal(0)
+        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "ins"
         : "null";
 
       this.emitEntryPoints();
@@ -616,6 +616,9 @@ module J2ME {
         }
         this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
         this.needsVariable("re");
+        if (!this.methodInfo.isStatic) {
+          this.bodyEmitter.writeLn("ins=O.lockObject;");
+        }
         this.bodyEmitter.writeLn("pc=O.pc;");
         this.bodyEmitter.writeLn("O=null;");
         if (this.methodInfo.isSynchronized) {
