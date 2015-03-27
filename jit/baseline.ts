@@ -871,7 +871,7 @@ module J2ME {
           baselineCounter && baselineCounter.count(message);
         } else {
           baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("if ($.initialized[\"" + classInfo.getClassNameSlow() + "\"] === undefined) { " + this.runtimeClassObject(classInfo) + ".initialize(); }");
+          this.blockEmitter.writeLn("if($.initialized[\"" + classInfo.getClassNameSlow() + "\"]===undefined)" + this.runtimeClassObject(classInfo) + ".initialize();");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc), String(this.pc));
           } else {
@@ -934,7 +934,7 @@ module J2ME {
       if (this.isPrivileged) {
         return;
       }
-      this.blockEmitter.writeLn(length + " < 0 && TN();");
+      this.blockEmitter.writeLn(length + "<0&&TN();");
     }
 
     emitBoundsCheck(array: string, index: string) {
@@ -942,9 +942,9 @@ module J2ME {
         return;
       }
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("if ((" + index + " >>> 0) >= (" + array + ".length >>> 0)) TI(" + index + ");");
+        this.blockEmitter.writeLn("if((" + index + " >>> 0)>=(" + array + ".length >>> 0))TI(" + index + ");");
       } else {
-        this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
+        this.blockEmitter.writeLn("CAB(" + array + "," + index + ");");
       }
     }
 
@@ -952,7 +952,7 @@ module J2ME {
       if (this.isPrivileged || !emitCheckArrayStore) {
         return;
       }
-      this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
+      this.blockEmitter.writeLn("CAS(" + array + "," + value + ");");
     }
 
     emitStoreIndexed(kind: Kind) {
@@ -963,7 +963,7 @@ module J2ME {
       if (kind === Kind.Reference) {
         this.emitArrayStoreCheck(array, value);
       }
-      this.blockEmitter.writeLn(array + "[" + index + "] = " + value + ";");
+      this.blockEmitter.writeLn(array + "[" + index + "]=" + value + ";");
     }
 
     emitLoadIndexed(kind: Kind) {
@@ -1191,7 +1191,7 @@ module J2ME {
         return;
       }
       if (inlineRuntimeCalls && kind !== Kind.Long) {
-        this.blockEmitter.writeLn(value + " === 0 && TA();");
+        this.blockEmitter.writeLn(value + "===0&&TA();");
       } else {
         var checkName = kind === Kind.Long ? "CDZL" : "CDZ";
         this.blockEmitter.writeLn(checkName + "(" + value + ");");
