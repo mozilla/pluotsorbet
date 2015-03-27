@@ -242,7 +242,23 @@ module J2ME {
       return classInfo.mangledName;
     }
     if (classInfo instanceof ArrayClassInfo) {
-      return "AK(" + classConstant(classInfo.elementClass) + ")";
+      return "AK(" + "M." + classConstant(classInfo.elementClass) + ")";
+    }
+    if (classInfo.mangledName) {
+      return "M." + classInfo.mangledName;
+    }
+    release || assert(classInfo.mangledName);
+    return "M." + classInfo.mangledName;
+  }
+
+  function runtimeClassConstant(classInfo: ClassInfo): string {
+    // PrimitiveArrayClassInfo have custom mangledNames;
+    if (classInfo instanceof PrimitiveArrayClassInfo) {
+      return classInfo.mangledName;
+    }
+    // TODO: figure out if this should dereference the class from M or not.
+    if (classInfo instanceof ArrayClassInfo) {
+      return "AK(" + "M." + classConstant(classInfo.elementClass) + ")";
     }
     if (classInfo.mangledName) {
       return classInfo.mangledName;
@@ -842,11 +858,11 @@ module J2ME {
     }
 
     runtimeClass(classInfo: ClassInfo) {
-      return "$." + classConstant(classInfo);
+      return "$." + runtimeClassConstant(classInfo);
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
-      return "$." + classConstant(classInfo) + ".classObject";
+      return "$." + runtimeClassConstant(classInfo) + ".classObject";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
@@ -1019,7 +1035,7 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "new " + this.localClassConstant(classInfo)+ "()", Precedence.New);
+      this.emitPush(Kind.Reference, "new " + this.localClassConstant(classInfo) + "()", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {

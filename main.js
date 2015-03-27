@@ -218,6 +218,7 @@ if (!config.midletClassName || config.midletClassName == "RunTests") {
 }
 
 Promise.all(loadingPromises).then(start, function (reason) {
+  debugger;
   console.error("Loading failed: \"" + reason + "\"");
 });
 

@@ -30,7 +30,7 @@ module J2ME {
     return list;
   }
 
-  export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
+  export function emitKlass(emitter: Emitter, classInfo: ClassInfo, defineProperty: boolean = false) {
     var writer = emitter.writer;
     var mangledClassName = classInfo.mangledName;
     if (emitter.closure) {
@@ -65,14 +65,16 @@ module J2ME {
     }
 
     // Emit class initializer.
-    writer.enter("function " + mangledClassName + "() {");
+    var entry = defineProperty ? ("Object.defineProperty(M,'" + mangledClassName + "',{configurable:true,value:function(){")
+                               : ("M." + mangledClassName + "=function(){");
+    writer.enter(entry);
     //
     // Should we or should we not generate hash codes at this point? Eager or lazy, we should at least
     // initialize it zero to keep object shapes fixed.
     // writer.writeLn("this._hashCode = $.nextHashCode(this);");
     writer.writeLn("this._hashCode = 0;");
     emitFields(classInfo.fTable, false);
-    writer.leave("}");
+    writer.leave(defineProperty ? "}});" : "};");
 
     if (emitter.klassHeaderOnly) {
       return;
@@ -104,7 +106,7 @@ module J2ME {
 
     var mangledClassName = classInfo.mangledName;
 
-    emitter.writer.writeLn(mangledClassName + ".classSymbols = [" + referencedClasses.map(classInfo => {
+    emitter.writer.writeLn("M." + mangledClassName + ".classSymbols = [" + referencedClasses.map(classInfo => {
       return quote(classInfo.getClassNameSlow());
     }).join(", ") + "];");
   }
@@ -158,9 +160,9 @@ module J2ME {
             methodFilterList.splice(methodFilterList.indexOf(method.implKey), 1);
           }
           var compiledMethodName = mangledClassAndMethodName;
-          writer.enter("function " + compiledMethodName + "(" + compiledMethod.args.join(",") + ") {");
+          writer.enter("M." + compiledMethodName + "=function(" + compiledMethod.args.join(",") + "){");
           writer.writeLns(compiledMethod.body);
-          writer.leave("}");
+          writer.leave("};");
           if (method.name === "<clinit>") {
             writer.writeLn(mangledClassName + ".staticConstructor = " + mangledClassAndMethodName);
           } else if (!method.isStatic) {
