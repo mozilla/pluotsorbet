@@ -8,9 +8,27 @@ PACKAGE_DIR="output"
 rm -rf $PACKAGE_DIR/
 mkdir $PACKAGE_DIR
 mkdir $PACKAGE_DIR/bld
+mkdir $PACKAGE_DIR/config
+mkdir $PACKAGE_DIR/libs
+mkdir $PACKAGE_DIR/polyfill
 
 # setup the root
-cp *.js *.html *.webapp $PACKAGE_DIR/.
+
+cp *.html *.webapp $PACKAGE_DIR/.
+
+# Copy over the individual JS files that are loaded by the app.
+# This list is the union of files loaded by index.html and main.html.
+cp index.js $PACKAGE_DIR/.
+cp timer.js $PACKAGE_DIR/.
+cp config/build.js $PACKAGE_DIR/config/.
+cp config/default.js $PACKAGE_DIR/config/.
+cp config/midlet.js $PACKAGE_DIR/config/.
+cp config/urlparams.js $PACKAGE_DIR/config/.
+cp libs/compiled-method-cache.js $PACKAGE_DIR/libs/.
+cp libs/load.js $PACKAGE_DIR/libs/.
+cp libs/promise-6.0.0.js $PACKAGE_DIR/libs/.
+cp libs/relooper.js $PACKAGE_DIR/libs/.
+cp polyfill/IndexedDB-getAll-shim.js $PACKAGE_DIR/polyfill/.
 cp bld/j2me.js $PACKAGE_DIR/bld/.
 cp bld/shumway.js $PACKAGE_DIR/bld/.
 cp bld/classes.jar.js $PACKAGE_DIR/bld/.
@@ -28,26 +46,8 @@ cp java/*.jar $PACKAGE_DIR/java
 # copy entire certs dir, it's possible we just need the ks files
 cp -R certs $PACKAGE_DIR/.
 
-# copy entire vm dir
-cp -R vm $PACKAGE_DIR/.
-
-# copy entire contents of libs dir
-cp -R libs $PACKAGE_DIR/.
-
-# copy entire contents of polyfill dir
-cp -R polyfill $PACKAGE_DIR/.
-
-# copy entire contents of config dir
-cp -R config $PACKAGE_DIR/.
-
 # Merge app.js into a config file that gets loaded.
-cat $PACKAGE_DIR/config/app.js >> $PACKAGE_DIR/config/midlet.js && rm $PACKAGE_DIR/config/app.js
-
-# copy entire contents of midp dir
-cp -R midp $PACKAGE_DIR/.
-if [ "$JSR_256" == "0" ]; then
-    rm $PACKAGE_DIR/midp/sensor.js
-fi
+cat config/app.js >> $PACKAGE_DIR/config/midlet.js
 
 # copy entire contents of style dir
 cp -R style $PACKAGE_DIR/.
