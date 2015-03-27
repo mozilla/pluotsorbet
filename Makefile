@@ -158,7 +158,7 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
+bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) tools/closure.jar
 	@echo "Building J2ME"
 	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
@@ -183,7 +183,7 @@ bld/main-all.js: $(MAIN_JS_SRCS) tools/closure.jar
 j2me: bld/j2me.js bld/jsc.js
 
 aot: bld/classes.jar.js
-bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt
+bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt tools/closure.jar
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
 	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_AOT_OPTIMIZATIONS bld/classes.jar.js > bld/classes.jar.cc.js \
