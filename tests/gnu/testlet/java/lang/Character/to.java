@@ -25,23 +25,26 @@ import gnu.testlet.TestHarness;
 
 public class to implements Testlet
 {
-  public int getExpectedPass() { return 12; }
+  public int getExpectedPass() { return 7; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 0; }
+  public int getExpectedKnownFail() { return 5; }
   public void test (TestHarness harness)
     {
+      // The default case converter in CLDC only supports the ISO Latin-1
+      // range of characters.
+
       harness.check (Character.toUpperCase ('a'), 'A');
       harness.check (Character.toUpperCase ('A'), 'A');
-      harness.check (Character.toUpperCase ('\uff5a'), '\uff3a');
+      harness.todo (Character.toUpperCase ('\uff5a'), '\uff3a');
       harness.check (Character.toUpperCase ('7'), '7');
-      harness.check (Character.toUpperCase ('\u01f2'), '\u01f1');
+      harness.todo (Character.toUpperCase ('\u01f2'), '\u01f1');
 
       harness.check (Character.toLowerCase ('q'), 'q');
       harness.check (Character.toLowerCase ('Q'), 'q');
       harness.check (Character.toLowerCase ('\u2638'), '\u2638');
-      harness.check (Character.toLowerCase ('\u01cb'), '\u01cc');
-      harness.check (Character.toLowerCase ('\u01ca'), '\u01cc');
+      harness.todo (Character.toLowerCase ('\u01cb'), '\u01cc');
+      harness.todo (Character.toLowerCase ('\u01ca'), '\u01cc');
       harness.check (Character.toLowerCase ('\u00df'), '\u00df');
-      harness.check (Character.toLowerCase ('\u2160'), '\u2170');
+      harness.todo (Character.toLowerCase ('\u2160'), '\u2170');
     }
 }

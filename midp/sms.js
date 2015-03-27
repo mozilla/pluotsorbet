@@ -66,7 +66,6 @@ function promptForMessageText() {
         clearInterval(intervalID);
         clearTimeout(timeoutID);
         el.parentElement.removeChild(el);
-        console.log('SMS prompt filled out:', input.value);
         // We don't have easy access to our own phone number; use a
         // dummy unknown value instead.
         receiveSms(MIDlet.SMSDialogReceiveFilter(input.value), 'unknown');
@@ -116,7 +115,7 @@ Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = func
     MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
-      host: util.fromJavaString(host),
+      host: J2ME.fromJavaString(host),
     };
 
     return ++MIDP.lastSMSConnection;
@@ -125,8 +124,6 @@ Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = func
 Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] =
 function(port, msid, handle, smsPacket) {
     asyncImpl("I", new Promise(function(resolve, reject) {
-        promptForMessageText();
-
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
             var text = sms.text;
@@ -142,11 +139,11 @@ function(port, msid, handle, smsPacket) {
                 address[i] = addr.charCodeAt(i);
             }
 
-            smsPacket.klass.classInfo.getField("I.message.[B").set(smsPacket, message);
-            smsPacket.klass.classInfo.getField("I.address.[B").set(smsPacket, address);
-            smsPacket.klass.classInfo.getField("I.port.I").set(smsPacket, port);
-            smsPacket.klass.classInfo.getField("I.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
-            smsPacket.klass.classInfo.getField("I.messageType.I").set(smsPacket, 0); // GSM_TEXT
+            smsPacket.message = message;
+            smsPacket.address = address;
+            smsPacket.port = port;
+            smsPacket.sentAt = Long.fromNumber(Date.now());
+            smsPacket.messageType = 0; // GSM_TEXT
 
             return text.length;
         }
@@ -180,7 +177,7 @@ function(handle, type, host, destPort, sourcePort, message) {
             name: "new",
             data: {
               type: "websms/sms",
-              number: util.fromJavaString(host),
+              number: J2ME.fromJavaString(host),
               body: new TextDecoder('utf-16be').decode(message),
             },
         });

@@ -16,7 +16,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)
     // But we don't really need to do that, because getIpNumber0 is called only
     // before open0. So we just need to store the host and pass it to
     // mozTCPSocket::open.
-    this.host = util.fromJavaString(host);
+    this.host = J2ME.fromJavaString(host);
     return 0;
 };
 
@@ -145,17 +145,17 @@ Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(data, of
 Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(data, offset, length) {
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
-        ctx.setAsCurrentContext();
         if (this.socket.isClosed) {
+          ctx.setAsCurrentContext();
           reject($.newIOException("socket is closed"));
           return;
         }
 
         this.socket.onsend = function(message) {
-            ctx.setAsCurrentContext();
             this.socket.onsend = null;
             if ("error" in message) {
                 console.error(message.error);
+                ctx.setAsCurrentContext();
                 reject($.newIOException("error writing to socket"));
             } else if (message.result) {
                 resolve(length);

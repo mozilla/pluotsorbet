@@ -9,8 +9,7 @@ module J2ME {
       public writer: IndentingWriter,
       public closure: boolean,
       public debugInfo: boolean,
-      public klassHeaderOnly: boolean = false,
-      public definitions: boolean = false
+      public klassHeaderOnly: boolean = false
     ) {
       // ...
     }
@@ -31,114 +30,6 @@ module J2ME {
     return list;
   }
 
-  function typeDescriptorToDefinition(value: string): string {
-    var typeDescriptor = TypeDescriptor.parseTypeDescriptor(value, 0);
-    var type = "";
-    if (typeDescriptor.kind === Kind.Reference) {
-      var dimensions = TypeDescriptor.getArrayDimensions(typeDescriptor);
-      if (dimensions) {
-        var elementType = typeDescriptor.value.substring(dimensions);
-        var elementTypeDescriptor = TypeDescriptor.parseTypeDescriptor(elementType, 0);
-        dimensions --;
-        switch (elementTypeDescriptor.kind) {
-          case Kind.Int:
-            type = "Int32Array";
-            break;
-          case Kind.Char:
-            type = "Uint16Array";
-            break;
-          case Kind.Short:
-            type = "Int16Array";
-            break;
-          case Kind.Byte:
-          case Kind.Boolean:
-            type = "Int8Array";
-            break;
-          case Kind.Float:
-            type = "Float32Array";
-            break;
-          case Kind.Long:
-            type = "Array";
-            break;
-          case Kind.Double:
-            type = "Float64Array";
-            break;
-          default:
-            type = typeDescriptorToDefinition(elementType);
-            dimensions ++;
-            break;
-        }
-      } else {
-        type = typeDescriptor.value.substring(dimensions + 1, typeDescriptor.value.length - 1);
-        type = type.replace(/\//g, '.');
-      }
-      for (var i = 0; i < dimensions; i++) {
-        type += "[]";
-      }
-    } else {
-      switch (typeDescriptor.kind) {
-        case Kind.Boolean: return "boolean";
-        case Kind.Byte:
-        case Kind.Short:
-        case Kind.Char:
-        case Kind.Int:
-        case Kind.Float:
-        case Kind.Double:
-          return "number";
-        case Kind.Long:
-          return "number"; // Should be Long.
-        case Kind.Void:
-          return "void";
-        default: throw Debug.unexpected("Unknown kind: " + typeDescriptor.kind);
-
-      }
-    }
-    return type;
-  }
-
-  export function signatureToDefinition(signature: string, includeReturnType = true, excludeArgumentNames = false): string {
-    var types = SignatureDescriptor.makeSignatureDescriptor(signature).typeDescriptors;
-    var argumentNames = "abcdefghijklmnopqrstuvwxyz";
-    var i = 0;
-    var result;
-    if (excludeArgumentNames) {
-      result = "(" + types.slice(1).map(t => typeDescriptorToDefinition(t.value)).join(", ") + ")";
-    } else {
-      result = "(" + types.slice(1).map(t => argumentNames[i++] + ": " + typeDescriptorToDefinition(t.value)).join(", ") + ")";
-    }
-    J2ME.Debug.assert(i < argumentNames.length);
-    if (includeReturnType) {
-      result += " => " + typeDescriptorToDefinition(types[0].value);
-    }
-    return result;
-  }
-
-
-  export function emitMethodDefinition(emitter: Emitter, methodInfo: MethodInfo) {
-    if (methodInfo.name === "<clinit>") {
-      return;
-    }
-    if (methodInfo.isStatic && methodInfo.classInfo.isInterface) {
-      return;
-    }
-    var isStaticString = methodInfo.isStatic ? "static " : "";
-    var isConstructor = methodInfo.name === "<init>";
-    if (isConstructor) {
-      // emitter.writer.writeLn("constructor" + signatureToDefinition(methodInfo.signature, false) + " {}");
-    } else {
-      var name = methodInfo.name + methodInfo.signature;
-      emitter.writer.writeLn(isStaticString + quote(name) + ": " + signatureToDefinition(methodInfo.signature) + ";");
-    }
-  }
-
-  export function emitFieldDefinition(emitter: Emitter, fieldInfo: FieldInfo) {
-    if (fieldInfo.isStatic && fieldInfo.classInfo.isInterface) {
-      return;
-    }
-    var isStaticString = fieldInfo.isStatic ? "static " : "";
-    emitter.writer.writeLn(isStaticString + fieldInfo.name + ": " + typeDescriptorToDefinition(fieldInfo.signature) + ";");
-  }
-
   export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
     var writer = emitter.writer;
     var mangledClassName = classInfo.mangledName;
@@ -152,8 +43,7 @@ module J2ME {
         if (fieldInfo.isStatic !== emitStatic) {
           continue;
         }
-        var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-        var kind = signature.kind;
+        var kind = getSignatureKind(fieldInfo.utf8Signature);
         var defaultValue;
         switch (kind) {
         case Kind.Reference:
@@ -166,22 +56,12 @@ module J2ME {
           defaultValue = "0";
           break;
         }
-        if (emitter.definitions) {
-          emitFieldDefinition(emitter, fieldInfo);
+        if (emitter.closure) {
+          writer.writeLn("this[" + quote(fieldInfo.mangledName) + "] = " + defaultValue + ";");
         } else {
-          if (emitter.closure) {
-            writer.writeLn("this[" + quote(fieldInfo.mangledName) + "] = " + defaultValue + ";");
-          } else {
-            writer.writeLn("this." + fieldInfo.mangledName + " = " + defaultValue + ";");
-          }
+          writer.writeLn("this." + fieldInfo.mangledName + " = " + defaultValue + ";");
         }
       }
-    }
-
-    if (emitter.definitions) {
-      emitFields(classInfo.fields, false);
-      emitFields(classInfo.fields, true);
-      return;
     }
 
     // Emit class initializer.
@@ -191,18 +71,8 @@ module J2ME {
     // initialize it zero to keep object shapes fixed.
     // writer.writeLn("this._hashCode = $.nextHashCode(this);");
     writer.writeLn("this._hashCode = 0;");
-    getClassInheritanceChain(classInfo).forEach(function (ci) {
-      emitFields(ci.fields, false);
-    });
+    emitFields(classInfo.fTable, false);
     writer.leave("}");
-
-    // Emit class static initializer if it has any static fields. We don't emit this for now
-    // since it probably doesn't pay off to emit code that only gets executed once.
-    if (false && classInfo.fields.some(f => f.isStatic)) {
-      writer.enter(mangledClassName + ".staticInitializer = function() {");
-      emitFields(classInfo.fields, true);
-      writer.leave("}");
-    }
 
     if (emitter.klassHeaderOnly) {
       return;
@@ -214,7 +84,13 @@ module J2ME {
   }
 
   function classNameWithDots(classInfo: ClassInfo) {
-    return classInfo.className.replace(/\//g, '.');
+    return classInfo.getClassNameSlow().replace(/\//g, '.');
+  }
+
+  export function emitMethodMetaData(emitter: Emitter, methodInfo: MethodInfo, compiledMethodInfo: CompiledMethodInfo) {
+    var metaData = <AOTMetaData>Object.create(null);
+    metaData.osr = compiledMethodInfo.onStackReplacementEntryPoints;
+    emitter.writer.writeLn("AOTMD[\"" + methodInfo.mangledClassAndMethodName + "\"] = " + JSON.stringify(metaData) + ";");
   }
 
   export function emitReferencedSymbols(emitter: Emitter, classInfo: ClassInfo, compiledMethods: CompiledMethodInfo []) {
@@ -229,7 +105,7 @@ module J2ME {
     var mangledClassName = classInfo.mangledName;
 
     emitter.writer.writeLn(mangledClassName + ".classSymbols = [" + referencedClasses.map(classInfo => {
-      return quote(classInfo.className);
+      return quote(classInfo.getClassNameSlow());
     }).join(", ") + "];");
   }
 
@@ -245,31 +121,17 @@ module J2ME {
     }
 
     var classNameParts;
-    if (emitter.definitions) {
-      classNameParts = classInfo.className.split("/");
-      if (classNameParts.length > 1) {
-        writer.enter("module " + classNameParts.slice(0, classNameParts.length - 1).join(".") + " {");
-      }
-      var classOrInterfaceString = classInfo.isInterface ? "interface" : "class";
-      var extendsString = classInfo.superClass ? " extends " + classNameWithDots(classInfo.superClass) : "";
-      if (classInfo.isInterface) {
-        extendsString = "";
-      }
-      // var implementsString = classInfo.interfaces.length ? " implements " + classInfo.interfaces.map(i => classNameWithDots(i)).join(", ") : "";
-      var implementsString = "";
-      writer.enter("export " + classOrInterfaceString + " " + classNameParts[classNameParts.length - 1] + extendsString + implementsString + " {");
-    }
 
     emitKlass(emitter, classInfo);
 
-    var methods = classInfo.methods;
+    var methods = classInfo.getMethods();
     var compiledMethods: CompiledMethodInfo [] = [];
     for (var i = 0; i < methods.length; i++) {
       var method = methods[i];
       if (method.isNative) {
         continue;
       }
-      if (!method.code) {
+      if (!method.codeAttribute) {
         continue;
       }
       if (methodFilterList !== null && methodFilterList.indexOf(method.implKey) < 0) {
@@ -279,14 +141,10 @@ module J2ME {
       if (!isIdentifierName(mangledMethodName)) {
         mangledMethodName = quote(mangledMethodName);
       }
-      if (emitter.definitions) {
-        emitMethodDefinition(emitter, method);
-        continue;
-      }
       try {
         var mangledClassAndMethodName = method.mangledClassAndMethodName;
         if (emitter.debugInfo) {
-          writer.writeLn("// " + method.implKey + " (" + mangledClassAndMethodName + ") " + method.getSourceLocationForPC(0));
+          writer.writeLn("// " + method.implKey + " (" + mangledClassAndMethodName + ")");
         }
         var compiledMethod = undefined;
         try {
@@ -315,6 +173,7 @@ module J2ME {
               writer.writeLn("window[" + quote(mangledClassAndMethodName) + "] = " + mangledClassAndMethodName + ";");
             }
           }
+          emitMethodMetaData(emitter, method, compiledMethod);
           compiledMethods.push(compiledMethod);
         }
       } catch (x) {
@@ -325,13 +184,6 @@ module J2ME {
 
     emitReferencedSymbols(emitter, classInfo, compiledMethods);
 
-    if (emitter.definitions) {
-      if (classNameParts.length > 1) {
-        writer.leave("}");
-      }
-      writer.leave("}");
-    }
-
     return compiledMethods;
   }
 
@@ -339,7 +191,7 @@ module J2ME {
     constructor(public args: string [],
                 public body: string,
                 public referencedClasses: ClassInfo [],
-                public hasOSREntryPoint: boolean = false) {
+                public onStackReplacementEntryPoints: number [] = null) {
       // ...
     }
   }
@@ -348,33 +200,25 @@ module J2ME {
     var method;
     method = baselineCompileMethod(methodInfo, target);
     return method;
-    try {
-      method = optimizerCompileMethod(methodInfo, target);
-    } catch (x) {
-      method = baselineCompileMethod(methodInfo, target);
-    }
-    return method;
   }
 
   export function compile(jvm: any,
+                          jarFiles: Map<string, any>,
                           jarFilter: (jarFile: string) => boolean,
                           classFilter: (classInfo: ClassInfo) => boolean,
                           methodFilterList: string[],
-                          fileFilter: string, debugInfo: boolean, tsDefinitions: boolean) {
+                          fileFilter: string, debugInfo: boolean) {
     var runtime = new Runtime(jvm);
-    var jarFiles = CLASSES.jarFiles;
     var ctx = new Context(runtime);
     var code = "";
     var writer = new J2ME.IndentingWriter(false, function (s) {
       code += s + "\n";
     });
 
-    var emitter = new Emitter(writer, false, debugInfo, false, tsDefinitions);
+    var emitter = new Emitter(writer, false, debugInfo, false);
 
     var compiledMethods: CompiledMethodInfo [] = [];
     var classInfoList: ClassInfo [] = [];
-
-    CLASSES.loadAllClassFiles();
 
     Object.keys(jarFiles).every(function (path) {
       if (path.substr(-4) !== ".jar" || !jarFilter(path)) {
@@ -396,7 +240,7 @@ module J2ME {
           }
           classInfoList.push(classInfo);
         } catch (e) {
-          stderrWriter.writeLn(e);
+          stderrWriter.writeLn(e + ": " + e.stack);
         }
         return true;
       }.bind(this));
@@ -407,18 +251,19 @@ module J2ME {
 
     function hasDependencies(list, classInfo) {
       var superClass = classInfo.superClass;
-      if (!superClass && classInfo.interfaces.length === 0) {
+      var interfaces = classInfo.getAllInterfaces();
+      if (!superClass && interfaces.length === 0) {
         return false;
       }
       for (var i = 0; i < list.length; i++) {
-        if (list[i].className === superClass.className) {
+        if (list[i].getClassNameSlow() === superClass.getClassNameSlow()) {
           return true;
         }
       }
 
-      for (var j = 0; j < classInfo.interfaces; j++) {
+      for (var j = 0; j < interfaces; j++) {
         for (var i = 0; i < list.length; i++) {
-          if (list[i].className === classInfo.interfaces[j].className) {
+          if (list[i].getClassNameSlow() === interfaces[j].getClassNameSlow()) {
             return true;
           }
         }
@@ -440,7 +285,7 @@ module J2ME {
     var filteredClassInfoList: ClassInfo [] = [];
     for (var i = 0; i < orderedClassInfoList.length; i++) {
       var classInfo = orderedClassInfoList[i];
-      var methods = classInfo.methods;
+      var methods = classInfo.getMethods();
       for (var j = 0; j < methods.length; j++) {
         var method = methods[j];
         if (methodFilterList === null || methodFilterList.indexOf(method.implKey) >= 0) {
@@ -455,7 +300,7 @@ module J2ME {
       var classInfo = filteredClassInfoList[i];
 
       if (emitter.debugInfo) {
-        writer.writeLn("// " + classInfo.className + (classInfo.superClass ? " extends " + classInfo.superClass.className : ""));
+        writer.writeLn("// " + classInfo.getClassNameSlow() + (classInfo.superClass ? " extends " + classInfo.superClass.getClassNameSlow() : ""));
       }
       // Don't compile interfaces.
       if (classInfo.isInterface) {

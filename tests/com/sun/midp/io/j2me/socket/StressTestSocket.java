@@ -6,9 +6,9 @@ import java.io.*;
 import javax.microedition.io.*;
 
 public class StressTestSocket implements Testlet {
-    public int getExpectedPass() { return 0; }
+    public int getExpectedPass() { return 200; }
     public int getExpectedFail() { return 0; }
-    public int getExpectedKnownFail() { return 1; }
+    public int getExpectedKnownFail() { return 0; }
     TestHarness th;
     static final String URL = "socket://localhost:50003";
 
@@ -19,7 +19,7 @@ public class StressTestSocket implements Testlet {
             testMultipleSendsReceivesOnSameSocket();
             testMultipleSendsReceivesOnMultipleSockets();
         } catch (IOException e) {
-            th.todo(false, "Exception unexpected: " + e);
+            th.fail("Exception unexpected: " + e);
             e.printStackTrace();
         }
     }
@@ -34,7 +34,7 @@ public class StressTestSocket implements Testlet {
         } while (buf[i-1] != -1 && buf[i-1] != '\n' && i < buf.length);
         
         String received = new String(buf, 0, i-1);
-        th.todo(received, string);
+        th.check(received, string);
     }
 
     void testMultipleSendsReceivesOnSameSocket() throws IOException {

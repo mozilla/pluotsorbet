@@ -95,7 +95,7 @@ var fixedDistCodeTab = [new Int32Array([
   0x50003, 0x50013, 0x5000b, 0x5001b, 0x50007, 0x50017, 0x5000f, 0x00000
 ]), 5];
 
-function inflate(bytes) {
+function inflate(bytes, uncompressed_len) {
   var bytesPos = 0;
 
   var codeSize = 0;
@@ -171,21 +171,8 @@ function inflate(bytes) {
     return [codes, maxLen];
   };
 
-  var buffer;
+  var buffer = new Uint8Array(uncompressed_len);
   var bufferLength = 0;
-
-  function ensureBuffer(requested) {
-    var current = buffer ? buffer.byteLength : 0;
-    if (requested <= current)
-      return;
-    var size = 512;
-    while (size < requested)
-      size <<= 1;
-    var buffer2 = new Uint8Array(size);
-    for (var i = 0; i < current; ++i)
-      buffer2[i] = buffer[i];
-    buffer = buffer2;
-  }
 
   function readBlock() {
     var eof = false;
@@ -217,17 +204,12 @@ function inflate(bytes) {
       codeBuf = 0;
       codeSize = 0;
 
-      ensureBuffer(bufferLength + blockLen);
       var end = bufferLength + blockLen;
-      for (var n = bufferLength; n < end; ++n) {
-        if (typeof (b = bytes[bytesPos++]) == 'undefined') {
-          eof = true;
-          break;
-        }
-        buffer[n] = b;
+      for (; bufferLength < end && bytesPos < bytes.length; ++bufferLength, ++bytesPos) {
+        buffer[bufferLength] = bytes[bytesPos];
       }
-      bufferLength = end;
-      return eof;
+
+      return bytesPos === bytes.length;
     }
 
     var litCodeTable;
@@ -276,20 +258,13 @@ function inflate(bytes) {
       new Error('Unknown block type in flate stream');
     }
 
-    var limit = buffer ? buffer.length : 0;
-    var pos = bufferLength;
     while (true) {
       var code1 = getCode(litCodeTable);
       if (code1 < 256) {
-        if (pos + 1 >= limit) {
-          ensureBuffer(pos + 1);
-          limit = buffer.length;
-        }
-        buffer[pos++] = code1;
+        buffer[bufferLength++] = code1;
         continue;
       }
       if (code1 == 256) {
-        bufferLength = pos;
         return eof;
       }
       code1 -= 257;
@@ -304,25 +279,20 @@ function inflate(bytes) {
       if (code2 > 0)
         code2 = getBits(code2);
       var dist = (code1 & 0xffff) + code2;
-      if (pos + len >= limit) {
-        ensureBuffer(pos + len);
-        limit = buffer.length;
-      }
-      for (var k = 0; k < len; ++k, ++pos)
-        buffer[pos] = buffer[pos - dist];
+      for (var k = 0; k < len; ++k, ++bufferLength)
+        buffer[bufferLength] = buffer[bufferLength - dist];
     }
   };
 
   while (!readBlock())
     ;
 
-  // shrink the buffer to the actual data size
-  return new Uint8Array(buffer.buffer, 0, bufferLength);
+  return buffer;
 }
 
 var arrays = J2ME.ArrayUtilities.makeArrays(256);
 
-function ZipFile(buffer) {
+function ZipFile(buffer, extract) {
   var bytes = new Uint8Array(buffer);
   var view = new DataView(buffer);
 
@@ -365,18 +335,28 @@ function ZipFile(buffer) {
       arrays = J2ME.ArrayUtilities.makeArrays(filename_len);
     }
     var array = arrays[filename_len];
-    var filename = "";
     for (var n = 0; n < filename_len; ++n) {
       array[n] = String.fromCharCode(bytes[pos++]);
     }
-    filename = array.join("");
+    var filename = array.join("");
     // locate the compressed data
     var local_extra_len = view.getInt16(local_header_offset + 28, true);
     var data_offset = local_header_offset + 30 + filename_len + local_extra_len;
+
     // add the entry to the directory
+    var compressed_data;
+    var data = new Uint8Array(buffer, data_offset, compressed_len);
+    if (extract) {
+      compressed_data = new Uint8Array(compressed_len);
+      compressed_data.set(data);
+    } else {
+      compressed_data = data;
+    }
+
     directory[filename] = {
       compression_method: compression_method,
-      compressed_data: new Uint8Array(buffer, data_offset, compressed_len)
+      compressed_data: compressed_data,
+      uncompressed_len: uncompressed_len,
     };
     // advance to the next entry
     pos += extra_len + comment_len;
@@ -397,7 +377,7 @@ ZipFile.prototype = {
     case 0: // stored
       return data;
     case 8: // deflated
-      return inflate(data);
+      return inflate(data, entry.uncompressed_len);
     }
     return null;
   }

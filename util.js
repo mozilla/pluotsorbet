@@ -4,13 +4,10 @@
 'use strict';
 
 var util = (function () {
-  var Utf8TextDecoder;
+  var Utf8TextDecoder = new TextDecoder("utf-8");
 
-  function decodeUtf8(arrayBuffer) {
-    if (!Utf8TextDecoder) {
-      Utf8TextDecoder = new TextDecoder("utf-8");
-    }
-    return Utf8TextDecoder.decode(new Uint8Array(arrayBuffer));
+  function decodeUtf8(array) {
+    return Utf8TextDecoder.decode(array);
   }
 
   /**
@@ -29,45 +26,6 @@ var util = (function () {
    */
   function decodeUtf8Array(arr) {
     return fallibleUtf8Decoder.decode(arr);
-  }
-
-  // Decode Java's modified UTF-8 (JVM specs, $ 4.4.7)
-  // http://docs.oracle.com/javase/specs/jvms/se5.0/html/ClassFile.doc.html#7963
-  function javaUTF8Decode(arr) {
-    var str = '';
-    var i = 0;
-    while (i < arr.length) {
-        var x = arr[i++];
-
-        if (x <= 0x7f) {
-            // Code points in the range '\u0001' to '\u007F' are represented by a
-            // single byte.
-            // The 7 bits of data in the byte give the value of the code point
-            // represented.
-            str += String.fromCharCode(x);
-        } else if (x <= 0xdf) {
-            // The null code point ('\u0000') and code points in the range '\u0080'
-            // to '\u07FF' are represented by a pair of bytes x and y.
-            var y = arr[i++];
-            str += String.fromCharCode(((x & 0x1f) << 6) + (y & 0x3f));
-        } else {
-            // Code points in the range '\u0800' to '\uFFFF' are represented by 3
-            // bytes x, y, and z.
-            var y = arr[i++];
-            var z = arr[i++];
-            str += String.fromCharCode(((x & 0xf) << 12) + ((y & 0x3f) << 6) + (z & 0x3f));
-        }
-    }
-
-    return str;
-  }
-
-  function defaultValue(type) {
-    if (type === 'J')
-      return Long.ZERO;
-    if (type[0] === '[' || type[0] === 'L')
-      return null;
-    return 0;
   }
 
   var INT_MAX = Math.pow(2, 31) - 1;
@@ -103,21 +61,6 @@ var util = (function () {
     return jStringDecoder.decode(chars.subarray(offset, offset + count));
   }
 
-  function fromJavaString(jStr) {
-    return J2ME.fromJavaString(jStr);
-  }
-
-  function newMultiArray(classInfo, lengths) {
-    var length = lengths[0];
-    var array = J2ME.newArray(classInfo.elementClass.klass, length);
-    if (lengths.length > 1) {
-      lengths = lengths.slice(1);
-      for (var i=0; i<length; i++)
-        array[i] = newMultiArray(classInfo.elementClass, lengths);
-    }
-    return array;
-  }
-
   /**
    * Returns an ArrayBufferView of the underlying code points
    * represented by the given Java string.
@@ -135,12 +78,6 @@ var util = (function () {
       return ++gen;
     }
   })();
-
-  function tag(obj) {
-    if (!obj.tag)
-      obj.tag = id();
-    return obj.tag;
-  }
 
   /**
    * Compare two typed arrays, returning *true* if they have the same length
@@ -189,12 +126,24 @@ var util = (function () {
     return chars;
   }
 
+  // rgbaToCSS() can be called frequently. Using |rgbaBuf| avoids creating
+  // many intermediate strings.
+  var rgbaBuf = ["rgba(", 0, ",", 0, ",", 0, ",", 0, ")"];
+
+  function rgbaToCSS(r, g, b, a) {
+    rgbaBuf[1] = r;
+    rgbaBuf[3] = g;
+    rgbaBuf[5] = b;
+    rgbaBuf[7] = a;
+    return rgbaBuf.join('');
+  }
+
   function abgrIntToCSS(pixel) {
     var a = (pixel >> 24) & 0xff;
     var b = (pixel >> 16) & 0xff;
     var g = (pixel >> 8) & 0xff;
     var r = pixel & 0xff;
-    return "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
+    return rgbaToCSS(r, g, b, a/255);
   }
 
   return {
@@ -202,19 +151,15 @@ var util = (function () {
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
     decodeUtf8Array: decodeUtf8Array,
-    javaUTF8Decode: javaUTF8Decode,
-    defaultValue: defaultValue,
     double2int: double2int,
     double2long: double2long,
     fromJavaChars: fromJavaChars,
-    fromJavaString: fromJavaString,
-    newMultiArray: newMultiArray,
     stringToCharArray: stringToCharArray,
     id: id,
-    tag: tag,
     compareTypedArrays: compareTypedArrays,
     pad: pad,
     toCodePointArray: toCodePointArray,
+    rgbaToCSS: rgbaToCSS,
     abgrIntToCSS: abgrIntToCSS,
   };
 })();

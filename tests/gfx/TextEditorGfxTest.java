@@ -11,6 +11,20 @@ public class TextEditorGfxTest extends MIDlet {
             g.setColor(0x00FFFFFF);
             g.fillRect(0, 0, getWidth(), getHeight());
 
+            String emoji1 = TestUtils.getEmojiString("1f1ee1f1f9");
+            String emoji2 = TestUtils.getEmojiString("1f609");
+            String emoji3 = TestUtils.getEmojiString("2320e3");
+
+            TextEditor textEditor = TextEditor.createTextEditor("A stri" + emoji1 + "ng wit" + emoji2 + "h emoj" + emoji3 + "i", 50, TextField.ANY, 150, 70);
+            textEditor.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM));
+            textEditor.setParent(this);
+            textEditor.setMultiline(true);
+            textEditor.setBackgroundColor(0x00FFFFFF);
+            textEditor.setForegroundColor(0xFF000000);
+            textEditor.setVisible(true);
+            textEditor.setFocus(false);
+            textEditor.setPosition(50, 50);
+
             System.out.println("PAINTED");
         }
     }
@@ -19,20 +33,6 @@ public class TextEditorGfxTest extends MIDlet {
         TestCanvas canvas = new TestCanvas();
         canvas.setFullScreenMode(true);
         Display.getDisplay(this).setCurrent(canvas);
-
-        String emoji1 = TestUtils.getEmojiString("1f1ee1f1f9");
-        String emoji2 = TestUtils.getEmojiString("1f609");
-        String emoji3 = TestUtils.getEmojiString("2320e3");
-
-        TextEditor textEditor = TextEditor.createTextEditor("A stri" + emoji1 + "ng wit" + emoji2 + "h emoj" + emoji3 + "i", 50, TextField.ANY, 150, 70);
-        textEditor.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_PLAIN, Font.SIZE_MEDIUM));
-        textEditor.setParent(canvas);
-        textEditor.setMultiline(true);
-        textEditor.setBackgroundColor(0x00FFFFFF);
-        textEditor.setForegroundColor(0xFF000000);
-        textEditor.setVisible(true);
-        textEditor.setFocus(false);
-        textEditor.setPosition(50, 50);
     }
 
     public void pauseApp() {

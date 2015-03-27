@@ -7,6 +7,10 @@ EXCLUDED += \
   $(NULL)
 endif
 
+ifeq ($(JSR_179),0)
+EXCLUDED += "./javax/microedition/location/*"
+endif
+
 SRCS=$(shell find . $(foreach path,$(EXCLUDED),-not -path $(path)) -name "*.java")
 JASMIN_SRCS=$(shell find . -name "*.j")
 
@@ -29,6 +33,7 @@ PACKAGE_FILES = \
   javax/microedition/media/audio.3gp \
   javax/microedition/media/audio.amr \
   javax/microedition/media/hello.ogg \
+  javax/microedition/media/test.webm \
   $(NULL)
 
 ifeq ($(JSR_256),1)
@@ -40,10 +45,13 @@ all: tests.jar
 ../java/classes.jar:
 	cd ../java && make
 
+javax/microedition/media/test.webm: gfx/images/red.png
+	ffmpeg -loop 1 -i gfx/images/red.png -t 10 javax/microedition/media/test.webm
+
 Testlets.java: $(SRCS) $(JASMIN_SRCS) Makefile
 	echo "public class Testlets {" > $@
 	echo "  static String[] list = {" >> $@
-	grep "implements Testlet" `find . -name "*.java"` | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
+	grep "implements Testlet" $(SRCS) | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
 	grep "implements gnu/testlet/Testlet" `find . -name "*.j"` | sed -e "s/^.\///" -e "s/\.j.*//" -e "s/\(.*\)/\"\1\",/" >> $@
 	echo "  null};" >> $@
 	echo "};" >> $@
@@ -53,11 +61,14 @@ tests.jar: $(SRCS) $(JASMIN_SRCS) Testlets.java
 	mkdir build
 	# Build the buildtime support classes in-place, not in ./build, so they aren't available at runtime.
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -extdirs "" $(BUILDTIME_SUPPORT_SRCS) > /dev/null
-	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar:$(BUILDTIME_SUPPORT_DIR) -extdirs "" -d ./build $(SRCS) > /dev/null
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -cp $(BUILDTIME_SUPPORT_DIR) -extdirs "" -d ./build $(SRCS) > /dev/null
 	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar -extdirs "" -d ./build $(RUNTIME_SUPPORT_SRCS) > /dev/null
 	java -jar ../tools/jasmin-2.4/jasmin.jar -d build/ $(JASMIN_SRCS)
-	jar cvfe tests.jar RunTests -C build/ .
-	jar uvf $(PACKAGE_FILES) > /dev/null
+	jar cfe tests.jar RunTests -C build/ .
+	jar uf $(PACKAGE_FILES) > /dev/null
+	# Create JARs for JARStore tests
+	jar cf compressed.jar build/RunTests.class
+	jar cf0 uncompressed.jar build/RunTests.class
 	rm -rf build
 
 clean:

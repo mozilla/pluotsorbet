@@ -66,7 +66,9 @@ Example - Asteroids
 
 ## Tests
 
-You can run the test suite with `make test`. The main driver for the test suite is automation.js which uses the Casper.js testing framework and slimer.js (a Gecko backend for casper.js). This test suite runs on every push (continuous integration) thanks to Travis.
+You can run the test suite with `make test`. The main driver for the test suite is tests/automation.js which uses the [CasperJS](http://casperjs.org/) testing framework and [SlimerJS](http://slimerjs.org/) (a Gecko backend for CasperJS). This test suite runs on every push (continuous integration) thanks to [Travis CI](https://travis-ci.org/).
+
+`make test` downloads SlimerJS for you automatically, but you have to install CasperJS yourself. The easiest way to do that is via NPM: `npm install -g casperjs`.  On Mac, you may also be able to install it via Brew.
 
 If you want to pass additional [casperJS command line options](http://docs.slimerjs.org/current/configuration.html), look at the "test" target in Makefile and place additional command line options before the automation.js filename.
 
@@ -99,7 +101,6 @@ If the testlet uses sockets, you must start 4 servers (instead of just the http 
 
 Frequent causes of failure include:
 
-* automation.js expects a different number of tests to have passed than the number that actually passed (this is very common when adding new tests)
 * timeout: Travis machines are generally slower than dev machines and so tests that pass locally will fail in the continuous integration tests
 * Number of differing pixels in a gfx/rendering test exceeds the threshold allowed in automation.js. This will often happen because slimerJS uses a different version of Firefox than the developer. This can also happen because the test renders text, whose font rendering can vary from machine to machine, perhaps even with the same font.
 
@@ -143,6 +144,111 @@ Modelines for JS files:
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
+### VM profiling
+
+The j2me.js VM has several profiling tools. The simplest feature is to use counters. `runtime.ts` defines several: `runtimeCounter`, `nativeCounter`, etc ... these are only available in debug builds.
+
+To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view accumulated counts, allow the application to run for some time and then click the `Dump Counters` button. If you want, reset the counter count any time by clicking `Clear Counters`.
+
+- Counting events:
+  ```
+  function readBytes(fileName, length) {
+    runtimeCounter && runtimeCounter.count("readBytes");
+  }
+  ```
+
+- Counting bucketed events:
+  ```
+  function readBytes(fileName, length) {
+    runtimeCounter && runtimeCounter.count("readBytes " + fileName);
+  }
+  ```
+
+- Counting events with larger counts: 
+  ```
+  function readBytes(fileName, length) {
+    runtimeCounter && runtimeCounter.count("readBytes", length);
+  }
+  ```
+
+- Counting events with caller context: This is useful to understand which call sites are the most common. 
+  ```
+  function readBytes(fileName, length) {
+    runtimeCounter && runtimeCounter.count("readBytes " + arguments.callee.caller.name);
+  }
+  ```
+
+The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2]`.
+
+Next, you will need to wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
+
+If you want to record every Java method call, change the line in `runtime.ts` from:
+
+```
+if (false && methodTimeline) {
+```
+to
+```
+if (methodTimeline) {
+```
+
+This will wrap all methods with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed trace of the application's execution. Note that this instrumentation has some overhead, and timing information of very short lived events may not be accurate and can lead to the entire application slowing down.
+
+Similar to the way counters work, you can get creative with the timeline profiler. The API looks something like this:
+
+```
+timeline.enter(name: string, details?: Object);
+timeline.leave(name?: string, details?: Object);
+```
+
+You must pair the calls to `enter` and `leave` but you don't necessarily need to specify arguments for `name` and `details`.
+
+The `name` argument can be any string and it specifies a event type. The timeline view will draw different types of events in different colors. It will also give you some statistics about the number of times a certain event type was seen, how long it took, etc.. 
+
+The `details` argument is an object whose properties are shown when you hover over a timeline segment in the profiler view. You can specify this object when you call `timeline.enter` or when you call `timeline.leave`. Usually, you have more information when you call `leave` so that's a more convenient place to put it.
+
+The way in which you come up with event names can produce different results. In the `profilingWrapper` function, the `key` is used to specify the event type.
+
+You can also create your own timelines. At the moment there are 3:
+- `timeline`: VM Events like loading class files, linking, etc.
+- `methodTimeline`: Method execution.
+- `threadTimeline`: Thread scheduling.
+
+You may have to change the CSS height style of the `profileContainer` if you don't see all timelines.
+
+![Shumway's timeline viewer](https://cloud.githubusercontent.com/assets/311082/5998278/644761ec-aa7a-11e4-8149-3556b08b8c54.png)
+
+Top band is an overview of all the timelines. Second band is the `timeline`, third is the `threadTimeline` and finally the fourth is the `methodTimeline`. Use your mouse wheel to zoom in and out, pan and hover.
+
+The tooltip displays:
+- `total`: ms spent in this event including all the child events.
+- `self`: `total` - `total` sum of all child events.
+- `count`: number of events seen with this name.
+- `all total` and `all self`: cumulative total and self times for all events with this name.
+- the remaining fields show the custom data specified in the `details` object.
+
+If you build with `PROFILE=2` the timeline will be saved to a text file instead of shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt` which you can later pull with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
+
+## Benchmarks
+
+### Startup Benchmark
+
+The startup benchmark measures from when the benchmark.js file loads to the call of `DisplayDevice.gainedForeground0`. Included in a benchmark build are helpers to build baseline scores so that subsequent runs of the benchmark can be compared. A t-test is used in the comparison to see if the changes were significant.
+
+To use:
+
+*It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds*
+
+1. Checkout the version you want to be the baseline(usually mozilla/master).
+1. Build a benchmark build `RELEASE=1 BENCHMARK=1 make` *"RELEASE=1" is not required, but is recommended to avoid debug code from changing execution behavior.*
+1. Open the midlet you want to test with `&logLevel=log` appended to the url and click `Build Benchmark Baseline`
+1. When finished, the message `FINISHED BUILDING BASELINE` will show up in the log.
+1. Apply/checkout your changes to the code
+1. Rebuild `RELEASE=1 BENCHMARK=1 make`
+1. Refresh the midlet
+1. Click `Run Startup Benchmark`
+1. Once done, the benchmark will dump results to the log. If it says "FASTER" or "SLOWER" the t-test has determined the results were significant. If it says "INSIGNIFICANT RESULT" the changes were likely not enough to be differentiated from the noise of the test. 
+
 ## Filesystem
 
 midp/fs.js contains native implementations of various midp filesystem APIs.
@@ -163,34 +269,55 @@ Java compiler will do nothing to ensure that implementation actually exists. At 
 
 We use `Native` object in JS to handle creation and registration of `native` functions. See native.js
 
-    Native.create("name/of/function.(parameterTypes)returnType", jsFuncToCall, isAsync)
+    Native["name/of/function.(parameterTypes)returnType"] = jsFuncToCall;
 
 e.g.:
 
-    Native.create("java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V", function(src, srcOffset, dst, dstOffset, length) {...});
+    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(src, srcOffset, dst, dstOffset, length) {...};
 
-If you need to implement a method in JS but you can't declare it `native` in Java, use `Override`.
-
-e.g.:
-
-   Override.create("com/ibm/oti/connection/file/Connection.decode.(Ljava/lang/String;)Ljava/lang/String;", function(...) {...});
-
-
-If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in runtime.ts, e.g.:
+If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in vm/runtime.ts, e.g.:
 
     throw $.newNullPointerException("Cannot copy to/from a null array.");
+
+If you need implement a native method with async JS calls, the following steps are required:
+
+1. Add the method to the `yieldMap` in jit/analyze.ts
+2. Use `asyncImpl` in native.js to return the asnyc value with a `Promise`.
+
+e.g:
+
+    Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
+        asyncImpl("V", new Promise(function(resolve, reject) {
+            window.setTimeout(resolve, delay.toNumber());
+        }));
+    };
+
+The `asyncImpl` call is optional if part of the code doesn't make async calls. The method can sometimes return a value synchronously, and the VM will handle it properly. However, if a native ever calls asyncImpl, even if it doesn't always do so, then you need to add the method to `yieldMap`.
+
+e.g:
+
+    Native["java/lang/Thread.newSleep.(J)Z"] = function(delay) {
+        if (delay < 0) {
+          // Return false synchronously. Note: we use 1 and 0 in JavaScript to
+          // represent true and false in Java.
+          return 0;
+        }
+        // Return true asynchronously with `asyncImpl`.
+        asyncImpl("Z", new Promise(function(resolve, reject) {
+            window.setTimeout(resolve.bind(null, 1), delay.toNumber());
+        }));
+    };
 
 Remember:
 
   * Return types are automatically converted to Java types, but parameters are not automatically converted from Java types to JS types
-  * Pass `true` as last param if JS will make async calls and return a `Promise`
   * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
-  * Context is last param to every function registered using `Native.create` or `Override.create`
+  * `$` is current runtime and `$.ctx` current Context
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
 
 ## Packaging
 
-The repository includes tools for packaging j2me.js into an Open Web App.
+`make app` packages j2me.js into an Open Web App in output directory.
 It's possible to simply package the entire contents of your working directory,
 but these tools will produce a better app.
 
@@ -204,9 +331,3 @@ To use it, first install a recent version of the
 ### Compiling With Closure
 
 `make closure` compiles some JavaScript code with the Closure compiler.
-
-To use it, first download this custom version of the compiler to tools/closure.jar:
-
-```
-wget https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar -P tools/
-```

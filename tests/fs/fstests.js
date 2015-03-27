@@ -614,12 +614,16 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  var truncated = fs.truncate("/tmp/tmp.txt");
-  is(truncated, true, "truncated a file");
+  var truncated = fs.truncate("/tmp/tmp.txt", 11);
+  is(truncated, true, "truncated a file to 11 bytes");
+  var size = fs.size("/tmp/tmp.txt");
+  is(size, 11, "truncated file's size is 11");
   next();
 });
 
 tests.push(function() {
+  var truncated = fs.truncate("/tmp/tmp.txt");
+  is(truncated, true, "truncated a file");
   var size = fs.size("/tmp/tmp.txt");
   is(size, 0, "truncated file's size is 0");
   next();
@@ -863,19 +867,6 @@ tests.push(function() {
     // is private to the fs module, but we have at least confirmed that the call
     // resulted in the callback being called.
     ok(true, "syncStore callback called");
-    next();
-  });
-});
-
-tests.push(function() {
-  fs.addTransientPath("/transient-path");
-  fs.create("/transient-path", new Blob());
-  fs.open("/transient-path", function(fd) {
-    fs.write(fd, new TextEncoder().encode("marco"));
-    fs.close(fd);
-    fs.purgeStore();
-    var exists = fs.exists("/transient-path");
-    is(exists, false, "transient file doesn't exist after purge");
     next();
   });
 });

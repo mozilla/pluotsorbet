@@ -1,4 +1,4 @@
-///<reference path='build/j2me-jsc.d.ts' />
+///<reference path='bld/j2me-jsc.d.ts' />
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
 
@@ -15,6 +15,9 @@ declare var load: (string) => void;
 load("libs/relooper.js"); // Load before we polyfill the window object.
 
 var CC = {};
+
+// Define objects and functions that j2me.js expects
+// but are unavailable in the shell environment.
 
 jsGlobal.window = {
   setZeroTimeout: function(callback) {
@@ -65,8 +68,11 @@ jsGlobal.config = {
   args: "",
 };
 
+jsGlobal.Promise = function() {
+}
+
 module J2ME {
-  declare var process, require, global, quit, help, scriptArgs, arguments, snarf;
+  declare var process, require, global, quit, help, scriptArgs, arguments, snarf, ZipFile, JARStore;
 
   var isNode = typeof process === 'object';
   var writer: IndentingWriter;
@@ -78,7 +84,7 @@ module J2ME {
     }
   }
 
-  loadFiles("blackBox.js", "build/j2me-jsc.js", "libs/zipfile.js", "libs/encoding.js", "util.js");
+  loadFiles("libs/long.js", "blackBox.js", "bld/j2me-jsc.js", "libs/zipfile.js", "libs/jarstore.js", "libs/encoding.js", "util.js");
 
   phase = ExecutionPhase.Compiler;
 
@@ -95,7 +101,6 @@ module J2ME {
   var fileFilterOption: Options.Option;
   var debuggerOption: Options.Option;
   var releaseOption: Options.Option;
-  var definitionOption: Options.Option;
 
 
   function main(commandLineArguments: string []) {
@@ -116,7 +121,6 @@ module J2ME {
     fileFilterOption = shellOptions.register(new Options.Option("ff", "fileFilter", "string", ".*", "Compile File Filter"));
     debuggerOption = shellOptions.register(new Options.Option("d", "debugger", "boolean", false, "Emit Debug Information"));
     releaseOption = shellOptions.register(new Options.Option("r", "release", "boolean", false, "Release mode"));
-    definitionOption = shellOptions.register(new Options.Option("t", "definition", "boolean", false, "Emit Definition"));
 
     var argumentParser = new Options.ArgumentParser();
     argumentParser.addBoundOptionSet(shellOptions);
@@ -179,7 +183,8 @@ module J2ME {
       quit();
     }
 
-    release = releaseOption.value;
+    var jarFiles = Object.create(null);
+
     var jvm = new JVM();
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
@@ -187,7 +192,9 @@ module J2ME {
         if (verboseOption.value) {
           writer.writeLn("Loading: " + file);
         }
-        CLASSES.addPath(file, snarf(file, "binary").buffer);
+        var data = snarf(file, "binary").buffer
+        JARStore.addBuiltIn(file, data);
+        jarFiles[file] = new ZipFile(data);
       }
     }
     CLASSES.initializeBuiltinClasses();
@@ -237,9 +244,9 @@ module J2ME {
     }
     function classFilter(classInfo: ClassInfo): boolean {
       if (classNameList) {
-        return classNameList.indexOf(classInfo.className) >= 0;
+        return classNameList.indexOf(classInfo.getClassNameSlow()) >= 0;
       } else if (classFilterOption.value) {
-        return !!classInfo.className.match(classFilterOption.value);
+        return !!classInfo.getClassNameSlow().match(classFilterOption.value);
       }
       return false;
     }
@@ -248,7 +255,7 @@ module J2ME {
     }
 
     stdoutWriter.writeLn("var start = performance.now();");
-    compile(jvm, jarFilter, classFilter, methodFilterList, fileFilterOption.value, debuggerOption.value, definitionOption.value);
+    compile(jvm, jarFiles, jarFilter, classFilter, methodFilterList, fileFilterOption.value, debuggerOption.value);
     stdoutWriter.writeLn("console.log(\"Loaded " + jarFileFilterOption.value + " in \" + (performance.now() - start).toFixed(2) + \" ms.\");");
     if (methodFilterList !== null && methodFilterList.length) {
       stderrWriter.enter("The following method(s) in the method filter list failed to compile or were not found:");

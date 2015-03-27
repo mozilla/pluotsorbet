@@ -116,230 +116,183 @@ module J2ME {
     }
   }
 
-  export function getSignatureKind(signature: string): Kind {
+  export function getSignatureKind(signature: Uint8Array): Kind {
     switch (signature[0]) {
-      case 'Z':
+      case UTF8Chars.Z:
         return Kind.Boolean;
-      case 'B':
+      case UTF8Chars.B:
         return Kind.Byte;
-      case 'S':
+      case UTF8Chars.S:
         return Kind.Short;
-      case 'C':
+      case UTF8Chars.C:
         return Kind.Char;
-      case 'I':
+      case UTF8Chars.I:
         return Kind.Int;
-      case 'F':
+      case UTF8Chars.F:
         return Kind.Float;
-      case 'J':
+      case UTF8Chars.J:
         return Kind.Long;
-      case 'D':
+      case UTF8Chars.D:
         return Kind.Double;
-      case '[':
-      case 'L':
+      case UTF8Chars.OpenBracket:
+      case UTF8Chars.L:
         return Kind.Reference;
-      case 'V':
+      case UTF8Chars.V:
         return Kind.Void;
     }
   }
 
-  export class TypeDescriptor {
+  /**
+   * MethodDescriptor:
+   *    ( ParameterDescriptor* ) ReturnDescriptor
+   *  ParameterDescriptor:
+   *    FieldType
+   *  ReturnDescriptor:
+   *    FieldType
+   *    VoidDescriptor
+   *  VoidDescriptor:
+   *    V
+   *  FieldDescriptor:
+   *    FieldType
+   *  FieldType:
+   *    BaseType
+   *    ObjectType
+   *    ArrayType
+   *  BaseType:
+   *    B
+   *    C
+   *    D
+   *    F
+   *    I
+   *    J
+   *    S
+   *    Z
+   *  ObjectType:
+   *    L ClassName ;
+   *  ArrayType:
+   *    [ ComponentType
+   *  ComponentType:
+   *    FieldType
+   */
 
-    private static canonicalTypeDescriptors: TypeDescriptor [] = [];
+  // Global state for signature parsing, kind of hackish but fast.
+  var globalNextIndex = 0;
+  var descriptorKinds = [];
 
-    constructor(public value: string, public kind: Kind) {
-      release || assert (!TypeDescriptor.canonicalTypeDescriptors[value]);
-      TypeDescriptor.canonicalTypeDescriptors[value] = this;
+  /**
+   * Returns an array of kinds that appear in a method signature. The first element is always the
+   * return kind. The returned array is shared, so you if you need a copy of it, you'll need to
+   * clone it.
+   *
+   * The parsing algorithm needs some global state to keep track of the current position in the
+   * descriptor, namely |globalNextIndex| which always points to the next index in the descriptor
+   * after a token has been consumed.
+   */
+  export function parseMethodDescriptorKinds(value: Uint8Array, startIndex: number): Kind [] {
+    globalNextIndex = 0;
+    if ((startIndex > value.length - 3) || value[startIndex] !== UTF8Chars.OpenParenthesis) {
+      assert(false, "Invalid method signature.");
     }
-
-    toString(): string {
-      return this.value;
-    }
-
-    public static getArrayDimensions(descriptor: TypeDescriptor): number {
-      var s = descriptor.toString();
-      var dimension = 0;
-      while (s.charAt(dimension) === '[') {
-        dimension++;
+    descriptorKinds.length = 0;
+    descriptorKinds.push(Kind.Void); // placeholder until the return type is parsed
+    var i = startIndex + 1;
+    while (value[i] !== UTF8Chars.CloseParenthesis) {
+      var kind = parseTypeDescriptorKind(value, i);
+      descriptorKinds.push(kind);
+      i = globalNextIndex;
+      if (i >= value.length) {
+        assert(false, "Invalid method signature.");
       }
-      return dimension;
     }
-
-    public static getArrayDescriptorForDescriptor(descriptor: TypeDescriptor, dimensions: number): TypeDescriptor {
-      release || assert (dimensions > 0);
-      var componentString = descriptor.toString();
-      if (TypeDescriptor.getArrayDimensions(descriptor) + dimensions > 255) {
-        throw "Array type with more than 255 dimensions";
-      }
-      for (var i = 0; i !== dimensions; ++i) {
-        componentString = "[" + componentString;
-      }
-      return TypeDescriptor.makeTypeDescriptor(componentString);
+    i++;
+    var kind = parseTypeDescriptorKind(value, i);
+    if (globalNextIndex !== value.length) {
+      assert(false, "Invalid method signature.");
     }
+    // Plug in the return type
+    descriptorKinds[0] = kind;
+    return descriptorKinds;
+  }
 
-    public static parseTypeDescriptor(value: string, startIndex: number): TypeDescriptor {
-      switch (value[startIndex]) {
-        case 'Z':
-          return AtomicTypeDescriptor.Boolean;
-        case 'B':
-          return AtomicTypeDescriptor.Byte;
-        case 'C':
-          return AtomicTypeDescriptor.Char;
-        case 'D':
-          return AtomicTypeDescriptor.Double;
-        case 'F':
-          return AtomicTypeDescriptor.Float;
-        case 'I':
-          return AtomicTypeDescriptor.Int;
-        case 'J':
-          return AtomicTypeDescriptor.Long;
-        case 'S':
-          return AtomicTypeDescriptor.Short;
-        case 'V':
-          return AtomicTypeDescriptor.Void;
-        case 'L': {
-          // parse a slashified Java class name
-          var endIndex = TypeDescriptor.parseClassName(value, startIndex, startIndex + 1, '/');
-          if (endIndex > startIndex + 1 && endIndex < value.length && value.charAt(endIndex) === ';') {
-            return TypeDescriptor.makeTypeDescriptor(value.substring(startIndex, endIndex + 1));
-          }
-          Debug.unexpected();
+  function parseTypeDescriptorKind(value: Uint8Array, startIndex: number): Kind {
+    globalNextIndex = startIndex + 1;
+    switch (value[startIndex]) {
+      case UTF8Chars.Z:
+        return Kind.Boolean;
+      case UTF8Chars.B:
+        return Kind.Byte;
+      case UTF8Chars.C:
+        return Kind.Char;
+      case UTF8Chars.D:
+        return Kind.Double;
+      case UTF8Chars.F:
+        return Kind.Float;
+      case UTF8Chars.I:
+        return Kind.Int;
+      case UTF8Chars.J:
+        return Kind.Long;
+      case UTF8Chars.S:
+        return Kind.Short;
+      case UTF8Chars.V:
+        return Kind.Void;
+      case UTF8Chars.L: {
+        // parse a slashified Java class name
+        var endIndex = parseClassNameKind(value, startIndex + 1, UTF8Chars.Slash);
+        if (endIndex > startIndex + 1 && endIndex < value.length && value[endIndex] === UTF8Chars.Semicolon) {
+          globalNextIndex = endIndex + 1;
+          return Kind.Reference;
         }
-        case '[': {
-          // compute the number of dimensions
-          var index = startIndex;
-          while (index < value.length && value.charAt(index) === '[') {
-            index++;
-          }
-          var dimensions = index - startIndex;
-          if (dimensions > 255) {
-            throw "array with more than 255 dimensions";;
-          }
-          var component = TypeDescriptor.parseTypeDescriptor(value, index);
-          return TypeDescriptor.getArrayDescriptorForDescriptor(component, dimensions);
-        }
-        default:
-          Debug.unexpected(value[startIndex]);
+        Debug.unexpected("Invalid signature.");
       }
+      case UTF8Chars.OpenBracket: {
+        // compute the number of dimensions
+        var index = startIndex;
+        while (index < value.length && value[index] === UTF8Chars.OpenBracket) {
+          index++;
+        }
+        var dimensions = index - startIndex;
+        if (dimensions > 255) {
+          Debug.unexpected("Array with more than 255 dimensions.");
+        }
+        var component = parseTypeDescriptorKind(value, index);
+        return Kind.Reference;
+      }
+      default:
+        Debug.unexpected("Unexpected type descriptor prefix: " + value[startIndex]);
     }
+  }
 
-    private static parseClassName(value: string, startIndex: number, index: number, separator: string): number {
-      var position = index;
-      var length = value.length;
-      while (position < length) {
-        var nextch = value.charAt(position);
-        if (nextch === '.' || nextch === '/') {
-          if (separator !== nextch) {
-            return position;
-          }
-        } else if (nextch === ';' || nextch === '[') {
+  function parseClassNameKind(value: Uint8Array, index: number, separator: number): number {
+    var position = index;
+    var length = value.length;
+    while (position < length) {
+      var nextch = value[position];
+      if (nextch === UTF8Chars.Dot || nextch === UTF8Chars.Slash) {
+        if (separator !== nextch) {
           return position;
         }
-        position++;
+      } else if (nextch === UTF8Chars.Semicolon || nextch === UTF8Chars.OpenBracket) {
+        return position;
       }
-      return position;
+      position++;
     }
-
-    public static makeTypeDescriptor(value: string) {
-      var typeDescriptor = TypeDescriptor.canonicalTypeDescriptors[value];
-      if (!typeDescriptor) {
-        // creating the type descriptor entry will add it to the canonical mapping.
-        typeDescriptor = new TypeDescriptor(value, Kind.Reference);
-      }
-      return typeDescriptor;
-    }
+    return position;
   }
 
-  export class AtomicTypeDescriptor extends TypeDescriptor {
-    constructor(public kind: Kind) {
-      super(kindCharacter(kind), kind);
+  export function signatureHasTwoSlotArguments(signatureKinds: Kind []): boolean {
+    for (var i = 1; i < signatureKinds.length; i++) {
+      if (isTwoSlot(signatureKinds[i])) {
+        return true;
+      }
     }
-
-    public static Boolean = new AtomicTypeDescriptor(Kind.Boolean);
-    public static Byte = new AtomicTypeDescriptor(Kind.Byte);
-    public static Char = new AtomicTypeDescriptor(Kind.Char);
-    public static Double = new AtomicTypeDescriptor(Kind.Double);
-    public static Float = new AtomicTypeDescriptor(Kind.Float);
-    public static Int = new AtomicTypeDescriptor(Kind.Int);
-    public static Long = new AtomicTypeDescriptor(Kind.Long);
-    public static Short = new AtomicTypeDescriptor(Kind.Short);
-    public static Void = new AtomicTypeDescriptor(Kind.Void);
+    return false;
   }
 
-  export class SignatureDescriptor {
-    private static canonicalSignatureDescriptors: SignatureDescriptor [] = [];
-
-    public typeDescriptors: TypeDescriptor [];
-    private _argumentSlotCount: number = -1;
-
-    constructor(public value: string) {
-      release || assert (!SignatureDescriptor.canonicalSignatureDescriptors[value]);
-      SignatureDescriptor.canonicalSignatureDescriptors[value] = this;
-      this.typeDescriptors = SignatureDescriptor.parse(value, 0);
+  export function signatureArgumentSlotCount(signatureKinds: Kind []): number {
+    var count = 0;
+    for (var i = 1; i < signatureKinds.length; i++) {
+      count += isTwoSlot(signatureKinds[i]) ? 2 : 1;
     }
-
-    toString(): string {
-      return this.value;
-    }
-
-
-    public hasTwoSlotArguments() {
-      return this.getArgumentCount() < this.getArgumentSlotCount();
-    }
-
-    /**
-     * Number of arguments, this may be less than the value returned by |getArgumentSlotCount|.
-     */
-    public getArgumentCount(): number {
-      return this.typeDescriptors.length - 1;
-    }
-
-    /**
-     * Number of slots consumed by the arguments.
-     */
-    public getArgumentSlotCount(): number {
-      if (this._argumentSlotCount < 0) {
-        var count = 0;
-        for (var i = 1; i < this.typeDescriptors.length; i++) {
-          var typeDescriptor = this.typeDescriptors[i];
-          count += isTwoSlot(typeDescriptor.kind) ? 2 : 1;
-        }
-        this._argumentSlotCount = count;
-      }
-      return this._argumentSlotCount;
-    }
-
-    public static makeSignatureDescriptor(value: string) {
-      var signatureDescriptor = SignatureDescriptor.canonicalSignatureDescriptors[value];
-      if (!signatureDescriptor) {
-        // creating the signaature descriptor entry will add it to the canonical mapping.
-        signatureDescriptor = new SignatureDescriptor(value);
-      }
-      return signatureDescriptor;
-    }
-
-    public static parse(value: string, startIndex: number): TypeDescriptor [] {
-      if ((startIndex > value.length - 3) || value.charAt(startIndex) !== '(') {
-        throw "Invalid method signature: " + value;
-      }
-      var typeDescriptors = [];
-      typeDescriptors.push(AtomicTypeDescriptor.Void); // placeholder until the return type is parsed
-      var i = startIndex + 1;
-      while (value.charAt(i) !== ')') {
-        var descriptor = TypeDescriptor.parseTypeDescriptor(value, i);
-        typeDescriptors.push(descriptor);
-        i = i + descriptor.toString().length;
-        if (i >= value.length) {
-          throw "Invalid method signature: " + value;
-        }
-      }
-      i++;
-      var descriptor = TypeDescriptor.parseTypeDescriptor(value, i);
-      if (i + descriptor.toString().length !== value.length) {
-        throw "Invalid method signature: " + value;
-      }
-      // Plug in the return type
-      typeDescriptors[0] = descriptor;
-      return typeDescriptors;
-    }
+    return count;
   }
 }

@@ -82,6 +82,8 @@ public class RunTests extends MIDlet {
     void runTest(String name) {
         name = name.replace('/', '.');
 
+        System.out.println("Running " + name);
+
         Form form = new Form(name);
         Display display = Display.getDisplay(this);
         Harness harness = new Harness(name, display);
@@ -126,6 +128,7 @@ public class RunTests extends MIDlet {
             classPass++;
         } else {
             classFail++;
+            System.err.println(name + ": class fail");
         }
         pass += harness.passed();
         fail += harness.failed();

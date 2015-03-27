@@ -22,11 +22,29 @@ module J2ME {
   export var baselineCounter = null; // new Metrics.Counter(true);
 
   /**
+   * The preemption check should be quick. We don't always want to measure
+   * time so we use a quick counter and mask to determine when to do the
+   * more expensive preemption check.
+   */
+  var preemptionSampleMask = 0xFF;
+
+  /**
    * Expressions to inline for commonly invoked methods.
    */
   var inlineMethods = {
     "java/lang/Object.<init>.()V": "undefined"
   };
+
+  /**
+   * These methods have special powers. Methods are added to this set based on the regexp patterns in |privilegedPatterns|.
+   */
+  var privilegedMethods = {};
+
+  var privilegedPatterns = [
+    "com/sun/midp/crypto/SHA*",
+    "java/io/DataInputStream*",
+    "org/mozilla/internal/Sys*",
+  ];
 
   /**
    * Emits optimization results inline as comments in the generated source.
@@ -53,19 +71,48 @@ module J2ME {
    * Emits array bounds checks. Although this is necessary for correctness, most
    * applications work without them.
    */
-  var emitCheckArrayBounds = true;
+  export var emitCheckArrayBounds = true;
+
+  /**
+   * Inline calls to runtime methods whenever possible.
+   */
+  export var inlineRuntimeCalls = true;
 
   /**
    * Emits array store type checks. Although this is necessary for correctness,
    * most applications work without them.
    */
-  var emitCheckArrayStore = true;
+  export var emitCheckArrayStore = true;
+
+  /**
+   * Unsafe methods.
+   */
+  function isPrivileged(methodInfo: MethodInfo) {
+    var privileged = privilegedMethods[methodInfo.implKey];
+    if (privileged) {
+      return true;
+    } else if (privileged === false) {
+      return false;
+    }
+    // Check patterns.
+    for (var i = 0; i < privilegedPatterns.length; i++) {
+      if (methodInfo.implKey.match(privilegedPatterns[i])) {
+        return privilegedMethods[methodInfo.implKey] = true;
+      }
+    }
+    return privilegedMethods[methodInfo.implKey] = false;
+  }
+
+  /**
+   * Emits preemption checks for methods that already yield.
+   */
+  export var emitCheckPreemption = false;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;
     var compileSynchronized = true;
 
-    if (!compileExceptions && methodInfo.exception_table && methodInfo.exception_table.length) {
+    if (!compileExceptions && methodInfo.exception_table_length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
     if (!compileSynchronized && methodInfo.isSynchronized) {
@@ -194,7 +241,7 @@ module J2ME {
     if (classInfo instanceof PrimitiveArrayClassInfo) {
       return classInfo.mangledName;
     }
-    if (classInfo.isArrayClass) {
+    if (classInfo instanceof ArrayClassInfo) {
       return "AK(" + classConstant(classInfo.elementClass) + ")";
     }
     if (classInfo.mangledName) {
@@ -202,6 +249,61 @@ module J2ME {
     }
     release || assert(classInfo.mangledName);
     return classInfo.mangledName;
+  }
+
+  /**
+   * These bytecodes require stack flushing.
+   */
+  function needsStackFlushBefore(opcode: Bytecodes, sp: number) {
+     // Bytecodes that modify the order in which expressions are evaluated, like: SWAP and DUP
+     // must flush the stack.
+    switch (opcode) {
+      case Bytecodes.DUP:
+      case Bytecodes.DUP_X1:
+      case Bytecodes.DUP_X2:
+      case Bytecodes.DUP2:
+      case Bytecodes.DUP2_X1:
+      case Bytecodes.DUP2_X2:
+      case Bytecodes.SWAP:
+        return true;
+    }
+    // IINC can increment something that's on the stack, so we need to flush.
+    if (opcode === Bytecodes.IINC && sp > 0) {
+      return true;
+    }
+    // All other STORE bytecodes can also modify something that's on the stack. However,
+    // since these will pop the stack before the assignment, we only need to care about
+    // cases where sp > 1.
+    if (Bytecode.isStore(opcode) && sp > 1) {
+      return true;
+    }
+    return false;
+  }
+
+  export enum Precedence {
+    Sequence            = 0,  // … , …
+    Assignment          = 3,  // … = …
+    Conditional         = 4,  // … ? … : …
+    LogicalOR           = 5,  // … || …
+    LogicalAND          = 6,  // … && …
+    BitwiseOR           = 7,  // … | …
+    BitwiseXOR          = 8,  // … ^ …
+    BitwiseAND          = 9,  // … & …
+    Equality            = 10, // … == …
+    Relational          = 11, // … < …
+    BitwiseShift        = 12, // … << …
+    Addition            = 13, // … + …
+    Subtraction         = 13, // … - …
+    Multiplication      = 14, // … * …
+    Division            = 14, // … / …
+    Remainder           = 14, // … % …
+    UnaryNegation       = 15, // - …
+    LogicalNOT          = 15, // ! …
+    Postfix             = 16, // … ++
+    Call                = 17, // … ( … )
+    New                 = 18, // new … ( … )
+    Member              = 18, // … . …
+    Primary             = 19
   }
 
   export class BaselineCompiler {
@@ -221,10 +323,14 @@ module J2ME {
     private referencedClasses: ClassInfo [];
     private local: string [];
     private stack: string [];
-    private variables: string [];
+    private blockStack: string [];
+    private blockStackPrecedence: Precedence [];
+    private variables: any;
     private lockObject: string;
     private hasOSREntryPoint = false;
     private entryBlock: number;
+    private isPrivileged: boolean;
+
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
     /**
@@ -232,22 +338,31 @@ module J2ME {
      */
     static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
 
+    /**
+     * Indicates whether a unwind throw was emitted.
+     */
+    private hasUnwindThrow: boolean;
+
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
       this.local = [];
-      this.variables = [];
+      this.variables = {};
       this.pc = 0;
       this.sp = 0;
       this.stack = [];
+      this.blockStack = [];
+      this.blockStackPrecedence = [];
       this.parameters = [];
       this.referencedClasses = [];
       this.initializedClasses = null;
-      this.hasHandlers = !!methodInfo.exception_table.length;
+      this.hasHandlers = methodInfo.exception_table_length > 0;
       this.hasMonitorEnter = false;
       this.blockStackHeightMap = [0];
-      this.bodyEmitter = new Emitter(target !== CompilationTarget.Runtime);
-      this.blockEmitter = new Emitter(target !== CompilationTarget.Runtime);
+      this.bodyEmitter = new Emitter(!release);
+      this.blockEmitter = new Emitter(!release);
       this.target = target;
+      this.hasUnwindThrow = false;
+      this.isPrivileged = isPrivileged(this.methodInfo);
     }
 
     compile(): CompiledMethodInfo {
@@ -265,19 +380,25 @@ module J2ME {
       this.emitPrologue();
       this.emitBody();
 
-      if (this.variables.length) {
-        this.bodyEmitter.prependLn("var " + this.variables.join(", ") + ";");
+      var variables = [];
+      for (var k in this.variables) {
+        if (this.variables[k] !== undefined) {
+          variables.push(k + "=" + this.variables[k]);
+        } else {
+          variables.push(k);
+        }
+      }
+      if (variables.length > 0) {
+        this.bodyEmitter.prependLn("var " + variables.join(",") + ";");
       }
       if (this.hasMonitorEnter) {
-        this.bodyEmitter.prependLn("var th = $.ctx.thread;");
+        this.bodyEmitter.prependLn("var th=$.ctx.thread;");
       }
-      return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint);
+      return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint ? this.blockMap.getOSREntryPoints() : []);
     }
 
-    needsVariable(name: string) {
-      if (this.variables.indexOf(name) < 0) {
-        this.variables.push(name);
-      }
+    needsVariable(name: string, value?: string) {
+      this.variables[name] = value;
     }
 
     setSuccessorsBlockStackHeight(block: Block, sp: number) {
@@ -292,10 +413,19 @@ module J2ME {
       }
     }
 
+    // Cache classes known to be initialized as locals.
+    localClassConstant(classInfo: ClassInfo): string {
+      if (classInfo !== this.methodInfo.classInfo) {
+        return classConstant(classInfo);
+      }
+      this.needsVariable("k0", classConstant(classInfo));
+      return "k0";
+    }
+
     emitBody() {
       var blockMap = this.blockMap;
       writer && blockMap.trace(writer);
-      var stream = new BytecodeStream(this.methodInfo.code);
+      var stream = new BytecodeStream(this.methodInfo.codeAttribute.code);
 
       var needsTry = this.hasHandlers || this.methodInfo.isSynchronized;
 
@@ -305,11 +435,6 @@ module J2ME {
       if (emitCallMethodLoopCounter) {
         this.bodyEmitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
       }
-
-      needsWhile && this.bodyEmitter.enter("while (1) {");
-      needsTry && this.bodyEmitter.enter("try {");
-
-      this.bodyEmitter.writeLn("var label = 0;");
 
       var blocks = blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
@@ -325,18 +450,30 @@ module J2ME {
         this.emitBlockBody(stream, block);
       }
 
+      if (this.hasUnwindThrow) {
+        needsTry = true;
+      }
+
+      needsWhile && this.bodyEmitter.enter("while(1){");
+      needsTry && this.bodyEmitter.enter("try{");
+      this.bodyEmitter.writeLn("var label=0;");
       this.bodyEmitter.writeLns(Relooper.render(this.entryBlock));
 
       emitCompilerAssertions && this.bodyEmitter.writeLn("J2ME.Debug.assert(false, 'Invalid PC: ' + pc)");
 
       if (needsTry) {
-        this.bodyEmitter.leaveAndEnter("} catch (ex) {");
-        this.bodyEmitter.writeLn(this.getStack(0) + " = TE(ex);");
+        this.bodyEmitter.leaveAndEnter("}catch(ex){");
+        if (this.hasUnwindThrow) {
+          var local = this.local.join(",");
+          var stack = this.stack.join(",");
+          this.bodyEmitter.writeLn("if(U){$.T(ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+        }
+        this.bodyEmitter.writeLn(this.getStackName(0) + "=TE(ex);");
+        this.blockStack = [this.getStackName(0)];
         this.sp = 1;
         if (this.hasHandlers) {
-          var handlers = this.methodInfo.exception_table;
-          for (var i = 0; i < handlers.length; i++) {
-            this.emitExceptionHandler(this.bodyEmitter, handlers[i]);
+          for (var i = 0; i < this.methodInfo.exception_table_length; i++) {
+            this.emitExceptionHandler(this.bodyEmitter, this.methodInfo.getExceptionEntryViewByIndex(i));
           }
         }
         if (this.methodInfo.isSynchronized) {
@@ -350,7 +487,7 @@ module J2ME {
       }
     }
 
-    private emitExceptionHandler(emitter: Emitter, handler: ExceptionHandler) {
+    private emitExceptionHandler(emitter: Emitter, handler: ExceptionEntryView) {
       var check = "";
       if (handler.catch_type > 0) {
         var classInfo = this.lookupClass(handler.catch_type);
@@ -358,12 +495,10 @@ module J2ME {
         if (classInfo.isInterface) {
           check = "IOI";
         }
-        check += "(" + this.peek(Kind.Reference) + ", " + classConstant(classInfo) + ")";
-        check = " && " + check;
+        check += "(" + this.peek(Kind.Reference) + "," + this.localClassConstant(classInfo) + ")";
+        check = "&&" + check;
       }
-      this.bodyEmitter.enter("if (pc >= " + handler.start_pc + " && pc < " + handler.end_pc + check + ") {");
-      this.bodyEmitter.writeLn("pc = " + this.getBlockIndex(handler.handler_pc) + "; continue;");
-      this.bodyEmitter.leave("}");
+      this.bodyEmitter.writeLn("if(pc>=" + handler.start_pc + "&&pc<" + handler.end_pc + check + "){pc=" + this.getBlockIndex(handler.handler_pc) + ";continue;}");
       return;
     }
 
@@ -377,6 +512,11 @@ module J2ME {
     emitBlockBody(stream: BytecodeStream, block: Block) {
       this.resetOptimizationState();
       this.sp = this.blockStackHeightMap[block.startBci];
+      this.blockStack = this.stack.slice(0, this.sp);
+      this.blockStackPrecedence = [];
+      for (var i = 0; i < this.sp; i++) {
+        this.blockStackPrecedence.push(Precedence.Primary);
+      }
       emitDebugInfoComments && this.blockEmitter.writeLn("// " + this.blockMap.blockToString(block));
       writer && writer.writeLn("emitBlock: " + block.startBci + " " + this.sp + " " + block.isExceptionEntry);
       release || assert(this.sp !== undefined, "Bad stack height");
@@ -390,6 +530,7 @@ module J2ME {
         stream.next();
       }
       if (this.sp >= 0) {
+        this.flushBlockStack();
         this.setSuccessorsBlockStackHeight(block, this.sp);
         if (!Bytecode.isBlockEnd(lastBC)) { // Fallthrough.
           Relooper.addBranch(block.relooperBlockID, this.getBlock(stream.currentBCI).relooperBlockID);
@@ -404,36 +545,33 @@ module J2ME {
       var local = this.local;
       var parameterLocalIndex = this.methodInfo.isStatic ? 0 : 1;
 
-      var typeDescriptors = SignatureDescriptor.makeSignatureDescriptor(this.methodInfo.signature).typeDescriptors;
+      var signatureKinds = this.methodInfo.signatureKinds;
 
       // Skip the first typeDescriptor since it is the return type.
-      for (var i = 1; i < typeDescriptors.length; i++) {
-        var kind = Kind.Reference;
-        if (typeDescriptors[i] instanceof AtomicTypeDescriptor) {
-          kind = (<AtomicTypeDescriptor>typeDescriptors[i]).kind;
-        }
+      for (var i = 1; i < signatureKinds.length; i++) {
+        var kind = signatureKinds[i];
         this.parameters.push(this.getLocalName(parameterLocalIndex));
         parameterLocalIndex += isTwoSlot(kind) ? 2 : 1;
       }
 
-      var maxLocals = this.methodInfo.max_locals;
+      var maxLocals = this.methodInfo.codeAttribute.max_locals;
       for (var i = 0; i < maxLocals; i++) {
         local.push(this.getLocalName(i));
       }
       if (local.length) {
-        this.bodyEmitter.writeLn("var " + local.join(", ") + ";");
+        this.bodyEmitter.writeLn("var " + local.join(",") + ";");
       }
       if (!this.methodInfo.isStatic) {
-        this.bodyEmitter.writeLn(this.getLocal(0) + " = this;");
+        this.bodyEmitter.writeLn("var ins="+ this.getLocal(0) + "=this;");
       }
       var stack = this.stack;
-      for (var i = 0; i < this.methodInfo.max_stack; i++) {
-        stack.push(this.getStack(i));
+      for (var i = 0; i < this.methodInfo.codeAttribute.max_stack; i++) {
+        stack.push(this.getStackName(i));
       }
       if (stack.length) {
-        this.bodyEmitter.writeLn("var " + stack.join(", ") + ";");
+        this.bodyEmitter.writeLn("var " + stack.join(",") + ";");
       }
-      this.bodyEmitter.writeLn("var pc = 0;");
+      this.bodyEmitter.writeLn("var pc=0;");
       if (this.hasHandlers) {
         this.bodyEmitter.writeLn("var ex;");
       }
@@ -443,7 +581,7 @@ module J2ME {
       }
 
       this.lockObject = this.methodInfo.isSynchronized ?
-        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : this.getLocal(0)
+        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "ins"
         : "null";
 
       this.emitEntryPoints();
@@ -453,10 +591,11 @@ module J2ME {
       var needsOSREntryPoint = false;
       var needsEntryDispatch = false;
 
-      var blocks = this.blockMap.blocks;
+      var blockMap = this.blockMap;
+      var blocks = blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
-        if (block.isLoopHeader && !block.isInnerLoopHeader()) {
+        if (blockMap.invokeCount > 0 && block.isLoopHeader && !block.isInnerLoopHeader()) {
           needsOSREntryPoint = true;
           needsEntryDispatch = true;
         }
@@ -467,18 +606,23 @@ module J2ME {
 
       if (needsOSREntryPoint) {
         // Are we doing an OSR?
-        this.bodyEmitter.enter("if (O) {");
-        this.bodyEmitter.writeLn("var local = O.local;");
+        this.bodyEmitter.enter("if(O){");
+        this.bodyEmitter.writeLn("var _=O.local;");
 
         // Restore locals.
-        for (var i = 0; i < this.methodInfo.max_locals; i++) {
-          this.bodyEmitter.writeLn(this.getLocal(i) + " = local[" + i + "];");
+        var restoreLocals = [];
+        for (var i = 0; i < this.methodInfo.codeAttribute.max_locals; i++) {
+          restoreLocals.push(this.getLocal(i) + "=_[" + i + "]");
         }
+        this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
         this.needsVariable("re");
-        this.bodyEmitter.writeLn("pc = O.pc;");
-        this.bodyEmitter.writeLn("O = null;");
+        if (!this.methodInfo.isStatic) {
+          this.bodyEmitter.writeLn("ins=O.lockObject;");
+        }
+        this.bodyEmitter.writeLn("pc=O.pc;");
+        this.bodyEmitter.writeLn("O=null;");
         if (this.methodInfo.isSynchronized) {
-          this.bodyEmitter.leaveAndEnter("} else {");
+          this.bodyEmitter.leaveAndEnter("}else{");
           this.emitMonitorEnter(this.bodyEmitter, 0, this.lockObject);
         }
         this.bodyEmitter.leave("}");
@@ -487,6 +631,13 @@ module J2ME {
         if (this.methodInfo.isSynchronized) {
           this.emitMonitorEnter(this.bodyEmitter, 0, this.lockObject);
         }
+      }
+
+      // Insert a preemption check after the OSR code so the pc
+      // and state will be stored. We can only do this if the
+      // method has the necessary unwinding code.
+      if (canYield(this.methodInfo)) {
+        this.emitPreemptionCheck(this.bodyEmitter, "pc");
       }
 
       if (needsEntryDispatch) {
@@ -499,7 +650,7 @@ module J2ME {
           if (i === 0 || // First block always gets a entry point.
               (block.isLoopHeader && !block.isInnerLoopHeader()) || // Outer loop headers need entry points so we can OSR.
               block.isExceptionEntry) {
-            Relooper.addBranch(entryBlock, block.relooperBlockID, "pc === " + block.startBci);
+            Relooper.addBranch(entryBlock, block.relooperBlockID, "pc===" + block.startBci);
           }
         }
 
@@ -512,28 +663,36 @@ module J2ME {
     }
 
     lookupClass(cpi: number): ClassInfo {
-      var classInfo = this.methodInfo.classInfo.resolve(cpi, false);
+      var classInfo = this.methodInfo.classInfo.constantPool.resolveClass(cpi);
       ArrayUtilities.pushUnique(this.referencedClasses, classInfo);
       return classInfo;
     }
 
     lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
-      var methodInfo = this.methodInfo.classInfo.resolve(cpi, isStatic);
+      var methodInfo = this.methodInfo.classInfo.constantPool.resolveMethod(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, methodInfo.classInfo);
       return methodInfo;
     }
 
     lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
-      var fieldInfo = this.methodInfo.classInfo.resolve(cpi, isStatic);
+      var fieldInfo = this.methodInfo.classInfo.constantPool.resolveField(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, fieldInfo.classInfo);
       return fieldInfo;
     }
 
-    getStack(i: number): string {
+    getStackName(i: number): string {
       if (i >= BaselineCompiler.stackNames.length) {
         return "s" + (i - BaselineCompiler.stackNames.length);
       }
       return BaselineCompiler.stackNames[i];
+    }
+
+    getStack(i: number, contextPrecedence: Precedence): string {
+      var v = this.blockStack[i];
+      if (this.blockStackPrecedence[i] < contextPrecedence) {
+        v = "(" + v + ")";
+      }
+      return v;
     }
 
     getLocalName(i: number): string {
@@ -551,19 +710,19 @@ module J2ME {
     }
 
     emitLoadLocal(kind: Kind, i: number) {
-      this.emitPush(kind, this.getLocal(i));
+      this.emitPush(kind, this.getLocal(i), Precedence.Primary);
     }
 
     emitStoreLocal(kind: Kind, i: number) {
-      this.blockEmitter.writeLn(this.getLocal(i) + " = " + this.pop(kind) + ";");
+      this.blockEmitter.writeLn(this.getLocal(i) + "=" + this.pop(kind, Precedence.Sequence) + ";");
     }
 
     peekAny(): string {
       return this.peek(Kind.Void);
     }
 
-    peek(kind: Kind): string {
-      return this.getStack(this.sp - 1);
+    peek(kind: Kind, precedence: Precedence = Precedence.Sequence): string {
+      return this.getStack(this.sp - 1, precedence);
     }
 
     popAny(): string {
@@ -572,33 +731,54 @@ module J2ME {
 
     emitPopTemporaries(n: number) {
       for (var i = 0; i < n; i++) {
-        this.blockEmitter.writeLn("var t" + i + " = " + this.pop(Kind.Void) + ";");
+        this.blockEmitter.writeLn("var t" + i + "=" + this.pop(Kind.Void) + ";");
       }
     }
 
     emitPushTemporary(...indices: number []) {
       for (var i = 0; i < indices.length; i++) {
-       this.emitPush(Kind.Void, "t" + indices[i]);
+       this.emitPush(Kind.Void, "t" + indices[i], Precedence.Primary);
       }
     }
 
-    pop(kind: Kind): string {
+    pop(kind: Kind, contextPrecedence: Precedence = Precedence.Primary): string {
       writer && writer.writeLn(" popping: sp: " + this.sp + " " + Kind[kind]);
       release || assert (this.sp, "SP below zero.");
       this.sp -= isTwoSlot(kind) ? 2 : 1;
-      var v = this.getStack(this.sp);
+      var v = this.getStack(this.sp, contextPrecedence);
       writer && writer.writeLn("  popped: sp: " + this.sp + " " + Kind[kind] + " " + v);
       return v;
     }
 
     emitPushAny(v) {
-      this.emitPush(Kind.Void, v);
+      this.emitPush(Kind.Void, v, Precedence.Sequence); // TODO: Revisit precedence.
     }
 
-    emitPush(kind: Kind, v) {
+    emitPushInteger(v) {
+      if (v < 0) {
+        this.emitPush(Kind.Int, v, Precedence.UnaryNegation);
+      } else {
+        this.emitPush(Kind.Int, v, Precedence.Primary);
+      }
+    }
+    
+    emitPush(kind: Kind, v, precedence: Precedence) {
       writer && writer.writeLn("push: sp: " + this.sp + " " + Kind[kind] + " " + v);
-      this.blockEmitter.writeLn(this.getStack(this.sp) + " = " + v + ";");
+      // this.blockEmitter.writeLn(this.getStack(this.sp) + " = " + v + ";");
+      this.blockStack[this.sp] = v;
+      this.blockStackPrecedence[this.sp] = precedence;
       this.sp += isTwoSlot(kind) ? 2 : 1;
+    }
+
+    flushBlockStack() {
+      for (var i = 0; i < this.sp; i++) {
+        var name = this.getStackName(i);
+        if (name !== this.blockStack[i]) {
+          this.blockEmitter.writeLn(name + "=" + this.blockStack[i] + ";");
+          this.blockStack[i] = name;
+          this.blockStackPrecedence[i] = Precedence.Primary;
+        }
+      }
     }
 
     emitReturn(kind: Kind) {
@@ -613,16 +793,22 @@ module J2ME {
     }
 
     emitGetField(fieldInfo: FieldInfo, isStatic: boolean) {
-      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
+      if (isStatic) {
+        this.emitClassInitializationCheck(fieldInfo.classInfo);
+      }
+      var kind = getSignatureKind(fieldInfo.utf8Signature);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.emitPush(signature.kind, object + "." + fieldInfo.mangledName);
+      this.emitPush(kind, object + "." + fieldInfo.mangledName, Precedence.Member);
     }
 
     emitPutField(fieldInfo: FieldInfo, isStatic: boolean) {
-      var signature = TypeDescriptor.makeTypeDescriptor(fieldInfo.signature);
-      var value = this.pop(signature.kind);
+      if (isStatic) {
+        this.emitClassInitializationCheck(fieldInfo.classInfo);
+      }
+      var kind = getSignatureKind(fieldInfo.utf8Signature);
+      var value = this.pop(kind, Precedence.Sequence);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.blockEmitter.writeLn(object + "." + fieldInfo.mangledName + " = " + value + ";");
+      this.blockEmitter.writeLn(object + "." + fieldInfo.mangledName + "=" + value + ";");
     }
 
     setBlockStackHeight(pc: number, height: number) {
@@ -644,18 +830,18 @@ module J2ME {
 
     emitIfNull(block: Block, stream: BytecodeStream, condition: Condition) {
       var x = this.pop(Kind.Reference);
-      this.emitIf(block, stream, x + " " + conditionToOperator(condition) + " null");
+      this.emitIf(block, stream, x + conditionToOperator(condition) + "null");
     }
 
     emitIfSame(block: Block, stream: BytecodeStream, kind: Kind, condition: Condition) {
       var y = this.pop(kind);
       var x = this.pop(kind);
-      this.emitIf(block, stream, x + " " + conditionToOperator(condition) + " " + y);
+      this.emitIf(block, stream, x + conditionToOperator(condition) + y);
     }
 
     emitIfZero(block: Block, stream: BytecodeStream, condition: Condition) {
-      var x = this.pop(Kind.Int);
-      this.emitIf(block, stream, x + " " + conditionToOperator(condition) + " 0");
+      var x = this.pop(Kind.Int, Precedence.Relational);
+      this.emitIf(block, stream, x + conditionToOperator(condition) + "0");
     }
 
     runtimeClass(classInfo: ClassInfo) {
@@ -667,35 +853,35 @@ module J2ME {
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
-      while (classInfo.isArrayClass) {
-        classInfo = classInfo.elementClass;
+      while (classInfo instanceof ArrayClassInfo) {
+        classInfo = (<ArrayClassInfo>classInfo).elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
-        if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.className]) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", is already initialized.";
+        if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.getClassNameSlow()]) {
+          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", is already initialized.";
           baselineCounter && baselineCounter.count(message);
-        } else if (this.initializedClasses[classInfo.className]) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", block redundant.";
+        } else if (this.initializedClasses[classInfo.getClassNameSlow()]) {
+          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", block redundant.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
         } else if (classInfo === this.methodInfo.classInfo) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", self access.";
+          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", self access.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
-        } else if (this.methodInfo.classInfo.isAssignableTo(classInfo)) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.className + ", base access.";
+        } else if (!classInfo.isInterface && this.methodInfo.classInfo.isAssignableTo(classInfo)) {
+          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
         } else {
-          baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.className);
-          this.blockEmitter.writeLn(this.runtimeClass(classInfo) + ";");
-          if (classInfo.staticInitializer && canYield(classInfo.staticInitializer)) {
-            this.emitUnwind(this.blockEmitter, this.pc, this.pc);
+          baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
+          this.blockEmitter.writeLn("if($.initialized[\"" + classInfo.getClassNameSlow() + "\"]===undefined)" + this.runtimeClassObject(classInfo) + ".initialize();");
+          if (canStaticInitializerYield(classInfo)) {
+            this.emitUnwind(this.blockEmitter, String(this.pc), String(this.pc));
           } else {
             emitCompilerAssertions && this.emitNoUnwindAssertion();
           }
         }
-        this.initializedClasses[classInfo.className] = true;
+        this.initializedClasses[classInfo.getClassNameSlow()] = true;
       }
     }
 
@@ -707,60 +893,91 @@ module J2ME {
       if (opcode === Bytecodes.INVOKESTATIC) {
         this.emitClassInitializationCheck(methodInfo.classInfo);
       }
-      var signature = SignatureDescriptor.makeSignatureDescriptor(methodInfo.signature);
-      var types = signature.typeDescriptors;
+
+      var signatureKinds = methodInfo.signatureKinds;
       var args: string [] = [];
-      for (var i = types.length - 1; i > 0; i--) {
-        args.unshift(this.pop(types[i].kind));
+      for (var i = signatureKinds.length - 1; i > 0; i--) {
+        args.unshift(this.pop(signatureKinds[i]));
       }
       var object = null, call;
       if (opcode !== Bytecodes.INVOKESTATIC) {
         object = this.pop(Kind.Reference);
         if (opcode === Bytecodes.INVOKESPECIAL) {
           args.unshift(object);
-          call = methodInfo.mangledClassAndMethodName + ".call(" + args.join(", ") + ")";
+          call = this.localClassConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ").call(" + args.join(",") + ")";
+        } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
+          call = object + "." + methodInfo.virtualName + "(" + args.join(",") + ")";
+        } else if (opcode === Bytecodes.INVOKEINTERFACE) {
+          call = object + "." + methodInfo.mangledName + "(" + args.join(",") + ")";
         } else {
-          call = object + "." + methodInfo.mangledName + "(" + args.join(", ") + ")";
+          Debug.unexpected(Bytecodes[opcode]);
         }
       } else {
-        call = methodInfo.mangledClassAndMethodName + "(" + args.join(", ") + ")";
+        call = this.localClassConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ")" + "(" + args.join(",") + ")";
       }
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
         call = inlineMethods[methodInfo.implKey];
       }
       this.needsVariable("re");
-      this.blockEmitter.writeLn("re = " + call + ";");
+      this.flushBlockStack();
+      this.blockEmitter.writeLn("re=" + call + ";");
       if (calleeCanYield) {
-        this.emitUnwind(this.blockEmitter, this.pc, nextPC);
+        this.emitUnwind(this.blockEmitter, String(this.pc), String(nextPC));
       } else {
+        emitCompilerAssertions && this.emitUndefinedReturnAssertion();
         emitCompilerAssertions && this.emitNoUnwindAssertion();
       }
-      if (types[0].kind !== Kind.Void) {
-        this.emitPush(types[0].kind, "re");
+      if (signatureKinds[0] !== Kind.Void) {
+        this.emitPush(signatureKinds[0], "re", Precedence.Primary);
       }
+    }
+
+    emitNegativeArraySizeCheck(length: string) {
+      if (this.isPrivileged) {
+        return;
+      }
+      this.blockEmitter.writeLn(length + "<0&&TN();");
+    }
+
+    emitBoundsCheck(array: string, index: string) {
+      if (this.isPrivileged || !emitCheckArrayBounds) {
+        return;
+      }
+      if (inlineRuntimeCalls) {
+        this.blockEmitter.writeLn("if((" + index + " >>> 0)>=(" + array + ".length >>> 0))TI(" + index + ");");
+      } else {
+        this.blockEmitter.writeLn("CAB(" + array + "," + index + ");");
+      }
+    }
+
+    emitArrayStoreCheck(array: string, value: string) {
+      if (this.isPrivileged || !emitCheckArrayStore) {
+        return;
+      }
+      this.blockEmitter.writeLn("CAS(" + array + "," + value + ");");
     }
 
     emitStoreIndexed(kind: Kind) {
-      var value = this.pop(stackKind(kind));
-      var index = this.pop(Kind.Int);
-      var array = this.pop(Kind.Reference);
-      emitCheckArrayBounds && this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
+      var value = this.pop(stackKind(kind), Precedence.Sequence);
+      var index = this.pop(Kind.Int, Precedence.Sequence);
+      var array = this.pop(Kind.Reference, Precedence.Sequence);
+      this.emitBoundsCheck(array, index);
       if (kind === Kind.Reference) {
-        emitCheckArrayStore && this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
+        this.emitArrayStoreCheck(array, value);
       }
-      this.blockEmitter.writeLn(array + "[" + index + "] = " + value + ";");
+      this.blockEmitter.writeLn(array + "[" + index + "]=" + value + ";");
     }
 
     emitLoadIndexed(kind: Kind) {
-      var index = this.pop(Kind.Int);
-      var array = this.pop(Kind.Reference);
-      emitCheckArrayBounds && this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
-      this.emitPush(kind, array + "[" + index + "]");
+      var index = this.pop(Kind.Int, Precedence.Sequence);
+      var array = this.pop(Kind.Reference, Precedence.Sequence);
+      this.emitBoundsCheck(array, index);
+      this.emitPush(kind, array + "[" + index + "]", Precedence.Member);
     }
 
     emitIncrement(stream: BytecodeStream) {
-      this.blockEmitter.writeLn(this.getLocal(stream.readLocalIndex()) + " += " + stream.readIncrement() + ";");
+      this.blockEmitter.writeLn(this.getLocal(stream.readLocalIndex()) + "+=" + stream.readIncrement() + ";");
     }
 
     emitGoto(block: Block, stream: BytecodeStream) {
@@ -770,27 +987,30 @@ module J2ME {
     }
 
     emitLoadConstant(cpi: number) {
-      var cp = this.methodInfo.classInfo.constant_pool;
-      var entry = cp[cpi];
-      switch (entry.tag) {
+      var cp = this.methodInfo.classInfo.constantPool;
+      var tag = cp.getConstantTag(cpi);
+
+      switch (tag) {
         case TAGS.CONSTANT_Integer:
-          this.emitPush(Kind.Int, entry.integer);
+          this.emitPushInteger(cp.resolve(cpi, tag));
           return;
         case TAGS.CONSTANT_Float:
-          this.emitPush(Kind.Float, doubleConstant(entry.float));
+          var value = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Float, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Double:
-          this.emitPush(Kind.Double, doubleConstant(entry.double));
+          var value = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Double, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
           return;
         case TAGS.CONSTANT_Long:
-          this.emitPush(Kind.Long, "Long.fromBits(" + entry.lowBits + ", " + entry.highBits + ")");
+          var long = cp.resolve(cpi, tag);
+          this.emitPush(Kind.Long, "Long.fromBits(" + long.getLowBits() + "," + long.getHighBits() + ")", Precedence.Primary);
           return;
         case TAGS.CONSTANT_String:
-          entry = cp[entry.string_index];
-          this.emitPush(Kind.Reference, "SC(" + StringUtilities.escapeStringLiteral(entry.bytes) + ")");
+          this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".c(" + cpi + ")", Precedence.Primary);
           return;
         default:
-          throw "Not done for: " + entry.tag;
+          throw "Not done for: " + TAGS[tag];
       }
     }
 
@@ -802,23 +1022,33 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "new " + classConstant(classInfo)+ "()");
+      this.emitPush(Kind.Reference, "new " + this.localClassConstant(classInfo)+ "()", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {
       var kind = arrayTypeCodeToKind(typeCode);
       var length = this.pop(Kind.Int);
-      this.emitPush(Kind.Reference, "new " + kindToTypedArrayName(kind) + "(" + length + ")");
+      this.emitNegativeArraySizeCheck(length);
+      this.emitPush(Kind.Reference, "new " + kindToTypedArrayName(kind) + "(" + length + ")", Precedence.New);
     }
 
     emitCheckCast(cpi: number) {
       var object = this.peek(Kind.Reference);
+      if (this.isPrivileged) {
+        return;
+      }
       var classInfo = this.lookupClass(cpi);
       var call = "CCK";
       if (classInfo.isInterface) {
         call = "CCI";
       }
-      this.blockEmitter.writeLn(call + "(" + object + ", " + classConstant(classInfo) + ");");
+      var classConstant = this.localClassConstant(classInfo);
+      call = call + "(" + object + "," + classConstant + ")"
+      if (inlineRuntimeCalls) {
+        this.blockEmitter.writeLn("(!" + object + ")||" + object + ".klass===" + classConstant + "||" + call + ";");
+      } else {
+        this.blockEmitter.writeLn(call + ";");
+      }
     }
 
     emitInstanceOf(cpi: number) {
@@ -828,43 +1058,85 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "IOI";
       }
-      this.emitPush(Kind.Int, call + "(" + object + ", " + classConstant(classInfo) + ") | 0");
+      var classConstant = this.localClassConstant(classInfo);
+      call = call + "(" + object + "," + classConstant + ")|0";
+      if (inlineRuntimeCalls) {
+        call = "((" + object + "&&" + object + ".klass===" + classConstant + ")||" + call + ")|0";
+      }
+      this.emitPush(Kind.Int, call, Precedence.BitwiseOR);
     }
 
     emitArrayLength() {
-      this.emitPush(Kind.Int, this.pop(Kind.Reference) + ".length");
+      this.emitPush(Kind.Int, this.pop(Kind.Reference) + ".length", Precedence.Member);
     }
 
     emitNewObjectArray(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
-      this.emitPush(Kind.Reference, "NA(" + classConstant(classInfo) + ", " + length + ")");
+      this.emitNegativeArraySizeCheck(length);
+      this.emitPush(Kind.Reference, "NA(" + this.localClassConstant(classInfo) + "," + length + ")", Precedence.Call);
     }
 
-    private emitUnwind(emitter: Emitter, pc: number, nextPC: number) {
-      var local = this.local.join(", ");
-      var stack = this.stack.slice(0, this.sp).join(", ");
-      emitter.writeLn("if (U) { $.B(" + pc + ", " + nextPC + ", [" + local + "], [" + stack + "], " + this.lockObject + "); return; }");
+    emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
+      var classInfo = this.lookupClass(cpi);
+      var numDimensions = stream.readUByte(stream.currentBCI + 3);
+      var dimensions = new Array(numDimensions);
+      for (var i = numDimensions - 1; i >= 0; i--) {
+        dimensions[i] = this.pop(Kind.Int);
+      }
+      this.emitPush(Kind.Reference, "NM(" + this.localClassConstant(classInfo) + ",[" + dimensions.join(",") + "])", Precedence.Call);
+    }
+
+    private emitUnwind(emitter: Emitter, pc: string, nextPC: string, forceInline: boolean = false) {
+      // Only emit unwind throws if it saves on code size.
+      if (!forceInline && this.blockMap.invokeCount > 2 &&
+          this.stack.length < 8) {
+        this.flushBlockStack();
+        if (<any>nextPC - <any>pc === 3) {
+          emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
+        } else {
+          emitter.writeLn("U&&B" + this.sp + "(" + pc + "," + nextPC + ");");
+        }
+        this.hasUnwindThrow = true;
+      } else {
+        var local = this.local.join(",");
+        var stack = this.blockStack.slice(0, this.sp).join(",");
+        emitter.writeLn("if(U){$.B(" + pc + "," + nextPC + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+      }
       baselineCounter && baselineCounter.count("emitUnwind");
     }
 
     emitNoUnwindAssertion() {
-      this.blockEmitter.writeLn("if (U) { J2ME.Debug.assert(false, 'Unexpected unwind.'); }");
+      this.blockEmitter.writeLn("if(U){J2ME.Debug.assert(false,'Unexpected unwind.');}");
+    }
+
+    emitUndefinedReturnAssertion() {
+      this.blockEmitter.writeLn("if (U && re !== undefined) { J2ME.Debug.assert(false, 'Unexpected return value during unwind.'); }");
     }
 
     private emitMonitorEnter(emitter: Emitter, nextPC: number, object: string) {
       this.hasMonitorEnter = true;
 
       this.needsVariable("lk");
-      emitter.writeLn("lk = " + object + "._lock;");
-      emitter.enter("if (lk && lk.level === 0) { lk.thread = th; lk.level = 1; } else { ME(" + object + ");");
-      this.emitUnwind(emitter, this.pc, nextPC);
+      emitter.writeLn("lk=" + object + "._lock;");
+      emitter.enter("if(lk&&lk.level===0){lk.thread=th;lk.level=1;}else{ME(" + object + ");");
+      this.emitUnwind(emitter, String(this.pc), String(nextPC), true);
       emitter.leave("}");
     }
 
+    private emitPreemptionCheck(emitter: Emitter, nextPC: string) {
+      if (!emitCheckPreemption) {
+        return;
+      }
+      emitter.writeLn("PS++;");
+      emitter.writeLn("if((PS&" + preemptionSampleMask + ")===0)PE();");
+      this.emitUnwind(emitter, String(nextPC), String(nextPC));
+    }
+
     private emitMonitorExit(emitter: Emitter, object: string) {
-      emitter.writeLn("if (" + object + "._lock.level === 1 && " + object + "._lock.ready.length === 0) " + object + "._lock.level = 0; else MX(" + object + ");");
+      emitter.writeLn("lk=" + object + "._lock;");
+      emitter.writeLn("if(lk.level===1&&lk.ready.length===0)lk.level=0;else MX(" + object + ");");
     }
 
     emitStackOp(opcode: Bytecodes) {
@@ -916,27 +1188,38 @@ module J2ME {
           Debug.unexpected(Bytecodes[opcode]);
       }
     }
-    
+
+    emitDivideByZeroCheck(kind: Kind, value: string) {
+      if (this.isPrivileged) {
+        return;
+      }
+      if (inlineRuntimeCalls && kind !== Kind.Long) {
+        this.blockEmitter.writeLn(value + "===0&&TA();");
+      } else {
+        var checkName = kind === Kind.Long ? "CDZL" : "CDZ";
+        this.blockEmitter.writeLn(checkName + "(" + value + ");");
+      }
+    }
+
     emitArithmeticOp(result: Kind, opcode: Bytecodes, canTrap: boolean) {
       var y = this.pop(result);
       var x = this.pop(result);
       if (canTrap) {
-        var checkName = result === Kind.Long ? "CDZL" : "CDZ";
-        this.blockEmitter.writeLn(checkName + "(" + y + ");");
+        this.emitDivideByZeroCheck(result, y);
       }
       var v;
       switch(opcode) {
-        case Bytecodes.IADD: v = x + " + " + y + " | 0"; break;
-        case Bytecodes.ISUB: v = x + " - " + y + " | 0"; break;
-        case Bytecodes.IMUL: v = "Math.imul(" + x + ", " + y + ")"; break;
-        case Bytecodes.IDIV: v = x + " / " + y + " | 0"; break;
-        case Bytecodes.IREM: v = x + " % " + y; break;
+        case Bytecodes.IADD: v = x + "+" + y + "|0"; break;
+        case Bytecodes.ISUB: v = x + "-" + y + "|0"; break;
+        case Bytecodes.IMUL: v = "Math.imul(" + x + "," + y + ")"; break;
+        case Bytecodes.IDIV: v = x + "/" + y + "|0"; break;
+        case Bytecodes.IREM: v = x + "%" + y; break;
 
-        case Bytecodes.FADD: v = "Math.fround(" + x + " + " + y + ")"; break;
-        case Bytecodes.FSUB: v = "Math.fround(" + x + " - " + y + ")"; break;
-        case Bytecodes.FMUL: v = "Math.fround(" + x + " * " + y + ")"; break;
-        case Bytecodes.FDIV: v = "Math.fround(" + x + " / " + y + ")"; break;
-        case Bytecodes.FREM: v = "Math.fround(" + x + " % " + y + ")"; break;
+        case Bytecodes.FADD: v = "Math.fround(" + x + "+" + y + ")"; break;
+        case Bytecodes.FSUB: v = "Math.fround(" + x + "-" + y + ")"; break;
+        case Bytecodes.FMUL: v = "Math.fround(" + x + "*" + y + ")"; break;
+        case Bytecodes.FDIV: v = "Math.fround(" + x + "/" + y + ")"; break;
+        case Bytecodes.FREM: v = "Math.fround(" + x + "%" + y + ")"; break;
 
         case Bytecodes.LADD: v = x + ".add(" + y + ")"; break;
         case Bytecodes.LSUB: v = y + ".negate().add(" + x + ")"; break;
@@ -944,29 +1227,29 @@ module J2ME {
         case Bytecodes.LDIV: v = x + ".div(" + y + ")"; break;
         case Bytecodes.LREM: v = x + ".modulo(" + y + ")"; break;
 
-        case Bytecodes.DADD: v = x + " + " + y; break;
-        case Bytecodes.DSUB: v = x + " - " + y; break;
-        case Bytecodes.DMUL: v = x + " * " + y; break;
-        case Bytecodes.DDIV: v = x + " / " + y; break;
-        case Bytecodes.DREM: v = x + " % " + y; break;
+        case Bytecodes.DADD: v = x + "+" + y; break;
+        case Bytecodes.DSUB: v = x + "-" + y; break;
+        case Bytecodes.DMUL: v = x + "*" + y; break;
+        case Bytecodes.DDIV: v = x + "/" + y; break;
+        case Bytecodes.DREM: v = x + "%" + y; break;
         default:
           release || assert(false, Bytecodes[opcode]);
       }
-      this.emitPush(result, v);
+      this.emitPush(result, v, Precedence.Sequence); // TODO: Restrict precedence.
     }
 
     emitNegateOp(kind: Kind) {
       var x = this.pop(kind);
       switch(kind) {
         case Kind.Int:
-          this.emitPush(kind, "(- " + x + ")|0");
+          this.emitPush(kind, "(- " + x + ")|0", Precedence.BitwiseOR);
           break;
         case Kind.Long:
-          this.emitPush(kind, x + ".negate()");
+          this.emitPush(kind, x + ".negate()", Precedence.Member); // TODO: Or is it call?
           break;
         case Kind.Float:
         case Kind.Double:
-          this.emitPush(kind, "- " + x);
+          this.emitPush(kind, "- " + x, Precedence.UnaryNegation);
           break;
         default:
           Debug.unexpected(Kind[kind]);
@@ -978,9 +1261,9 @@ module J2ME {
       var x = this.pop(kind);
       var v;
       switch(opcode) {
-        case Bytecodes.ISHL: v = x + " << " + s; break;
-        case Bytecodes.ISHR: v = x + " >> " + s; break;
-        case Bytecodes.IUSHR: v = x + " >>> " + s; break;
+        case Bytecodes.ISHL:  this.emitPush(kind, x + "<<"  + s, Precedence.BitwiseShift); return;
+        case Bytecodes.ISHR:  this.emitPush(kind, x + ">>"  + s, Precedence.BitwiseShift); return;
+        case Bytecodes.IUSHR: this.emitPush(kind, x + ">>>" + s, Precedence.BitwiseShift); return;
 
         case Bytecodes.LSHL: v = x + ".shiftLeft(" + s + ")"; break;
         case Bytecodes.LSHR: v = x + ".shiftRight(" + s + ")"; break;
@@ -988,7 +1271,7 @@ module J2ME {
         default:
           Debug.unexpected(Bytecodes[opcode]);
       }
-      this.emitPush(kind, v);
+      this.emitPush(kind, v, Precedence.Call);
     }
 
     emitLogicOp(kind: Kind, opcode: Bytecodes) {
@@ -996,17 +1279,17 @@ module J2ME {
       var x = this.pop(kind);
       var v;
       switch(opcode) {
-        case Bytecodes.IAND: v = x + " & " + y; break;
-        case Bytecodes.IOR: v = x + " | " + y; break;
-        case Bytecodes.IXOR: v = x + " ^ " + y; break;
+        case Bytecodes.IAND: this.emitPush(kind, x + "&" + y, Precedence.BitwiseAND); return;
+        case Bytecodes.IOR:  this.emitPush(kind, x + "|" + y, Precedence.BitwiseOR);  return;
+        case Bytecodes.IXOR: this.emitPush(kind, x + "^" + y, Precedence.BitwiseXOR); return;
 
         case Bytecodes.LAND: v = x + ".and(" + y + ")"; break;
-        case Bytecodes.LOR: v = x + ".or(" + y + ")"; break;
+        case Bytecodes.LOR:  v = x + ".or(" + y + ")"; break;
         case Bytecodes.LXOR: v = x + ".xor(" + y + ")"; break;
         default:
           Debug.unexpected(Bytecodes[opcode]);
       }
-      this.emitPush(kind, v);
+      this.emitPush(kind, v, Precedence.Call);
     }
 
     emitConvertOp(from: Kind, to: Kind, opcode: Bytecodes) {
@@ -1016,9 +1299,9 @@ module J2ME {
         case Bytecodes.I2L: v = "Long.fromInt(" + x + ")"; break;
         case Bytecodes.I2F:
         case Bytecodes.I2D: v = x; break;
-        case Bytecodes.I2B: v = "(" + x + " << 24) >> 24"; break;
-        case Bytecodes.I2C: v = x + " & 0xffff"; break;
-        case Bytecodes.I2S: v = "(" + x + " << 16) >> 16"; break;
+        case Bytecodes.I2B: v = "(" + x + "<<24)>>24"; break;
+        case Bytecodes.I2C: v = x + "&0xffff"; break;
+        case Bytecodes.I2S: v = "(" + x + "<<16)>>16"; break;
         case Bytecodes.L2I: v = x + ".toInt()"; break;
         case Bytecodes.L2F: v = "Math.fround(" + x + ".toNumber())"; break;
         case Bytecodes.L2D: v = x + ".toNumber()"; break;
@@ -1029,30 +1312,33 @@ module J2ME {
         case Bytecodes.D2L: v = "util.double2long(" + x + ")"; break;
         case Bytecodes.D2F: v = "Math.fround(" + x + ")"; break;
       }
-      this.emitPush(to, v);
+      this.emitPush(to, v, Precedence.Sequence); // TODO: Restrict precedence.
     }
 
     emitCompareOp(kind: Kind, isLessThan: boolean) {
       var y = this.pop(kind);
       var x = this.pop(kind);
-      var s = this.getStack(this.sp++);
+      this.flushBlockStack();
+      var sp = this.sp ++;
+      // Get the top stack slot and make sure it is also it in the |blockStack|.
+      var s = this.blockStack[sp] = this.getStackName(sp);
       if (kind === Kind.Long) {
-        this.blockEmitter.enter("if (" + x + ".greaterThan(" + y + ")) {");
-        this.blockEmitter.writeLn(s + " = 1");
-        this.blockEmitter.leaveAndEnter("} else if (" + x + ".lessThan(" + y + ")) {");
-        this.blockEmitter.writeLn(s + " = -1");
-        this.blockEmitter.leaveAndEnter("} else {");
-        this.blockEmitter.writeLn(s + " = 0");
+        this.blockEmitter.enter("if(" + x + ".greaterThan(" + y + ")){");
+        this.blockEmitter.writeLn(s + "=1");
+        this.blockEmitter.leaveAndEnter("}else if(" + x + ".lessThan(" + y + ")){");
+        this.blockEmitter.writeLn(s + "=-1");
+        this.blockEmitter.leaveAndEnter("}else{");
+        this.blockEmitter.writeLn(s + "=0");
         this.blockEmitter.leave("}");
       } else {
-        this.blockEmitter.enter("if (isNaN(" + x + ") || isNaN(" + y + ")) {");
-        this.blockEmitter.writeLn(s + " = " + (isLessThan ? "-1" : "1"));
-        this.blockEmitter.leaveAndEnter("} else if (" + x + " > " + y + ") {");
-        this.blockEmitter.writeLn(s + " = 1");
-        this.blockEmitter.leaveAndEnter("} else if (" + x + " < " + y + ") {");
-        this.blockEmitter.writeLn(s + " = -1");
-        this.blockEmitter.leaveAndEnter("} else {");
-        this.blockEmitter.writeLn(s + " = 0");
+        this.blockEmitter.enter("if(isNaN(" + x + ")||isNaN(" + y + ")){");
+        this.blockEmitter.writeLn(s + "=" + (isLessThan ? "-1" : "1"));
+        this.blockEmitter.leaveAndEnter("}else if(" + x + ">" + y + ") {");
+        this.blockEmitter.writeLn(s + "=1");
+        this.blockEmitter.leaveAndEnter("}else if(" + x + "<" + y + "){");
+        this.blockEmitter.writeLn(s + "=-1");
+        this.blockEmitter.leaveAndEnter("}else{");
+        this.blockEmitter.writeLn(s + "=0");
         this.blockEmitter.leave("}");
       }
     }
@@ -1112,30 +1398,36 @@ module J2ME {
       var cpi: number;
       var opcode: Bytecodes = stream.currentBC();
       writer && writer.writeLn("emit: pc: " + stream.currentBCI + ", sp: " + this.sp + " " + Bytecodes[opcode]);
+
+      var flushBlockStackAfter = false;
       if ((block.isExceptionEntry || block.hasHandlers) && Bytecode.canTrap(opcode)) {
-        // This needs to update the PC not the BI.
-        this.blockEmitter.writeLn("pc = " + this.pc + ";");
+        this.blockEmitter.writeLn("pc=" + this.pc + ";");
+        flushBlockStackAfter = true;
+      }
+
+      if (needsStackFlushBefore(opcode, this.sp)) {
+        this.flushBlockStack();
       }
 
       switch (opcode) {
         case Bytecodes.NOP            : break;
-        case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null"); break;
-        case Bytecodes.ICONST_M1      :
+        case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null", Precedence.Primary); break;
+        case Bytecodes.ICONST_M1      : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0, Precedence.UnaryNegation); break;
         case Bytecodes.ICONST_0       :
         case Bytecodes.ICONST_1       :
         case Bytecodes.ICONST_2       :
         case Bytecodes.ICONST_3       :
         case Bytecodes.ICONST_4       :
-        case Bytecodes.ICONST_5       : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0); break;
+        case Bytecodes.ICONST_5       : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0, Precedence.Primary); break;
         case Bytecodes.FCONST_0       :
         case Bytecodes.FCONST_1       :
-        case Bytecodes.FCONST_2       : this.emitPush(Kind.Float, opcode - Bytecodes.FCONST_0); break;
+        case Bytecodes.FCONST_2       : this.emitPush(Kind.Float, opcode - Bytecodes.FCONST_0, Precedence.Primary); break;
         case Bytecodes.DCONST_0       :
-        case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0); break;
+        case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0, Precedence.Primary); break;
         case Bytecodes.LCONST_0       :
-        case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0)); break;
-        case Bytecodes.BIPUSH         : this.emitPush(Kind.Int, stream.readByte()); break;
-        case Bytecodes.SIPUSH         : this.emitPush(Kind.Int, stream.readShort()); break;
+        case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0), Precedence.Primary); break;
+        case Bytecodes.BIPUSH         : this.emitPushInteger(stream.readByte()); break;
+        case Bytecodes.SIPUSH         : this.emitPushInteger(stream.readShort()); break;
         case Bytecodes.LDC            :
         case Bytecodes.LDC_W          :
         case Bytecodes.LDC2_W         : this.emitLoadConstant(stream.readCPI()); break;
@@ -1313,6 +1605,7 @@ module J2ME {
         case Bytecodes.NEW            : this.emitNewInstance(stream.readCPI()); break;
         case Bytecodes.NEWARRAY       : this.emitNewTypeArray(stream.readLocalIndex()); break;
         case Bytecodes.ANEWARRAY      : this.emitNewObjectArray(stream.readCPI()); break;
+        case Bytecodes.MULTIANEWARRAY : this.emitNewMultiObjectArray(stream.readCPI(), stream); break;
         case Bytecodes.ARRAYLENGTH    : this.emitArrayLength(); break;
         case Bytecodes.ATHROW         : this.emitThrow(stream.currentBCI); break;
         case Bytecodes.CHECKCAST      : this.emitCheckCast(stream.readCPI()); break;
@@ -1324,9 +1617,11 @@ module J2ME {
         // The following bytecodes are not supported yet and are not frequently used.
         // case Bytecodes.JSR            : ... break;
         // case Bytecodes.RET            : ... break;
-        // case Bytecodes.MULTIANEWARRAY : ... break;
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
+      }
+      if (flushBlockStackAfter) {
+        this.flushBlockStack();
       }
       writer && writer.writeLn("");
     }

@@ -11,10 +11,30 @@ module J2ME {
         }
       }
     },
+    "java/lang/Class": {
+      fields: {
+        instanceSymbols: {
+          "status.I": "status"
+        }
+      },
+      methods: {
+        instanceSymbols: {
+          "initialize.()V": "initialize"
+        }
+      }
+    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
           "priority.I": "priority"
+        }
+      }
+    },
+    "com/sun/cldc/isolate/Isolate": {
+      fields: {
+        instanceSymbols: {
+          "_mainArgs.[Ljava/lang/String;": "_mainArgs",
+          "_mainClass.Ljava/lang/String;": "_mainClass",
         }
       }
     },
@@ -30,6 +50,38 @@ module J2ME {
       fields: {
         instanceSymbols: {
           "pendingSurrogate.I": "pendingSurrogate"
+        }
+      }
+    },
+    "com/sun/j2me/location/CriteriaImpl": {
+      fields: {
+        instanceSymbols: {
+          "providerName.Ljava/lang/String;": "providerName"
+        }
+      }
+    },
+    "com/sun/j2me/location/LocationProviderInfo": {
+      fields: {
+        instanceSymbols: {
+          "canReportAltitude.Z": "canReportAltitude",
+          "canReportSpeedCource.Z": "canReportSpeedCource",
+          "averageResponseTime.I": "averageResponseTime"
+        }
+      }
+    },
+    "com/sun/j2me/location/LocationInfo": {
+      fields: {
+        instanceSymbols: {
+          "isValid.Z": "isValid",
+          "timestamp.J": "timestamp",
+          "latitude.D": "latitude",
+          "longitude.D": "longitude",
+          "altitude.F": "altitude",
+          "horizontalAccuracy.F": "horizontalAccuracy",
+          "verticalAccuracy.F": "verticalAccuracy",
+          "speed.F": "speed",
+          "course.F": "course",
+          "method.I": "method"
         }
       }
     },
@@ -71,6 +123,24 @@ module J2ME {
         }
       }
     },
+    "javax/microedition/lcdui/Command": {
+      fields: {
+        instanceSymbols: {
+          "id.I": "id",
+          "commandType.I": "commandType",
+          "shortLabel.Ljava/lang/String;": "shortLabel",
+          "priority.I": "priority",
+        }
+      }
+    },
+    "javax/microedition/lcdui/Font": {
+      fields: {
+        instanceSymbols: {
+          "baseline.I": "baseline",
+          "height.I": "height",
+        }
+      }
+    },
     "javax/microedition/lcdui/Image": {
       fields: {
         instanceSymbols: {
@@ -84,11 +154,139 @@ module J2ME {
       fields: {
         instanceSymbols: {
           "width.I": "width",
-          "height.I": "height"
+          "height.I": "height",
+          "isMutable.Z": "isMutable",
+        }
+      }
+    },
+    "com/nokia/mid/ui/TextEditor": {
+      fields: {
+        instanceSymbols: {
+          "font.Ljavax/microedition/lcdui/Font;": "font",
+        }
+      }
+    },
+    "com/sun/midp/events/Event": {
+      fields: {
+        instanceSymbols: {
+          "type.I": "type",
+          "next.Lcom/sun/midp/events/Event;": "next",
+        }
+      }
+    },
+    "com/sun/midp/events/NativeEvent": {
+      fields: {
+        instanceSymbols: {
+          "intParam1.I": "intParam1",
+          "intParam2.I": "intParam2",
+          "intParam3.I": "intParam3",
+          "intParam4.I": "intParam4",
+          "intParam5.I": "intParam5",
+          "intParam6.I": "intParam6",
+          "intParam7.I": "intParam7",
+          "intParam8.I": "intParam8",
+          "intParam9.I": "intParam9",
+          "intParam10.I": "intParam10",
+          "intParam11.I": "intParam11",
+          "intParam12.I": "intParam12",
+          "intParam13.I": "intParam13",
+          "intParam14.I": "intParam14",
+          "intParam15.I": "intParam15",
+          "intParam16.I": "intParam16",
+          "floatParam1.F": "floatParam1",
+          "stringParam1.Ljava/lang/String;": "stringParam1",
+          "stringParam2.Ljava/lang/String;": "stringParam2",
+          "stringParam3.Ljava/lang/String;": "stringParam3",
+          "stringParam4.Ljava/lang/String;": "stringParam4",
+          "stringParam5.Ljava/lang/String;": "stringParam5",
+          "stringParam6.Ljava/lang/String;": "stringParam6",
+        }
+      }
+    },
+    "com/sun/cdc/io/j2me/file/DefaultFileHandler": {
+      fields: {
+        instanceSymbols: {
+          "nativePath.Ljava/lang/String;": "nativePath",
+          "nativeDescriptor.I": "nativeDescriptor",
+          "isOpenForRead.Z": "isOpenForRead",
+          "isOpenForWrite.Z": "isOpenForWrite"
+        }
+      }
+    },
+    "com/sun/midp/rms/RecordStoreSharedDBHeader": {
+      fields: {
+        instanceSymbols: {
+          "lookupId.I": "lookupId",
+        }
+      }
+    },
+    "com/sun/cdc/io/j2me/file/Protocol": {
+      fields: {
+        instanceSymbols: {
+          "fileHandler.Lcom/sun/cdc/io/j2me/file/BaseFileHandler;": "fileHandler",
+        }
+      }
+    },
+    "com/sun/j2me/pim/PIMFieldDescriptor": {
+      fields: {
+        instanceSymbols: {
+          "field.I": "field",
+          "dataType.I": "dataType",
+          "maxValues.I": "maxValues",
+        }
+      }
+    },
+    "com/sun/midp/io/j2me/sms/Protocol$SMSPacket": {
+      fields: {
+        instanceSymbols: {
+          "message.[B": "message",
+          "address.[B": "address",
+          "port.I": "port",
+          "sentAt.J": "sentAt",
+          "messageType.I": "messageType",
+        }
+      }
+    },
+    "com/sun/midp/main/CommandState": {
+      fields: {
+        instanceSymbols: {
+          "suiteId.I": "suiteId",
+          "midletClassName.Ljava/lang/String;": "midletClassName",
+          "arg0.Ljava/lang/String;": "arg0",
+          "arg1.Ljava/lang/String;": "arg1",
+          "arg2.Ljava/lang/String;": "arg2",
+        }
+      }
+    },
+    "com/sun/midp/midletsuite/SuiteSettings": {
+      fields: {
+        instanceSymbols: {
+          "pushInterruptSetting.B": "pushInterruptSetting",
+        }
+      }
+    },
+    "com/sun/midp/midletsuite/InstallInfo": {
+      fields: {
+        instanceSymbols: {
+          "trusted.Z": "trusted",
+        }
+      }
+    },
+    "com/sun/midp/links/Link": {
+      fields: {
+        instanceSymbols: {
+          "nativePointer.I": "nativePointer",
         }
       }
     }
   };
+
+  export var BindingsMap = new Uint8Hashtable(50);
+
+  // Create a map of the classes that have bindings.
+  for (var k in Bindings) {
+    BindingsMap.put(toUTF8(k), Bindings[k]);
+  }
 
   export module java.lang {
     export interface Object {
@@ -125,6 +323,8 @@ module J2ME {
        * RuntimeKlass associated with this Class object.
        */
       runtimeKlass: RuntimeKlass;
+      status: number;
+      initialize(): void;
     }
 
     export interface String extends java.lang.Object {
@@ -139,6 +339,9 @@ module J2ME {
 
     export interface Exception extends java.lang.Object {
       message: string;
+    }
+
+    export interface InstantiationException extends java.lang.Exception {
     }
 
     export interface IllegalArgumentException extends java.lang.Exception {
@@ -222,6 +425,8 @@ module J2ME {
     export interface Isolate extends java.lang.Object {
       id: number;
       runtime: Runtime;
+      _mainArgs: java.lang.String [];
+      _mainClass: java.lang.String;
     }
   }
 
@@ -243,6 +448,7 @@ module J2ME {
     export interface ImageData extends java.lang.Object {
       width: number;
       height: number;
+      isMutable: boolean;
     }
 
     export interface Image extends java.lang.Object {
@@ -255,6 +461,47 @@ module J2ME {
   export module com.nokia.mid.ui {
     export interface DirectGraphicsImp extends java.lang.Object {
       graphics: javax.microedition.lcdui.Graphics;
+    }
+  }
+
+  export module com.sun.midp.events {
+    export interface Event {
+      type: number;
+      next: com.sun.midp.events.Event;
+    }
+
+    export interface NativeEvent extends com.sun.midp.events.Event {
+      intParam1: number;
+      intParam2: number;
+      intParam3: number;
+      intParam4: number;
+      intParam5: number;
+      intParam6: number;
+      intParam7: number;
+      intParam8: number;
+      intParam9: number;
+      intParam10: number;
+      intParam11: number;
+      intParam12: number;
+      intParam13: number;
+      intParam14: number;
+      intParam15: number;
+      intParam16: number;
+      floatParam1: number;
+      stringParam1: java.lang.String;
+      stringParam2: java.lang.String;
+      stringParam3: java.lang.String;
+      stringParam4: java.lang.String;
+      stringParam5: java.lang.String;
+      stringParam6: java.lang.String;
+    }
+  }
+
+  export module com.sun.j2me.pim {
+    export interface PIMFieldDescriptor {
+      field: number;
+      dataType: number;
+      maxValues: number;
     }
   }
 }

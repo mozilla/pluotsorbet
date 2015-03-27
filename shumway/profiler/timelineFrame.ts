@@ -234,13 +234,40 @@ module Shumway.Tools.Profiler {
       visit(this);
     }
 
-    public trace(writer: IndentingWriter) {
-      var s = (this.kind ? this.kind.name + ": " : "Profile: ") +
-              (this.endTime - this.startTime).toFixed(2);
+    public traceStatistics(writer: IndentingWriter, minTime: number = 0.0001) {
+      this.calculateStatistics();
+      var s = [];
+      // Filter out null values.
+      for (var i = 0; i < this.statistics.length; i++) {
+        if (this.statistics[i] && this.statistics[i].totalTime > minTime) {
+          s.push(this.statistics[i]);
+        }
+      }
+      // Sort by self time.
+      s.sort(function (a, b) {
+        return a.selfTime - b.selfTime;
+      })
+      for (var i = 0; i < s.length; i++) {
+        var statistic = s[i];
+        writer.writeLn(
+          (statistic.kind ? statistic.kind.name + ": " : "?: ") +
+          "count: " + statistic.count + ", " +
+          "self: " + statistic.selfTime.toFixed(3) + " ms, " +
+          "total: " + statistic.totalTime.toFixed(3) + " ms."
+        );
+      }
+    }
+
+    public trace(writer: IndentingWriter, minTime: number = 0.0001) {
+      var time = this.endTime - this.startTime;
+      if (time < minTime) {
+        return;
+      }
+      var s = (this.kind ? this.kind.name + ": " : "Profile: ") + time.toFixed(3);
       if (this.children && this.children.length) {
         writer.enter(s);
         for (var i = 0; i < this.children.length; i++) {
-          this.children[i].trace(writer);
+          this.children[i].trace(writer, minTime);
         }
         writer.outdent();
       } else {

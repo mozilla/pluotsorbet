@@ -24,8 +24,10 @@ Native["gnu/testlet/vm/NativeTest.throwException.()V"] = function() {
 Native["gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V"] = function() {
   var ctx = $.ctx;
   asyncImpl("V", new Promise(function(resolve, reject) {
-    ctx.setAsCurrentContext();
-    setTimeout(reject.bind(null, $.newNullPointerException("An exception")), 100);
+    setTimeout(function() {
+      ctx.setAsCurrentContext();
+      reject($.newNullPointerException("An exception"))
+    }, 100);
   }));
 };
 
@@ -40,7 +42,7 @@ Native["gnu/testlet/vm/NativeTest.nonStatic.(I)I"] = function(val) {
 };
 
 Native["gnu/testlet/vm/NativeTest.fromJavaString.(Ljava/lang/String;)I"] = function(str) {
-  return util.fromJavaString(str).length;
+  return J2ME.fromJavaString(str).length;
 };
 
 Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(str) {
@@ -71,11 +73,13 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function() {
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function() {
-  window.dispatchEvent(new Event("keyboardHidden"));
+  MIDP.isVKVisible = function() { return false; };
+  MIDP.sendVirtualKeyboardEvent();
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V"] = function() {
-  window.dispatchEvent(new Event("keyboardShown"));
+  MIDP.isVKVisible = function() { return true; };
+  MIDP.sendVirtualKeyboardEvent();
 };
 
 Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = function() {
@@ -87,7 +91,7 @@ Native["javax/microedition/lcdui/TestTextEditorFocus.isTextEditorReallyFocused.(
 };
 
 Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = function(pathStr) {
-  var path = util.fromJavaString(pathStr);
+  var path = J2ME.fromJavaString(pathStr);
   asyncImpl("I", new Promise(function(resolve, reject) {
     var gotCanvas = document.getElementById("canvas");
     var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
@@ -149,4 +153,27 @@ Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = fu
   var result = J2ME.newByteArray(converted.length);
   result.set(converted);
   return result;
+};
+
+Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)V"] = function(language) {
+  MIDP.localizedStrings = null;
+  config.language = J2ME.fromJavaString(language);
+}
+
+// Many tests create FileConnection objects to files with the "/" root,
+// so add it to the list of valid roots.
+MIDP.fsRoots.push("/");
+
+Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(label) {
+  if (typeof Benchmark !== "undefined") {
+    asyncImpl("V", Benchmark.sampleMemory().then(function(memory) {
+      var keys = ["totalSize", "domSize", "styleSize", "jsObjectsSize", "jsStringsSize", "jsOtherSize", "otherSize"];
+      var rows = [];
+      rows.push(keys);
+      rows.push(keys.map(function(k) { return memory[k] }));
+      var RIGHT = Benchmark.RIGHT;
+      var alignment = [RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT];
+      console.log((J2ME.fromJavaString(label) || "Memory sample") + ":\n" + Benchmark.prettyTable(rows, alignment));
+    }));
+  }
 };

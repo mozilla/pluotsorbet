@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE configuration SYSTEM "../configuration.dtd">
+<!--
+
+
+  Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
+  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
+  
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License version
+  2 only, as published by the Free Software Foundation.
+  
+  This program is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  General Public License version 2 for more details (a copy is
+  included at /legal/license.txt).
+  
+  You should have received a copy of the GNU General Public License
+  version 2 along with this work; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
+  02110-1301 USA
+  
+  Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+  Clara, CA 95054 or visit www.sun.com if you need additional
+  information or have any questions.
+-->
+<configuration>
+<localized_strings Package="com.sun.midp.l10n" 
+    Name="LocalizedStringsBase" 
+    KeysClass="com.sun.midp.i18n.ResourceConstants" >
+<localized_string Key="DONE"
+                Value="Done"/>
+<localized_string Key="EXIT"
+                Value="Exit"/>
+<localized_string Key="OK"
+                Value="OK"/>
+<localized_string Key="ERROR"
+                Value="Error"/>
+<localized_string Key="CLASS_VERIFIER_APPLICATION"
+                Value="Class Verifier Application"/>
+
+<localized_string Key="LCDUI_DF_SUN"
+                Value="Sun"/>
+<localized_string Key="LCDUI_DF_MON"
+                Value="Mon"/>
+<localized_string Key="LCDUI_DF_TUE"
+                Value="Tue"/>
+<localized_string Key="LCDUI_DF_WED"
+                Value="Wed"/>
+<localized_string Key="LCDUI_DF_THU"
+                Value="Thu"/>
+<localized_string Key="LCDUI_DF_FRI"
+                Value="Fri"/>
+<localized_string Key="LCDUI_DF_SAT"
+                Value="Sat"/>
+<localized_string Key="LCDUI_DF_JAN_SHORT"
+                Value="Jan"/>
+<localized_string Key="LCDUI_DF_FEB_SHORT"
+                Value="Feb"/>
+<localized_string Key="LCDUI_DF_MAR_SHORT"
+                Value="Mar"/>
+<localized_string Key="LCDUI_DF_APR_SHORT"
+                Value="Apr"/>
+<localized_string Key="LCDUI_DF_MAY_SHORT"
+                Value="May"/>
+<localized_string Key="LCDUI_DF_JUN_SHORT"
+                Value="Jun"/>
+<localized_string Key="LCDUI_DF_JUL_SHORT"
+                Value="Jul"/>
+<localized_string Key="LCDUI_DF_AUG_SHORT"
+                Value="Aug"/>
+<localized_string Key="LCDUI_DF_SEP_SHORT"
+                Value="Sep"/>
+<localized_string Key="LCDUI_DF_OCT_SHORT"
+                Value="Oct"/>
+<localized_string Key="LCDUI_DF_NOV_SHORT"
+                Value="Nov"/>
+<localized_string Key="LCDUI_DF_DEC_SHORT"
+                Value="Dec"/>
+<localized_string Key="LCDUI_DISPLAY_HEADLESS"
+                Value="This application does not use the screen and runs in the background."/>
+<localized_string Key="AMS_MGR_INTRUPT"
+                Value="Interrupt"/>
+<localized_string Key="AMS_MGR_INTRUPT_QUE"
+                Value="How often should %1 ask for permission to interrupt? The interrupted application will exit."/>
+<localized_string Key="AMS_MGR_INTRUPT_QUE_DONT"
+                Value="Don't interrupt and don't ask"/>
+
+<localized_string Key="PERMISSION_MUTUALLY_EXCLUSIVE_ERROR_MESSAGE"
+                Value="%1 can't be set to not ask because it is not secure when %2 is set to not ask."/>
+<localized_string Key="PERMISSION_SECURITY_WARNING_ERROR_MESSAGE"
+                Value="It is not secure when %1 and %2 are allowed simultaneously. Proceed anyway?"/>
+<localized_string Key="PERMISSION_AUTO_START_DIALOG_TITLE"
+                Value="Is it OK to automatically start the application?"/>
+<localized_string Key="PERMISSION_AUTO_START_QUE"
+                Value="%1 wants to register itself to be automatically started.&#010;&#010;Is it OK to register to be automatically started?"/>
+<localized_string Key="AMS_MIDLETSUITEIMPL_CURR_APP"
+                Value="The current application"/>
+<localized_string Key="AMS_MIDLETSUITEIMPL_INTRPT_QUE"
+                Value="Can %1 Interrupt?"/>
+<localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_DIALOG_TITLE"
+                Value="Is it OK to Automatically Start?"/>
+<localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_QUESTION"
+                Value="Information is arriving for %1. Is it OK for %1 to start up and receive this information? The currently running application will exit.&#010;&#010;Is it OK to start up?"/>
+<localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_NOTFOUND"
+                Value="The MIDlet suite was not found."/>
+<localized_string Key="AMS_MIDLETSUITELDR_PUSH_INTERRUPT_QUESTION"
+                Value="Information is arriving for %1.&#010;&#010;Is it OK for %1 to start up and receive this information?"/>
+<localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_MISSING_CLASS"
+                Value="The application cannot be launched. One of the application classes appears to be missing. This could be due to a misnamed class. Contact the application provider to resolve the issue."/>
+<localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_ILL_OPERATION"
+                Value="The application cannot be launched. The application may have done an illegal operation. Contact the application provider to resolve the issue."/>
+<localized_string Key="AMS_MIDLETSUITELDR_QUIT_OUT_OF_MEMORY"
+                Value="The application has unexpectedly quit because it ran out of memory."/>
+<localized_string Key="AMS_MIDLETSUITELDR_UNEXPECTEDLY_QUIT"
+                Value="The application has unexpectedly quit. Contact the application provider to resolve the issue."/>
+<localized_string Key="AMS_MIDLETSUITELDR_CANT_EXE_NEXT_MIDLET"
+                Value="Can't execute next MIDlet."/>
+<localized_string Key="AMS_MIDLETSUITELDR_RESOURCE_LIMIT_ERROR"
+                Value="No more concurrent applications allowed."/>
+<localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_DISABLED"
+                Value="The MIDlet suite is disabled."/>
+
+<localized_string Key="SR_ALL_KILLED_ALERT_TITLE"
+                Value="Java applications stopped"/>
+<localized_string Key="SR_ALL_KILLED_ALERT_MSG"
+                Value="All MIDlets were destroyed during last system pause operation."/>
+<localized_string Key="SR_SUSPEND_ALERT_TITLE"
+                Value="Suspending java..."/>
+<localized_string Key="SR_SUSPEND_ALERT_MSG"
+                Value="Java VM is suspended by system request. Applications may be either paused or destroyed."/>
+
+<localized_string Key="JSR75_ENUM_LISTS"
+                Value="enumerate lists"/>
+<localized_string Key="JSR75_OPEN_DEFAULT_LIST"
+                Value="open default list"/>
+<localized_string Key="JSR75_OPEN_LIST"
+                Value="open list"/>
+<localized_string Key="JSR75_ADD_OR_UPDATE_ITEM"
+                Value="add or update an item"/>
+<localized_string Key="JSR75_REMOVE_ITEM"
+                Value="remove an item"/>
+<localized_string Key="JSR75_ENUM_CATEGORY_ITEMS"
+                Value="enumerate items in a category"/>
+<localized_string Key="JSR75_ENUM_MATCHING_ITEMS"
+                Value="enumerate matching items"/>
+<localized_string Key="JSR75_ENUM_ALL_ITEMS"
+                Value="enumerate all items"/>
+<localized_string Key="JSR75_ENUM_ITEMS_MATCHING_STRING"
+                Value="enumerate items matching a string"/>
+<localized_string Key="JSR75_ADD_CATEGORY"
+                Value="add a category"/>
+<localized_string Key="JSR75_RENAME_CATEGORY"
+                Value="rename a category"/>
+<localized_string Key="JSR75_DELETE_CATEGORY"
+                Value="delete a category"/>
+
+<localized_string Key="ABSTRACTIONS_PIM_CONTACTS"
+                Value="PIM contact list"/>
+<localized_string Key="ABSTRACTIONS_PIM_EVENTS"
+                Value="PIM event list"/>
+<localized_string Key="ABSTRACTIONS_PIM_TODO"
+                Value="PIM to-do list"/>
+</localized_strings>
+</configuration>

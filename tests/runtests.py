@@ -9,8 +9,8 @@ import time
 
 # The test automation scripts to run via casperjs/slimerjs.
 automation_scripts = [
-    '/tests/automation.js',
-    '/tests/fs/automation.js',
+    ['tests', 'automation.js'],
+    ['tests', 'fs', 'automation.js'],
 ]
 
 # The exit code to return.  We set this to 1 if an automation script outputs
@@ -99,8 +99,8 @@ wait_server(4443)
 wait_server(54443)
 
 # Run each test automation script in turn.
-for script in automation_scripts:
-    run_test(os.getcwd() + script);
+for scriptParts in automation_scripts:
+    run_test(os.path.join(os.getcwd(), *scriptParts))
 
 # Terminate all the server processes.
 for process in server_processes:
@@ -110,5 +110,15 @@ for process in server_processes:
 # between the last time we polled them and their termination.
 for stream in server_output_streams:
     sys.stdout.write(stream.read())
+
+p = subprocess.Popen(['js', 'jsshell.js', 'Basic'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+shell_success = False
+for line in iter(p.stdout.readline, b''):
+    if "The end" in line:
+        shell_success = True
+    sys.stdout.write(line)
+
+if exit_code == 0 and not shell_success:
+    exit_code = 1
 
 sys.exit(exit_code)

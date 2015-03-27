@@ -32,7 +32,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
 MIDP.additionalProperties = {};
 
 Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"] = function(args) {
-  util.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
+  J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
     var elems = arg.split("=");
     MIDP.additionalProperties[elems[0]] = elems[1];
   });

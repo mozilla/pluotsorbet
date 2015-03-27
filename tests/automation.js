@@ -4,14 +4,25 @@
 var system = require('system');
 var fs = require('fs');
 
+// Enable TCP socket API and grant tcp-socket permission to the testing page
+var { Cu } = require("chrome");
+Cu.import("resource://gre/modules/Services.jsm");
+Services.prefs.setBoolPref("dom.mozTCPSocket.enabled", true);
+var uri = Services.io.newURI("http://localhost:8000", null, null);
+var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
+Services.perms.addFromPrincipal(principal, "tcp-socket", Services.perms.ALLOW_ACTION);
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 70000;
+casper.options.waitTimeout = 80000;
 casper.options.verbose = true;
 casper.options.logLevel = "debug";
 casper.options.viewportSize = { width: 240, height: 320 };
+casper.options.clientScripts = [
+  "tests/mocks/getUserMedia.js",
+];
 
 casper.options.onWaitTimeout = function() {
     this.echo("data:image/png;base64," + this.captureBase64('png'));
@@ -65,8 +76,11 @@ var gfxTests = [
   { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
   { name: "gfx/LauncherTest", maxDifferent: 0 },
   { name: "gfx/MediaImageTest", maxDifferent: 0 },
-  { name: "gfx/TextEditorGfxTest", maxDifferent: 1339 },
+  { name: "gfx/TextEditorGfxTest", maxDifferent: 1375 },
   { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 244 },
+  { name: "gfx/VideoPlayerTest", maxDifferent: 0 },
+  { name: "gfx/ImageCapture", maxDifferent: 0 },
+  { name: "gfx/CameraTest", maxDifferent: 0 },
 ];
 
 /**
@@ -91,7 +105,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -102,7 +116,7 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", syncFS);
     });
@@ -134,12 +148,12 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     }
 
     casper
-    .thenOpen("http://localhost:8000/index.html?logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
     .withFrame(0, basicUnitTests);
 
     // Run the same unit tests again to test the compiled method cache.
     casper
-    .thenOpen("http://localhost:8000/index.html?logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
     .withFrame(0, basicUnitTests);
 
     casper
@@ -148,36 +162,36 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
         casper.waitForText("DONE", function() {
             test.assertTextExists("I m\n" +
                                   "I a ma\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I ma\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I 1 isolate\n" +
                                   "I Isolate ID correct\n" +
-                                  "I 4\n" +
                                   "I 5\n" +
+                                  "I 6\n" +
                                   "I 1 isolate\n" +
                                   "I ma\n" +
                                   "I ma\n" +
                                   "I 3 isolates\n" +
                                   "I 1 m1\n" +
-                                  "I 4\n" +
-                                  "I 2 m2\n" +
                                   "I 5\n" +
+                                  "I 2 m2\n" +
+                                  "I 6\n" +
                                   "I ma\n" +
                                   "I 1 isolate\n" +
                                   "I Isolates terminated\n" +
                                   "I r mar\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I mar\n" +
                                   "I c marc\n" +
-                                  "I 2\n" +
+                                  "I 3\n" +
                                   "I marc\n" +
                                   "I Main isolate still running");
         });
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
@@ -185,7 +199,31 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&jars=tests/tests.jar&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/background1.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("Hello World from foreground MIDlet", function() {
+            test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet2&jad=tests/midlets/background/background2.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("Hello World from foreground MIDlet", function() {
+            test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet3&jad=tests/midlets/background/background3.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("Hello World from foreground MIDlet", function() {
+            test.assertTextExists("prop1=hello prop2=ciao");
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.sms.SMSMIDlet&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.evaluate(function() {
@@ -202,7 +240,7 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&jars=tests/tests.jar&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.fileui.FileUIMIDlet&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.waitUntilVisible(".nokia-fileui-prompt", function() {
@@ -228,7 +266,7 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
 
     gfxTests.forEach(function(testCase) {
         casper
-        .thenOpen("http://localhost:8000/index.html?fontSize=12&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page")
+        .thenOpen("http://localhost:8000/index.html?fontSize=12&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
         .withFrame(0, function() {
             casper.waitForText("PAINTED", function() {
                 this.waitForSelector("#canvas", function() {
@@ -327,7 +365,7 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0")
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Download");
@@ -335,9 +373,9 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
         });
     });
 
-    // Run the test a second time to ensure loading the JAR stored in the FS works correctly.
+    // Run the test a second time to ensure loading the JAR stored in the JARStore works correctly.
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0")
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Load");
@@ -348,7 +386,7 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
 
     // Run the test that updates the MIDlet
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDletUpdater&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDletUpdater&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         var alertText = null;
         casper.on('remote.alert', function onAlert(message) {
@@ -366,7 +404,7 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
 
     // Verify that the update has been applied
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=3.0.0")
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=3.0.0&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Load after update");
@@ -374,13 +412,13 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
         });
     });
 
-    // Clear the FS before downloading another JAD
+    // Clear the JARStore before downloading another JAD
     casper
-    .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
+    .thenOpen("http://localhost:8000/tests/jarstore/clear-jarstore.html")
     .waitForText("DONE");
 
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=2.0.0")
+    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=2.0.0&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Download with absolute URL");
@@ -389,14 +427,14 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=com.sun.midp.midlet.TestMIDletPeer&jars=tests/tests.jar&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=com.sun.midp.midlet.TestMIDletPeer&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .waitForPopup("test.html", function() {
         test.assertEquals(this.popups.length, 1);
         test.assertTextDoesntExist("FAIL");
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.TestAlertWithGauge&jars=tests/tests.jar&logConsole=web,page")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.TestAlertWithGauge&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         this.waitUntilVisible(".lcdui-alert.visible .button1", function() {
             this.click(".lcdui-alert.visible .button0");
@@ -409,6 +447,12 @@ casper.test.begin("unit tests", 16 + gfxTests.length, function(test) {
                 });
             });
         });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/tests/jarstore/jarstoretests.html")
+    .waitForText("DONE", function() {
+        test.assertTextExists("DONE: 23 pass, 0 fail", "JARStore unit tests");
     });
 
     casper

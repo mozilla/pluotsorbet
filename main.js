@@ -3,16 +3,23 @@
 
 'use strict';
 
+// The real profile variable declaration in config.ts is folded away by closure. Until we
+// make closure process this file also, make sure that |profile| is defined in this file.
+var profile;
 var jvm = new JVM();
 
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
   document.documentElement.classList.add('gamepad');
 }
 
-var jars = ["java/classes.jar"];
+var jars = [];
 
 if (config.midletClassName == "RunTests") {
   jars.push("tests/tests.jar");
+}
+
+if (typeof Benchmark !== "undefined") {
+  Benchmark.startup.init();
 }
 
 if (config.jars) {
@@ -29,11 +36,18 @@ var getMobileInfo = new Promise(function(resolve, reject) {
   });
 });
 
-var loadingPromises = [initFS, getMobileInfo];
+var loadingMIDletPromises = [initFS, getMobileInfo];
+
+var loadingPromises = [];
+
+loadingPromises.push(load("java/classes.jar", "arraybuffer").then(function(data) {
+  JARStore.addBuiltIn("java/classes.jar", data);
+  CLASSES.initializeBuiltinClasses();
+}));
 
 jars.forEach(function(jar) {
-  loadingPromises.push(load(jar, "arraybuffer").then(function(data) {
-    CLASSES.addPath(jar, data);
+  loadingMIDletPromises.push(load(jar, "arraybuffer").then(function(data) {
+    JARStore.addBuiltIn(jar, data);
   }));
 });
 
@@ -58,7 +72,7 @@ function processJAD(data) {
 }
 
 if (config.jad) {
-  loadingPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
+  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
 }
 
 function performDownload(url, dialog, callback) {
@@ -109,53 +123,36 @@ function performDownload(url, dialog, callback) {
 }
 
 if (config.downloadJAD) {
-  loadingPromises.push(initFS.then(function() {
-    return new Promise(function(resolve, reject) {
-      if (fs.exists("/midlet.jar")) {
-        Promise.all([
-          new Promise(function(resolve, reject) {
-            fs.open("/midlet.jar", function(fd) {
-              CLASSES.addPath("midlet.jar", fs.read(fd).buffer.slice(0));
-              fs.close(fd);
-              resolve();
-            });
-          }),
-          new Promise(function(resolve, reject) {
-            fs.open("/midlet.jad", function(fd) {
-              processJAD(util.decodeUtf8(fs.read(fd)));
-              fs.close(fd);
-              resolve();
-            });
-          }),
-        ]).then(resolve);
-      } else {
-        var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
-        dialog.style.display = 'block';
-        dialog.classList.add('visible');
-        document.body.appendChild(dialog);
+  loadingMIDletPromises.push(new Promise(function(resolve, reject) {
+    JARStore.loadJAR("midlet.jar").then(function(loaded) {
+      if (loaded) {
+        processJAD(JARStore.getJAD());
+        resolve();
+        return;
+      }
 
-        performDownload(config.downloadJAD, dialog, function(data) {
-          dialog.parentElement.removeChild(dialog);
+      var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+      dialog.style.display = 'block';
+      dialog.classList.add('visible');
+      document.body.appendChild(dialog);
 
-          CLASSES.addPath("midlet.jar", data.jarData);
+      performDownload(config.downloadJAD, dialog, function(data) {
+        dialog.parentElement.removeChild(dialog);
+
+        JARStore.installJAR("midlet.jar", data.jarData, data.jadData).then(function() {
           processJAD(data.jadData);
-
-          fs.create("/midlet.jad", new Blob([ data.jadData ]));
-          fs.create("/midlet.jar", new Blob([ data.jarData ]));
           resolve();
         });
-      }
+      });
     });
   }).then(backgroundCheck));
 }
 
-if (config.midletClassName == "RunTests") {
+if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
-                       loadScript("tests/override.js"),
-                       loadScript("tests/mozactivitymock.js"));
+                       loadScript("tests/mozactivitymock.js"),
+                       loadScript("tests/config.js"));
 }
-
-loadingPromises.push(emoji.loadData());
 
 function getIsOff(button) {
   return button.textContent.contains("OFF");
@@ -167,12 +164,56 @@ function toggle(button) {
 
 var bigBang = 0;
 
+function startTimeline() {
+  requestTimelineBuffers(function (buffers) {
+    for (var i = 0; i < buffers.length; i++) {
+      buffers[i].reset();
+    }
+  });
+}
+
+function stopAndSaveTimeline() {
+  console.log("Saving profile, please wait ...");
+  var output = [];
+  var writer = new J2ME.IndentingWriter(false, function (s) {
+    output.push(s);
+  });
+  requestTimelineBuffers(function (buffers) {
+    var snapshots = [];
+    for (var i = 0; i < buffers.length; i++) {
+      snapshots.push(buffers[i].createSnapshot());
+    }
+    // Trace Statistcs
+    for (var i = 0; i < snapshots.length; i++) {
+      writer.writeLn("Timeline Statistics: " + i);
+      snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
+    }
+    // Trace Events
+    for (var i = 0; i < snapshots.length; i++) {
+      writer.writeLn("Timeline Events: " + i);
+      snapshots[i].trace(writer, 0.1); // Don't trace anything below 0.1 ms.
+    }
+  });
+  var text = output.join("\n");
+  var profileFilename = "profile.txt";
+  var blob = new Blob([text], {type : 'text/html'});
+  saveAs(blob, profileFilename);
+  console.log("Saved profile in: adb pull /sdcard/downloads/" + profileFilename);
+}
+
 function start() {
   J2ME.Context.setWriters(new J2ME.IndentingWriter());
-  CLASSES.initializeBuiltinClasses();
-  profiler && profiler.start(2000, false);
+  // For profile mode 1, we start the profiler and wait 2 seconds and show the flame chart UI.
+  profile === 1 && profiler.start(2000, false);
   bigBang = performance.now();
+  // For profiler mode 2, we start the timeline and stop it later by calling |stopAndSaveTimeline|.
+  profile === 2 && startTimeline();
   jvm.startIsolate0(config.main, config.args);
+}
+
+// If we're not running a MIDlet, we need to wait everything to be loaded.
+if (!config.midletClassName || config.midletClassName == "RunTests") {
+  loadingPromises = loadingPromises.concat(loadingMIDletPromises);
 }
 
 Promise.all(loadingPromises).then(start, function (reason) {
@@ -183,18 +224,9 @@ document.getElementById("start").onclick = function() {
   start();
 };
 
-function loadAllClasses() {
-  profiler.start(5000, false);
-  for (var i = 0; i < 1; i++) {
-    var s = performance.now();
-    CLASSES.loadAllClassFiles();
-    console.info("Loaded all classes in: " + (performance.now() - s));
-  }
+if (typeof Benchmark !== "undefined") {
+  Benchmark.initUI("benchmark");
 }
-
-document.getElementById("loadAllClasses").onclick = function() {
-  loadAllClasses();
-};
 
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
@@ -245,13 +277,18 @@ window.onload = function() {
 
     var el = document.getElementById("compiledCount");
     el.textContent = numberWithCommas(J2ME.compiledMethodCount) + " / " +
-                     numberWithCommas(J2ME.cachedMethodCount);
+                     numberWithCommas(J2ME.cachedMethodCount) + " / " +
+                     numberWithCommas(J2ME.aotMethodCount);
 
     var el = document.getElementById("onStackReplacementCount");
     el.textContent = numberWithCommas(J2ME.onStackReplacementCount);
 
     var el = document.getElementById("unwindCount");
     el.textContent = numberWithCommas(J2ME.unwindCount);
+
+    var el = document.getElementById("preemptionCount");
+    el.textContent = numberWithCommas(J2ME.preemptionCount);
+
   }, 500);
 
   function dumpCounters() {
@@ -365,8 +402,7 @@ perfWriterCheckbox.addEventListener('change', function() {
   }
 });
 
-
-var profiler = typeof Shumway !== "undefined" ? (function() {
+var profiler = profile === 1 ? (function() {
 
   var elPageContainer = document.getElementById("pageContainer");
   elPageContainer.classList.add("profile-mode");
