@@ -237,7 +237,7 @@ The startup benchmark measures from when the benchmark.js file loads to the call
 
 To use:
 
-*It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds*
+*It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds. To do this on a Firefox OS device, see: https://wiki.mozilla.org/B2G/QA/Tips_And_Tricks#For_changing_the_preference*
 
 1. Checkout the version you want to be the baseline(usually mozilla/master).
 1. Build a benchmark build `RELEASE=1 BENCHMARK=1 make` *"RELEASE=1" is not required, but is recommended to avoid debug code from changing execution behavior.*
