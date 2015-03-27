@@ -6,7 +6,6 @@ RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
-DEVICE ?= 0
 
 # Sensor support
 JSR_256 ?= 1
