@@ -23,8 +23,10 @@ var Benchmark = (function() {
   var NO_SECURITY = typeof netscape !== "undefined" && netscape.security.PrivilegeManager;
 
   function enableSuperPowers() {
-    // To enable chrome privileges use a separate profile and enable the pref:
+    // To enable chrome privileges use a separate profile and set the pref
     // security.turn_off_all_security_so_that_viruses_can_take_over_this_computer
+    // to boolean true.  To do this on a device, see:
+    // https://wiki.mozilla.org/B2G/QA/Tips_And_Tricks#For_changing_the_preference:
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   }
 

@@ -10,82 +10,48 @@
   <link rel="stylesheet" type="text/css" href="style/drawer.css">
 
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+
+  <!-- Load config scripts separately because compiled-method-cache.js
+     - depends on them. -->
   <script type="text/javascript" src="config/default.js" defer></script>
   <script type="text/javascript" src="config/midlet.js" defer></script>
   <script type="text/javascript" src="config/build.js" defer></script>
   <script type="text/javascript" src="config/urlparams.js" defer></script>
-  <!-- #if BENCHMARK == "true" -->
-  <script type="text/javascript" src="benchmark.js" defer></script>
-  <script type="text/javascript" src="libs/ttest.js" defer></script>
-  <!-- #endif -->
+
   <!-- #if PROFILE > 0 -->
+  <!-- Load bld/shumway.js separately because j2me.js depends on it. -->
   <script type="text/javascript" src="bld/shumway.js" defer></script>
   <!-- #endif -->
+
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
-  <script type="text/javascript" src="libs/console.js" defer></script>
+
+  <!-- Load promise-6.0.0.js and IndexedDB-getAll-shim.js separately
+     - because compiled-method-cache.js depends on them. -->
   <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
-  <script type="text/javascript" src="polyfill/canvas-toblob.js" defer></script>
-  <script type="text/javascript" src="polyfill/fromcodepoint.js" defer></script>
-  <script type="text/javascript" src="polyfill/codepointat.js" defer></script>
   <script type="text/javascript" src="polyfill/IndexedDB-getAll-shim.js" defer></script>
-  <script type="text/javascript" src="polyfill/map.js" defer></script>
-  <script type="text/javascript" src="polyfill/contains.js" defer></script>
-  <script type="text/javascript" src="polyfill/find.js" defer></script>
-  <script type="text/javascript" src="polyfill/findIndex.js" defer></script>
-  <script type="text/javascript" src="polyfill/fround.js" defer></script>
-  <script type="text/javascript" src="blackBox.js" defer></script>
-  <script type="text/javascript" src="timer.js" defer></script>
-  <script type="text/javascript" src="util.js" defer></script>
 
+  <!-- Load compiled-method-cache.js separately because j2me.js depends on it. -->
   <script type="text/javascript" src="libs/compiled-method-cache.js" defer></script>
-  <script type="text/javascript" src="libs/relooper.js" defer></script>
-  <script type="text/javascript" src="bld/j2me.js" defer></script>
-  <script type="text/javascript" src="native.js" defer></script>
-  <script type="text/javascript" src="string.js" defer></script>
-  <script type="text/javascript" src="libs/load.js" defer></script>
-  <script type="text/javascript" src="libs/zipfile.js" defer></script>
-  <script type="text/javascript" src="libs/jarstore.js" defer></script>
-  <script type="text/javascript" src="libs/long.js" defer></script>
-  <script type="text/javascript" src="libs/encoding.js" defer></script>
-  <script type="text/javascript" src="libs/fs.js" defer></script>
-  <script type="text/javascript" src="libs/fs-init.js" defer></script>
-  <script type="text/javascript" src="libs/forge/util.js" defer></script>
-  <script type="text/javascript" src="libs/forge/md5.js" defer></script>
-  <script type="text/javascript" src="libs/jsbn/jsbn.js" defer></script>
-  <script type="text/javascript" src="libs/jsbn/jsbn2.js" defer></script>
-  <script type="text/javascript" src="libs/contacts.js" defer></script>
-  <script type="text/javascript" src="libs/pipe.js" defer></script>
-  <script type="text/javascript" src="libs/contact2vcard.js" defer></script>
-  <script type="text/javascript" src="libs/emoji.js" defer></script>
-  <script type="text/javascript" src="libs/FileSaver/FileSaver.js" defer></script>
-  <script type="text/javascript" src="midp/midp.js" defer></script>
-  <script type="text/javascript" src="midp/frameanimator.js" defer></script>
-  <script type="text/javascript" src="midp/fs.js" defer></script>
-  <script type="text/javascript" src="midp/crypto.js" defer></script>
-  <script type="text/javascript" src="midp/gfx.js" defer></script>
-  <script type="text/javascript" src="midp/text_editor.js" defer></script>
-  <script type="text/javascript" src="midp/localmsg.js" defer></script>
-  <!-- #if JSR_179 == 1 -->
-  <script type="text/javascript" src="midp/location.js" defer></script>
-  <!-- #endif -->
-  <script type="text/javascript" src="midp/media.js" defer></script>
-  <!-- #if JSR_256 == 1 -->
-  <script type="text/javascript" src="midp/sensor.js" defer></script>
-  <!-- #endif -->
-  <script type="text/javascript" src="midp/socket.js" defer></script>
-  <script type="text/javascript" src="midp/sms.js" defer></script>
-  <script type="text/javascript" src="midp/codec.js" defer></script>
-  <script type="text/javascript" src="midp/pim.js" defer></script>
-  <script type="text/javascript" src="midp/device_control.js" defer></script>
-  <script type="text/javascript" src="midp/background.js" defer></script>
-  <script type="text/javascript" src="midp/gestures.js" defer></script>
-  <script type="text/javascript" src="game-ui.js" defer></script>
 
-  <!-- run make aot to generate these -->
+  <!-- Load relooper.js separately because adding it to main-all.js
+     - throws an "asm.js type error". -->
+  <script type="text/javascript" src="libs/relooper.js" defer></script>
+
+  <!-- Load j2me.js separately because classes.jar.js depends on it (it adds
+     - members to the AOTMD hash that j2me.js defines); and also so its source
+     - map gets loaded by the debugger. -->
+  <script type="text/javascript" src="bld/j2me.js" defer></script>
+
+  <!-- Run `make aot` to generate these.  Load them separately, because adding
+     - classes.jar.js to main-all.js fails silently for unknown reasons. -->
   <script type="text/javascript" src="bld/classes.jar.js" defer></script>
   <!--<script type="text/javascript" src="bld/program.jar.js" defer></script>-->
   <!--<script type="text/javascript" src="bld/tests.jar.js" defer></script>-->
-  <script type="text/javascript" src="main.js" defer></script>
+
+  <!-- Load the rest of the scripts from the combined script main-all.js
+     - to improve startup and runtime performance.  See Makefile for the list
+     - of files that get combined into this one. -->
+  <script type="text/javascript" src="bld/main-all.js" defer></script>
 </head>
 
 <body>
