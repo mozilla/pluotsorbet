@@ -4,29 +4,99 @@
 'use strict';
 
 var currentlyFocusedTextEditor;
-(function(Native) {
+var GFX = (function(Native) {
+    var screenContextInfo = new ContextInfo(MIDP.context2D.canvas.width, MIDP.context2D.canvas.height, document.getElementById("canvas").getContext("2d"));
+
     var tempContext = document.createElement("canvas").getContext("2d");
     tempContext.canvas.width = 0;
     tempContext.canvas.height = 0;
 
-    var NativeDisplay = function() {
-        this.fullScreen = 1;
-    };
+    function ContextInfo(w, h, context) {
+      if (context) {
+          this.context = context;
+      } else {
+          this.context = document.createElement("canvas").getContext("2d");
+      }
+      this.context.canvas.width = w;
+      this.context.canvas.height = h;
+      this.context.save();
 
-    var NativeDisplays = {
-        get: function(id) {
-            var d = this._map.get(id);
-            if (!d) {
-                d = new NativeDisplay();
-                this._map.set(id, d);
-            }
-            return d;
-        },
+      this.applied = {
+          transX: 0,
+          transY: 0,
+          clipX1: 0,
+          clipY1: 0,
+          clipX2: w,
+          clipY2: h,
+          font: this.context.font,
+          pixel: 0xFF000000,
+      }
+    }
 
-        _map: new Map(),
+    ContextInfo.prototype.resize = function(w, h) {
+        this.context.canvas.width = w;
+        this.context.canvas.height = h;
+        this.context.save();
 
-        foreground: -1
-    };
+        this.applied.transX = 0;
+        this.applied.transY = 0;
+        this.applied.clipX1 = 0;
+        this.applied.clipY1 = 0;
+        this.applied.clipX2 = w;
+        this.applied.clipY2 = h;
+        this.applied.font = this.context.font;
+        // Canvas context `fillStyle` and `strokeStyle` are initially
+        // the string value "#000000" which is fully opaque black
+        this.applied.pixel = 0xFF000000;
+    }
+
+    ContextInfo.prototype.applyGraphics = function(g) {
+        var transX = g.transX;
+        var transY = g.transY;
+        var clipX1 = g.clipX1;
+        var clipY1 = g.clipY1;
+        var clipX2 = g.clipX2;
+        var clipY2 = g.clipY2;
+        var font = g.currentFont;
+        var pixel = g.pixel;
+
+        if (clipX1 < this.applied.clipX1 || clipY1 < this.applied.clipY1 || clipX2 > this.applied.clipX2 || clipY2 > this.applied.clipY2) {
+            this.context.restore();
+            this.context.save();
+
+            this.applied.transX = 0;
+            this.applied.transY = 0;
+            this.applied.clipX1 = 0;
+            this.applied.clipY1 = 0;
+            this.applied.clipX2 = this.context.canvas.width;
+            this.applied.clipY2 = this.context.canvas.height;
+            this.applied.pixel = 0xFF000000;
+        }
+
+        this.context.translate(transX - this.applied.transX, transY - this.applied.transY);
+        this.applied.transX = transX;
+        this.applied.transY = transY;
+
+        if (clipX1 != this.applied.clipX1 || clipY1 != this.applied.clipY1 || clipX2 != this.applied.clipX2 || clipY2 != this.applied.clipY2) {
+            this.context.beginPath();
+            this.context.rect(clipX1 - this.applied.transX, clipY1 - this.applied.transY, clipX2 - clipX1, clipY2 - clipY1);
+            this.context.clip();
+
+            this.applied.clipX1 = clipX1;
+            this.applied.clipY1 = clipY1;
+            this.applied.clipX2 = clipX2;
+            this.applied.clipY2 = clipY2;
+        }
+
+        if (this.context.font != font.css) {
+          this.context.font = font.css;
+        }
+
+        if (this.applied.pixel != pixel) {
+          this.context.fillStyle = this.context.strokeStyle = util.abgrIntToCSS(pixel);
+          this.applied.pixel = pixel;
+        }
+    }
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = J2ME.newIntArray( 1);
@@ -79,20 +149,9 @@ var currentlyFocusedTextEditor;
         console.warn("DisplayDevice.displayStateChanged0.(II)V not implemented (" + hardwareId + ", " + state + ")");
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
-        var d = NativeDisplays.get(displayId);
-        d.fullScreen = mode;
-        if (NativeDisplays.foreground === displayId) {
-            MIDP.setFullScreen(mode);
-        }
-    };
-
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
         document.getElementById("background-screen").style.display = "none";
         document.getElementById("splash-screen").style.display = "none";
-        var d = NativeDisplays.get(displayId);
-        NativeDisplays.foreground = displayId;
-        MIDP.setFullScreen(d.fullScreen);
 
         asyncImpl("V", emoji.loadData());
 
@@ -112,8 +171,10 @@ var currentlyFocusedTextEditor;
         return 1;
     };
 
-
-    addUnimplementedNative("com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V");
+    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function() {
+        // This is a no-op: The foreground display gets drawn directly
+        // to the screen.
+    }
 
     function swapRB(pixel) {
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
@@ -205,19 +266,14 @@ var currentlyFocusedTextEditor;
     }
 
     function initImageData(imageData, width, height) {
-        var canvas = document.createElement("canvas");
-        imageData.context = canvas.getContext("2d");
-        setImageDataDimensions(imageData, width, height);
-        return imageData.context;
-    }
+        if (imageData.contextInfo) {
+          console.error("initImageData called on already-initialized `ImageData`");
+        }
 
-    function setImageDataDimensions(imageData, width, height) {
-        var canvas = imageData.context.canvas;
-        canvas.width = width;
-        canvas.height = height;
-
+        imageData.contextInfo = new ContextInfo(width, height);
         imageData.width = width;
         imageData.height = height;
+        return imageData.contextInfo.context;
     }
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] =
@@ -229,7 +285,7 @@ var currentlyFocusedTextEditor;
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
                 var context = initImageData(imageData, img.naturalWidth, img.naturalHeight);
-                context.drawImage(img, 0, 0);
+                context.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0, img.naturalWidth, img.naturalHeight);
 
                 URL.revokeObjectURL(img.src);
                 resolve();
@@ -242,40 +298,74 @@ var currentlyFocusedTextEditor;
         }));
     };
 
-    Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
-    function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
-        var context = initImageData(dataDest, width, height);
-
-        if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
-            context.scale(-1, 1);
-        } else if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270) {
-            context.scale(1, -1);
-        } else if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90) {
-            context.rotate(Math.PI / 2);
-        } else if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180) {
-            context.rotate(Math.PI);
-        } else if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270) {
-            context.rotate(1.5 * Math.PI);
+    function copyImage(c, texture, sx, sy, width, height, transform, x, y) {
+        if (transform !== TRANS_NONE) {
+            c.save();
         }
 
-        var imgdata = dataSource.context.getImageData(x, y, width, height);
-        context.putImageData(imgdata, 0, 0);
+        switch (transform) {
+            case TRANS_ROT90:
+                y -= height;
+                c.rotate(Math.PI / 2);
+                break;
+            case TRANS_ROT180:
+                x -= width;
+                y -= height;
+                c.rotate(Math.PI);
+                break;
+            case TRANS_ROT270:
+                x -= width;
+                c.rotate(Math.PI * 1.5);
+                break;
+            case TRANS_MIRROR:
+                x -= height;
+                c.scale(-1, 1);
+                break;
+            case TRANS_MIRROR_ROT90:
+                x -= width;
+                y -= height;
+                c.scale(-1, 1);
+                c.rotate(MATH.PI * 1.5);
+                break;
+            case TRANS_MIRROR_ROT180:
+                y -= height;
+                c.scale(-1, 1);
+                c.rotate(MATH.PI);
+                break;
+            case TRANS_MIRROR_ROT270:
+                c.scale(-1, 1);
+                c.rotate(MATH.PI / 2);
+                break;
+        }
 
+        c.drawImage(texture, sx, sy, width, height, x, y, width, height);
+
+        if (transform !== TRANS_NONE) {
+            c.restore();
+        }
+    }
+
+    Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
+    function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
+        var c = initImageData(dataDest, width, height);
+        copyImage(c, dataSource.contextInfo.context.canvas, x, y, width, height, transform, 0, 0);
         dataDest.isMutable = isMutable;
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
-        var srcCanvas = source.context.canvas;
+        var srcCanvas = source.contextInfo.context.canvas;
         var context = initImageData(dest, srcCanvas.width, srcCanvas.height);
-        context.drawImage(srcCanvas, 0, 0);
+        context.drawImage(srcCanvas, 0, 0, srcCanvas.width, srcCanvas.height, 0, 0, srcCanvas.width, srcCanvas.height);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] =
     function(imageData, width, height) {
         var context = initImageData(imageData, width, height);
-        context.fillStyle = "rgb(255,255,255)"; // white
+        var oldStyle = context.fillStyle;
+        context.fillStyle = util.rgbaToCSS(255, 255, 255, 1);
         context.fillRect(0, 0, width, height);
+        context.fillStyle = oldStyle;
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
@@ -291,7 +381,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {
-        var abgrData = new Int32Array(this.context.getImageData(x, y, width, height).data.buffer);
+        var abgrData = new Int32Array(this.contextInfo.context.getImageData(x, y, width, height).data.buffer);
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     };
 
@@ -305,8 +395,13 @@ var currentlyFocusedTextEditor;
         var height = image.height;
         var imageData = image.imageData;
 
-        var ctx = imageData.context;
-        setImageDataDimensions(imageData, width, height);
+        if (imageData.width != width || imageData.height != height) {
+            imageData.contextInfo.resize(width, height);
+            imageData.width = width;
+            imageData.height = height;
+        }
+
+        var ctx = imageData.contextInfo.context;
 
         var ctxImageData = ctx.createImageData(width, height);
         var pixels = new Int32Array(ctxImageData.data.buffer);
@@ -363,11 +458,14 @@ var currentlyFocusedTextEditor;
 
         // Note:
         // When a css string, such as ` 10 pt Arial, Helvetica`, is set to
-        // MIDP.context2D.font, it will be formatted to `10 pt Arial,Helvetica`
+        // tempContext.font, it will be formatted to `10 pt Arial,Helvetica`
         // with some spaces removed.
-        // We need this css string to have the same format as that of the
-        // MIDP.context2D.font to do comparison in withFont() function.
-        this.css = style + size + "px " + face;
+        // We want our `css` property to be the canonical string
+        // representation, so we set `tempContext.font` to this
+        // value and then actually use the string that it is formatted to
+        var css = style + size + "px " + face;
+        tempContext.font = css;
+        this.css = tempContext.font;
         this.size = size;
         this.style = style;
         this.face = face;
@@ -376,13 +474,31 @@ var currentlyFocusedTextEditor;
     function calcStringWidth(font, str) {
         var emojiLen = 0;
 
-        withFont(font, MIDP.context2D);
-        var len = measureWidth(MIDP.context2D, str.replace(emoji.regEx, function() {
+        tempContext.font = font.css;
+        var len = measureWidth(tempContext, str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
         }));
 
         return len + emojiLen;
+    }
+
+    function getGraphicsContext(g) {
+        var contextInfo;
+        var displayId = g.displayId;
+        var img = g.img;
+        if (displayId != -1 && MIDP.isForegroundDisplay(displayId)) {
+            contextInfo = screenContextInfo;
+        } else if (img && img.imageData) {
+            contextInfo = img.imageData.contextInfo;
+        }
+
+        if (contextInfo && contextInfo.context.canvas.width > 0 && contextInfo.context.canvas.height > 0) {
+            contextInfo.applyGraphics(g);
+            return contextInfo.context;
+        }
+
+        return null;
     }
 
     var defaultFont;
@@ -405,8 +521,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        withFont(this, MIDP.context2D);
-        return measureWidth(MIDP.context2D, String.fromCharCode(char));
+        tempContext.font = this.css;
+        return measureWidth(tempContext, String.fromCharCode(char));
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -425,38 +541,29 @@ var currentlyFocusedTextEditor;
     var BOTTOM = 32;
     var BASELINE = 64;
 
-    function withAnchor(g, c, anchor, x, y, w, h) {
+    function getAnchorX(anchor, x, w) {
         if (anchor & RIGHT) {
             x -= w;
         } else if (anchor & HCENTER) {
             x -= (w >>> 1) | 0;
         }
+        return x;
+    }
 
+    function getAnchorY(anchor, y, h) {
         if (anchor & BOTTOM) {
             y -= h;
         } else if (anchor & VCENTER) {
             y -= (h >>> 1) | 0;
         }
-
-        return [x, y];
+        return y;
     }
 
     function measureWidth(c, str) {
         return c.measureText(str).width | 0;
     }
 
-    function withFont(font, c) {
-        if (c.font != font.css) {
-          c.font = font.css;
-        }
-    }
-
-    function withTextAnchor(g, c, anchor, x, y, str) {
-        withFont(g.currentFont, c);
-
-        c.textAlign = "left";
-        c.textBaseline = "top";
-
+    function getTextAnchorX(c, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
             var w = measureWidth(c, str);
 
@@ -466,34 +573,19 @@ var currentlyFocusedTextEditor;
                 x -= (w >>> 1) | 0;
             }
         }
+        return x;
+    }
 
+    function withTextAnchor(c, anchor) {
         if (anchor & BOTTOM) {
             c.textBaseline = "bottom";
         } else if (anchor & BASELINE) {
             c.textBaseline = "alphabetic";
         } else if (anchor & VCENTER) {
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
+        } else {
+            c.textBaseline = "top";
         }
-
-        return [x, y];
-    }
-
-    function withPixel(g, c) {
-        c.fillStyle = c.strokeStyle = util.abgrIntToCSS(g.pixel);
-    }
-
-    /**
-     * Like withPixel, but ignores alpha channel, setting the alpha value to 1.
-     * Useful when you suspect that the caller is specifying the alpha channel
-     * incorrectly, although we should actually figure out why that's happening.
-     */
-    function withOpaquePixel(g, c) {
-        var pixel = g.pixel;
-        var b = (pixel >> 16) & 0xff;
-        var g = (pixel >> 8) & 0xff;
-        var r = pixel & 0xff;
-        var style = util.rgbaToCSS(r, g, b, 1);
-        c.fillStyle = c.strokeStyle = style;
     }
 
     /**
@@ -549,15 +641,9 @@ var currentlyFocusedTextEditor;
         return color;
     };
 
-    function getPixel(rgb, gray, isGray) {
+    function getPixel(rgb) {
         return swapRB(rgb) | 0xff000000;
     }
-
-
-    Native["javax/microedition/lcdui/Graphics.restoreMIDPRuntimeGC.()V"] = function() {
-        this.runtimeClipEnforce = false;
-        translate(this, this.aX-this.transX, this.aY-this.transY);
-    };
 
     Native["javax/microedition/lcdui/Graphics.resetGC.()V"] = function() {
         resetGC(this);
@@ -729,20 +815,23 @@ var currentlyFocusedTextEditor;
     var TYPE_USHORT_4444_ARGB = 4444;
     var TYPE_USHORT_565_RGB = 565;
 
-    Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(rgba) {
+    Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(argb) {
+        argb = argb & 0xFFFFFFFF;
         var g = this.graphics;
-        var red = (rgba >> 16) & 0xff;
-        var green = (rgba >> 8) & 0xff;
-        var blue = rgba & 0xff;
-        g.pixel = swapRB(rgba);
-        g.rgbColor = rgba & 0x00ffffff;
+        var red = (argb >> 16) & 0xff;
+        var green = (argb >> 8) & 0xff;
+        var blue = argb & 0xff;
+        g.pixel = swapRB(argb);
+        g.rgbColor = argb & 0x00ffffff;
         // Conversion matches Graphics#grayVal(int, int, int).
         g.gray = grayVal(red, green, blue);
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function() {
         var g = this.graphics;
-        return (g.pixel >> 24) & 0xff;
+        var pixel = g.pixel;
+        var alpha = (pixel >> 24) & 0xff;
+        return alpha;
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V"] =
@@ -760,14 +849,15 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("Format unsupported");
         }
 
-        var graphics = this.graphics;
-        var image = graphics.img;
-        if (!image) {
-            throw $.newIllegalArgumentException("getPixels with no image not yet supported");
+        var context = getGraphicsContext(this.graphics);
+        if (!context) {
+          for (var i = 0; i < (width * height); i++) {
+            pixels[i] = 0x00000000;
+          }
+          return;
         }
-        var imageData = image.imageData;
 
-        var abgrData = new Int32Array(imageData.context.getImageData(x, y, width, height).data.buffer);
+        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
     };
 
@@ -777,14 +867,17 @@ var currentlyFocusedTextEditor;
             throw $.newNullPointerException("Pixels array is null");
         }
 
+        var c = getGraphicsContext(this.graphics);
+        if (!c) {
+          return;
+        }
+
         var converterFunc = null;
         if (format == TYPE_USHORT_4444_ARGB && transparency && !manipulation) {
             converterFunc = ARGB4444ToABGR;
         } else {
             throw $.newIllegalArgumentException("Format unsupported");
         }
-
-        var graphics = this.graphics;
 
         tempContext.canvas.width = width;
         tempContext.canvas.height = height;
@@ -795,9 +888,8 @@ var currentlyFocusedTextEditor;
 
         tempContext.putImageData(imageData, 0, 0);
 
-        var c = graphics.context2D;
+        c.drawImage(tempContext.canvas, 0, 0, width, height, x, y, width, height);
 
-        c.drawImage(tempContext.canvas, x, y);
         tempContext.canvas.width = 0;
         tempContext.canvas.height = 0;
     };
@@ -807,15 +899,17 @@ var currentlyFocusedTextEditor;
     };
 
     function renderImage(g, image, x, y, anchor) {
-        var texture = image.imageData.context.canvas;
+        var c = getGraphicsContext(g);
+        if (!c) {
+            return 1;
+        }
 
-        var c = g.context2D;
+        var texture = image.imageData.contextInfo.context.canvas;
 
-        var pair = withAnchor(g, c, anchor, x, y, texture.width, texture.height);
-        x = pair[0];
-        y = pair[1];
+        x = getAnchorX(anchor, x, texture.width);
+        y = getAnchorY(anchor, y, texture.height);
 
-        c.drawImage(texture, x, y);
+        c.drawImage(texture, 0, 0, texture.width, texture.height, x, y, texture.width, texture.height);
 
         return 1;
     }
@@ -867,13 +961,6 @@ var currentlyFocusedTextEditor;
         var newY1 = Math.max(0, y) & 0x7fff;
         var newY2 = Math.min(g.maxHeight, y + height) & 0x7fff;
 
-        if (g.runtimeClipEnforce) {
-            newX1 = Math.max(newX1, g.systemClipX1);
-            newY1 = Math.max(newY1, g.systemClipY1);
-            newX2 = Math.min(newX2, g.systemClipX2);
-            newY2 = Math.min(newY2, g.systemClipY2);
-        }
-
         if (width <= 0 || height <= 0 || newX2 <= newX1 || newY2 <= newY1) {
             newX1 = newY1 = newX2 = newY2 = 0;
         }
@@ -882,28 +969,10 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        // If we're expanding the clip rect, we need to restore the pre-clipped context
-        if (newX1 < g.clipX1 || newX2 > g.clipX2 || newY1 < g.clipY1 || newY2 > g.clipY2) {
-            g.context2D.restore();
-            g.context2D.translate(g.transX, g.transY);
-            g.context2D.save();
-        }
-
-        g.clipped = newX1 > 0 ||
-                    newY1 > 0 ||
-                    newX2 < g.maxWidth ||
-                    newY2 < g.maxHeight;
-
         g.clipX1 = newX1;
         g.clipX2 = newX2;
         g.clipY1 = newY1;
         g.clipY2 = newY2;
-
-        if (g.clipped) {
-            g.context2D.beginPath();
-            g.context2D.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
-            g.context2D.clip();
-        }
     }
 
     function grayVal(red, green, blue) {
@@ -920,12 +989,6 @@ var currentlyFocusedTextEditor;
         this.rgbColor = 0;
         this.gray = 0;
         this.pixel = 0;
-        this.aX = 0;
-        this.aY = 0;
-        this.systemClipX1 = 0;
-        this.systemClipX2 = 0;
-        this.systemClipY1 = 0;
-        this.systemClipY2 = 0;
         this.clipX1 = 0;
         this.clipX2 = 0;
         this.clipY1 = 0;
@@ -938,15 +1001,12 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.initScreen0.(III)V"] = function(displayId, w, h) {
-        this.context2D = MIDP.context2D;
         this.displayId = displayId;
         setDimensions(this, w, h);
         resetGC(this);
     };
 
     Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;II)V"] = function(img, w, h) {
-        this.context2D = img.imageData.context;
-        this.context2D.save();
         this.img = img;
         setDimensions(this, w, h);
         resetGC(this);
@@ -972,7 +1032,6 @@ var currentlyFocusedTextEditor;
     function translate(g, x, y) {
         g.transX += x;
         g.transY += y;
-        g.context2D.translate(x, y);
     }
 
     function setDimensions(g, w, h) {
@@ -996,57 +1055,37 @@ var currentlyFocusedTextEditor;
         if (width <= 0 || height <= 0 || g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
             g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
         }
-
-        g.clipped = g.clipX1 > 0 ||
-                    g.clipY1 > 0 ||
-                    g.clipX2 < g.maxWidth ||
-                    g.clipY2 < g.maxHeight;
-
-        if (g.clipped) {
-            g.context2D.beginPath();
-            g.context2D.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
-            g.context2D.clip();
-        }
     }
 
     Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
         setClip(this, x, y, w, h);
     };
 
-    Native["javax/microedition/lcdui/Graphics.preserveMIDPRuntimeGC.(IIII)V"] = function(systemX, systemY, systemW, systemH) {
-        this.runtimeClipEnforce = true;
-        clipRect(this, systemX, systemY, systemW, systemH);
-
-        // this is the first time, we setup
-        // the systemClip values.
-        this.systemClipX1 = this.clipX1;
-        this.systemClipY1 = this.clipY1;
-        this.systemClipX2 = this.clipX2;
-        this.systemClipY2 = this.clipY2;
-
-        // Preserve the translation system
-        translate(this, systemX, systemY);
-        this.aX = this.transX;
-        this.aY = this.transY;
-};
-
-
     function drawString(g, str, x, y, anchor, isOpaque) {
+        var c = getGraphicsContext(g);
+        if (!c) {
+            return;
+        }
+
         var font = g.currentFont;
 
-        var c = g.context2D;
-
+        // TODO: Is this still necessary?
+        var oldStyle;
         if (isOpaque) {
-            withOpaquePixel(g, c);
-        } else {
-            withPixel(g, c);
+            var pixel = g.pixel;
+            var b = (pixel >> 16) & 0xff;
+            var g = (pixel >> 8) & 0xff;
+            var r = pixel & 0xff;
+            var style = util.rgbaToCSS(r, g, b, 1);
+            oldStyle = c.fillStyle;
+            c.fillStyle = c.strokeStyle = style;
         }
 
         parseEmojiString(str).forEach(function(part) {
             if (part.text) {
-                var pair = withTextAnchor(g, c, anchor, x, y, part.text);
-                var textX = pair[0];
-                var textY = pair[1];
+                var textX = getTextAnchorX(c, anchor, x, part.text);
+                var textY = y;
+                withTextAnchor(c, anchor);
 
                 c.fillText(part.text, textX, textY);
 
@@ -1063,6 +1102,22 @@ var currentlyFocusedTextEditor;
                 x += font.size;
             }
         });
+
+        if (isOpaque) {
+          c.fillStyle = c.strokeStyle = oldStyle;
+        }
+    }
+
+    Native["javax/microedition/lcdui/Graphics.getPixel.(IIZ)I"] = function(rgb, gray, isGray) {
+        if (isGray) {
+            rgb = gray | (gray << 8) | (gray << 16);
+        }
+        var red = (rgb >> 16) & 0xff;
+        var green = (rgb >> 8) & 0xff;
+        var blue = rgb & 0xff;
+        var pixel = getPixel(rgb);
+
+        return pixel;
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
@@ -1079,23 +1134,24 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(jChr, x, y, anchor) {
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
+
         var chr = String.fromCharCode(jChr);
 
-        var c = this.context2D;
-
-        var pair = withTextAnchor(this, c, anchor, x, y, chr);
-        x = pair[0];
-        y = pair[1];
-
-        withPixel(this, c);
+        x = getTextAnchorX(c, anchor, x, chr);
+        withTextAnchor(c, anchor);
 
         c.fillText(chr, x, y);
     };
 
     Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(x1, y1, x2, y2, x3, y3) {
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
 
         var dx1 = (x2 - x1) || 1;
         var dy1 = (y2 - y1) || 1;
@@ -1106,7 +1162,6 @@ var currentlyFocusedTextEditor;
         c.moveTo(x1, y1);
         c.lineTo(x1 + dx1, y1 + dy1);
         c.lineTo(x1 + dx2, y1 + dy2);
-        c.closePath();
         c.fill();
     };
 
@@ -1115,9 +1170,10 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
 
         w = w || 1;
         h = h || 1;
@@ -1130,9 +1186,10 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
 
         w = w || 1;
         h = h || 1;
@@ -1147,9 +1204,10 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
 
         w = w || 1;
         h = h || 1;
@@ -1162,9 +1220,10 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
 
         w = w || 1;
         h = h || 1;
@@ -1179,9 +1238,10 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
 
         var endRad = -startAngle * 0.0175;
         var startRad = endRad - arcAngle * 0.0175;
@@ -1195,9 +1255,10 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
 
         var endRad = -startAngle * 0.0175;
         var startRad = endRad - arcAngle * 0.0175;
@@ -1218,43 +1279,33 @@ var currentlyFocusedTextEditor;
     var TRANS_MIRROR_ROT90 = 7;
 
     function renderRegion(g, image, sx, sy, sw, sh, transform, x, y, anchor) {
-        var imgData = image.imageData,
-            texture = imgData.context.canvas;
-
-        var c = g.context2D;
-        if (transform !== TRANS_NONE) {
-            c.save();
+        var c = getGraphicsContext(g);
+        if (!c) {
+            return 1;
         }
 
-        var pair = withAnchor(g, c, anchor, x, y, sw, sh);
-        x = pair[0];
-        y = pair[1];
+        var texture = image.imageData.contextInfo.context.canvas;
 
-        if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
-            c.scale(-1, 1);
-        } else if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270) {
-            c.scale(1, -1);
-        } else if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90) {
-            c.rotate(Math.PI / 2);
-        } else if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180) {
-            c.rotate(Math.PI);
-        } else if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270) {
-            c.rotate(1.5 * Math.PI);
-        }
+        tempContext.canvas.width = sw;
+        tempContext.canvas.height = sh;
+        copyImage(tempContext, texture, sx, sy, sw, sh, transform, 0, 0);
 
-        c.drawImage(texture, sx, sy, sw, sh, x, y, sw, sh);
+        x = getAnchorX(anchor, x, sw);
+        y = getAnchorY(anchor, y, sh);
 
-        if (transform !== TRANS_NONE) {
-            c.restore();
-        }
+        c.drawImage(tempContext.canvas, 0, 0, sw, sh, x, y, sw, sh);
 
-        return true;
+        tempContext.canvas.width = 0;
+        tempContext.canvas.height = 0;
+
+        return 1;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
 
         var dx = (x2 - x1);
         var dy = (y2 - y1);
@@ -1274,6 +1325,11 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] =
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
+        var c = getGraphicsContext(this);
+        if (!c) {
+            return;
+        }
+
         tempContext.canvas.height = height;
         tempContext.canvas.width = width;
         var imageData = tempContext.createImageData(width, height);
@@ -1284,9 +1340,7 @@ var currentlyFocusedTextEditor;
 
         tempContext.putImageData(imageData, 0, 0);
 
-        var c = this.context2D;
-
-        c.drawImage(tempContext.canvas, x, y);
+        c.drawImage(tempContext.canvas, 0, 0, width, height, x, y, width, height);
         tempContext.canvas.width = 0;
         tempContext.canvas.height = 0;
     };
@@ -1781,5 +1835,9 @@ var currentlyFocusedTextEditor;
                 backBtn.style.display = "none";
             }
         }
+    };
+
+    return {
+        screenContextInfo: screenContextInfo,
     };
 })(Native);
