@@ -66,7 +66,9 @@ Example - Asteroids
 
 ## Tests
 
-You can run the test suite with `make test`. The main driver for the test suite is automation.js which uses the Casper.js testing framework and slimer.js (a Gecko backend for casper.js). This test suite runs on every push (continuous integration) thanks to Travis.
+You can run the test suite with `make test`. The main driver for the test suite is tests/automation.js which uses the [CasperJS](http://casperjs.org/) testing framework and [SlimerJS](http://slimerjs.org/) (a Gecko backend for CasperJS). This test suite runs on every push (continuous integration) thanks to [Travis CI](https://travis-ci.org/).
+
+`make test` downloads SlimerJS for you automatically, but you have to install CasperJS yourself. The easiest way to do that is via NPM: `npm install -g casperjs`.  On Mac, you may also be able to install it via Brew.
 
 If you want to pass additional [casperJS command line options](http://docs.slimerjs.org/current/configuration.html), look at the "test" target in Makefile and place additional command line options before the automation.js filename.
 
@@ -142,15 +144,45 @@ Modelines for JS files:
 
 One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
-### Java profiling
+### VM profiling
 
-The VM has several profiling tools. The simplest feature is to use counters. For instance, `runtime.ts` defines several: `runtimeCounter`, `nativeCounter`, etc ... these should only ever be used in non release builds.
+The j2me.js VM has several profiling tools. The simplest feature is to use counters. `runtime.ts` defines several: `runtimeCounter`, `nativeCounter`, etc ... these are only available in debug builds.
 
-To use them, just sprinkle calls to `runtimeCounter.count("string")`. To see the accumulated counts, press the `Dump Counters` button, or `Clear Counters` if you want to reset them.
+To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view accumulated counts, allow the application to run for some time and then click the `Dump Counters` button. If you want, reset the counter count any time by clicking `Clear Counters`.
 
-The second, more heavy weight profiling tool is to build with `PROFILE=1 make`. This will include Shumway's timeline viewer. One way to use it is to manually insert calls to `timeline.enter` / `timeline.leave` around code blocks that you're interested in measuring. 
+- Counting events:
+  ```
+  function readBytes(fileName, length) {
+    runtimeCounter && runtimeCounter.count("readBytes");
+  }
+  ```
 
-If you want to record every method call, change the line in `runtime.ts` from:
+- Counting bucketed events:
+  ```
+  function readBytes(fileName, length) {
+    runtimeCounter && runtimeCounter.count("readBytes " + fileName);
+  }
+  ```
+
+- Counting events with larger counts: 
+  ```
+  function readBytes(fileName, length) {
+    runtimeCounter && runtimeCounter.count("readBytes", length);
+  }
+  ```
+
+- Counting events with caller context: This is useful to understand which call sites are the most common. 
+  ```
+  function readBytes(fileName, length) {
+    runtimeCounter && runtimeCounter.count("readBytes " + arguments.callee.caller.name);
+  }
+  ```
+
+The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2]`.
+
+Next, you will need to wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
+
+If you want to record every Java method call, change the line in `runtime.ts` from:
 
 ```
 if (false && methodTimeline) {
@@ -160,24 +192,24 @@ to
 if (methodTimeline) {
 ```
 
-This will wrap all methods with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed flame chart of the execution. Because of the fine grained nature of this instrumentation, timing for very short lived events may not be recorded accurately.
+This will wrap all methods with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed trace of the application's execution. Note that this instrumentation has some overhead, and timing information of very short lived events may not be accurate and can lead to the entire application slowing down.
 
-You can get creative with the timelines. The API looks something like this:
+Similar to the way counters work, you can get creative with the timeline profiler. The API looks something like this:
 
 ```
 timeline.enter(name: string, details?: Object);
 timeline.leave(name?: string, details?: Object);
 ```
 
-You must pair the `enter` and `leave` events but you don't necessarily need to specify arguments for `name` and `details`.
+You must pair the calls to `enter` and `leave` but you don't necessarily need to specify arguments for `name` and `details`.
 
 The `name` argument can be any string and it specifies a event type. The timeline view will draw different types of events in different colors. It will also give you some statistics about the number of times a certain event type was seen, how long it took, etc.. 
 
-The `details` is an object, whose properties are shown when you hover over a timeline segment in the profiler view. You can specify this object when you call `timeline.enter` or when you call `timeline.leave`. Usually, you have more information when you call `leave` so that's a more convenient place to put it.
+The `details` argument is an object whose properties are shown when you hover over a timeline segment in the profiler view. You can specify this object when you call `timeline.enter` or when you call `timeline.leave`. Usually, you have more information when you call `leave` so that's a more convenient place to put it.
 
-The way in which you come up with event names can produce different results. In the `profilingWrapper` function, the `key` is used to specify the event type. At the moment, this is set to `MethodType[methodType]`, but you can easily set it to `implKey` which will give you a very detailed output.
+The way in which you come up with event names can produce different results. In the `profilingWrapper` function, the `key` is used to specify the event type.
 
-Additionally, you may create your own timelines. At the moment there are 3:
+You can also create your own timelines. At the moment there are 3:
 - `timeline`: VM Events like loading class files, linking, etc.
 - `methodTimeline`: Method execution.
 - `threadTimeline`: Thread scheduling.
@@ -194,6 +226,8 @@ The tooltip displays:
 - `count`: number of events seen with this name.
 - `all total` and `all self`: cumulative total and self times for all events with this name.
 - the remaining fields show the custom data specified in the `details` object.
+
+If you build with `PROFILE=2` the timeline will be saved to a text file instead of shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt` which you can later pull with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
 
 ## Benchmarks
 
@@ -241,14 +275,6 @@ e.g.:
 
     Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(src, srcOffset, dst, dstOffset, length) {...};
 
-If you need to implement a method in JS but you can't declare it `native` in Java, use `Override`.
-
-e.g.:
-
-    Override["java/lang/Math.min.(II)I"] = function(a, b) {
-      return Math.min(a, b);
-    };
-
 If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in vm/runtime.ts, e.g.:
 
     throw $.newNullPointerException("Cannot copy to/from a null array.");
@@ -256,7 +282,7 @@ If raising a Java `Exception`, throw new instance of Java `Exception` class as d
 If you need implement a native method with async JS calls, the following steps are required:
 
 1. Add the method to the `yieldMap` in jit/analyze.ts
-2. Use `asyncImpl` in override.js to return the asnyc value with a `Promise`.
+2. Use `asyncImpl` in native.js to return the asnyc value with a `Promise`.
 
 e.g:
 

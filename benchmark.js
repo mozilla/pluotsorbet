@@ -23,18 +23,28 @@ var Benchmark = (function() {
   var NO_SECURITY = typeof netscape !== "undefined" && netscape.security.PrivilegeManager;
 
   function enableSuperPowers() {
-    // To enable chrome privileges use a separate profile and enable the pref:
+    // To enable chrome privileges use a separate profile and set the pref
     // security.turn_off_all_security_so_that_viruses_can_take_over_this_computer
+    // to boolean true.  To do this on a device, see:
+    // https://wiki.mozilla.org/B2G/QA/Tips_And_Tricks#For_changing_the_preference:
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   }
 
   function forceCollectors() {
-    enableSuperPowers();
-    console.log("Forcing CC/GC.");
-    for (var i = 0; i < 3; i++) {
-      Components.utils.forceCC();
-      Components.utils.forceGC();
+    if (!NO_SECURITY) {
+      return Promise.resolve();
     }
+    return new Promise(function(resolve, reject) {
+      enableSuperPowers();
+      console.log("Starting minimize memory.");
+      var gMgr = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
+      Components.utils.import("resource://gre/modules/Services.jsm");
+      Services.obs.notifyObservers(null, "child-mmu-request", null);
+      gMgr.minimizeMemoryUsage(function() {
+        console.log("Finished minimize memory.");
+        resolve();
+      });
+    });
   }
 
   var STORAGE_KEY = "benchmark";
@@ -130,8 +140,10 @@ var Benchmark = (function() {
   };
 
   function sampleMemory() {
-    if (NO_SECURITY) {
-      forceCollectors();
+    if (!NO_SECURITY) {
+      return Promise.resolve({});
+    }
+    return forceCollectors().then(function() {
       var memoryReporter = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
 
       var jsObjectsSize = {};
@@ -160,9 +172,7 @@ var Benchmark = (function() {
         jsOtherSize: jsOtherSize.value,
         otherSize: otherSize.value,
       };
-    }
-
-    return {};
+    });
   }
 
   var startup = {
@@ -216,29 +226,33 @@ var Benchmark = (function() {
       this.runNextRound();
     },
     sampleMemoryToStorage: function() {
-      var mem = sampleMemory();
-      for (var p in mem) {
-        storage.current[p].push(mem[p]);
-      }
-      saveStorage();
+      return sampleMemory().then(function(mem) {
+        for (var p in mem) {
+          storage.current[p].push(mem[p]);
+        }
+        saveStorage();
+      });
     },
     runNextRound: function() {
       var self = this;
       var done = storage.round >= storage.numRounds;
       function run() {
-        if (NO_SECURITY) {
-          forceCollectors();
+        var promise;
+        if (storage.round === 0) {
+          promise = Promise.resolve();
+        } else {
+          promise = self.sampleMemoryToStorage();
         }
-        if (storage.round !== 0) {
-          if (NO_SECURITY) {
-            self.sampleMemoryToStorage();
-          }
+
+        promise.then(function() {
           if (done) {
             self.finish();
             return;
           }
-        }
-        DumbPipe.close(DumbPipe.open("reload", {}));
+          DumbPipe.close(DumbPipe.open("gcReload", {}));
+        }).catch(function (e) {
+          console.error(e)
+        });
       }
       if (storage.deleteFs) {
         console.log("Deleting fs.");
@@ -353,6 +367,7 @@ var Benchmark = (function() {
     start: start,
     buildBaseline: buildBaseline,
     sampleMemory: sampleMemory,
+    forceCollectors: forceCollectors,
     prettyTable: prettyTable,
     LEFT: LEFT,
     CENTER: CENTER,

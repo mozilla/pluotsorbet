@@ -562,7 +562,7 @@ module J2ME {
         this.bodyEmitter.writeLn("var " + local.join(",") + ";");
       }
       if (!this.methodInfo.isStatic) {
-        this.bodyEmitter.writeLn(this.getLocal(0) + "=this;");
+        this.bodyEmitter.writeLn("var ins="+ this.getLocal(0) + "=this;");
       }
       var stack = this.stack;
       for (var i = 0; i < this.methodInfo.codeAttribute.max_stack; i++) {
@@ -581,7 +581,7 @@ module J2ME {
       }
 
       this.lockObject = this.methodInfo.isSynchronized ?
-        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : this.getLocal(0)
+        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "ins"
         : "null";
 
       this.emitEntryPoints();
@@ -616,6 +616,9 @@ module J2ME {
         }
         this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
         this.needsVariable("re");
+        if (!this.methodInfo.isStatic) {
+          this.bodyEmitter.writeLn("ins=O.lockObject;");
+        }
         this.bodyEmitter.writeLn("pc=O.pc;");
         this.bodyEmitter.writeLn("O=null;");
         if (this.methodInfo.isSynchronized) {
@@ -871,7 +874,7 @@ module J2ME {
           baselineCounter && baselineCounter.count(message);
         } else {
           baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("if ($.initialized[\"" + classInfo.getClassNameSlow() + "\"] === undefined) { " + this.runtimeClassObject(classInfo) + ".initialize(); }");
+          this.blockEmitter.writeLn("if($.initialized[\"" + classInfo.getClassNameSlow() + "\"]===undefined)" + this.runtimeClassObject(classInfo) + ".initialize();");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc), String(this.pc));
           } else {
@@ -934,7 +937,7 @@ module J2ME {
       if (this.isPrivileged) {
         return;
       }
-      this.blockEmitter.writeLn(length + " < 0 && TN();");
+      this.blockEmitter.writeLn(length + "<0&&TN();");
     }
 
     emitBoundsCheck(array: string, index: string) {
@@ -942,9 +945,9 @@ module J2ME {
         return;
       }
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("if ((" + index + " >>> 0) >= (" + array + ".length >>> 0)) TI(" + index + ");");
+        this.blockEmitter.writeLn("if((" + index + " >>> 0)>=(" + array + ".length >>> 0))TI(" + index + ");");
       } else {
-        this.blockEmitter.writeLn("CAB(" + array + ", " + index + ");");
+        this.blockEmitter.writeLn("CAB(" + array + "," + index + ");");
       }
     }
 
@@ -952,7 +955,7 @@ module J2ME {
       if (this.isPrivileged || !emitCheckArrayStore) {
         return;
       }
-      this.blockEmitter.writeLn("CAS(" + array + ", " + value + ");");
+      this.blockEmitter.writeLn("CAS(" + array + "," + value + ");");
     }
 
     emitStoreIndexed(kind: Kind) {
@@ -963,7 +966,7 @@ module J2ME {
       if (kind === Kind.Reference) {
         this.emitArrayStoreCheck(array, value);
       }
-      this.blockEmitter.writeLn(array + "[" + index + "] = " + value + ";");
+      this.blockEmitter.writeLn(array + "[" + index + "]=" + value + ";");
     }
 
     emitLoadIndexed(kind: Kind) {
@@ -1031,12 +1034,21 @@ module J2ME {
 
     emitCheckCast(cpi: number) {
       var object = this.peek(Kind.Reference);
+      if (this.isPrivileged) {
+        return;
+      }
       var classInfo = this.lookupClass(cpi);
       var call = "CCK";
       if (classInfo.isInterface) {
         call = "CCI";
       }
-      this.blockEmitter.writeLn(call + "(" + object + "," + this.localClassConstant(classInfo) + ");");
+      var classConstant = this.localClassConstant(classInfo);
+      call = call + "(" + object + "," + classConstant + ")"
+      if (inlineRuntimeCalls) {
+        this.blockEmitter.writeLn("(!" + object + ")||" + object + ".klass===" + classConstant + "||" + call + ";");
+      } else {
+        this.blockEmitter.writeLn(call + ";");
+      }
     }
 
     emitInstanceOf(cpi: number) {
@@ -1046,7 +1058,12 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "IOI";
       }
-      this.emitPush(Kind.Int, call + "(" + object + "," + this.localClassConstant(classInfo) + ")|0", Precedence.BitwiseOR);
+      var classConstant = this.localClassConstant(classInfo);
+      call = call + "(" + object + "," + classConstant + ")|0";
+      if (inlineRuntimeCalls) {
+        call = "((" + object + "&&" + object + ".klass===" + classConstant + ")||" + call + ")|0";
+      }
+      this.emitPush(Kind.Int, call, Precedence.BitwiseOR);
     }
 
     emitArrayLength() {
@@ -1118,7 +1135,8 @@ module J2ME {
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {
-      emitter.writeLn("if(" + object + "._lock.level===1&&" + object + "._lock.ready.length===0)" + object + "._lock.level=0;else MX(" + object + ");");
+      emitter.writeLn("lk=" + object + "._lock;");
+      emitter.writeLn("if(lk.level===1&&lk.ready.length===0)lk.level=0;else MX(" + object + ");");
     }
 
     emitStackOp(opcode: Bytecodes) {
@@ -1176,7 +1194,7 @@ module J2ME {
         return;
       }
       if (inlineRuntimeCalls && kind !== Kind.Long) {
-        this.blockEmitter.writeLn(value + " === 0 && TA();");
+        this.blockEmitter.writeLn(value + "===0&&TA();");
       } else {
         var checkName = kind === Kind.Long ? "CDZL" : "CDZ";
         this.blockEmitter.writeLn(checkName + "(" + value + ");");

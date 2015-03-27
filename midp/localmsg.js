@@ -620,8 +620,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
           throw new Error("Media type '" + mediaType + "' not supported");
       }
 
-      var promptTemplateNode = document.getElementById('nokia-fileui-prompt');
-      var el = promptTemplateNode.cloneNode(true);
+      var el = document.getElementById('nokia-fileui-prompt').cloneNode(true);
       el.style.display = 'block';
       el.classList.add('visible');
 
@@ -681,7 +680,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
         });
       }).bind(this));
 
-      promptTemplateNode.parentNode.appendChild(el);
+      document.body.appendChild(el);
     break;
 
     default:

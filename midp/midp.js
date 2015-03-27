@@ -14,13 +14,6 @@ var MIDP = (function() {
     updateCanvas();
   };
 
-  function updatePhysicalScreenSize() {
-    if (!config.autosize || /no|0/.test(config.autosize)) {
-      physicalScreenWidth = document.getElementById('display').clientWidth;
-      physicalScreenHeight = document.getElementById('display').clientHeight;
-    }
-  }
-
   function updateCanvas() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
@@ -76,31 +69,12 @@ var MIDP = (function() {
     console.info(J2ME.fromJavaString(message));
   };
 
-  Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function() {
-    return J2ME.newStringArray(0);
-  };
-
-  Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
-    return null;
-  };
-
-  Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(name) {
-    return J2ME.newStringArray(0);
-  };
-
-  Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function() {
-    return J2ME.newStringArray(0);
-  };
-
   Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
     return 1;
   };
 
   Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
     return 1;
-  };
-
-  Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function() {
   };
 
   Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
@@ -292,8 +266,8 @@ var MIDP = (function() {
     window.addEventListener("resize", onWindowResize);
   } else {
     document.documentElement.classList.add('debug-mode');
-    physicalScreenWidth = document.getElementById('display').clientWidth;
-    physicalScreenHeight = document.getElementById('display').clientHeight;
+    physicalScreenWidth = 240;
+    physicalScreenHeight = 320;
 
     updateCanvas();
     isVKVisible = function() {
@@ -669,11 +643,10 @@ var MIDP = (function() {
     }
 
     // Perform updating.
-    var dialogTemplateNode = document.getElementById('download-progress-dialog');
-    var dialog = dialogTemplateNode.cloneNode(true);
+    var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
     dialog.style.display = 'block';
     dialog.classList.add('visible');
-    dialogTemplateNode.parentNode.appendChild(dialog);
+    document.body.appendChild(dialog);
 
     performDownload(pendingMIDletUpdate, dialog, function(data) {
       dialog.parentElement.removeChild(dialog);
@@ -1250,8 +1223,6 @@ var MIDP = (function() {
     keyRelease: keyRelease,
     displayId: displayId,
     context2D: context2D,
-    updatePhysicalScreenSize: updatePhysicalScreenSize,
-    updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,
   };
 })();

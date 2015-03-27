@@ -34,7 +34,6 @@ java/io/DataOutputStream.write.(I)V
 javax/microedition/lcdui/Canvas.repaint.(IIII)V
 java/util/Vector.removeAllElements.()V
 com/sun/midp/events/EventQueue.post.(Lcom/sun/midp/events/Event;)V
-javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;
 javax/microedition/lcdui/DisplayableLFImpl.lIsShown.()Z
 javax/microedition/lcdui/DisplayableLFImpl.lRequestPaint.(IIIILjava/lang/Object;)V
 javax/microedition/lcdui/Display.isShown.(Ljavax/microedition/lcdui/DisplayableLF;)Z

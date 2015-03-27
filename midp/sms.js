@@ -40,8 +40,7 @@ function receiveSms(text, addr) {
  * the app.
  */
 function promptForMessageText() {
-    var smsTemplateNode = document.getElementById('sms-listener-prompt');
-    var el = smsTemplateNode.cloneNode(true);
+    var el = document.getElementById('sms-listener-prompt').cloneNode(true);
     el.style.display = 'block';
     el.classList.add('visible');
 
@@ -91,7 +90,7 @@ function promptForMessageText() {
     el.querySelector('p.timeLeft').textContent = toTimeText(MIDlet.SMSDialogTimeout) +
                                                  " " + MIDlet.SMSDialogTimeoutText;
 
-    smsTemplateNode.parentNode.appendChild(el);
+    document.body.appendChild(el);
     if (currentlyFocusedTextEditor) {
       currentlyFocusedTextEditor.blur();
       currentlyFocusedTextEditor = null;
