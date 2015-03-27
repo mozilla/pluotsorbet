@@ -13,11 +13,15 @@ mkdir $PACKAGE_DIR/libs
 mkdir $PACKAGE_DIR/polyfill
 
 # setup the root
+# TODO: Only copy benchmark.js/gc.html/gc.js if BENCHMARK=1.
 
 cp *.html *.webapp $PACKAGE_DIR/.
 
 # Copy over the individual JS files that are loaded by the app.
-# This list is the union of files loaded by index.html and main.html.
+# This list is the union of files loaded by gc.html, index.html, and main.html.
+
+cp benchmark.js $PACKAGE_DIR/.
+cp gc.js $PACKAGE_DIR/.
 cp index.js $PACKAGE_DIR/.
 cp timer.js $PACKAGE_DIR/.
 cp config/build.js $PACKAGE_DIR/config/.
