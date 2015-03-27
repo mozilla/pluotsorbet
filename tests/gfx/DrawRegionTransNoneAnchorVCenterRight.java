@@ -4,25 +4,28 @@ import javax.microedition.lcdui.*;
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.game.Sprite;
 
-public class DrawRegionTest extends MIDlet {
+public class DrawRegionTransNoneAnchorVCenterRight extends MIDlet {
     private Display display;
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics screenG) {
-            Image image = Image.createImage(70, 70);
-            Graphics g = image.getGraphics();
-            g.setColor(255, 0, 0);
-            g.fillRect(0, 0, 70, 70);
+            Image image;
+            try {
+              image = Image.createImage("/gfx/images/colorRects.png");
+            } catch (java.io.IOException e) {
+              System.out.println("FAIL - " + e);
+              return;
+            }
 
             screenG.setColor(255, 255, 255);
             screenG.fillRect(0, 0, getWidth(), getHeight());
 
-            screenG.drawRegion(image, 35, 35, 30, 30, Sprite.TRANS_NONE, 35, 35, Graphics.TOP | Graphics.LEFT);
+            screenG.drawRegion(image, 10, 15, 70, 95, Sprite.TRANS_NONE, getWidth() / 2, getHeight() / 2, Graphics.VCENTER | Graphics.RIGHT);
             System.out.println("PAINTED");
         }
     }
 
-    public DrawRegionTest() {
+    public DrawRegionTransNoneAnchorVCenterRight() {
         display = Display.getDisplay(this);
     }
 

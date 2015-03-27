@@ -245,22 +245,9 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
     function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
         var context = initImageData(dataDest, width, height);
-
-        if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
-            context.scale(-1, 1);
-        } else if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270) {
-            context.scale(1, -1);
-        } else if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90) {
-            context.rotate(Math.PI / 2);
-        } else if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180) {
-            context.rotate(Math.PI);
-        } else if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270) {
-            context.rotate(1.5 * Math.PI);
+        if (!renderRegion(context, dataSource.context.canvas, x, y, width, height, transform, 0, 0, TOP|LEFT)) {
+            throw $.newIllegalArgumentException();
         }
-
-        var imgdata = dataSource.context.getImageData(x, y, width, height);
-        context.putImageData(imgdata, 0, 0);
-
         dataDest.isMutable = isMutable;
     };
 
@@ -424,22 +411,6 @@ var currentlyFocusedTextEditor;
     var TOP = 16;
     var BOTTOM = 32;
     var BASELINE = 64;
-
-    function withAnchor(g, c, anchor, x, y, w, h) {
-        if (anchor & RIGHT) {
-            x -= w;
-        } else if (anchor & HCENTER) {
-            x -= (w >>> 1) | 0;
-        }
-
-        if (anchor & BOTTOM) {
-            y -= h;
-        } else if (anchor & VCENTER) {
-            y -= (h >>> 1) | 0;
-        }
-
-        return [x, y];
-    }
 
     function measureWidth(c, str) {
         return c.measureText(str).width | 0;
@@ -798,29 +769,15 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(image, x, y, anchor) {
-        return renderImage(this, image, x, y, anchor);
+        return renderRegion(this.context2D, image.imageData.context.canvas, 0, 0, image.width, image.height, TRANS_NONE, x, y, anchor);
     };
-
-    function renderImage(g, image, x, y, anchor) {
-        var texture = image.imageData.context.canvas;
-
-        var c = g.context2D;
-
-        var pair = withAnchor(g, c, anchor, x, y, texture.width, texture.height);
-        x = pair[0];
-        y = pair[1];
-
-        c.drawImage(texture, x, y);
-
-        return 1;
-    }
 
     Native["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] = function(src, x_src, y_src, width, height, transform, x_dest, y_dest, anchor) {
         if (!src) {
             throw $.newNullPointerException("src image is null");
         }
 
-        if (!renderRegion(this, src, x_src, y_src, width, height,
+        if (!renderRegion(this.context2D, src.imageData.context.canvas, x_src, y_src, width, height,
                           transform, x_dest, y_dest, anchor)) {
             throw $.newIllegalArgumentException();
         }
@@ -831,7 +788,7 @@ var currentlyFocusedTextEditor;
             throw $.newNullPointerException("image is null");
         }
 
-        if (!renderImage(this, image, x, y, anchor)) {
+        if (!renderRegion(this.context2D, image.imageData.context.canvas, 0, 0, image.imageData.width, image.imageData.height, TRANS_NONE, x, y, anchor)) {
             throw $.newIllegalArgumentException();
         }
     };
@@ -1178,38 +1135,114 @@ var currentlyFocusedTextEditor;
     var TRANS_ROT270 = 6;
     var TRANS_MIRROR_ROT90 = 7;
 
-    function renderRegion(g, image, sx, sy, sw, sh, transform, x, y, anchor) {
-        var imgData = image.imageData,
-            texture = imgData.context.canvas;
-
-        var c = g.context2D;
-        if (transform !== TRANS_NONE) {
-            c.save();
+    function renderRegion(dstContext, srcCanvas, sx, sy, sw, sh, transform, absX, absY, anchor) {
+        var w, h;
+        switch (transform) {
+            case TRANS_NONE:
+            case TRANS_ROT180:
+            case TRANS_MIRROR:
+            case TRANS_MIRROR_ROT180:
+                w = sw;
+                h = sh;
+                break;
+            case TRANS_ROT90:
+            case TRANS_ROT270:
+            case TRANS_MIRROR_ROT90:
+            case TRANS_MIRROR_ROT270:
+                w = sh;
+                h = sw;
+                break;
         }
 
-        var pair = withAnchor(g, c, anchor, x, y, sw, sh);
-        x = pair[0];
-        y = pair[1];
-
-        if (transform === TRANS_MIRROR || transform === TRANS_MIRROR_ROT180) {
-            c.scale(-1, 1);
-        } else if (transform === TRANS_MIRROR_ROT90 || transform === TRANS_MIRROR_ROT270) {
-            c.scale(1, -1);
-        } else if (transform === TRANS_ROT90 || transform === TRANS_MIRROR_ROT90) {
-            c.rotate(Math.PI / 2);
-        } else if (transform === TRANS_ROT180 || transform === TRANS_MIRROR_ROT180) {
-            c.rotate(Math.PI);
-        } else if (transform === TRANS_ROT270 || transform === TRANS_MIRROR_ROT270) {
-            c.rotate(1.5 * Math.PI);
+        // Make `absX` and `absY` the top-left coordinates where we will
+        // place the image in absolute coordinates
+        if (0 != (anchor & HCENTER)) {
+            absX -= ((w >>> 1) | 0);
+        } else if (0 != (anchor & RIGHT)) {
+            absX -= w;
+        }
+        if (0 != (anchor & VCENTER)) {
+            absY -= ((h >>> 1) | 0);
+        } else if (0 != (anchor & BOTTOM)) {
+            absY -= h;
         }
 
-        c.drawImage(texture, sx, sy, sw, sh, x, y, sw, sh);
-
-        if (transform !== TRANS_NONE) {
-            c.restore();
+        var x, y;
+        switch (transform) {
+            case TRANS_NONE:
+                x = absX;
+                y = absY;
+                break;
+            case TRANS_ROT90:
+                dstContext.rotate(Math.PI / 2);
+                x = absY;
+                y = -absX - w;
+                break;
+            case TRANS_ROT180:
+                dstContext.rotate(Math.PI);
+                x = -absX - w;
+                y = -absY - h;
+                break;
+            case TRANS_ROT270:
+                dstContext.rotate(Math.PI * 1.5);
+                x = -absY - h;
+                y = absX;
+                break;
+            case TRANS_MIRROR:
+                dstContext.scale(-1, 1);
+                x = -absX - w;
+                y = absY;
+                break;
+            case TRANS_MIRROR_ROT90:
+                dstContext.rotate(Math.PI / 2);
+                dstContext.scale(-1, 1);
+                x = -absY - h;
+                y = -absX - w;
+                break;
+            case TRANS_MIRROR_ROT180:
+                dstContext.scale(1, -1);
+                x = absX;
+                y = -absY - h;
+                break;
+            case TRANS_MIRROR_ROT270:
+                dstContext.rotate(Math.PI * 1.5);
+                dstContext.scale(-1, 1);
+                x = absY;
+                y = absX;
+                break;
         }
 
-        return true;
+        dstContext.drawImage(srcCanvas, sx, sy, sw, sh, x, y, sw, sh);
+
+        switch (transform) {
+            case TRANS_NONE:
+                break;
+            case TRANS_ROT90:
+                dstContext.rotate(Math.PI * 1.5);
+                break;
+            case TRANS_ROT180:
+                dstContext.rotate(Math.PI);
+                break;
+            case TRANS_ROT270:
+                dstContext.rotate(Math.PI / 2);
+                break;
+            case TRANS_MIRROR:
+                dstContext.scale(-1, 1);
+                break;
+            case TRANS_MIRROR_ROT90:
+                dstContext.scale(-1, 1);
+                dstContext.rotate(Math.PI * 1.5);
+                break;
+            case TRANS_MIRROR_ROT180:
+                dstContext.scale(1, -1);
+                break;
+            case TRANS_MIRROR_ROT270:
+                dstContext.scale(-1, 1);
+                dstContext.rotate(Math.PI / 2);
+                break;
+        }
+
+        return 1;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
