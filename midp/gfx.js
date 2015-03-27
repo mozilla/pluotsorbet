@@ -451,6 +451,10 @@ var currentlyFocusedTextEditor;
         }
     }
 
+    // withTextAnchor() can be hot. This variable lets it return two values
+    // without creating a new array every time.
+    var withTextAnchorRet = [0, 0];
+
     function withTextAnchor(g, c, anchor, x, y, str) {
         withFont(g.currentFont, c);
 
@@ -475,7 +479,8 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
         }
 
-        return [x, y];
+        withTextAnchorRet[0] = x;
+        withTextAnchorRet[1] = y;
     }
 
     function withPixel(g, c) {
@@ -845,22 +850,6 @@ var currentlyFocusedTextEditor;
         }
     };
 
-    function parseEmojiString(str) {
-        var parts = [];
-
-        var match;
-        var lastIndex = 0;
-        emoji.regEx.lastIndex = 0;
-        while (match = emoji.regEx.exec(str)) {
-            parts.push({ text: str.substring(lastIndex, match.index), emoji: match[0] });
-            lastIndex = match.index + match[0].length;
-        }
-
-        parts.push({ text: str.substring(lastIndex), emoji: null });
-
-        return parts;
-    }
-
     function setClip(g, x, y, width, height) {
         var newX1 = Math.max(0, x) & 0x7fff;
         var newX2 = Math.min(g.maxWidth, x + width) & 0x7fff;
@@ -1028,12 +1017,9 @@ var currentlyFocusedTextEditor;
         translate(this, systemX, systemY);
         this.aX = this.transX;
         this.aY = this.transY;
-};
-
+    };
 
     function drawString(g, str, x, y, anchor, isOpaque) {
-        var font = g.currentFont;
-
         var c = g.context2D;
 
         if (isOpaque) {
@@ -1042,27 +1028,46 @@ var currentlyFocusedTextEditor;
             withPixel(g, c);
         }
 
-        parseEmojiString(str).forEach(function(part) {
-            if (part.text) {
-                var pair = withTextAnchor(g, c, anchor, x, y, part.text);
-                var textX = pair[0];
-                var textY = pair[1];
+        var finalText;
+        if (!emoji.regEx.test(str)) {
+            // No emojis are present.
+            finalText = str;
+        } else {
+            // Emojis are present. Handle all the text up to the last emoji.
+            var font = g.currentFont;
+            var match;
+            var lastIndex = 0;
+            emoji.regEx.lastIndex = 0;
+            while (match = emoji.regEx.exec(str)) {
+                var text = str.substring(lastIndex, match.index);
+                var match0 = match[0];
+                lastIndex = match.index + match0.length;
 
-                c.fillText(part.text, textX, textY);
+                withTextAnchor(g, c, anchor, x, y, text);
+                var textX = withTextAnchorRet[0]
+                var textY = withTextAnchorRet[1];
 
-                // If there are emojis in the string that we need to draw,
-                // we need to calculate the string width
-                if (part.emoji) {
-                    x += measureWidth(c, part.text);
-                }
-            }
+                c.fillText(text, textX, textY);
 
-            if (part.emoji) {
-                var emojiData = emoji.getData(part.emoji, font.size);
+                // Calculate the string width.
+                x += measureWidth(c, text);
+
+                var emojiData = emoji.getData(match0, font.size);
                 c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, font.size, font.size);
                 x += font.size;
             }
-        });
+            finalText = str.substring(lastIndex);
+        }
+
+        // Now handle all the text after the final emoji. If there were no
+        // emojis present, this is the entire string.
+        if (finalText) {
+            withTextAnchor(g, c, anchor, x, y, finalText);
+            var textX = withTextAnchorRet[0];
+            var textY = withTextAnchorRet[1];
+
+            c.fillText(finalText, textX, textY);
+        }
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
@@ -1083,9 +1088,9 @@ var currentlyFocusedTextEditor;
 
         var c = this.context2D;
 
-        var pair = withTextAnchor(this, c, anchor, x, y, chr);
-        x = pair[0];
-        y = pair[1];
+        withTextAnchor(this, c, anchor, x, y, chr);
+        x = withTextAnchorRet[0];
+        y = withTextAnchorRet[1];
 
         withPixel(this, c);
 
