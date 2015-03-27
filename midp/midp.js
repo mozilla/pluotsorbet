@@ -14,13 +14,6 @@ var MIDP = (function() {
     updateCanvas();
   };
 
-  function updatePhysicalScreenSize() {
-    if (!config.autosize || /no|0/.test(config.autosize)) {
-      physicalScreenWidth = document.getElementById('display').clientWidth;
-      physicalScreenHeight = document.getElementById('display').clientHeight;
-    }
-  }
-
   function updateCanvas() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
@@ -273,8 +266,8 @@ var MIDP = (function() {
     window.addEventListener("resize", onWindowResize);
   } else {
     document.documentElement.classList.add('debug-mode');
-    physicalScreenWidth = document.getElementById('display').clientWidth;
-    physicalScreenHeight = document.getElementById('display').clientHeight;
+    physicalScreenWidth = 240;
+    physicalScreenHeight = 320;
 
     updateCanvas();
     isVKVisible = function() {
@@ -650,11 +643,10 @@ var MIDP = (function() {
     }
 
     // Perform updating.
-    var dialogTemplateNode = document.getElementById('download-progress-dialog');
-    var dialog = dialogTemplateNode.cloneNode(true);
+    var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
     dialog.style.display = 'block';
     dialog.classList.add('visible');
-    dialogTemplateNode.parentNode.appendChild(dialog);
+    document.body.appendChild(dialog);
 
     performDownload(pendingMIDletUpdate, dialog, function(data) {
       dialog.parentElement.removeChild(dialog);
@@ -1231,8 +1223,6 @@ var MIDP = (function() {
     keyRelease: keyRelease,
     displayId: displayId,
     context2D: context2D,
-    updatePhysicalScreenSize: updatePhysicalScreenSize,
-    updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,
   };
 })();

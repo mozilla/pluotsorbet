@@ -111,173 +111,165 @@
   <!-- The raw console is used for unit tests, so it's not visible by default: -->
   <pre id="raw-console" style="display: none"></pre>
 
-  <div id="display-container">
-    <div id="display">
-      <section id="sidebar" data-type="sidebar" style="display:none">
-        <header>
-          <h1>Menu</h1>
-        </header>
-        <nav>
-          <ul>
-          </ul>
-        </nav>
-      </section>
-      <section id="drawer" role="region">
-        <header style="display:none">
-          <a href="#"><span class="icon icon-menu">hide sidebar</span></a>
-          <a id="header-drawer-button" href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
-          <menu id="header-ok-button" type="toolbar" style="display:none"><button>√</button></menu>
-          <h1 id="display_title"></h1>
-        </header>
-        <div id="main" role="main">
-          <canvas id="canvas"></canvas>
-          <input id="password-editor" class="text-editor" type="password">
-          <input id="tel-editor" class="text-editor" type="tel">
-          <input id="number-editor" class="text-editor" type="number">
-          <input id="email-editor" class="text-editor" type="email">
-          <input id="url-editor" class="text-editor" type="url">
-          <div id="textarea-editor" class="text-editor" contenteditable="true"></div>
-          <!-- The hidden textarea editor is used to measure the content height -->
-          <div id="hidden-textarea-editor" class="text-editor"></div>
-          <button id="back-button">Back</button>
-        </div>
-      </section>
-      <div id="gamepad">
-        <button id="up">up</button>
-        <button id="down">down</button>
-        <button id="left">left</button>
-        <button id="right">right</button>
-        <button id="fire">fire</button>
+  <div id="settings">
+    <section>
+      <div>BytecodeCount: <span id="bytecodeCount"></span></div>
+      <div>InterpreterCount: <span id="interpreterCount"></span></div>
+      <div>CompiledCount: <span id="compiledCount"></span></div>
+      <div>OnStackReplacementCount: <span id="onStackReplacementCount"></span></div>
+      <div>UnwindCount: <span id="unwindCount"></span></div>
+      <div>PreemptionCount: <span id="preemptionCount"></span></div>
+    </section>
+    <section>
+      <select id="loglevel">
+        <option value="0">Log Level: Trace
+        <option value="1">Log Level: Log
+        <option value="2">Log Level: Info
+        <option value="3">Log Level: Warn
+        <option value="4">Log Level: Error
+        <option value="5">Log Level: Silent
+      </select>
+      <input id="console-filter-input" type="text" placeholder="Filter Console Output" value="">
+      <button id="console-clear">Clear console</button>
+      <button id="console-save">Save console</button>
+      <label><input type="checkbox" id="perfWriter">Perf</label>
+    </section>
+    <section>
+      <button id="deleteDatabase">Delete Database</button>
+      <button id="exportstorage">Export storage</button>
+      <div>Import storage:</div>
+      <input type="file" id="importstoragefile">
+      <input type="text" id="importstorageurl" placeholder="URL to FS backup">
+      <button id="importstorage">Import</button>
+      <button id="clearCompiledMethodCache">Clear Compiled Method Cache</button>
+      <button id="printAllExceptions">Print all exceptions: OFF</button>
+      <button id="clearCounters">Clear Counters</button>
+      <button id="dumpCounters">Dump Counters</button>
+      <button id="sampleCounters1">One sample for 1s</button>
+      <button id="sampleCounters2">One sample for 100ms (2s)</button>
+      <button id="start">Start</button>
+
+    </section>
+    <!-- #if BENCHMARK == "true" -->
+    <section id="benchmark">
+      <button id="benchmark-startup-run">Run Startup Benchmark</button>
+      <button id="benchmark-startup-baseline">Build Benchmark Baseline</button>
+      <label><input type="number" min="1" max="100" id="benchmark-num-rounds"> Rounds</label>
+      <label><input type="number" id="benchmark-round-delay" min="0" max="20000"> Round Delay(ms)</label>
+      <label><input type="checkbox" id="benchmark-delete-fs">Delete FS before round</label>
+      <label><input type="checkbox" id="benchmark-delete-jit-cache">Delete JIT cache before round</label>
+    </section>
+    <!-- #endif -->
+  </div>
+  <div id="display">
+    <section id="sidebar" data-type="sidebar" style="display:none">
+      <header>
+        <h1>Menu</h1>
+      </header>
+      <nav>
+        <ul>
+        </ul>
+      </nav>
+    </section>
+    <section id="drawer" role="region">
+      <header style="display:none">
+        <a href="#"><span class="icon icon-menu">hide sidebar</span></a>
+        <a id="header-drawer-button" href="#drawer"><span class="icon icon-menu">show sidebar</span></a>
+        <menu id="header-ok-button" type="toolbar" style="display:none"><button>√</button></menu>
+        <h1 id="display_title"></h1>
+      </header>
+      <div id="main" role="main">
+        <canvas id="canvas"></canvas>
+        <input id="password-editor" class="text-editor" type="password">
+        <input id="tel-editor" class="text-editor" type="tel">
+        <input id="number-editor" class="text-editor" type="number">
+        <input id="email-editor" class="text-editor" type="email">
+        <input id="url-editor" class="text-editor" type="url">
+        <div id="textarea-editor" class="text-editor" contenteditable="true"></div>
+        <!-- The hidden textarea editor is used to measure the content height -->
+        <div id="hidden-textarea-editor" class="text-editor"></div>
+        <button id="back-button">Back</button>
       </div>
+    </section>
+  </div>
+  <div id="gamepad">
+    <button id="up">up</button>
+    <button id="down">down</button>
+    <button id="left">left</button>
+    <button id="right">right</button>
+    <button id="fire">fire</button>
+  </div>
 
-      <div class="splash-screen" id="splash-screen">
-        <h1 class="title">Loading</h1>
-        <div class="splash-progress-container">
-          <progress></progress>
-        </div>
-      </div>
-
-      <div class="splash-screen" id="exit-screen">
-        <div class="splash-progress-container">
-          <progress></progress>
-        </div>
-      </div>
-
-      <div id="background-screen">
-      </div>
-
-      <form role="dialog" data-type="confirm"
-            class="lcdui-alert"
-            id="lcdui-alert" style="display: none">
-        <section>
-          <h1 class="title"></h1>
-          <p class="text"></p>
-          <p style="border-top: 0"><progress style="display: none"></progress></p>
-        </section>
-        <menu>
-          <button class="button0" style="display: none"></button>
-          <button class="button1" style="display: none"></button>
-        </menu>
-      </form>
-
-      <form role="dialog" data-type="confirm"
-            class="sms-listener-prompt"
-            id="sms-listener-prompt" style="display: none">
-        <section>
-          <h1>SMS Verification</h1>
-          <p class="verificationText"></p>
-            <input type="text" placeholder="Type SMS Here">
-            <p class="timeLeft"></p>
-            <progress class="timeLeftBar" value="0" max="100"></progress>
-        </section>
-        <menu>
-          <button class="cancel">Cancel</button>
-          <button class="recommend">Done</button>
-        </menu>
-      </form>
-
-      <form role="dialog" data-type="confirm"
-            class="nokia-fileui-prompt"
-            id="nokia-fileui-prompt" style="display: none">
-        <section>
-          <h1>Select a file</h1>
-          <p><input type="file" name="nokia-fileui-file">
-        </section>
-        <menu>
-          <button class="cancel">Cancel</button>
-          <button class="recommend">Done</button>
-        </menu>
-      </form>
-
-      <form role="dialog" data-type="confirm"
-            class="download-progress-dialog"
-            id="download-progress-dialog" style="display: none">
-        <section>
-          <h1 class="download-dialog-text"></h1>
-          <progress class="pack-activity" value="0" max="100"></progress>
-        </section>
-        <menu>
-          <button class="recommend" style="display: none">Retry</button>
-        </menu>
-      </form>
+  <div class="splash-screen" id="splash-screen">
+    <h1 class="title">Loading</h1>
+    <div class="splash-progress-container">
+      <progress></progress>
     </div>
-    <div id="settings">
-      <section>
-        <div>BytecodeCount: <span id="bytecodeCount"></span></div>
-        <div>InterpreterCount: <span id="interpreterCount"></span></div>
-        <div>CompiledCount: <span id="compiledCount"></span></div>
-        <div>OnStackReplacementCount: <span id="onStackReplacementCount"></span></div>
-        <div>UnwindCount: <span id="unwindCount"></span></div>
-        <div>PreemptionCount: <span id="preemptionCount"></span></div>
-      </section>
-      <section>
-        <select id="loglevel">
-          <option value="0">Log Level: Trace
-          <option value="1">Log Level: Log
-          <option value="2">Log Level: Info
-          <option value="3">Log Level: Warn
-          <option value="4">Log Level: Error
-          <option value="5">Log Level: Silent
-        </select>
-        <input id="console-filter-input" type="text" placeholder="Filter Console Output" value="">
-        <button id="console-clear">Clear console</button>
-        <button id="console-save">Save console</button>
-        <label><input type="checkbox" id="perfWriter">Perf</label>
-      </section>
-      <section>
-        <button id="deleteDatabase">Delete Database</button>
-        <button id="exportstorage">Export storage</button>
-        <div>Import storage:</div>
-        <input type="file" id="importstoragefile">
-        <input type="text" id="importstorageurl" placeholder="URL to FS backup">
-        <button id="importstorage">Import</button>
-        <button id="clearCompiledMethodCache">Clear Compiled Method Cache</button>
-        <button id="printAllExceptions">Print all exceptions: OFF</button>
-        <button id="clearCounters">Clear Counters</button>
-        <button id="dumpCounters">Dump Counters</button>
-        <button id="sampleCounters1">One sample for 1s</button>
-        <button id="sampleCounters2">One sample for 100ms (2s)</button>
-        <select id="canvasSize">
-          <option value="" selected>Display size: 240x320</option>
-          <option value="size-320x240">Display size: 320x240</option>
-          <option value="size-320x480">Display size: 320x480</option>
-          <option value="size-480x320">Display size: 480x320</option>
-        </select>
-        <button id="start">Start</button>
+  </div>
 
-      </section>
-      <!-- #if BENCHMARK == "true" -->
-      <section id="benchmark">
-        <button id="benchmark-startup-run">Run Startup Benchmark</button>
-        <button id="benchmark-startup-baseline">Build Benchmark Baseline</button>
-        <label><input type="number" min="1" max="100" id="benchmark-num-rounds"> Rounds</label>
-        <label><input type="number" id="benchmark-round-delay" min="0" max="20000"> Round Delay(ms)</label>
-        <label><input type="checkbox" id="benchmark-delete-fs">Delete FS before round</label>
-        <label><input type="checkbox" id="benchmark-delete-jit-cache">Delete JIT cache before round</label>
-      </section>
-      <!-- #endif -->
+  <div class="splash-screen" id="exit-screen">
+    <div class="splash-progress-container">
+      <progress></progress>
     </div>
- </div>
+  </div>
+
+  <div id="background-screen">
+  </div>
+
+  <form role="dialog" data-type="confirm"
+        class="lcdui-alert"
+        id="lcdui-alert" style="display: none">
+    <section>
+      <h1 class="title"></h1>
+      <p class="text"></p>
+      <p style="border-top: 0"><progress style="display: none"></progress></p>
+    </section>
+    <menu>
+      <button class="button0" style="display: none"></button>
+      <button class="button1" style="display: none"></button>
+    </menu>
+  </form>
+
+  <form role="dialog" data-type="confirm"
+        class="sms-listener-prompt"
+        id="sms-listener-prompt" style="display: none">
+    <section>
+      <h1>SMS Verification</h1>
+      <p class="verificationText"></p>
+        <input type="text" placeholder="Type SMS Here">
+        <p class="timeLeft"></p>
+        <progress class="timeLeftBar" value="0" max="100"></progress>
+    </section>
+    <menu>
+      <button class="cancel">Cancel</button>
+      <button class="recommend">Done</button>
+    </menu>
+  </form>
+
+  <form role="dialog" data-type="confirm"
+        class="nokia-fileui-prompt"
+        id="nokia-fileui-prompt" style="display: none">
+    <section>
+      <h1>Select a file</h1>
+      <p><input type="file" name="nokia-fileui-file">
+    </section>
+    <menu>
+      <button class="cancel">Cancel</button>
+      <button class="recommend">Done</button>
+    </menu>
+  </form>
+
+  <form role="dialog" data-type="confirm"
+        class="download-progress-dialog"
+        id="download-progress-dialog" style="display: none">
+    <section>
+      <h1 class="download-dialog-text"></h1>
+      <progress class="pack-activity" value="0" max="100"></progress>
+    </section>
+    <menu>
+      <button class="recommend" style="display: none">Retry</button>
+    </menu>
+  </form>
 
 </body>
 
