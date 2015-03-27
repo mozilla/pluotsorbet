@@ -161,6 +161,8 @@ relooper:
 bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
 	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out bld/j2me.js
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
+		&& mv bld/j2me.cc.js bld/j2me.js
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME AOT Compiler"
@@ -184,6 +186,8 @@ aot: bld/classes.jar.js
 bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_AOT_OPTIMIZATIONS bld/classes.jar.js > bld/classes.jar.cc.js \
+		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
 bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
@@ -193,12 +197,6 @@ bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
 
 tools/closure.jar:
 	wget -O $@ https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar
-
-closure: bld/classes.jar.js bld/j2me.js tools/closure.jar
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
-		&& mv bld/j2me.cc.js bld/j2me.js
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
-		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
 shumway: bld/shumway.js
 bld/shumway.js: $(SHUMWAY_SRCS)
