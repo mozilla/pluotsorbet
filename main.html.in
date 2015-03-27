@@ -25,8 +25,9 @@
 
   <!--<script type="text/javascript" src="libs/terminal.js" defer></script>-->
 
-  <!-- Load IndexedDB-getAll-shim.js separately because compiled-method-cache.js
-     - depends on it. -->
+  <!-- Load promise-6.0.0.js and IndexedDB-getAll-shim.js separately
+     - because compiled-method-cache.js depends on them. -->
+  <script type="text/javascript" src="libs/promise-6.0.0.js" defer></script>
   <script type="text/javascript" src="polyfill/IndexedDB-getAll-shim.js" defer></script>
 
   <!-- Load compiled-method-cache.js separately because j2me.js depends on it. -->

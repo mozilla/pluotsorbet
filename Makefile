@@ -21,7 +21,6 @@ export JSR_179
 
 MAIN_JS_SRCS = \
   libs/console.js \
-  libs/promise-6.0.0.js \
   polyfill/canvas-toblob.js \
   polyfill/fromcodepoint.js \
   polyfill/codepointat.js \
