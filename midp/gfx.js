@@ -558,12 +558,6 @@ var currentlyFocusedTextEditor;
         return swapRB(rgb) | 0xff000000;
     }
 
-
-    Native["javax/microedition/lcdui/Graphics.restoreMIDPRuntimeGC.()V"] = function() {
-        this.runtimeClipEnforce = false;
-        translate(this, this.aX-this.transX, this.aY-this.transY);
-    };
-
     Native["javax/microedition/lcdui/Graphics.resetGC.()V"] = function() {
         resetGC(this);
     };
@@ -856,13 +850,6 @@ var currentlyFocusedTextEditor;
         var newY1 = Math.max(0, y) & 0x7fff;
         var newY2 = Math.min(g.maxHeight, y + height) & 0x7fff;
 
-        if (g.runtimeClipEnforce) {
-            newX1 = Math.max(newX1, g.systemClipX1);
-            newY1 = Math.max(newY1, g.systemClipY1);
-            newX2 = Math.min(newX2, g.systemClipX2);
-            newY2 = Math.min(newY2, g.systemClipY2);
-        }
-
         if (width <= 0 || height <= 0 || newX2 <= newX1 || newY2 <= newY1) {
             newX1 = newY1 = newX2 = newY2 = 0;
         }
@@ -909,12 +896,6 @@ var currentlyFocusedTextEditor;
         this.rgbColor = 0;
         this.gray = 0;
         this.pixel = 0;
-        this.aX = 0;
-        this.aY = 0;
-        this.systemClipX1 = 0;
-        this.systemClipX2 = 0;
-        this.systemClipY1 = 0;
-        this.systemClipY2 = 0;
         this.clipX1 = 0;
         this.clipX2 = 0;
         this.clipY1 = 0;
@@ -1000,23 +981,6 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
         setClip(this, x, y, w, h);
-    };
-
-    Native["javax/microedition/lcdui/Graphics.preserveMIDPRuntimeGC.(IIII)V"] = function(systemX, systemY, systemW, systemH) {
-        this.runtimeClipEnforce = true;
-        clipRect(this, systemX, systemY, systemW, systemH);
-
-        // this is the first time, we setup
-        // the systemClip values.
-        this.systemClipX1 = this.clipX1;
-        this.systemClipY1 = this.clipY1;
-        this.systemClipX2 = this.clipX2;
-        this.systemClipY2 = this.clipY2;
-
-        // Preserve the translation system
-        translate(this, systemX, systemY);
-        this.aX = this.transX;
-        this.aY = this.transY;
     };
 
     function drawString(g, str, x, y, anchor, isOpaque) {

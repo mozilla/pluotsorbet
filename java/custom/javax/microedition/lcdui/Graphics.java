@@ -1469,27 +1469,6 @@ public class Graphics {
     native void resetGC();
 
     /**
-     * Preserve MIDP runtime GC.
-     * - Our internal MIDP clip to protect 
-     * it from MIDlet drawing on top of our widget.
-     * - Translation
-     *
-     * @param systemX The system upper left x coordinate
-     * @param systemY The system upper left y coordinate
-     * @param systemW The system width of the rectangle
-     * @param systemH The system height of the rectangle
-     */
-    native void preserveMIDPRuntimeGC(int systemX, int systemY, int systemW, int systemH);
-
-    /**
-     * Restore the runtime GC.
-     * - Release the internal runtime clip values by
-     * unsetting the variable.
-     * - Restore the original translation
-     */
-    native void restoreMIDPRuntimeGC();
-
-    /**
      * Renders provided Image onto this Graphics object.
      *
      * @param img the Image to be rendered
