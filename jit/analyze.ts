@@ -76,6 +76,7 @@ module J2ME {
     "gnu/testlet/vm/NativeTest.dumbPipe.()Z": YieldReason.Root,
     "gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I": YieldReason.Root,
     "org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V": YieldReason.Root,
+    "org/mozilla/Test.callAsyncNative.()V": YieldReason.Root,
   };
 
   export var yieldVirtualMap = {
