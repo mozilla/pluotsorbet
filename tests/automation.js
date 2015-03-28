@@ -31,7 +31,7 @@ casper.options.onWaitTimeout = function() {
 
 var gfxTests = [
   { name: "gfx/AlertTest", maxDifferent: 1942 },
-  { name: "gfx/AlertTwoCommandsTest", maxDifferent: 1403 },
+  { name: "gfx/AlertTwoCommandsTest", maxDifferent: 2186 },
   { name: "gfx/CanvasTest", maxDifferent: 0 },
   { name: "gfx/CanvasWithHeaderTest", maxDifferent: 1400 },
   { name: "gfx/DrawRegionTest", maxDifferent: 0 },
