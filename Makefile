@@ -154,7 +154,7 @@ build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2 -m
 
 build_tools/closure.jar: build_tools/.closure_compiler_version
-	wget -P build_tools -N https://github.com/mykmelez/closure-compiler/releases/download/j2me.js-v20150327/closure.jar
+	wget -P build_tools -N https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
