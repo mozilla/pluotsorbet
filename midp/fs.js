@@ -598,17 +598,23 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {
     var pathname = J2ME.fromJavaString(this.nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.write: " + pathname);
+    DEBUG_FS && console.log("DefaultFileHandler.write: " + pathname + " " + off + "+" + len);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.write: ignored file");
-        return len;
+        asyncImpl("I", Promise.resolve(len));
+        return;
     }
 
     var fd = this.nativeDescriptor;
     fs.write(fd, b.subarray(off, off + len));
-    // The "length of data really written," which is always the length requested
-    // in our implementation.
-    return len;
+
+    // The return value is the "length of data really written," which is
+    // always the same as the length requested in our implementation.
+    //
+    // We always write asynchronously to ensure that a thread that writes
+    // a bunch of data doesn't starve a UI thread and reduce responsiveness.
+    //
+    asyncImpl("I", Promise.resolve(len));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
