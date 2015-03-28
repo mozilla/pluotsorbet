@@ -177,3 +177,11 @@ Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = functio
     }));
   }
 };
+
+Native["org/mozilla/Test.callSyncNative.()V"] = function() {};
+
+Native["org/mozilla/Test.callAsyncNative.()V"] = function() {
+  asyncImpl("V", new Promise(function (resolve, reject) {
+    resolve();
+  }));
+};
