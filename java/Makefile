@@ -28,10 +28,8 @@ classes.jar: $(SRCS) $(JPP_DESTS) $(EXTRA)
 	javac -cp build-src -g:none -source 1.3 -target 1.3 -bootclasspath "" -extdirs "" -d ./build @build-srcs.txt > /dev/null
 	java -jar ../build_tools/soot-trunk.jar -j2me -process-dir build -no-output-source-file-attribute -no-output-inner-classes-attribute -force-overwrite -include-all 2>&1 > /dev/null
 	cp -a sootOutput/. build/
-	rm -rf sootOutput
 	cd build && jar cf0 ../classes.jar *
 	jar uf0 classes.jar $(EXTRA)
-	rm -rf build build-src
 
 tools/Jpp.class: tools/Jpp.java
 	javac $^
@@ -43,3 +41,4 @@ $(JPP_DESTS): tools/Jpp.class $(JPP_SRCS)
 clean:
 	rm -f `find . -name "*.jar" -or -name "*~"` $(JPP_DESTS)
 	rm -f build-srcs.txt
+	rm -rf sootOutput build build-src
