@@ -522,9 +522,8 @@ MIDP.openFileHandler = function(fileHandler, mode) {
 };
 
 MIDP.closeFileHandler = function(fileHandler, mode) {
-    var pathname = J2ME.fromJavaString(fileHandler.nativePath);
-    DEBUG_FS && console.log("MIDP.closeFileHandler: " + pathname + " for " + mode);
-    if (config.ignoredFiles.has(pathname)) {
+    DEBUG_FS && console.log("MIDP.closeFileHandler: " + J2ME.fromJavaString(fileHandler.nativePath) + " for " + mode);
+    if (fileHandler.nativeDescriptor === -1) {
         DEBUG_FS && console.log("MIDP.closeFileHandler: ignored file");
         return;
     }
