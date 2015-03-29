@@ -38,9 +38,6 @@ Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"]
   });
 };
 
-var localmsgServerCreated = false;
-var localmsgServerWait = null;
-
 Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
   asyncImpl("V", new Promise(function(resolve, reject) {
     // If the page is visible, just start the FG MIDlet
@@ -56,16 +53,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
         resolve();
       }
     }, false);
-  })/*.then(function() {
-    return new Promise(function(resolve, reject) {
-      if (localmsgServerCreated) {
-        resolve();
-        return;
-      }
-
-      localmsgServerWait = resolve;
-    });
-  })*/.then(function() {
+  }).then(function() {
     document.getElementById("splash-screen").style.display = "block";
     document.getElementById("background-screen").style.display = "none";
   }));
