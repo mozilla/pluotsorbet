@@ -572,9 +572,8 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = fu
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
-    var pathname = J2ME.fromJavaString(this.nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.read: " + pathname);
-    if (config.ignoredFiles.has(pathname)) {
+    DEBUG_FS && console.log("DefaultFileHandler.read: " + J2ME.fromJavaString(this.nativePath));
+    if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.read: ignored file");
         return -1;
     }
@@ -597,9 +596,8 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {
-    var pathname = J2ME.fromJavaString(this.nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.write: " + pathname + " " + off + "+" + len);
-    if (config.ignoredFiles.has(pathname)) {
+    DEBUG_FS && console.log("DefaultFileHandler.write: " + J2ME.fromJavaString(this.nativePath) + " " + off + "+" + len);
+    if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.write: ignored file");
         asyncImpl("I", Promise.resolve(len));
         return;
@@ -618,9 +616,8 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
-    var pathname = J2ME.fromJavaString(this.nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + pathname);
-    if (config.ignoredFiles.has(pathname)) {
+    DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + J2ME.fromJavaString(this.nativePath));
+    if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: ignored file");
         return;
     }
@@ -630,9 +627,8 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = fu
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
-    var pathname = J2ME.fromJavaString(this.nativePath);
-    DEBUG_FS && console.log("DefaultFileHandler.flush: " + pathname);
-    if (config.ignoredFiles.has(pathname)) {
+    DEBUG_FS && console.log("DefaultFileHandler.flush: " + J2ME.fromJavaString(this.nativePath));
+    if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.flush: ignored file");
         return;
     }
