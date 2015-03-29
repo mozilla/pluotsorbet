@@ -27,7 +27,7 @@ public class BGUtils {
       new WaitUserInteractionThread().start();
     }
 
-    public static void startMIDlet() {
+    static void startMIDlet() {
       if (BGUtils.launchMIDletCalled) {
         return;
       }
