@@ -18,7 +18,7 @@ public class BGUtils {
         BGUtils.startMIDlet();
     }
 
-    public static void startMIDlet() {
+    static void startMIDlet() {
       if (BGUtils.launchMIDletCalled) {
         return;
       }
