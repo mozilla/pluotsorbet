@@ -56,8 +56,9 @@
 
 <body>
   <div id="pageContainer">
-    <pre id="consoleContainer">
-    </pre>
+    <!-- #if CONSOLE == "true" -->
+      <pre id="consoleContainer"></pre>
+    <!-- #endif -->
     <div id="profilerContainer">
       <div id="profilerToolbar">
         <div class="toolbarLabel">Profiler <span id="profilerMessage" class="toolbarMessage">6 Seconds</span></div>
@@ -74,8 +75,10 @@
     </div>
   </div>
 
-  <!-- The raw console is used for unit tests, so it's not visible by default: -->
-  <pre id="raw-console" style="display: none"></pre>
+  <!-- #if CONSOLE == "true" -->
+    <!-- The raw console is used for unit tests, so it's not visible by default: -->
+    <pre id="raw-console" style="display: none"></pre>
+  <!-- #endif -->
 
   <div id="settings">
     <section>
