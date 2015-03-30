@@ -357,11 +357,7 @@ ImagePlayer.prototype.realize = function() {
         };
 
         if (this.url.startsWith("file")) {
-            fs.open(this.url.substring(7), (function(fd) {
-                var imgData = fs.read(fd);
-                fs.close(fd);
-                this.image.src = URL.createObjectURL(new Blob([ imgData ]));
-            }).bind(this));
+            this.image.src = URL.createObjectURL(fs.getBlob(this.url.substring(7)));
         } else {
             this.image.src = this.url;
         }
