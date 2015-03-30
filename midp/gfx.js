@@ -1641,6 +1641,7 @@ var currentlyFocusedTextEditor;
     var BACK = 2;
     var CANCEL = 3;
     var OK = 4;
+    var STOP = 6;
 
     Native["javax/microedition/lcdui/NativeMenu.updateCommands.([Ljavax/microedition/lcdui/Command;I[Ljavax/microedition/lcdui/Command;I)V"] =
     function(itemCommands, numItemCommands, commands, numCommands) {
@@ -1681,8 +1682,10 @@ var currentlyFocusedTextEditor;
                 var commandType = command.commandType;
                 if (numCommands == 1 || commandType == OK) {
                     button.classList.add('recommend');
-                } else if (commandType == CANCEL || commandType == BACK) {
+                    button.classList.remove('cancel');
+                } else if (commandType == CANCEL || commandType == BACK || commandType == STOP) {
                     button.classList.add('cancel');
+                    button.classList.remove('recommend');
                 }
 
                 button.onclick = function(e) {
