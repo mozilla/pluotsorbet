@@ -53,8 +53,9 @@ cp -R certs $PACKAGE_DIR/.
 # Merge app.js into a config file that gets loaded.
 cat config/app.js >> $PACKAGE_DIR/config/midlet.js
 
-# copy entire contents of style dir
+# copy entire contents of style dir, except *.in preprocessor source files
 cp -R style $PACKAGE_DIR/.
+rm -r $PACKAGE_DIR/style/*.in
 
 # setup tests dir, for now just the jar and js files
 # TODO: only copy these files if we're building for testing.
