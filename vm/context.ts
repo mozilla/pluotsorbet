@@ -34,7 +34,7 @@ module J2ME {
   /**
    * Toggle VM tracing here.
    */
-  export var writers = WriterFlags.Link;
+  export var writers = WriterFlags.None;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
