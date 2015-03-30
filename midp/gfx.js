@@ -1531,10 +1531,12 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(title, ticker, type) {
         var nativeId = nextMidpDisplayableId++;
-        var el = document.getElementById("lcdui-alert").cloneNode(true);
+        var alertTemplateNode = document.getElementById("lcdui-alert");
+        var el = alertTemplateNode.cloneNode(true);
         el.id = "displayable-" + nativeId;
         el.querySelector('h1.title').textContent = J2ME.fromJavaString(title);
-        document.body.appendChild(el);
+        alertTemplateNode.parentNode.appendChild(el);
+
         return nativeId;
     };
 
