@@ -118,6 +118,10 @@ SOOT_VERSION=25Mar2015
 OLD_SOOT_VERSION := $(shell [ -f build_tools/.soot_version ] && cat build_tools/.soot_version)
 $(shell [ "$(SOOT_VERSION)" != "$(OLD_SOOT_VERSION)" ] && echo $(SOOT_VERSION) > build_tools/.soot_version)
 
+CLOSURE_COMPILER_VERSION=j2me.js-v20150327
+OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
+$(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
+
 PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
@@ -158,6 +162,10 @@ build_tools/soot-trunk.jar: build_tools/.soot_version
 	wget -P build_tools -N https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
 	touch build_tools/soot-trunk.jar
 
+build_tools/closure.jar: build_tools/.closure_compiler_version
+	wget -P build_tools -N https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
+	touch build_tools/closure.jar
+
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
 
@@ -167,9 +175,11 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
+bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar
 	@echo "Building J2ME"
 	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out bld/j2me.js
+	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
+		&& mv bld/j2me.cc.js bld/j2me.js
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME AOT Compiler"
@@ -183,31 +193,24 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 # (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
 # out-language) in order for Closure to compile them, even though for now
 # we're optimizing "WHITESPACE_ONLY".
-bld/main-all.js: $(MAIN_JS_SRCS) tools/closure.jar .checksum
-	java -jar tools/closure.jar --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
+	java -jar build_tools/closure.jar --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
 j2me: bld/j2me.js bld/jsc.js
 
 aot: bld/classes.jar.js
-bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt
+bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
+	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_AOT_OPTIMIZATIONS bld/classes.jar.js > bld/classes.jar.cc.js \
+		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
 bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 
 bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
-
-tools/closure.jar:
-	wget -O $@ https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar
-
-closure: bld/classes.jar.js bld/j2me.js tools/closure.jar
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
-		&& mv bld/j2me.cc.js bld/j2me.js
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
-		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
 shumway: bld/shumway.js
 bld/shumway.js: $(SHUMWAY_SRCS)
