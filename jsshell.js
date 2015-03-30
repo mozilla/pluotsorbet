@@ -9,10 +9,20 @@
 if (typeof console === "undefined") {
   var console = {
     log: print,
-    info: print,
-    error: print,
   }
 }
+
+console.print = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
+console.info = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
+console.error = function (c) {
+  putstr(String.fromCharCode(c));
+};
 
 var START_TIME = dateNow();
 var performance = {
