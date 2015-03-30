@@ -131,11 +131,10 @@ if (config.downloadJAD) {
         return;
       }
 
-      var progressTemplateNode = document.getElementById('download-progress-dialog');
-      var dialog = progressTemplateNode.cloneNode(true);
+      var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
       dialog.style.display = 'block';
       dialog.classList.add('visible');
-      progressTemplateNode.parentNode.appendChild(dialog);
+      document.body.appendChild(dialog);
 
       performDownload(config.downloadJAD, dialog, function(data) {
         dialog.parentElement.removeChild(dialog);
@@ -151,7 +150,6 @@ if (config.downloadJAD) {
 
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
-                       loadScript("tests/override.js"),
                        loadScript("tests/mozactivitymock.js"),
                        loadScript("tests/config.js"));
 }
@@ -213,27 +211,16 @@ function start() {
   jvm.startIsolate0(config.main, config.args);
 }
 
+// If we're not running a MIDlet, we need to wait everything to be loaded.
+if (!config.midletClassName || config.midletClassName == "RunTests") {
+  loadingPromises = loadingPromises.concat(loadingMIDletPromises);
+}
+
 Promise.all(loadingPromises).then(start, function (reason) {
   console.error("Loading failed: \"" + reason + "\"");
 });
 
 document.getElementById("start").onclick = function() {
-  start();
-};
-
-document.getElementById("canvasSize").onchange = function() {
-  Array.prototype.forEach.call(document.body.classList, function(c) {
-    if (c.indexOf('size-') == 0) {
-      document.body.classList.remove(c);
-    }
-  });
-
-  if (this.value) {
-    document.body.classList.add(this.value);
-  }
-
-  MIDP.updatePhysicalScreenSize();
-  MIDP.updateCanvas();
   start();
 };
 

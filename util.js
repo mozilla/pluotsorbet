@@ -126,12 +126,24 @@ var util = (function () {
     return chars;
   }
 
+  // rgbaToCSS() can be called frequently. Using |rgbaBuf| avoids creating
+  // many intermediate strings.
+  var rgbaBuf = ["rgba(", 0, ",", 0, ",", 0, ",", 0, ")"];
+
+  function rgbaToCSS(r, g, b, a) {
+    rgbaBuf[1] = r;
+    rgbaBuf[3] = g;
+    rgbaBuf[5] = b;
+    rgbaBuf[7] = a;
+    return rgbaBuf.join('');
+  }
+
   function abgrIntToCSS(pixel) {
     var a = (pixel >> 24) & 0xff;
     var b = (pixel >> 16) & 0xff;
     var g = (pixel >> 8) & 0xff;
     var r = pixel & 0xff;
-    return "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
+    return rgbaToCSS(r, g, b, a/255);
   }
 
   return {
@@ -147,6 +159,7 @@ var util = (function () {
     compareTypedArrays: compareTypedArrays,
     pad: pad,
     toCodePointArray: toCodePointArray,
+    rgbaToCSS: rgbaToCSS,
     abgrIntToCSS: abgrIntToCSS,
   };
 })();

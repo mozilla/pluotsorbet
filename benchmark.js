@@ -8,7 +8,9 @@ var Benchmark = (function() {
   }
 
   var defaultStorage = {
-    numRounds: 10,
+    // 30 is usually considered a large enough sample size for the central limit theorem
+    // to take effect, unless the distribution is too weird
+    numRounds: 30,
     roundDelay: 5000, // ms to delay starting next round of tests
     baseline: {},
     current: {},
@@ -23,18 +25,28 @@ var Benchmark = (function() {
   var NO_SECURITY = typeof netscape !== "undefined" && netscape.security.PrivilegeManager;
 
   function enableSuperPowers() {
-    // To enable chrome privileges use a separate profile and enable the pref:
+    // To enable chrome privileges use a separate profile and set the pref
     // security.turn_off_all_security_so_that_viruses_can_take_over_this_computer
+    // to boolean true.  To do this on a device, see:
+    // https://wiki.mozilla.org/B2G/QA/Tips_And_Tricks#For_changing_the_preference:
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   }
 
   function forceCollectors() {
-    enableSuperPowers();
-    console.log("Forcing CC/GC.");
-    for (var i = 0; i < 3; i++) {
-      Components.utils.forceCC();
-      Components.utils.forceGC();
+    if (!NO_SECURITY) {
+      return Promise.resolve();
     }
+    return new Promise(function(resolve, reject) {
+      enableSuperPowers();
+      console.log("Starting minimize memory.");
+      var gMgr = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
+      Components.utils.import("resource://gre/modules/Services.jsm");
+      Services.obs.notifyObservers(null, "child-mmu-request", null);
+      gMgr.minimizeMemoryUsage(function() {
+        console.log("Finished minimize memory.");
+        resolve();
+      });
+    });
   }
 
   var STORAGE_KEY = "benchmark";
@@ -129,6 +141,42 @@ var Benchmark = (function() {
     otherSize: byteFormatter,
   };
 
+  function sampleMemory() {
+    if (!NO_SECURITY) {
+      return Promise.resolve({});
+    }
+    return forceCollectors().then(function() {
+      var memoryReporter = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
+
+      var jsObjectsSize = {};
+      var jsStringsSize = {};
+      var jsOtherSize = {};
+      var domSize = {};
+      var styleSize = {};
+      var otherSize = {};
+      var totalSize = {};
+      var jsMilliseconds = {};
+      var nonJSMilliseconds = {};
+
+      try {
+        memoryReporter.sizeOfTab(window.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
+          domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
+      } catch (e) {
+        console.log(e);
+      }
+
+      return {
+        totalSize: totalSize.value,
+        domSize: domSize.value,
+        styleSize: styleSize.value,
+        jsObjectsSize: jsObjectsSize.value,
+        jsStringsSize: jsStringsSize.value,
+        jsOtherSize: jsOtherSize.value,
+        otherSize: otherSize.value,
+      };
+    });
+  }
+
   var startup = {
     run: function(settings) {
       storage.round = 0;
@@ -179,54 +227,34 @@ var Benchmark = (function() {
       saveStorage();
       this.runNextRound();
     },
-    sampleMemory: function() {
-      if (NO_SECURITY) {
-        forceCollectors();
-        var memoryReporter = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
-
-        var jsObjectsSize = {};
-        var jsStringsSize = {};
-        var jsOtherSize = {};
-        var domSize = {};
-        var styleSize = {};
-        var otherSize = {};
-        var totalSize = {};
-        var jsMilliseconds = {};
-        var nonJSMilliseconds = {};
-
-        try {
-          memoryReporter.sizeOfTab(window.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
-            domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
-        } catch (e) {
-          console.log(e);
+    sampleMemoryToStorage: function() {
+      return sampleMemory().then(function(mem) {
+        for (var p in mem) {
+          storage.current[p].push(mem[p]);
         }
-        storage.current.totalSize.push(totalSize.value);
-        storage.current.domSize.push(domSize.value);
-        storage.current.styleSize.push(styleSize.value);
-        storage.current.jsObjectsSize.push(jsObjectsSize.value);
-        storage.current.jsStringsSize.push(jsStringsSize.value);
-        storage.current.jsOtherSize.push(jsOtherSize.value);
-        storage.current.otherSize.push(otherSize.value);
         saveStorage();
-      }
+      });
     },
     runNextRound: function() {
       var self = this;
       var done = storage.round >= storage.numRounds;
       function run() {
-        if (NO_SECURITY) {
-          forceCollectors();
+        var promise;
+        if (storage.round === 0) {
+          promise = Promise.resolve();
+        } else {
+          promise = self.sampleMemoryToStorage();
         }
-        if (storage.round !== 0) {
-          if (NO_SECURITY) {
-            self.sampleMemory();
-          }
+
+        promise.then(function() {
           if (done) {
             self.finish();
             return;
           }
-        }
-        DumbPipe.close(DumbPipe.open("reload", {}));
+          DumbPipe.close(DumbPipe.open("gcReload", {}));
+        }).catch(function (e) {
+          console.error(e)
+        });
       }
       if (storage.deleteFs) {
         console.log("Deleting fs.");
@@ -340,6 +368,12 @@ var Benchmark = (function() {
     },
     start: start,
     buildBaseline: buildBaseline,
+    sampleMemory: sampleMemory,
+    forceCollectors: forceCollectors,
+    prettyTable: prettyTable,
+    LEFT: LEFT,
+    CENTER: CENTER,
+    RIGHT: RIGHT,
     startup: {
       init: function() {
         if (!storage.running) {

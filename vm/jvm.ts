@@ -53,8 +53,8 @@ module J2ME {
 
       runtime.updateStatus(RuntimeStatus.Started);
 
-      var mainClass = J2ME.fromJavaString(isolate.klass.classInfo.getField("I._mainClass.Ljava/lang/String;").get(isolate)).replace(/\./g, "/");
-      var mainArgs = isolate.klass.classInfo.getField("I._mainArgs.[Ljava/lang/String;").get(isolate);
+      var mainClass = J2ME.fromJavaString(isolate._mainClass).replace(/\./g, "/");
+      var mainArgs = isolate._mainArgs;
       var classInfo = CLASSES.getClass(mainClass);
       linkKlass(classInfo);
       if (!classInfo)

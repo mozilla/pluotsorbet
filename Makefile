@@ -1,6 +1,6 @@
 .PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks
-BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./build/*") config.ts
-JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./build/*")
+BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.ts
+JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 VERSION ?=$(shell date +%s)
@@ -20,11 +20,78 @@ export JSR_082
 JSR_179 ?= 1
 export JSR_179
 
+MAIN_JS_SRCS = \
+  polyfill/canvas-toblob.js \
+  polyfill/fromcodepoint.js \
+  polyfill/codepointat.js \
+  polyfill/map.js \
+  polyfill/contains.js \
+  polyfill/find.js \
+  polyfill/findIndex.js \
+  polyfill/fround.js \
+  blackBox.js \
+  timer.js \
+  util.js \
+  native.js \
+  string.js \
+  libs/load.js \
+  libs/zipfile.js \
+  libs/jarstore.js \
+  libs/long.js \
+  libs/encoding.js \
+  libs/fs.js \
+  libs/fs-init.js \
+  libs/forge/util.js \
+  libs/forge/md5.js \
+  libs/jsbn/jsbn.js \
+  libs/jsbn/jsbn2.js \
+  libs/contacts.js \
+  libs/pipe.js \
+  libs/contact2vcard.js \
+  libs/emoji.js \
+  libs/FileSaver/FileSaver.js \
+  midp/midp.js \
+  midp/frameanimator.js \
+  midp/fs.js \
+  midp/crypto.js \
+  midp/gfx.js \
+  midp/text_editor.js \
+  midp/localmsg.js \
+  midp/socket.js \
+  midp/sms.js \
+  midp/codec.js \
+  midp/pim.js \
+  midp/device_control.js \
+  midp/background.js \
+  midp/gestures.js \
+  midp/media.js \
+  game-ui.js \
+  $(NULL)
+
+ifeq ($(JSR_179),1)
+	MAIN_JS_SRCS += midp/location.js
+endif
+
+ifeq ($(JSR_256),1)
+	MAIN_JS_SRCS += midp/sensor.js
+endif
+
+ifeq ($(BENCHMARK),1)
+	MAIN_JS_SRCS += benchmark.js libs/ttest.js
+endif
+
+ifeq ($(CONSOLE),1)
+	MAIN_JS_SRCS += libs/console.js
+endif
+
+# Add main.js last, as it depends on some of the other scripts.
+MAIN_JS_SRCS += main.js
+
 # Create a checksum file to monitor the changes of the Makefile configuration.
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(CONSOLE)$(JSR_256)$(JSR_179)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -40,7 +107,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks
+all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -51,6 +118,10 @@ $(shell [ "$(XULRUNNER_VERSION)" != "$(OLD_XULRUNNER_VERSION)" ] && echo $(XULRU
 SLIMERJS_VERSION=0.10.0pre
 OLD_SLIMERJS_VERSION := $(shell [ -f build_tools/.slimerjs_version ] && cat build_tools/.slimerjs_version)
 $(shell [ "$(SLIMERJS_VERSION)" != "$(OLD_SLIMERJS_VERSION)" ] && echo $(SLIMERJS_VERSION) > build_tools/.slimerjs_version)
+
+SOOT_VERSION=25Mar2015
+OLD_SOOT_VERSION := $(shell [ -f build_tools/.soot_version ] && cat build_tools/.soot_version)
+$(shell [ "$(SOOT_VERSION)" != "$(OLD_SOOT_VERSION)" ] && echo $(SOOT_VERSION) > build_tools/.soot_version)
 
 PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
@@ -87,6 +158,11 @@ build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2
 	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2 -m
 
+build_tools/soot-trunk.jar: build_tools/.soot_version
+	rm -f build_tools/soot-trunk.jar
+	wget -P build_tools -N https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
+	touch build_tools/soot-trunk.jar
+
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
 
@@ -96,43 +172,51 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-build/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
+bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME"
-	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out build/j2me.js
+	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 
-build/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
+bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME AOT Compiler"
-	node tools/tsc.js --sourcemap --target ES5 references-jsc.ts -d --out build/j2me-jsc.js
+	node tools/tsc.js --sourcemap --target ES5 references-jsc.ts -d --out bld/j2me-jsc.js
 
-build/jsc.js: jsc.ts build/j2me-jsc.js
+bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
-	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out build/jsc.js
+	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out bld/jsc.js
 
-j2me: build/j2me.js build/jsc.js
+# Some scripts use ES6 features, so we have to specify ES6 as the in-language
+# (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
+# out-language) in order for Closure to compile them, even though for now
+# we're optimizing "WHITESPACE_ONLY".
+bld/main-all.js: $(MAIN_JS_SRCS) tools/closure.jar .checksum
+	java -jar tools/closure.jar --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
-aot: build/classes.jar.js
-build/classes.jar.js: java/classes.jar build/jsc.js aot-methods.txt
+j2me: bld/j2me.js bld/jsc.js
+
+aot: bld/classes.jar.js
+bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt
 	@echo "Compiling ..."
-	js build/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > build/classes.jar.js
+	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
 
-build/tests.jar.js: tests/tests.jar build/jsc.js aot-methods.txt
-	js build/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > build/tests.jar.js
+bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
+	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 
-build/program.jar.js: program.jar build/jsc.js aot-methods.txt
-	js build/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > build/program.jar.js
+bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
+	js bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
 
 tools/closure.jar:
 	wget -O $@ https://github.com/mykmelez/closure-compiler/releases/download/v0.1/closure.jar
 
-closure: build/classes.jar.js build/j2me.js tools/closure.jar
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS build/j2me.js > build/j2me.cc.js \
-		&& mv build/j2me.cc.js build/j2me.js
-	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE build/classes.jar.js > build/classes.jar.cc.js \
-		&& mv build/classes.jar.cc.js build/classes.jar.js
+closure: bld/classes.jar.js bld/j2me.js tools/closure.jar
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
+		&& mv bld/j2me.cc.js bld/j2me.js
+	java -jar tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
+		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
-shumway: build/shumway.js
-build/shumway.js: $(SHUMWAY_SRCS)
-	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out build/shumway.js
+shumway: bld/shumway.js
+bld/shumway.js: $(SHUMWAY_SRCS)
+	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out bld/shumway.js
 
 # We should update config/build.js everytime to generate the new VERSION number
 # based on current time.
@@ -144,32 +228,35 @@ tests: java jasmin
 	make -C tests
 
 LANG_FILES=$(shell find l10n -name "*.xml")
-LANG_DESTS=$(LANG_FILES:%.xml=java/%.json)
+LANG_DESTS=$(LANG_FILES:%.xml=java/%.json) java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 
 java/classes.jar: java
-java: $(LANG_DESTS)
+java: $(LANG_DESTS) build_tools/soot-trunk.jar
 	make -C java
 
 $(LANG_DESTS): $(LANG_FILES)
 	rm -rf java/l10n/
 	mkdir java/l10n/
 	$(foreach file,$(LANG_FILES), tools/xml_to_json.py $(file) java/$(file:.xml=.json);)
+	mkdir -p java/custom/com/sun/midp/i18n/ java/custom/com/sun/midp/l10n/
+	tools/xml_to_java_classes.py l10n/en-US.xml
 
 certs:
 	make -C certs
 
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs j2me aot
+app: config-build java certs j2me aot bld/main-all.js
 	tools/package.sh
 
 benchmarks: java tests
 	make -C bench
 
 clean:
-	rm -rf build
-	rm -f config/build.js
+	rm -rf bld
+	rm -f $(PREPROCESS_DESTS)
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
 	make -C java clean
 	rm -rf java/l10n/
+	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 	make -C bench clean

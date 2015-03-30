@@ -3,6 +3,27 @@
 
 'use strict';
 
+function asyncImpl(returnKind, promise) {
+  var ctx = $.ctx;
+
+  promise.then(function(res) {
+    if (returnKind === "J" || returnKind === "D") {
+      ctx.current().stack.push2(res);
+    } else if (returnKind !== "V") {
+      ctx.current().stack.push(res);
+    } else {
+      // void, do nothing
+    }
+    ctx.execute();
+  }, function(exception) {
+    var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
+    var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
+    ctx.frames.push(Frame.create(methodInfo, [exception], 0));
+    ctx.execute();
+  });
+  $.pause("Async");
+}
+
 var Native = {};
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
@@ -585,23 +606,11 @@ Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang
     return obj;
 };
 
-Override["com/sun/cldc/io/ResourceInputStream.available.()I"] = function() {
-    var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
-
-    if (!handle) {
-        throw $.newIOException();
-    }
-
+Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(handle) {
     return handle.data.length - handle.pos;
 };
 
-Override["com/sun/cldc/io/ResourceInputStream.read.()I"] = function() {
-    var handle = this.klass.classInfo.getField("I.fileDecoder.Ljava/lang/Object;").get(this);
-
-    if (!handle) {
-        throw $.newIOException();
-    }
-
+Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(handle) {
     return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
 };
 
@@ -676,57 +685,6 @@ Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function() {
 };
 
 Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(newPriority) {
-};
-
-var links = {};
-var waitingForLinks = {};
-
-Native["com/sun/midp/links/LinkPortal.getLinkCount0.()I"] = function() {
-    var ctx = $.ctx;
-    asyncImpl("I", new Promise(function(resolve, reject) {
-        var isolateId = ctx.runtime.isolate.id;
-
-        if (!links[isolateId]) {
-            waitingForLinks[isolateId] = function() {
-                resolve(links[isolateId].length);
-            }
-
-            return;
-        }
-
-        resolve(links[isolateId].length);
-    }));
-};
-
-Native["com/sun/midp/links/LinkPortal.getLinks0.([Lcom/sun/midp/links/Link;)V"] = function(linkArray) {
-    var isolateId = $.ctx.runtime.isolate.id;
-
-    for (var i = 0; i < links[isolateId].length; i++) {
-        var nativePointer = links[isolateId][i].klass.classInfo.getField("I.nativePointer.I").get(links[isolateId][i]);
-        linkArray[i].klass.classInfo.getField("I.nativePointer.I").set(linkArray[i], nativePointer);
-        linkArray[i].sender = links[isolateId][i].sender;
-        linkArray[i].receiver = links[isolateId][i].receiver;
-    }
-};
-
-Native["com/sun/midp/links/LinkPortal.setLinks0.(I[Lcom/sun/midp/links/Link;)V"] = function(id, linkArray) {
-    links[id] = linkArray;
-
-    if (waitingForLinks[id]) {
-        waitingForLinks[id]();
-    }
-};
-
-Native["com/sun/midp/links/Link.init0.(II)V"] = function(sender, receiver) {
-    this.sender = sender;
-    this.receiver = receiver;
-    this.klass.classInfo.getField("I.nativePointer.I").set(this, util.id());
-};
-
-Native["com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V"] = function(linkMessage, link) {
-    // TODO: Implement when something hits send0
-    console.warn("Called com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V");
-    asyncImpl("V", new Promise(function(){}));
 };
 
 Native["com/sun/cldc/i18n/j2me/UTF_8_Reader.init.([B)V"] = function(data) {
@@ -869,8 +827,8 @@ Native["com/sun/cldc/i18n/j2me/UTF_8_Writer.sizeOf.([CII)I"] = function(cbuf, of
   var outputCount = 0;
   var count = 0;
   var localPendingSurrogate = this.pendingSurrogate;
-  while (count < length) {
-    inputChar = 0xffff & cbuf[offset + count];
+  while (count < len) {
+    inputChar = 0xffff & cbuf[off + count];
     if (0 != localPendingSurrogate) {
       if (0xdc00 <= inputChar && inputChar <= 0xdfff) {
         //000u uuuu xxxx xxxx xxxx xxxx
@@ -952,6 +910,16 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
             } else {
                 mask = document.createElement("div");
                 mask.id = maskId;
+                mask.style.position = "absolute";
+                mask.style.top = 0;
+                mask.style.left = 0;
+                mask.style.height = MIDP.context2D.canvas.height + "px";
+                mask.style.width = MIDP.context2D.canvas.width + "px";
+                mask.style.backgroundColor = "#000";
+                mask.style.backgroundPosition = "center center";
+                mask.style.backgroundRepeat = "no-repeat";
+                mask.style.backgroundSize = "contain";
+
                 mask.onclick = mask.ontouchstart = function() {
                     _revokeImageURL();
                     mask.parentNode.removeChild(mask);
@@ -991,4 +959,113 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
     if (!release) {
         eval(J2ME.fromJavaString(src));
     }
+};
+
+Native["java/io/ByteArrayOutputStream.write.([BII)V"] = function(b, off, len) {
+  if ((off < 0) || (off > b.length) || (len < 0) ||
+      ((off + len) > b.length)) {
+    throw $.newIndexOutOfBoundsException();
+  }
+
+  if (len == 0) {
+    return;
+  }
+
+  var count = this.count;
+  var buf = this.buf;
+
+  var newcount = count + len;
+  if (newcount > buf.length) {
+    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
+    newbuf.set(buf);
+    buf = newbuf;
+    this.buf = buf;
+  }
+
+  buf.set(b.subarray(off, off + len), count);
+  this.count = newcount;
+};
+
+Native["java/io/ByteArrayOutputStream.write.(I)V"] = function(value) {
+  var count = this.count;
+  var buf = this.buf;
+
+  var newcount = count + 1;
+  if (newcount > buf.length) {
+    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
+    newbuf.set(buf);
+    buf = newbuf;
+    this.buf = buf;
+  }
+
+  buf[count] = value;
+  this.count = newcount;
+};
+
+Native["java/io/ByteArrayInputStream.init.([BII)V"] = function(buf, offset, length) {
+  if (!buf) {
+    throw $.newNullPointerException();
+  }
+
+  this.buf = buf;
+  this.pos = this.mark = offset;
+  this.count = (offset + length <= buf.length) ? (offset + length) : buf.length;
+};
+
+Native["java/io/ByteArrayInputStream.read.()I"] = function() {
+  return (this.pos < this.count) ? (this.buf[this.pos++] & 0xFF) : -1;
+};
+
+Native["java/io/ByteArrayInputStream.read.([BII)I"] = function(b, off, len) {
+  if (!b) {
+    throw $.newNullPointerException();
+  }
+
+  if ((off < 0) || (off > b.length) || (len < 0) ||
+      ((off + len) > b.length)) {
+    throw $.newIndexOutOfBoundsException();
+  }
+
+  if (this.pos >= this.count) {
+    return -1;
+  }
+  if (this.pos + len > this.count) {
+    len = this.count - this.pos;
+  }
+  if (len === 0) {
+    return 0;
+  }
+
+  b.set(this.buf.subarray(this.pos, this.pos + len), off);
+
+  this.pos += len;
+  return len;
+};
+
+Native["java/io/ByteArrayInputStream.skip.(J)J"] = function(long) {
+  var n = long.toNumber();
+
+  if (this.pos + n > this.count) {
+    n = this.count - this.pos;
+  }
+
+  if (n < 0) {
+    return Long.fromNumber(0);
+  }
+
+  this.pos += n;
+
+  return Long.fromNumber(n);
+};
+
+Native["java/io/ByteArrayInputStream.available.()I"] = function() {
+  return this.count - this.pos;
+};
+
+Native["java/io/ByteArrayInputStream.mark.(I)V"] = function(readAheadLimit) {
+  this.mark = this.pos;
+};
+
+Native["java/io/ByteArrayInputStream.reset.()V"] = function() {
+  this.pos = this.mark;
 };

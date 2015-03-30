@@ -1303,15 +1303,6 @@ module J2ME {
       return null;
     }
 
-    // DEPRECATED use getFieldByName
-    getField(key: string): FieldInfo {
-      var isStatic = key[0] === "S";
-      var secondDot = key.indexOf(".", 2);
-      var name = key.substring(2, secondDot);
-      var signature = key.substr(secondDot + 1);
-      return this.getFieldByName(toUTF8(name), toUTF8(signature), isStatic);
-    }
-
     getFields(): FieldInfo [] {
       if (!this.fields) {
         return ArrayUtilities.EMPTY_ARRAY;

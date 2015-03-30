@@ -40,8 +40,7 @@ function receiveSms(text, addr) {
  * the app.
  */
 function promptForMessageText() {
-    var smsTemplateNode = document.getElementById('sms-listener-prompt');
-    var el = smsTemplateNode.cloneNode(true);
+    var el = document.getElementById('sms-listener-prompt').cloneNode(true);
     el.style.display = 'block';
     el.classList.add('visible');
 
@@ -91,7 +90,7 @@ function promptForMessageText() {
     el.querySelector('p.timeLeft').textContent = toTimeText(MIDlet.SMSDialogTimeout) +
                                                  " " + MIDlet.SMSDialogTimeoutText;
 
-    smsTemplateNode.parentNode.appendChild(el);
+    document.body.appendChild(el);
     if (currentlyFocusedTextEditor) {
       currentlyFocusedTextEditor.blur();
       currentlyFocusedTextEditor = null;
@@ -140,11 +139,11 @@ function(port, msid, handle, smsPacket) {
                 address[i] = addr.charCodeAt(i);
             }
 
-            smsPacket.klass.classInfo.getField("I.message.[B").set(smsPacket, message);
-            smsPacket.klass.classInfo.getField("I.address.[B").set(smsPacket, address);
-            smsPacket.klass.classInfo.getField("I.port.I").set(smsPacket, port);
-            smsPacket.klass.classInfo.getField("I.sentAt.J").set(smsPacket, Long.fromNumber(Date.now()));
-            smsPacket.klass.classInfo.getField("I.messageType.I").set(smsPacket, 0); // GSM_TEXT
+            smsPacket.message = message;
+            smsPacket.address = address;
+            smsPacket.port = port;
+            smsPacket.sentAt = Long.fromNumber(Date.now());
+            smsPacket.messageType = 0; // GSM_TEXT
 
             return text.length;
         }
