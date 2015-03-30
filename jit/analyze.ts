@@ -224,7 +224,9 @@ module J2ME {
   }
 
   export function canYield(methodInfo: MethodInfo): YieldReason {
-    return YieldReason.Likely;
+    if (phase === ExecutionPhase.Runtime) {
+      return YieldReason.Likely;
+    }
 
     if (phase === ExecutionPhase.Runtime && methodInfo.codeAttribute && methodInfo.codeAttribute.code.length > 100) {
       // Large methods are likely to yield, so don't even bother checking at runtime.
