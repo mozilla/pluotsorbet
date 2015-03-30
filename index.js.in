@@ -58,7 +58,7 @@ var DumbPipe = {
 
   handlePipeEvent: function(event) {
     if (event.detail.promptType == "custom-prompt") {
-      console.warn("unresponsive script warning; figure out how to handle: " + JSON.stringify(event.detail));
+      console.warn("unresponsive script warning; figure out how to handle");
       return;
     }
 

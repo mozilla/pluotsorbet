@@ -967,7 +967,6 @@ module J2ME {
       Object.defineProperty(Methods, mangledName, {
         configurable: true,
         get: function () {
-console.log("Gload Klass: " + className);
           linkWriter && linkWriter.writeLn("Load Klass: " + className);
           CLASSES.loadAndLinkClass(className);
           unresolvedSymbols[mangledName] = false;
@@ -1001,10 +1000,7 @@ console.log("Gload Klass: " + className);
     });
     var emitter = new Emitter(writer, false, true, true);
     J2ME.emitKlass(emitter, classInfo, true);
-// console.log("about to eval: " + source.join("\n"));
-console.log("emitKlassConstructor: " + mangledName);
     (1, eval)(source.join("\n"));
-// console.log("eval done");
     leaveTimeline("emitKlassConstructor");
     // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.getClassNameSlow());
     // consoleWriter.writeLn(source);

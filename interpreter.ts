@@ -1285,7 +1285,6 @@ module J2ME {
             break;
           default:
             var opName = Bytecodes[op];
-debugger;
             throw new Error("Opcode " + opName + " [" + op + "] not supported.");
         }
       } catch (e) {
