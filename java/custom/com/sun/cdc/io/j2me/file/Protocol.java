@@ -876,7 +876,9 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
      * @throws IOException if the connection is closed
      */
     protected void ensureConnected() throws IOException {
-        connect(fileRoot, filePath + fileName);
+        if (fileHandler == null) {
+            connect(fileRoot, filePath + fileName);
+        }
     }
 
     /**

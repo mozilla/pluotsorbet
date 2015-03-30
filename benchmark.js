@@ -8,7 +8,9 @@ var Benchmark = (function() {
   }
 
   var defaultStorage = {
-    numRounds: 10,
+    // 30 is usually considered a large enough sample size for the central limit theorem
+    // to take effect, unless the distribution is too weird
+    numRounds: 30,
     roundDelay: 5000, // ms to delay starting next round of tests
     baseline: {},
     current: {},

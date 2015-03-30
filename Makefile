@@ -114,6 +114,10 @@ SLIMERJS_VERSION=0.10.0pre
 OLD_SLIMERJS_VERSION := $(shell [ -f build_tools/.slimerjs_version ] && cat build_tools/.slimerjs_version)
 $(shell [ "$(SLIMERJS_VERSION)" != "$(OLD_SLIMERJS_VERSION)" ] && echo $(SLIMERJS_VERSION) > build_tools/.slimerjs_version)
 
+SOOT_VERSION=25Mar2015
+OLD_SOOT_VERSION := $(shell [ -f build_tools/.soot_version ] && cat build_tools/.soot_version)
+$(shell [ "$(SOOT_VERSION)" != "$(OLD_SOOT_VERSION)" ] && echo $(SOOT_VERSION) > build_tools/.soot_version)
+
 CLOSURE_COMPILER_VERSION=j2me.js-v20150327
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
@@ -153,6 +157,11 @@ build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2
 	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2 -m
 
+build_tools/soot-trunk.jar: build_tools/.soot_version
+	rm -f build_tools/soot-trunk.jar
+	wget -P build_tools -N https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
+	touch build_tools/soot-trunk.jar
+
 build_tools/closure.jar: build_tools/.closure_compiler_version
 	wget -P build_tools -N https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
@@ -184,7 +193,7 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 # (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
 # out-language) in order for Closure to compile them, even though for now
 # we're optimizing "WHITESPACE_ONLY".
-bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar
+bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
 	java -jar build_tools/closure.jar --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
@@ -220,7 +229,7 @@ LANG_FILES=$(shell find l10n -name "*.xml")
 LANG_DESTS=$(LANG_FILES:%.xml=java/%.json) java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 
 java/classes.jar: java
-java: $(LANG_DESTS)
+java: $(LANG_DESTS) build_tools/soot-trunk.jar
 	make -C java
 
 $(LANG_DESTS): $(LANG_FILES)
