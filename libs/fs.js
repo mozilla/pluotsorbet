@@ -435,7 +435,8 @@ var fs = (function() {
   var lastId = 2;
 
   function getBlob(path) {
-    return store.getItem(normalizePath(path)).data;
+    var record = store.getItem(normalizePath(path));
+    return record ? record.data : null;
   }
 
   function open(path, cb) {
