@@ -444,12 +444,8 @@ VideoPlayer.prototype.realize = function() {
         };
 
         if (this.playerContainer.url.startsWith("file")) {
-            fs.open(this.playerContainer.url.substring(7), (function(fd) {
-                var videoData = fs.read(fd);
-                fs.close(fd);
-                this.video.src = URL.createObjectURL(new Blob([ videoData ]),
-                                                     { type: this.playerContainer.contentType });
-            }).bind(this));
+            this.video.src = URL.createObjectURL(fs.getBlob(this.playerContainer.url.substring(7)),
+                                                 { type: this.playerContainer.contentType });
         } else {
             this.video.src = this.playerContainer.url;
         }
