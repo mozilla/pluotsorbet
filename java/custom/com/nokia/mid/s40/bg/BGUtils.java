@@ -1,16 +1,7 @@
 package com.nokia.mid.s40.bg;
 
-import com.sun.midp.main.MIDletSuiteUtils;
-
-class WaitUserInteractionThread extends Thread {
-    public WaitUserInteractionThread() {
-        setPriority(Thread.MAX_PRIORITY);
-    }
-    public void run() {
-        BGUtils.waitUserInteraction();
-        BGUtils.startMIDlet();
-    }
-}
+import com.sun.midp.main.AmsUtil;
+import com.sun.midp.midletsuite.MIDletSuiteStorage;
 
 public class BGUtils {
     private static boolean launchMIDletCalled = false;
@@ -23,18 +14,17 @@ public class BGUtils {
        launchIEMIDlet hasn't been called (we want launchIEMIDlet
        to launch the MIDlet if possible) */
     public static void setBGMIDletResident(boolean param) {
-      new WaitUserInteractionThread().start();
+        BGUtils.waitUserInteraction();
+        BGUtils.startMIDlet();
     }
 
-    public static void startMIDlet() {
+    static void startMIDlet() {
       if (BGUtils.launchMIDletCalled) {
         return;
       }
 
-      int midletNumber = BGUtils.getFGMIDletNumber();
-      String midletClass = BGUtils.getFGMIDletClass();
-
-      MIDletSuiteUtils.execute(midletNumber, midletClass, null);
+      AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, BGUtils.getFGMIDletNumber(),
+                              BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, -1, null, false);
     }
 
     private static native void addSystemProperties(String args);
@@ -47,7 +37,9 @@ public class BGUtils {
         try {
             BGUtils.addSystemProperties(args);
 
-            MIDletSuiteUtils.execute(midletNumber, BGUtils.getFGMIDletClass(), null);
+            AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, midletNumber,
+                                    BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1,
+                                    -1, null, false);
         } catch (Exception e) {
             System.out.println("Unexpected exception: " + e);
             e.printStackTrace();
