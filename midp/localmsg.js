@@ -762,7 +762,6 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
       }
 
       var imgData = fs.getBlob("/" + fileName);
-      var fileSize = imgData.size;
       var img = new Image();
       img.src = URL.createObjectURL(imgData);
 
