@@ -8,7 +8,9 @@ var Benchmark = (function() {
   }
 
   var defaultStorage = {
-    numRounds: 10,
+    // 30 is usually considered a large enough sample size for the central limit theorem
+    // to take effect, unless the distribution is too weird
+    numRounds: 30,
     roundDelay: 5000, // ms to delay starting next round of tests
     baseline: {},
     current: {},
@@ -23,8 +25,10 @@ var Benchmark = (function() {
   var NO_SECURITY = typeof netscape !== "undefined" && netscape.security.PrivilegeManager;
 
   function enableSuperPowers() {
-    // To enable chrome privileges use a separate profile and enable the pref:
+    // To enable chrome privileges use a separate profile and set the pref
     // security.turn_off_all_security_so_that_viruses_can_take_over_this_computer
+    // to boolean true.  To do this on a device, see:
+    // https://wiki.mozilla.org/B2G/QA/Tips_And_Tricks#For_changing_the_preference:
     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
   }
 

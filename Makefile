@@ -19,6 +19,70 @@ export JSR_082
 JSR_179 ?= 1
 export JSR_179
 
+MAIN_JS_SRCS = \
+  libs/console.js \
+  polyfill/canvas-toblob.js \
+  polyfill/fromcodepoint.js \
+  polyfill/codepointat.js \
+  polyfill/map.js \
+  polyfill/contains.js \
+  polyfill/find.js \
+  polyfill/findIndex.js \
+  polyfill/fround.js \
+  blackBox.js \
+  timer.js \
+  util.js \
+  native.js \
+  string.js \
+  libs/load.js \
+  libs/zipfile.js \
+  libs/jarstore.js \
+  libs/long.js \
+  libs/encoding.js \
+  libs/fs.js \
+  libs/fs-init.js \
+  libs/forge/util.js \
+  libs/forge/md5.js \
+  libs/jsbn/jsbn.js \
+  libs/jsbn/jsbn2.js \
+  libs/contacts.js \
+  libs/pipe.js \
+  libs/contact2vcard.js \
+  libs/emoji.js \
+  libs/FileSaver/FileSaver.js \
+  midp/midp.js \
+  midp/frameanimator.js \
+  midp/fs.js \
+  midp/crypto.js \
+  midp/gfx.js \
+  midp/text_editor.js \
+  midp/localmsg.js \
+  midp/socket.js \
+  midp/sms.js \
+  midp/codec.js \
+  midp/pim.js \
+  midp/device_control.js \
+  midp/background.js \
+  midp/gestures.js \
+  midp/media.js \
+  game-ui.js \
+  $(NULL)
+
+ifeq ($(JSR_179),1)
+	MAIN_JS_SRCS += midp/location.js
+endif
+
+ifeq ($(JSR_256),1)
+	MAIN_JS_SRCS += midp/sensor.js
+endif
+
+ifeq ($(BENCHMARK),1)
+	MAIN_JS_SRCS += benchmark.js libs/ttest.js
+endif
+
+# Add main.js last, as it depends on some of the other scripts.
+MAIN_JS_SRCS += main.js
+
 # Create a checksum file to monitor the changes of the Makefile configuration.
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
@@ -38,7 +102,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks
+all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -49,6 +113,10 @@ $(shell [ "$(XULRUNNER_VERSION)" != "$(OLD_XULRUNNER_VERSION)" ] && echo $(XULRU
 SLIMERJS_VERSION=0.10.0pre
 OLD_SLIMERJS_VERSION := $(shell [ -f build_tools/.slimerjs_version ] && cat build_tools/.slimerjs_version)
 $(shell [ "$(SLIMERJS_VERSION)" != "$(OLD_SLIMERJS_VERSION)" ] && echo $(SLIMERJS_VERSION) > build_tools/.slimerjs_version)
+
+SOOT_VERSION=25Mar2015
+OLD_SOOT_VERSION := $(shell [ -f build_tools/.soot_version ] && cat build_tools/.soot_version)
+$(shell [ "$(SOOT_VERSION)" != "$(OLD_SOOT_VERSION)" ] && echo $(SOOT_VERSION) > build_tools/.soot_version)
 
 PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
@@ -85,6 +153,11 @@ build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2
 	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2 -m
 
+build_tools/soot-trunk.jar: build_tools/.soot_version
+	rm -f build_tools/soot-trunk.jar
+	wget -P build_tools -N https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
+	touch build_tools/soot-trunk.jar
+
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
 
@@ -105,6 +178,14 @@ bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
 	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out bld/jsc.js
+
+# Some scripts use ES6 features, so we have to specify ES6 as the in-language
+# (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
+# out-language) in order for Closure to compile them, even though for now
+# we're optimizing "WHITESPACE_ONLY".
+bld/main-all.js: $(MAIN_JS_SRCS) tools/closure.jar .checksum
+	java -jar tools/closure.jar --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
 j2me: bld/j2me.js bld/jsc.js
 
@@ -145,7 +226,7 @@ LANG_FILES=$(shell find l10n -name "*.xml")
 LANG_DESTS=$(LANG_FILES:%.xml=java/%.json) java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 
 java/classes.jar: java
-java: $(LANG_DESTS)
+java: $(LANG_DESTS) build_tools/soot-trunk.jar
 	make -C java
 
 $(LANG_DESTS): $(LANG_FILES)
@@ -159,7 +240,7 @@ certs:
 	make -C certs
 
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs j2me aot
+app: config-build java certs j2me aot bld/main-all.js
 	tools/package.sh
 
 benchmarks: java tests

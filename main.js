@@ -131,11 +131,10 @@ if (config.downloadJAD) {
         return;
       }
 
-      var progressTemplateNode = document.getElementById('download-progress-dialog');
-      var dialog = progressTemplateNode.cloneNode(true);
+      var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
       dialog.style.display = 'block';
       dialog.classList.add('visible');
-      progressTemplateNode.parentNode.appendChild(dialog);
+      document.body.appendChild(dialog);
 
       performDownload(config.downloadJAD, dialog, function(data) {
         dialog.parentElement.removeChild(dialog);
@@ -223,22 +222,6 @@ Promise.all(loadingPromises).then(start, function (reason) {
 });
 
 document.getElementById("start").onclick = function() {
-  start();
-};
-
-document.getElementById("canvasSize").onchange = function() {
-  Array.prototype.forEach.call(document.body.classList, function(c) {
-    if (c.indexOf('size-') == 0) {
-      document.body.classList.remove(c);
-    }
-  });
-
-  if (this.value) {
-    document.body.classList.add(this.value);
-  }
-
-  MIDP.updatePhysicalScreenSize();
-  MIDP.updateCanvas();
   start();
 };
 

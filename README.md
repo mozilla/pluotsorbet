@@ -66,7 +66,9 @@ Example - Asteroids
 
 ## Tests
 
-You can run the test suite with `make test`. The main driver for the test suite is automation.js which uses the Casper.js testing framework and slimer.js (a Gecko backend for casper.js). This test suite runs on every push (continuous integration) thanks to Travis.
+You can run the test suite with `make test`. The main driver for the test suite is tests/automation.js which uses the [CasperJS](http://casperjs.org/) testing framework and [SlimerJS](http://slimerjs.org/) (a Gecko backend for CasperJS). This test suite runs on every push (continuous integration) thanks to [Travis CI](https://travis-ci.org/).
+
+`make test` downloads SlimerJS for you automatically, but you have to install CasperJS yourself. The easiest way to do that is via NPM: `npm install -g casperjs`.  On Mac, you may also be able to install it via Brew.
 
 If you want to pass additional [casperJS command line options](http://docs.slimerjs.org/current/configuration.html), look at the "test" target in Makefile and place additional command line options before the automation.js filename.
 
@@ -235,7 +237,7 @@ The startup benchmark measures from when the benchmark.js file loads to the call
 
 To use:
 
-*It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds*
+*It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds. To do this on a Firefox OS device, see [B2G/QA/Tips And Tricks](https://wiki.mozilla.org/B2G/QA/Tips_And_Tricks#For_changing_the_preference:).*
 
 1. Checkout the version you want to be the baseline(usually mozilla/master).
 1. Build a benchmark build `RELEASE=1 BENCHMARK=1 make` *"RELEASE=1" is not required, but is recommended to avoid debug code from changing execution behavior.*

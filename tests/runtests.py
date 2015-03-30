@@ -9,8 +9,8 @@ import time
 
 # The test automation scripts to run via casperjs/slimerjs.
 automation_scripts = [
-    '/tests/automation.js',
-    '/tests/fs/automation.js',
+    ['tests', 'automation.js'],
+    ['tests', 'fs', 'automation.js'],
 ]
 
 # The exit code to return.  We set this to 1 if an automation script outputs
@@ -99,8 +99,8 @@ wait_server(4443)
 wait_server(54443)
 
 # Run each test automation script in turn.
-for script in automation_scripts:
-    run_test(os.getcwd() + script);
+for scriptParts in automation_scripts:
+    run_test(os.path.join(os.getcwd(), *scriptParts))
 
 # Terminate all the server processes.
 for process in server_processes:

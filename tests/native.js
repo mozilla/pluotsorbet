@@ -177,3 +177,18 @@ Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = functio
     }));
   }
 };
+
+Native["org/mozilla/Test.callSyncNative.()V"] = function() {
+  // A noop sync implementation for comparison with the noop async one.
+};
+
+Native["org/mozilla/Test.callAsyncNative.()V"] = function() {
+  // A noop async implementation for comparison with the noop sync one.
+  asyncImpl("V", new Promise(function (resolve, reject) {
+    resolve();
+  }));
+
+  // This is even faster, but not very handy, unless your native is really
+  // synchronous, and you just want to force the thread to yield.
+  // asyncImpl("V", Promise.resolve());
+};
