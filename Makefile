@@ -177,17 +177,17 @@ relooper:
 
 bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar
 	@echo "Building J2ME"
-	node tools/tsc.js --sourcemap --target ES5 references.ts -d --out bld/j2me.js
+	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME AOT Compiler"
-	node tools/tsc.js --sourcemap --target ES5 references-jsc.ts -d --out bld/j2me-jsc.js
+	tsc --sourcemap --target ES5 references-jsc.ts -d --out bld/j2me-jsc.js
 
 bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
-	node tools/tsc.js --sourcemap --target ES5 jsc.ts --out bld/jsc.js
+	tsc --sourcemap --target ES5 jsc.ts --out bld/jsc.js
 
 # Some scripts use ES6 features, so we have to specify ES6 as the in-language
 # (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
@@ -214,7 +214,7 @@ bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
 
 shumway: bld/shumway.js
 bld/shumway.js: $(SHUMWAY_SRCS)
-	node tools/tsc.js --sourcemap --target ES5 shumway/references.ts --out bld/shumway.js
+	tsc --sourcemap --target ES5 shumway/references.ts --out bld/shumway.js
 
 # We should update config/build.js everytime to generate the new VERSION number
 # based on current time.
