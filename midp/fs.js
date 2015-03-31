@@ -601,13 +601,13 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(n) {
         return -1;
     }
 
-    if (n < 0) {
+    var toSkip = n.toNumber();
+
+    if (toSkip < 0) {
         return Long.fromNumber(0);
     }
 
     var fd = this.nativeDescriptor;
-
-    var toSkip = n.toNumber();
     var pos = fs.getpos(fd);
     var size = fs.getsize(fd);
     if (pos + toSkip > size) {
