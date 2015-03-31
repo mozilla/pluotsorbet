@@ -1166,6 +1166,10 @@ var MIDP = (function() {
     return J2ME.newString("");
   };
 
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
+
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z", 0);
+
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;
