@@ -178,7 +178,7 @@ relooper:
 bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
-	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
+	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
