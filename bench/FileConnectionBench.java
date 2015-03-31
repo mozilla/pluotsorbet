@@ -3,6 +3,7 @@ package benchmark;
 import com.sun.cldchi.jvm.JVM;
 import com.sun.midp.crypto.SecureRandom;
 import java.io.OutputStream;
+import java.io.InputStream;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
 import org.mozilla.MemorySampler;
@@ -33,7 +34,39 @@ public class FileConnectionBench {
       }
       System.out.println("OutputStream.write time: " + (JVM.monotonicTimeMillis() - start));
 
+      start = JVM.monotonicTimeMillis();
+      for (int i = 0; i < 10000; i++) {
+        out.write(42);
+      }
+      System.out.println("OutputStream.write single byte time: " + (JVM.monotonicTimeMillis() - start));
+
       out.close();
+
+      InputStream in = file.openInputStream();
+      byte[] arr = new byte[1024];
+      start = JVM.monotonicTimeMillis();
+      for (int i = 0; i < 1000; i++) {
+        in.read(arr, 0, 1024);
+      }
+      System.out.println("InputStream.read time: " + (JVM.monotonicTimeMillis() - start));
+      in.close();
+
+      in = file.openInputStream();
+      start = JVM.monotonicTimeMillis();
+      for (int i = 0; i < 10000; i++) {
+        in.read();
+      }
+      System.out.println("InputStream.read single byte time: " + (JVM.monotonicTimeMillis() - start));
+      in.close();
+
+      in = file.openInputStream();
+      start = JVM.monotonicTimeMillis();
+      for (int i = 0; i < 1000; i++) {
+        in.skip(1024);
+      }
+      System.out.println("InputStream.skip time: " + (JVM.monotonicTimeMillis() - start));
+      in.close();
+
       file.close();
     } catch (Exception e) {
       System.out.println("Unexpected exception: " + e);
