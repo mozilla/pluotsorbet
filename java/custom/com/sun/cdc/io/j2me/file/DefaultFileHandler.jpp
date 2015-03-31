@@ -374,6 +374,8 @@ class DefaultFileHandler implements BaseFileHandler {
      */
     public native int read(byte b[], int off, int len) throws IOException;
 
+    public native long skip(long n) throws IOException;
+
     /**
      * Write data from an array to the file.
      * @param b array of output data
