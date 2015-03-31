@@ -14,6 +14,13 @@ var MIDP = (function() {
     updateCanvas();
   };
 
+  function updatePhysicalScreenSize() {
+    if (!config.autosize || /no|0/.test(config.autosize)) {
+      physicalScreenWidth = document.getElementById('display').clientWidth;
+      physicalScreenHeight = document.getElementById('display').clientHeight;
+    }
+  }
+
   function updateCanvas() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
@@ -266,8 +273,8 @@ var MIDP = (function() {
     window.addEventListener("resize", onWindowResize);
   } else {
     document.documentElement.classList.add('debug-mode');
-    physicalScreenWidth = 240;
-    physicalScreenHeight = 320;
+    physicalScreenWidth = document.getElementById('display').clientWidth;
+    physicalScreenHeight = document.getElementById('display').clientHeight;
 
     updateCanvas();
     isVKVisible = function() {
@@ -643,10 +650,11 @@ var MIDP = (function() {
     }
 
     // Perform updating.
-    var dialog = document.getElementById('download-progress-dialog').cloneNode(true);
+    var dialogTemplateNode = document.getElementById('download-progress-dialog');
+    var dialog = dialogTemplateNode.cloneNode(true);
     dialog.style.display = 'block';
     dialog.classList.add('visible');
-    document.body.appendChild(dialog);
+    dialogTemplateNode.parentNode.appendChild(dialog);
 
     performDownload(pendingMIDletUpdate, dialog, function(data) {
       dialog.parentElement.removeChild(dialog);
@@ -1158,6 +1166,10 @@ var MIDP = (function() {
     return J2ME.newString("");
   };
 
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
+
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z", 0);
+
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;
@@ -1223,6 +1235,8 @@ var MIDP = (function() {
     keyRelease: keyRelease,
     displayId: displayId,
     context2D: context2D,
+    updatePhysicalScreenSize: updatePhysicalScreenSize,
+    updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,
   };
 })();

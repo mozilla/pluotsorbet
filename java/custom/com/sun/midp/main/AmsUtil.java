@@ -132,7 +132,7 @@ public class AmsUtil {
      * @return false to signal that the MIDlet suite does not have to exit
      * before the MIDlet is run
      */
-    public static boolean executeWithArgs(MIDletSuiteStorage midletSuiteStorage,
+    static boolean executeWithArgs(MIDletSuiteStorage midletSuiteStorage,
             int externalAppId, int id, String midlet,
             String displayName, String arg0, String arg1, String arg2,
             int memoryReserved, int memoryTotal, int priority,
