@@ -21,11 +21,11 @@ export JSR_179
 
 # Closure optimization level J2ME_OPTIMIZATIONS breaks the profiler somehow,
 # so we revert to level SIMPLE if the profiler is enabled.
-#ifeq ($(PROFILE),0)
-J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
-#else
-J2ME_JS_OPTIMIZATION_LEVEL = SIMPLE
-#endif
+ifeq ($(PROFILE),0)
+  J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
+else
+  J2ME_JS_OPTIMIZATION_LEVEL = SIMPLE
+endif
 
 MAIN_JS_SRCS = \
   libs/console.js \
