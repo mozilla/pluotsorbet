@@ -363,11 +363,13 @@ var currentlyFocusedTextEditor;
 
         // Note:
         // When a css string, such as ` 10 pt Arial, Helvetica`, is set to
-        // MIDP.context2D.font, it will be formatted to `10 pt Arial,Helvetica`
-        // with some spaces removed.
-        // We need this css string to have the same format as that of the
-        // MIDP.context2D.font to do comparison in withFont() function.
-        this.css = style + size + "px " + face;
+        // a canvas context's `font` property, it will be formatted to
+        // `10 pt Arial,Helvetica` with some spaces removed.
+        // We want our `css` property to be the canonical string
+        // representation, so we set `tempContext.font` to this value
+        // and then actually use the result.
+        tempContext.font = style + size + "px " + face;
+        this.css = tempContext.font;
         this.size = size;
         this.style = style;
         this.face = face;
@@ -376,11 +378,11 @@ var currentlyFocusedTextEditor;
     function calcStringWidth(font, str) {
         var emojiLen = 0;
 
-        withFont(font, MIDP.context2D);
-        var len = measureWidth(MIDP.context2D, str.replace(emoji.regEx, function() {
+        tempContext.font = font.css;
+        var len = tempContext.measureText(str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
-        }));
+        })).width;
 
         return len + emojiLen;
     }
@@ -405,8 +407,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        withFont(this, MIDP.context2D);
-        return measureWidth(MIDP.context2D, String.fromCharCode(char));
+        tempContext.font = this.css;
+        return tempContext.measureText(String.fromCharCode(char)).width;
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -441,28 +443,18 @@ var currentlyFocusedTextEditor;
         return [x, y];
     }
 
-    function measureWidth(c, str) {
-        return c.measureText(str).width | 0;
-    }
-
-    function withFont(font, c) {
-        if (c.font != font.css) {
-          c.font = font.css;
-        }
-    }
-
     // withTextAnchor() can be hot. This variable lets it return two values
     // without creating a new array every time.
     var withTextAnchorRet = [0, 0];
 
     function withTextAnchor(g, c, anchor, x, y, str) {
-        withFont(g.currentFont, c);
+        c.font = g.currentFont.css;
 
         c.textAlign = "left";
         c.textBaseline = "top";
 
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = measureWidth(c, str);
+            var w = c.measureText(str).width;
 
             if (anchor & RIGHT) {
                 x -= w;
@@ -1006,7 +998,7 @@ var currentlyFocusedTextEditor;
                 c.fillText(text, textX, textY);
 
                 // Calculate the string width.
-                x += measureWidth(c, text);
+                x += c.measureText(text).width;
 
                 var emojiData = emoji.getData(match0, font.size);
                 c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, font.size, font.size);
