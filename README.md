@@ -11,6 +11,8 @@ The current goals of j2me.js are:
 
 Make sure you have a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
 
+You need to install the TypeScript compiler, the easiest way is via NPM: `npm install -g typescript`.
+
 Get the [j2me.js repo](https://github.com/mozilla/j2me.js) if you don't have it already
 
         git clone https://github.com/mozilla/j2me.js
@@ -66,7 +68,9 @@ Example - Asteroids
 
 ## Tests
 
-You can run the test suite with `make test`. The main driver for the test suite is automation.js which uses the Casper.js testing framework and slimer.js (a Gecko backend for casper.js). This test suite runs on every push (continuous integration) thanks to Travis.
+You can run the test suite with `make test`. The main driver for the test suite is tests/automation.js which uses the [CasperJS](http://casperjs.org/) testing framework and [SlimerJS](http://slimerjs.org/) (a Gecko backend for CasperJS). This test suite runs on every push (continuous integration) thanks to [Travis CI](https://travis-ci.org/).
+
+`make test` downloads SlimerJS for you automatically, but you have to install CasperJS yourself. The easiest way to do that is via NPM: `npm install -g casperjs`.  On Mac, you may also be able to install it via Brew.
 
 If you want to pass additional [casperJS command line options](http://docs.slimerjs.org/current/configuration.html), look at the "test" target in Makefile and place additional command line options before the automation.js filename.
 
@@ -235,7 +239,7 @@ The startup benchmark measures from when the benchmark.js file loads to the call
 
 To use:
 
-*It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds*
+*It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds. To do this on a Firefox OS device, see [B2G/QA/Tips And Tricks](https://wiki.mozilla.org/B2G/QA/Tips_And_Tricks#For_changing_the_preference:).*
 
 1. Checkout the version you want to be the baseline(usually mozilla/master).
 1. Build a benchmark build `RELEASE=1 BENCHMARK=1 make` *"RELEASE=1" is not required, but is recommended to avoid debug code from changing execution behavior.*
@@ -273,14 +277,6 @@ e.g.:
 
     Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(src, srcOffset, dst, dstOffset, length) {...};
 
-If you need to implement a method in JS but you can't declare it `native` in Java, use `Override`.
-
-e.g.:
-
-    Override["java/lang/Math.min.(II)I"] = function(a, b) {
-      return Math.min(a, b);
-    };
-
 If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in vm/runtime.ts, e.g.:
 
     throw $.newNullPointerException("Cannot copy to/from a null array.");
@@ -288,7 +284,7 @@ If raising a Java `Exception`, throw new instance of Java `Exception` class as d
 If you need implement a native method with async JS calls, the following steps are required:
 
 1. Add the method to the `yieldMap` in jit/analyze.ts
-2. Use `asyncImpl` in override.js to return the asnyc value with a `Promise`.
+2. Use `asyncImpl` in native.js to return the asnyc value with a `Promise`.
 
 e.g:
 

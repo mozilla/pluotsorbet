@@ -6,7 +6,8 @@ env:
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
-  - wget -P /tmp/j2me.js -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/36.0b1-candidates/build1/jsshell-linux-x86_64.zip
+  - npm install typescript
+  - wget -P /tmp/j2me.js -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/37.0b7-candidates/build1/jsshell-linux-x86_64.zip
   - unzip -d /tmp/js /tmp/j2me.js/jsshell-linux-x86_64.zip
   - export PATH=$PATH:/tmp/js
 script:

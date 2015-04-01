@@ -76,31 +76,12 @@ var MIDP = (function() {
     console.info(J2ME.fromJavaString(message));
   };
 
-  Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function() {
-    return J2ME.newStringArray(0);
-  };
-
-  Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
-    return null;
-  };
-
-  Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(name) {
-    return J2ME.newStringArray(0);
-  };
-
-  Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function() {
-    return J2ME.newStringArray(0);
-  };
-
   Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
     return 1;
   };
 
   Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
     return 1;
-  };
-
-  Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function() {
   };
 
   Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
@@ -1184,6 +1165,10 @@ var MIDP = (function() {
     console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
     return J2ME.newString("");
   };
+
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
+
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z", 0);
 
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     // We are in MVM mode (multiple MIDlets running concurrently)

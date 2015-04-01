@@ -780,6 +780,14 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
         return (readBytes > 0) ? readBytes : -1;
     }
 
+    protected long skip(long n) throws IOException {
+        checkReadMode();
+
+        ensureConnected();
+
+        return fileHandler.skip(n);
+    }
+
     /**
      * Writes <code>len</code> bytes from the specified byte array
      * starting at offset <code>off</code> to this output stream.
@@ -876,7 +884,9 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
      * @throws IOException if the connection is closed
      */
     protected void ensureConnected() throws IOException {
-        connect(fileRoot, filePath + fileName);
+        if (fileHandler == null) {
+            connect(fileRoot, filePath + fileName);
+        }
     }
 
     /**
