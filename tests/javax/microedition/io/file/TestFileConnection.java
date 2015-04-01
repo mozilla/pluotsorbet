@@ -10,7 +10,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestFileConnection implements Testlet {
-    public int getExpectedPass() { return 167; }
+    public int getExpectedPass() { return 169; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
     String dirPath;
@@ -383,6 +383,8 @@ public class TestFileConnection implements Testlet {
             in.read();
             th.check(in.available(), 4);
             th.check(in.skip((long) 1), 1);
+            th.check(in.available(), 3);
+            th.check(in.skip((long) -5), 0);
             th.check(in.available(), 3);
             th.check(in.skip((long) 10), 3);
             th.check(in.available(), 0);

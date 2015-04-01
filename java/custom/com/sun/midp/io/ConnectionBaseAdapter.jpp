@@ -291,6 +291,22 @@ public abstract class ConnectionBaseAdapter implements ConnectionBaseInterface,
     protected abstract int readBytes(byte b[], int off, int len)
         throws IOException;
 
+    protected long skip(long n) throws IOException {
+        byte[] buf = new byte[1];
+
+        long m = n;
+        while (m > 0) {
+            if (readBytes(buf, 0, 1) < 0) {
+                break;
+            }
+            if ((buf[0] & 0xFF) < 0) {
+                break;
+            }
+            --m;
+        }
+        return n-m;
+    }
+
     /**
      * Returns the number of bytes that can be read (or skipped over) from
      * this input stream without blocking by the next caller of a method for
@@ -620,6 +636,10 @@ class BaseInputStream extends InputStream {
         }
 
         return readSize;
+    }
+
+    public long skip(long n) throws IOException {
+        return parent.skip(n);
     }
 
     /**
