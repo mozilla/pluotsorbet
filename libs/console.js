@@ -327,32 +327,12 @@
     });
   };
 
-  window.console = {
-    trace: logAtLevel.bind(null, "trace"),
-    log: logAtLevel.bind(null, "log"),
-    info: logAtLevel.bind(null, "info"),
-    warn: logAtLevel.bind(null, "warn"),
-    error: logAtLevel.bind(null, "error"),
-    profile: typeof console !== "undefined" && console.profile ? console.profile.bind(console) : null,
-    profileEnd: typeof console !== "undefined" && console.profileEnd ? console.profileEnd.bind(console) : null,
-  };
-
-  window.console.buffer = "";
-
-  window.console.print = function(ch) {
-    if (ch === 10) {
-      this.flush();
-    } else {
-      this.buffer += String.fromCharCode(ch);
-    }
-  };
-
-  window.console.flush = function() {
-    if (this.buffer.length) {
-      var temp = this.buffer;
-      this.buffer = "";
-      console.info(temp);
-    }
-  };
+  window.console = Object.create(windowConsole, {
+    trace: { value: logAtLevel.bind(null, "trace") },
+    log: { value: logAtLevel.bind(null, "log") },
+    info: { value: logAtLevel.bind(null, "info") },
+    warn: { value: logAtLevel.bind(null, "warn") },
+    error: { value: logAtLevel.bind(null, "error") },
+  });
 
 })();

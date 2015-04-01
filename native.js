@@ -559,29 +559,23 @@ Native["java/lang/Thread.activeCount.()I"] = function() {
     return $.ctx.runtime.threadCount;
 };
 
-if (!("buffer" in console)) {
-    console.buffer = "";
-}
+console.buffer = "";
 
-if (!("print" in console)) {
-    console.print = function(ch) {
-        if (ch === 10) {
-            this.flush();
-        } else {
-            this.buffer += String.fromCharCode(ch);
-        }
-    };
-}
+console.print = function(ch) {
+    if (ch === 10) {
+        this.flush();
+    } else {
+        this.buffer += String.fromCharCode(ch);
+    }
+};
 
-if (!("flush" in console)) {
-    console.flush = function() {
-        if (this.buffer.length) {
-            var temp = this.buffer;
-            this.buffer = "";
-            console.info(temp);
-        }
-    };
-}
+console.flush = function() {
+    if (this.buffer.length) {
+        var temp = this.buffer;
+        this.buffer = "";
+        console.info(temp);
+    }
+};
 
 Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
     console.print(ch);
