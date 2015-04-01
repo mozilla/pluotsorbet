@@ -171,9 +171,9 @@
   WebConsole.prototype = {
     push: function(item) {
       if (item.matchesCurrentFilters()) {
-        if (console.buffer.length) {
+        if (consoleBuffer.length) {
           // Preserve order w/r/t console.print().
-          console.flush();
+          flushConsoleBuffer();
         }
         windowConsole[item.levelName].apply(windowConsole, [item.message]);
       }

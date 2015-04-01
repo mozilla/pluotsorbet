@@ -559,23 +559,27 @@ Native["java/lang/Thread.activeCount.()I"] = function() {
     return $.ctx.runtime.threadCount;
 };
 
-console.buffer = "";
+var consoleBuffer = "";
 
-console.print = function(ch) {
-    if (ch === 10) {
-        this.flush();
-    } else {
-        this.buffer += String.fromCharCode(ch);
-    }
-};
-
-console.flush = function() {
-    if (this.buffer.length) {
-        var temp = this.buffer;
-        this.buffer = "";
+function flushConsoleBuffer() {
+    if (consoleBuffer.length) {
+        var temp = consoleBuffer;
+        consoleBuffer = "";
         console.info(temp);
     }
-};
+}
+
+// jsshell.js defines *console.print* differently, so we only define it here
+// if it isn't already defined.
+if (!("print" in console)) {
+    console.print = function(ch) {
+        if (ch === 10) {
+            flushConsoleBuffer();
+        } else {
+            consoleBuffer += String.fromCharCode(ch);
+        }
+    };
+}
 
 Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
     console.print(ch);
