@@ -21,7 +21,7 @@ public class ImageProcessingTest extends MIDlet {
             g.fillRect(0, 0, getWidth(), getHeight());
 
             if (image != null) {
-                g.drawImage(image, 0, 0, Graphics.TOP | Graphics.LEFT);
+                g.drawImage(image, 20, 20, Graphics.TOP | Graphics.LEFT);
             }
             System.out.println("PAINTED");
         }
@@ -45,12 +45,12 @@ public class ImageProcessingTest extends MIDlet {
         client.receive(msg);
         byte[] clientData = msg.getData();
 
-        FileConnection originalImage = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
+        FileConnection originalImage = (FileConnection)Connector.open("file:////test.png", Connector.READ_WRITE);
         if (!originalImage.exists()) {
             originalImage.create();
         }
         OutputStream os = originalImage.openDataOutputStream();
-        InputStream is = getClass().getResourceAsStream("/org/mozilla/io/test.jpg");
+        InputStream is = getClass().getResourceAsStream("/gfx/images/red.png");
         os.write(TestUtils.read(is));
         os.close();
 
@@ -58,10 +58,10 @@ public class ImageProcessingTest extends MIDlet {
         dataEncoder.putStart(14, "event");
         dataEncoder.put(13, "name", "Scale");
         dataEncoder.put(2, "trans_id", 42);
-        dataEncoder.put(11, "filename", "test.jpg");
+        dataEncoder.put(11, "filename", "test.png");
         dataEncoder.putStart(15, "limits");
-        dataEncoder.put(5, "max_hres", 100);
-        dataEncoder.put(5, "max_vres", 100);
+        dataEncoder.put(5, "max_hres", 70);
+        dataEncoder.put(5, "max_vres", 40);
         dataEncoder.putEnd(15, "limits");
         dataEncoder.put(10, "aspect", "FullImage");
         dataEncoder.put(2, "quality", 80);
