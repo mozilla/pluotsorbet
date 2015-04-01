@@ -601,11 +601,11 @@ ImageRecorder.prototype.getHeight = function() {
 }
 
 ImageRecorder.prototype.setLocation = function(x, y, w, h) {
-    var displayElem = document.getElementById("display");
+    var displayContainer = document.getElementById("display-container");
     this.sender({
         type: "setPosition",
-        x: x + displayElem.offsetLeft,
-        y: y + displayElem.offsetTop,
+        x: x + displayContainer.offsetLeft,
+        y: y + displayContainer.offsetTop,
         w: w,
         h: h,
     });

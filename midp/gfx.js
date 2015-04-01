@@ -570,10 +570,6 @@ var currentlyFocusedTextEditor;
         reset(this, 0, 0, this.maxWidth, this.maxHeight);
     };
 
-    Native["javax/microedition/lcdui/Graphics.isScreenGraphics.()Z"] = function() {
-        return isScreenGraphics(this);
-    };
-
     Native["javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V"] = function(x_src, y_src, width, height, x_dest, y_dest, anchor) {
         if (isScreenGraphics(this)) {
             throw $.newIllegalStateException();
@@ -597,11 +593,11 @@ var currentlyFocusedTextEditor;
         return this.transY;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getMaxWidth.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
         return this.maxWidth;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getMaxHeight.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function() {
         return this.maxHeight;
     };
 
@@ -828,10 +824,6 @@ var currentlyFocusedTextEditor;
                           transform, x_dest, y_dest, anchor)) {
             throw $.newIllegalArgumentException();
         }
-    };
-
-    Native["javax/microedition/lcdui/Graphics.renderRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)Z"] = function(image, x_src, y_src, width, height, transform, x_dest, y_dest, anchor) {
-        return renderRegion(this, image, x_src, y_src, width, height, transform, x_dest, y_dest, anchor);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawImage.(Ljavax/microedition/lcdui/Image;III)V"] = function(image, x, y, anchor) {
@@ -1531,10 +1523,12 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(title, ticker, type) {
         var nativeId = nextMidpDisplayableId++;
-        var el = document.getElementById("lcdui-alert").cloneNode(true);
+        var alertTemplateNode = document.getElementById("lcdui-alert");
+        var el = alertTemplateNode.cloneNode(true);
         el.id = "displayable-" + nativeId;
         el.querySelector('h1.title').textContent = J2ME.fromJavaString(title);
-        document.body.appendChild(el);
+        alertTemplateNode.parentNode.appendChild(el);
+
         return nativeId;
     };
 

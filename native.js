@@ -881,16 +881,6 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
     } else {
         mask = document.createElement("div");
         mask.id = maskId;
-        mask.style.position = "absolute";
-        mask.style.top = 0;
-        mask.style.left = 0;
-        mask.style.height = MIDP.context2D.canvas.height + "px";
-        mask.style.width = MIDP.context2D.canvas.width + "px";
-        mask.style.backgroundColor = "#000";
-        mask.style.backgroundPosition = "center center";
-        mask.style.backgroundRepeat = "no-repeat";
-        mask.style.backgroundSize = "contain";
-
         mask.onclick = mask.ontouchstart = function() {
             _revokeImageURL();
             mask.parentNode.removeChild(mask);

@@ -19,6 +19,14 @@ export JSR_082
 JSR_179 ?= 1
 export JSR_179
 
+# Closure optimization level J2ME_OPTIMIZATIONS breaks the profiler somehow,
+# so we revert to level SIMPLE if the profiler is enabled.
+ifeq ($(PROFILE),0)
+  J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
+else
+  J2ME_JS_OPTIMIZATION_LEVEL = SIMPLE
+endif
+
 MAIN_JS_SRCS = \
   libs/console.js \
   polyfill/canvas-toblob.js \
@@ -175,10 +183,10 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar
+bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
-	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_OPTIMIZATIONS bld/j2me.js > bld/j2me.cc.js \
+	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
