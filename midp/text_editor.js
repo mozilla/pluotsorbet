@@ -262,7 +262,7 @@ var TextEditorProvider = (function() {
 
                 // Replace <br> by \n so that textContent attribute doesn't
                 // strip new lines.
-                html = html.replace("<br>", "\n", "g");
+                html = html.replace(/<br>/g, "\n");
 
                 // Convert the emoji images back to characters.
                 // The original character is stored in the alt attribute of its
@@ -294,7 +294,7 @@ var TextEditorProvider = (function() {
 
         setContent: function(content) {
             // Filter all the \r characters as we use \n.
-            content = content.replace("\r", "", "g");
+            content = content.replace(/\r/g, "");
 
             this.content = content;
 
@@ -322,7 +322,7 @@ var TextEditorProvider = (function() {
             }.bind(this);
 
             // Replace "\n" by <br>
-            html = html.replace("\n", "<br>", "g");
+            html = html.replace(/\n/g, "<br>");
 
             html = html.replace(emoji.regEx, toImg) + "<br>";
 
