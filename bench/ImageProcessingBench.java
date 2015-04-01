@@ -73,6 +73,7 @@ public class ImageProcessingBench {
           os.write(TestUtils.read(is));
           os.close();
 
+          MemorySampler.sampleMemory("Memory before nokia.image-processing benchmark");
           for (int i = 0; i < 1000; i++) {
             start = JVM.monotonicTimeMillis();
             String path = scaleImage();
@@ -83,6 +84,7 @@ public class ImageProcessingBench {
             file.close();
           }
           System.out.println("scaleImage: " + time);
+          MemorySampler.sampleMemory("Memory after nokia.image-processing benchmark");
 
           originalImage.delete();
           originalImage.close();
