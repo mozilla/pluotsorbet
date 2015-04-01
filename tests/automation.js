@@ -51,7 +51,7 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBxyTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
-  { name: "gfx/ImageProcessingTest", maxDifferentLinux: 5830, maxDifferentMac: 6466 },
+  { name: "gfx/ImageProcessingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferentLinux: 205, maxDifferentMac: 295 },
   { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferentLinux: 0, maxDifferentMac: 788 },
