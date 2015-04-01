@@ -211,7 +211,7 @@ aot: bld/classes.jar.js
 bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
-	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_AOT_OPTIMIZATIONS bld/classes.jar.js > bld/classes.jar.cc.js \
+	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
 bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
