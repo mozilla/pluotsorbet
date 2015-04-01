@@ -334,9 +334,6 @@ module J2ME {
     return c >= 48 && c <= 57;
   }
 
-  var invalidChars = "[];/<>()";
-  var replaceChars = "abc_defg";
-
   function needsEscaping(s: string): boolean {
     var l = s.length;
     for (var i = 0; i < l; i++) {

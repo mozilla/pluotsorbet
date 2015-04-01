@@ -193,6 +193,8 @@ interface BaseFileHandler {
     // See javax.microedition.media.protocol.SourceStream.read() in JSR-135
     public int read(byte b[], int off, int len) throws IOException;
 
+    public long skip(long skip) throws IOException;
+
     // JAVADOC COMMENT ELIDED
     // See java.io.OutputStream.write() in CLDC 1.1
     public int write(byte b[], int off, int len) throws IOException;

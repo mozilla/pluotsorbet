@@ -571,7 +571,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = fu
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
-    DEBUG_FS && console.log("DefaultFileHandler.read: " + J2ME.fromJavaString(this.nativePath));
+    DEBUG_FS && console.log("DefaultFileHandler.read: " + J2ME.fromJavaString(this.nativePath) + " " + len);
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.read: ignored file");
         return -1;
@@ -592,6 +592,31 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
     b.set(data, off);
 
     return (data.byteLength > 0) ? data.byteLength : -1;
+};
+
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(n) {
+    DEBUG_FS && console.log("DefaultFileHandler.skip: " + J2ME.fromJavaString(this.nativePath));
+    if (this.nativeDescriptor === -1) {
+        DEBUG_FS && console.log("DefaultFileHandler.skip: ignored file");
+        return -1;
+    }
+
+    var toSkip = n.toNumber();
+
+    if (toSkip < 0) {
+        return Long.fromNumber(0);
+    }
+
+    var fd = this.nativeDescriptor;
+    var pos = fs.getpos(fd);
+    var size = fs.getsize(fd);
+    if (pos + toSkip > size) {
+        fs.setpos(fd, size);
+        return Long.fromNumber(size - pos);
+    } else {
+        fs.setpos(fd, pos + toSkip);
+        return n;
+    }
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {

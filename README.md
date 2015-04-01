@@ -11,6 +11,8 @@ The current goals of j2me.js are:
 
 Make sure you have a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
 
+You need to install the TypeScript compiler, the easiest way is via NPM: `npm install -g typescript`.
+
 Get the [j2me.js repo](https://github.com/mozilla/j2me.js) if you don't have it already
 
         git clone https://github.com/mozilla/j2me.js

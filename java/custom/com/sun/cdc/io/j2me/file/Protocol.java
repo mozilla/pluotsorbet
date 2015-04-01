@@ -780,6 +780,14 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
         return (readBytes > 0) ? readBytes : -1;
     }
 
+    protected long skip(long n) throws IOException {
+        checkReadMode();
+
+        ensureConnected();
+
+        return fileHandler.skip(n);
+    }
+
     /**
      * Writes <code>len</code> bytes from the specified byte array
      * starting at offset <code>off</code> to this output stream.
