@@ -75,7 +75,6 @@ module J2ME {
         "com/sun/cldc/isolate/Isolate",
         "org/mozilla/internal/Sys",
         "java/lang/System",
-        "javax/microedition/lcdui/Display",
         "java/lang/RuntimeException",
         "java/lang/IllegalStateException",
         "java/lang/Long",
