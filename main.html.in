@@ -63,6 +63,7 @@
         <div class="toolbarLabel">Profiler <span id="profilerMessage" class="toolbarMessage">6 Seconds</span></div>
         <div id="profilerButtons">
           <div id="profilerStartStop">Start</div>
+          <div id="profilerAdjustHeight">Height</div>
         </div>
       </div>
       <div id="profiler">

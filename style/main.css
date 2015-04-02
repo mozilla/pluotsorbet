@@ -385,16 +385,30 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   bottom: 0px;
   right: 0px;
   height: 512px;
+  background-color: #111;
+  overflow: auto;
+}
+
+.profile-mode #profilerContainer.max {
+  height: 100%;
 }
 
 #profilerToolbar {
+  color: white;
   padding: 2px;
 }
 
-#profilerStartStop {
-  display: block;
+#profilerStartStop, #profilerAdjustHeight {
+  display: inline;
   color: red;
   cursor: hand;
+  padding-right: 20px;
+}
+
+#profiler {
+  /* Add a bumper for scrolling since the profiler intercepts
+   * scroll events, making it impossible to scroll to more timelines. */
+  margin-right: 20px;
 }
 
 .profiler-tooltip {
@@ -420,6 +434,9 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   margin: 2px auto 4px auto;
   border: none;
   border-bottom: 1px solid #555;
+}
+.profiler-timeline-name {
+  color: #ddd;
 }
 
 /* Styles for text editors */

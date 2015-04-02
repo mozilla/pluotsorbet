@@ -133,8 +133,8 @@ module J2ME {
   declare var Shumway;
 
   export var timeline;
-  export var methodTimeline;
   export var threadTimeline;
+  export var methodTimelines = [];
   export var nativeCounter = release ? null : new Metrics.Counter(true);
   export var runtimeCounter = release ? null : new Metrics.Counter(true);
   export var baselineMethodCounter = release ? null : new Metrics.Counter(true);
@@ -145,7 +145,6 @@ module J2ME {
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
-    methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
     threadTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Threads");
   }
 
@@ -420,6 +419,7 @@ module J2ME {
     staticFields: any;
     classObjects: any;
     ctx: Context;
+    allCtxs: Set<Context>;
 
     isolate: com.sun.cldc.isolate.Isolate;
     mainThread: java.lang.Thread;
@@ -438,6 +438,7 @@ module J2ME {
       this.staticFields = {};
       this.classObjects = {};
       this.ctx = null;
+      this.allCtxs = new Set();
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
       this._nextHashCode = this._runtimeId << 24;
     }
@@ -506,6 +507,7 @@ module J2ME {
     addContext(ctx) {
       ++this.threadCount;
       RuntimeTemplate.all.add(this);
+      this.allCtxs.add(ctx);
     }
 
     removeContext(ctx) {
@@ -513,6 +515,7 @@ module J2ME {
         RuntimeTemplate.all.delete(this);
         this.updateStatus(RuntimeStatus.Stopped);
       }
+      this.allCtxs.delete(ctx);
     }
 
     newStringConstant(s: string): java.lang.String {
@@ -1311,7 +1314,7 @@ module J2ME {
         }
         $.ctx.monitorEnter(frame.lockObject);
         if (U === VMState.Pausing) {
-          $.ctx.frames.push(frame);
+          $.ctx.pushFrame(frame);
           return;
         }
       }
@@ -1391,10 +1394,15 @@ module J2ME {
   }
 
   function profilingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
+    if (methodType === MethodType.Interpreted) {
+      // Profiling for interpreted functions is handled by the context.
+      return fn;
+    }
     return function (a, b, c, d) {
       var key = MethodType[methodType] + " " + methodInfo.implKey;
       try {
-        methodTimeline.enter(key);
+        var ctx = $.ctx;
+        ctx.methodTimeline.enter(key);
         var r;
         switch (arguments.length) {
           case 0:
@@ -1412,9 +1420,16 @@ module J2ME {
           default:
             r = fn.apply(this, arguments);
         }
-        methodTimeline.leave(key);
+        if (U) {
+          // TODO: Indicate unwinding on the method timeline.
+          if (methodType === MethodType.Native) {
+            ctx.methodTimeline.leave(key);
+          }
+        } else {
+          ctx.methodTimeline.leave(key);
+        }
       } catch (e) {
-        methodTimeline.leave(key);
+        ctx.methodTimeline.leave(key);
         throw e;
       }
       return r;
@@ -1467,12 +1482,8 @@ module J2ME {
       }
     }
 
-    if (false && methodTimeline) {
-      fn = profilingWrapper(fn, methodInfo, methodType);
-    }
-
-    if (traceWriter) {
-      fn = tracingWrapper(fn, methodInfo, methodType);
+    if (profile) {
+      fn = wrapMethod(fn, methodInfo, methodType);
     }
 
     klass.methods[methodInfo.index] = methodInfo.fn = fn;
@@ -1762,6 +1773,17 @@ module J2ME {
     }
   }
 
+  function wrapMethod(fn, methodInfo: MethodInfo, methodType: MethodType) {
+    if (profile) {
+      fn = profilingWrapper(fn, methodInfo, methodType);
+    }
+
+    if (traceWriter) {
+      fn = tracingWrapper(fn, methodInfo, methodType);
+    }
+    return fn;
+  }
+
   /**
    * Links up compiled method at runtime.
    */
@@ -1775,6 +1797,9 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = jsGlobal[mangledClassAndMethodName];
+    if (profile) {
+      fn = wrapMethod(fn, methodInfo, MethodType.Compiled);
+    }
     var klass = methodInfo.classInfo.klass;
     klass.methods[methodInfo.index] = methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;

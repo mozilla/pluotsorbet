@@ -18,7 +18,7 @@ function asyncImpl(returnKind, promise) {
   }, function(exception) {
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
-    ctx.frames.push(Frame.create(methodInfo, [exception]));
+    ctx.pushFrame(Frame.create(methodInfo, [exception]));
     ctx.execute();
   });
   $.pause("Async");
@@ -309,7 +309,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
-        $.ctx.executeFrame(Frame.create(clinit, []));
+        J2ME.getLinkedMethod(clinit).call();
     }
 };
 
