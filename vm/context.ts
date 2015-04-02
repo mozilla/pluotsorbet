@@ -130,10 +130,6 @@ module J2ME {
       Frame.dirtyStack.push(this);
     }
 
-    setLocal(i: number, value: any) {
-      this.local[i] = value;
-    }
-
     incLocal(i: number, value: any) {
       this.local[i] += value | 0;
     }
@@ -240,16 +236,16 @@ module J2ME {
         case Bytecodes.ISTORE:
         case Bytecodes.FSTORE:
         case Bytecodes.ASTORE:
-          this.setLocal(this.read16(), stack.pop());
+          this.local[this.read16()] = stack.pop();
           break;
         case Bytecodes.LSTORE:
         case Bytecodes.DSTORE:
-          this.setLocal(this.read16(), stack.pop2());
+          this.local[this.read16()] = stack.pop2();
           break;
         case Bytecodes.IINC:
           var index = this.read16();
           var value = this.read16Signed();
-          this.setLocal(index, this.local[index] + value);
+          this.local[index] += value;
           break;
         case Bytecodes.RET:
           this.pc = this.local[this.read16()];

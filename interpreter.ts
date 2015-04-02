@@ -418,47 +418,47 @@ module J2ME {
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
           case Bytecodes.ASTORE:
-            frame.setLocal(frame.read8(), stack.pop());
+            frame.local[frame.read8()] = stack.pop();
             break;
           case Bytecodes.LSTORE:
           case Bytecodes.DSTORE:
-            frame.setLocal(frame.read8(), stack.pop2());
+            frame.local[frame.read8()] = stack.pop2();
             break;
           case Bytecodes.ISTORE_0:
           case Bytecodes.FSTORE_0:
           case Bytecodes.ASTORE_0:
-            frame.setLocal(0, stack.pop());
+            frame.local[0] = stack.pop();
             break;
           case Bytecodes.ISTORE_1:
           case Bytecodes.FSTORE_1:
           case Bytecodes.ASTORE_1:
-            frame.setLocal(1, stack.pop());
+            frame.local[1] = stack.pop();
             break;
           case Bytecodes.ISTORE_2:
           case Bytecodes.FSTORE_2:
           case Bytecodes.ASTORE_2:
-            frame.setLocal(2, stack.pop());
+            frame.local[2] = stack.pop();
             break;
           case Bytecodes.ISTORE_3:
           case Bytecodes.FSTORE_3:
           case Bytecodes.ASTORE_3:
-            frame.setLocal(3, stack.pop());
+            frame.local[3] = stack.pop();
             break;
           case Bytecodes.LSTORE_0:
           case Bytecodes.DSTORE_0:
-            frame.setLocal(0, stack.pop2());
+            frame.local[0] = stack.pop2();
             break;
           case Bytecodes.LSTORE_1:
           case Bytecodes.DSTORE_1:
-            frame.setLocal(1, stack.pop2());
+            frame.local[1] = stack.pop2();
             break;
           case Bytecodes.LSTORE_2:
           case Bytecodes.DSTORE_2:
-            frame.setLocal(2, stack.pop2());
+            frame.local[2] = stack.pop2();
             break;
           case Bytecodes.LSTORE_3:
           case Bytecodes.DSTORE_3:
-            frame.setLocal(3, stack.pop2());
+            frame.local[3] = stack.pop2();
             break;
           case Bytecodes.IASTORE:
           case Bytecodes.FASTORE:
@@ -551,12 +551,12 @@ module J2ME {
           case Bytecodes.IINC:
             index = frame.read8();
             value = frame.read8Signed();
-            frame.incLocal(index, value);
+            frame.local[index] += value | 0;
             break;
           case Bytecodes.IINC_GOTO:
             index = frame.read8();
             value = frame.read8Signed();
-            frame.setLocal(index, frame.local[index] + value);
+            frame.local[index] += frame.local[index];
             frame.pc ++;
             frame.pc = frame.readTargetPC();
             break;

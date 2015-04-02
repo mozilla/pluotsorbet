@@ -1276,11 +1276,11 @@ module J2ME {
         var frame = Frame.create(methodInfo, []);
         var j = 0;
         if (!methodInfo.isStatic) {
-          frame.setLocal(j++, this);
+          frame.local[j++] = this;
         }
         var slots = methodInfo.argumentSlots;
         for (var i = 0; i < slots; i++) {
-          frame.setLocal(j++, arguments[i]);
+          frame.local[j++] = arguments[i];
         }
         return $.ctx.executeFrame(frame);
       };
@@ -1292,15 +1292,15 @@ module J2ME {
       var frame = Frame.create(methodInfo, []);
       var j = 0;
       if (!methodInfo.isStatic) {
-        frame.setLocal(j++, this);
+        frame.local[j++] = this;
       }
       var signatureKinds = methodInfo.signatureKinds;
       release || assert (arguments.length === signatureKinds.length - 1,
         "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor.");
       for (var i = 1; i < signatureKinds.length; i++) {
-        frame.setLocal(j++, arguments[i - 1]);
+        frame.local[j++] = arguments[i - 1];
         if (isTwoSlot(signatureKinds[i])) {
-          frame.setLocal(j++, null);
+          frame.local[j++] = null;
         }
       }
       if (methodInfo.isSynchronized) {
