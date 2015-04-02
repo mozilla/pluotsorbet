@@ -139,7 +139,7 @@ public final class TestRunner {
 		System.out.print(passed ? " passed (" : " failed (");
 		System.out.print(description);
 		System.out.println(")");
-		if (testLog.length() > 0) {
+		if (testLog.length() > 0 && !passed) {
 			System.out.print("TESTLOG: ");
 			System.out.println(testLog);
 		}
