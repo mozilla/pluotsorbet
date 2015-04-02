@@ -157,6 +157,11 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
     .withFrame(0, basicUnitTests);
 
+    // Run the same unit tests again with baseline JIT enabled for all methods.
+    casper
+    .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log&forceRuntimeCompilation=1")
+    .withFrame(0, basicUnitTests);
+
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
     .withFrame(0, function() {
