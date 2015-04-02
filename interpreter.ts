@@ -350,52 +350,52 @@ module J2ME {
             stack.push2(constant);
             break;
           case Bytecodes.ILOAD:
-            stack.push(frame.getLocal(frame.read8()));
+            stack.push(frame.local[frame.read8()]);
             break;
           case Bytecodes.FLOAD:
-            stack.push(frame.getLocal(frame.read8()));
+            stack.push(frame.local[frame.read8()]);
             break;
           case Bytecodes.ALOAD:
-            stack.push(frame.getLocal(frame.read8()));
+            stack.push(frame.local[frame.read8()]);
             break;
           case Bytecodes.ALOAD_ILOAD:
-            stack.push(frame.getLocal(frame.read8()));
+            stack.push(frame.local[frame.read8()]);
             frame.pc ++;
-            stack.push(frame.getLocal(frame.read8()));
+            stack.push(frame.local[frame.read8()]);
             break;
           case Bytecodes.LLOAD:
           case Bytecodes.DLOAD:
-            stack.push2(frame.getLocal(frame.read8()));
+            stack.push2(frame.local[frame.read8()]);
             break;
           case Bytecodes.ILOAD_0:
           case Bytecodes.ILOAD_1:
           case Bytecodes.ILOAD_2:
           case Bytecodes.ILOAD_3:
-            stack.push(frame.getLocal(op - Bytecodes.ILOAD_0));
+            stack.push(frame.local[op - Bytecodes.ILOAD_0]);
             break;
           case Bytecodes.FLOAD_0:
           case Bytecodes.FLOAD_1:
           case Bytecodes.FLOAD_2:
           case Bytecodes.FLOAD_3:
-            stack.push(frame.getLocal(op - Bytecodes.FLOAD_0));
+            stack.push(frame.local[op - Bytecodes.FLOAD_0]);
             break;
           case Bytecodes.ALOAD_0:
           case Bytecodes.ALOAD_1:
           case Bytecodes.ALOAD_2:
           case Bytecodes.ALOAD_3:
-            stack.push(frame.getLocal(op - Bytecodes.ALOAD_0));
+            stack.push(frame.local[op - Bytecodes.ALOAD_0]);
             break;
           case Bytecodes.LLOAD_0:
           case Bytecodes.LLOAD_1:
           case Bytecodes.LLOAD_2:
           case Bytecodes.LLOAD_3:
-            stack.push2(frame.getLocal(op - Bytecodes.LLOAD_0));
+            stack.push2(frame.local[op - Bytecodes.LLOAD_0]);
             break;
           case Bytecodes.DLOAD_0:
           case Bytecodes.DLOAD_1:
           case Bytecodes.DLOAD_2:
           case Bytecodes.DLOAD_3:
-            stack.push2(frame.getLocal(op - Bytecodes.DLOAD_0));
+            stack.push2(frame.local[op - Bytecodes.DLOAD_0]);
             break;
           case Bytecodes.IALOAD:
           case Bytecodes.FALOAD:
@@ -556,7 +556,7 @@ module J2ME {
           case Bytecodes.IINC_GOTO:
             index = frame.read8();
             value = frame.read8Signed();
-            frame.setLocal(index, frame.getLocal(index) + value);
+            frame.setLocal(index, frame.local[index] + value);
             frame.pc ++;
             frame.pc = frame.readTargetPC();
             break;
@@ -876,7 +876,7 @@ module J2ME {
             frame.pc = pc;
             break;
           case Bytecodes.RET:
-            frame.pc = frame.getLocal(frame.read8());
+            frame.pc = frame.local[frame.read8()];
             break;
           case Bytecodes.I2L:
             stack.push2(Long.fromInt(stack.pop()));
@@ -1188,7 +1188,7 @@ module J2ME {
                 if (!calleeFrame.lockObject) {
                   frame.lockObject = calleeTargetMethodInfo.isStatic
                     ? calleeTargetMethodInfo.classInfo.getClassObject()
-                    : frame.getLocal(0);
+                    : frame.local[0];
                 }
                 ctx.monitorEnter(calleeFrame.lockObject);
                 if (U === VMState.Pausing || U === VMState.Stopping) {

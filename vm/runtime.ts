@@ -1307,7 +1307,7 @@ module J2ME {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
             ? methodInfo.classInfo.getClassObject()
-            : frame.getLocal(0);
+            : frame.local[0];
         }
         $.ctx.monitorEnter(frame.lockObject);
         if (U === VMState.Pausing) {

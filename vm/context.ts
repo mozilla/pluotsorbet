@@ -130,10 +130,6 @@ module J2ME {
       Frame.dirtyStack.push(this);
     }
 
-    getLocal(i: number): any {
-      return this.local[i];
-    }
-
     setLocal(i: number, value: any) {
       this.local[i] = value;
     }
@@ -235,11 +231,11 @@ module J2ME {
         case Bytecodes.ILOAD:
         case Bytecodes.FLOAD:
         case Bytecodes.ALOAD:
-          stack.push(this.getLocal(this.read16()));
+          stack.push(this.local[this.read16()]);
           break;
         case Bytecodes.LLOAD:
         case Bytecodes.DLOAD:
-          stack.push2(this.getLocal(this.read16()));
+          stack.push2(this.local[this.read16()]);
           break;
         case Bytecodes.ISTORE:
         case Bytecodes.FSTORE:
@@ -253,10 +249,10 @@ module J2ME {
         case Bytecodes.IINC:
           var index = this.read16();
           var value = this.read16Signed();
-          this.setLocal(index, this.getLocal(index) + value);
+          this.setLocal(index, this.local[index] + value);
           break;
         case Bytecodes.RET:
-          this.pc = this.getLocal(this.read16());
+          this.pc = this.local[this.read16()];
           break;
         default:
           var opName = Bytecodes[op];
