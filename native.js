@@ -18,7 +18,7 @@ function asyncImpl(returnKind, promise) {
   }, function(exception) {
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
-    ctx.frames.push(Frame.create(methodInfo, [exception], 0));
+    ctx.frames.push(Frame.create(methodInfo, [exception]));
     ctx.execute();
   });
   $.pause("Async");
@@ -309,7 +309,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
-        $.ctx.executeFrame(Frame.create(clinit, [], 0));
+        $.ctx.executeFrame(Frame.create(clinit, []));
     }
 };
 
@@ -538,7 +538,7 @@ Native["java/lang/Thread.start0.()V"] = function() {
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
-    newCtx.start([new Frame(run, [ this ], 0)]);
+    newCtx.start([Frame.create(run, [ this ])]);
 }
 
 Native["java/lang/Thread.isAlive.()Z"] = function() {

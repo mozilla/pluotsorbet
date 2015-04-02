@@ -79,7 +79,6 @@ module J2ME {
     pc: number;
     opPC: number;
     cp: any;
-    localBase: number;
     lockObject: java.lang.Object;
 
     static dirtyStack: Frame [] = [];
@@ -87,24 +86,24 @@ module J2ME {
     /**
      * Denotes the start of the context frame stack.
      */
-    static Start: Frame = Frame.create(null, null, 0);
+    static Start: Frame = Frame.create(null, null);
 
     /**
      * Marks a frame set.
      */
-    static Marker: Frame = Frame.create(null, null, 0);
+    static Marker: Frame = Frame.create(null, null);
 
     static isMarker(frame: Frame) {
       return frame.methodInfo === null;
     }
 
-    constructor(methodInfo: MethodInfo, local: any [], localBase: number) {
+    constructor(methodInfo: MethodInfo, local: any []) {
       frameCount ++;
       this.stack = [];
-      this.reset(methodInfo, local, localBase);
+      this.reset(methodInfo, local);
     }
 
-    reset(methodInfo: MethodInfo, local: any [], localBase: number) {
+    reset(methodInfo: MethodInfo, local: any []) {
       this.methodInfo = methodInfo;
       this.cp = methodInfo ? methodInfo.classInfo.constantPool : null;
       this.code = methodInfo ? methodInfo.codeAttribute.code : null;
@@ -112,18 +111,17 @@ module J2ME {
       this.opPC = 0;
       this.stack.length = 0;
       this.local = local;
-      this.localBase = localBase;
       this.lockObject = null;
     }
 
-    static create(methodInfo: MethodInfo, local: any [], localBase: number): Frame {
+    static create(methodInfo: MethodInfo, local: any []): Frame {
       var dirtyStack = Frame.dirtyStack;
       if (dirtyStack.length) {
         var frame = dirtyStack.pop();
-        frame.reset(methodInfo, local, localBase);
+        frame.reset(methodInfo, local);
         return frame;
       } else {
-        return new Frame(methodInfo, local, localBase);
+        return new Frame(methodInfo, local);
       }
     }
 
@@ -133,16 +131,15 @@ module J2ME {
     }
 
     getLocal(i: number): any {
-      return this.local[this.localBase + i];
+      return this.local[i];
     }
 
     setLocal(i: number, value: any) {
-      this.local[this.localBase + i] = value;
+      this.local[i] = value;
     }
 
     incLocal(i: number, value: any) {
-      var j = this.localBase + i;
-      this.local[j] = this.local[j] + value | 0;
+      this.local[i] += value | 0;
     }
 
     read8(): number {
@@ -618,7 +615,7 @@ module J2ME {
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
-      var frame = Frame.create(methodInfo, local, 0);
+      var frame = Frame.create(methodInfo, local);
       frame.stack = stack;
       frame.pc = nextPC;
       frame.opPC = pc;

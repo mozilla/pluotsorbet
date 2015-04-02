@@ -1273,7 +1273,7 @@ module J2ME {
     // Adapter for the most common case.
     if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
       var method = function fastInterpreterFrameAdapter() {
-        var frame = Frame.create(methodInfo, [], 0);
+        var frame = Frame.create(methodInfo, []);
         var j = 0;
         if (!methodInfo.isStatic) {
           frame.setLocal(j++, this);
@@ -1289,7 +1289,7 @@ module J2ME {
     }
 
     var method = function interpreterFrameAdapter() {
-      var frame = Frame.create(methodInfo, [], 0);
+      var frame = Frame.create(methodInfo, []);
       var j = 0;
       if (!methodInfo.isStatic) {
         frame.setLocal(j++, this);
