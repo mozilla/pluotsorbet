@@ -4,6 +4,7 @@
 */
 
 declare var Shumway;
+declare var profiling;
 
 interface Array<T> {
   push2: (value) => void;
@@ -409,14 +410,14 @@ module J2ME {
     popFrame(): Frame {
       var frame = this.frames.pop();
       if (profile) {
-        this.methodTimeline.leave(MethodType[MethodType.Interpreted] + " " + frame.methodInfo.implKey);
+        this.leaveMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
       }
       return frame;
     }
 
     pushFrame(frame: Frame) {
       if (profile) {
-        this.methodTimeline.enter(MethodType[MethodType.Interpreted] + " " + frame.methodInfo.implKey);
+        this.enterMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
       }
       this.frames.push(frame);
     }
@@ -645,13 +646,25 @@ module J2ME {
      * Re-enters all the frames that are currently on the stack so the full stack
      * trace shows up in the profiler.
      */
-    restartProfile() {
+    restartMethodTimeline() {
       for (var i = 0; i < this.frames.length; i++) {
         var frame = this.frames[i];
         if (J2ME.Frame.isMarker(frame)) {
           continue;
         }
-        this.methodTimeline.enter(MethodType[MethodType.Interpreted] + " " + frame.methodInfo.implKey);
+        this.methodTimeline.enter(frame.methodInfo.implKey, MethodType.Interpreted);
+      }
+    }
+
+    enterMethodTimeline(key: string, methodType: MethodType) {
+      if (profiling) {
+        this.methodTimeline.enter(key, MethodType[methodType]);
+      }
+    }
+
+    leaveMethodTimeline(key: string, methodType: MethodType) {
+      if (profiling) {
+        this.methodTimeline.leave(key, MethodType[methodType]);
       }
     }
   }

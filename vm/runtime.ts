@@ -1399,10 +1399,10 @@ module J2ME {
       return fn;
     }
     return function (a, b, c, d) {
-      var key = MethodType[methodType] + " " + methodInfo.implKey;
+      var key = methodInfo.implKey;
       try {
         var ctx = $.ctx;
-        ctx.methodTimeline.enter(key);
+        ctx.enterMethodTimeline(key, methodType);
         var r;
         switch (arguments.length) {
           case 0:
@@ -1423,13 +1423,13 @@ module J2ME {
         if (U) {
           // TODO: Indicate unwinding on the method timeline.
           if (methodType === MethodType.Native) {
-            ctx.methodTimeline.leave(key);
+            ctx.leaveMethodTimeline(key, methodType);
           }
         } else {
-          ctx.methodTimeline.leave(key);
+          ctx.leaveMethodTimeline(key, methodType);
         }
       } catch (e) {
-        ctx.methodTimeline.leave(key);
+        ctx.leaveMethodTimeline(key, methodType);
         throw e;
       }
       return r;

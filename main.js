@@ -168,19 +168,21 @@ var bigBang = 0;
 
 function startTimeline() {
   jsGlobal.START_TIME = performance.now();
+  jsGlobal.profiling = true;
   requestTimelineBuffers(function (buffers) {
     for (var i = 0; i < buffers.length; i++) {
       buffers[i].reset();
     }
     for (var runtime of J2ME.RuntimeTemplate.all) {
       for (var ctx of runtime.allCtxs) {
-        ctx.restartProfile();
+        ctx.restartMethodTimeline();
       }
     }
   });
 }
 
 function stopTimeline(cb) {
+  jsGlobal.profiling = false;
   requestTimelineBuffers(function(buffers) {
     // Some of the methods may have not exited yet. Leave them
     // so they show up in the profile.
@@ -424,9 +426,7 @@ function requestTimelineBuffers(fn) {
     ];
     var methodTimeLines = J2ME.methodTimelines;
     for (var i = 0; i < methodTimeLines.length; i++) {
-      if (methodTimeLines[i]._times.index > 0) {
-        activeTimeLines.push(methodTimeLines[i]);
-      }
+      activeTimeLines.push(methodTimeLines[i]);
     }
     fn(activeTimeLines);
     return;
