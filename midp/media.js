@@ -227,8 +227,6 @@ function AudioPlayer(playerContainer) {
         }
     }.bind(this));
 
-    /* @type HTMLAudioElement */
-    this.audio = new Audio();
     this.paused = true;
     this.loaded = false;
     this.volume = 100;
