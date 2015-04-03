@@ -1170,6 +1170,8 @@ var MIDP = (function() {
 
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z", 0);
 
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", null);
+
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;

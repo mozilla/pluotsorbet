@@ -26,8 +26,10 @@ classes.jar: $(SRCS) $(JPP_DESTS) $(EXTRA)
 	$(foreach dir,$(SRC_DIRS),cp -a $(dir)/. build-src/;)
 	find ./build-src -name *.java > build-srcs.txt
 	javac -cp build-src -g:none -source 1.3 -target 1.3 -bootclasspath "" -extdirs "" -d ./build @build-srcs.txt > /dev/null
-	java -jar ../build_tools/soot-trunk.jar -j2me -process-dir build -no-output-source-file-attribute -no-output-inner-classes-attribute -force-overwrite -include-all 2>&1 > /dev/null
-	cp -a sootOutput/. build/
+	# TODO: Re-enable Soot optimizations once tests with baseline JIT enabled
+	#       for all methods pass.
+	#java -jar ../build_tools/soot-trunk.jar -j2me -process-dir build -no-output-source-file-attribute -no-output-inner-classes-attribute -force-overwrite -include-all 2>&1 > /dev/null
+	#cp -a sootOutput/. build/
 	cd build && jar cf0 ../classes.jar *
 	jar uf0 classes.jar $(EXTRA)
 

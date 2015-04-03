@@ -559,6 +559,24 @@ Native["java/lang/Thread.activeCount.()I"] = function() {
     return $.ctx.runtime.threadCount;
 };
 
+var consoleBuffer = "";
+
+function flushConsoleBuffer() {
+    if (consoleBuffer.length) {
+        var temp = consoleBuffer;
+        consoleBuffer = "";
+        console.info(temp);
+    }
+}
+
+console.print = function(ch) {
+    if (ch === 10) {
+        flushConsoleBuffer();
+    } else {
+        consoleBuffer += String.fromCharCode(ch);
+    }
+};
+
 Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
     console.print(ch);
 };
@@ -859,48 +877,38 @@ Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V
         throw $.newException("File not supported: " + fileName);
     }
 
-    var ctx = $.ctx;
-    asyncImpl("V", new Promise(function(resolve, reject) {
-        // `fileName` is supposed to be a full path, but we don't support
-        // partition, e.g. `C:` or `E:` etc, so the `fileName` we got here
-        // is something like: `Photos/sampleImage.jpg`, we need to prepend
-        // the root dir to make sure it's valid.
-        fileName = "/" + fileName;
-        fs.open(fileName, function(fd) {
-            if (fd == -1) {
-                ctx.setAsCurrentContext();
-                console.error("File not found: " + fileName);
-                reject($.newException("File not found: " + fileName));
-                return;
-            }
+    // `fileName` is supposed to be a full path, but we don't support
+    // partition, e.g. `C:` or `E:` etc, so the `fileName` we got here
+    // is something like: `Photos/sampleImage.jpg`, we need to prepend
+    // the root dir to make sure it's valid.
+    var imgData = fs.getBlob("/" + fileName);
+    if (!imgData) {
+        console.error("File not found: " + fileName);
+        throw $.newException("File not found: " + fileName);
+    }
 
-            var maskId = "image-launcher";
-            var mask = document.getElementById(maskId);
+    var maskId = "image-launcher";
+    var mask = document.getElementById(maskId);
 
-            function _revokeImageURL() {
-                URL.revokeObjectURL(/url\((.+)\)/ig.exec(mask.style.backgroundImage)[1]);
-            }
+    function _revokeImageURL() {
+        URL.revokeObjectURL(/url\((.+)\)/ig.exec(mask.style.backgroundImage)[1]);
+    }
 
-            if (mask) {
-                _revokeImageURL();
-            } else {
-                mask = document.createElement("div");
-                mask.id = maskId;
-                mask.onclick = mask.ontouchstart = function() {
-                    _revokeImageURL();
-                    mask.parentNode.removeChild(mask);
-                };
+    if (mask) {
+        _revokeImageURL();
+    } else {
+        mask = document.createElement("div");
+        mask.id = maskId;
+        mask.onclick = mask.ontouchstart = function() {
+            _revokeImageURL();
+            mask.parentNode.removeChild(mask);
+        };
 
-                document.getElementById("main").appendChild(mask);
-            }
+        document.getElementById("main").appendChild(mask);
+    }
 
-            mask.style.backgroundImage = "url(" +
-              URL.createObjectURL(new Blob([fs.read(fd)])) + ")";
-
-            fs.close(fd);
-            resolve();
-        });
-    }));
+    mask.style.backgroundImage = "url(" +
+      URL.createObjectURL(imgData) + ")";
 };
 
 function addUnimplementedNative(signature, returnValue) {

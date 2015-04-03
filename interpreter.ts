@@ -1,5 +1,5 @@
 module J2ME {
-  declare var util;
+  declare var util, config;
   declare var Promise;
 
   import BytecodeStream = Bytecode.BytecodeStream;
@@ -243,9 +243,10 @@ module J2ME {
       // for synthetic method frames which have bad max_local counts.
 
       // Inline heuristics that trigger JIT compilation here.
-      if (enableRuntimeCompilation &&
-          mi.state < MethodState.Compiled && // Give up if we're at this state.
-          mi.stats.backwardsBranchCount + mi.stats.interpreterCallCount > 10) {
+      if ((enableRuntimeCompilation &&
+           mi.state < MethodState.Compiled && // Give up if we're at this state.
+           mi.stats.backwardsBranchCount + mi.stats.interpreterCallCount > 10) ||
+          config.forceRuntimeCompilation) {
         compileAndLinkMethod(mi);
       }
 
