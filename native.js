@@ -569,17 +569,13 @@ function flushConsoleBuffer() {
     }
 }
 
-// jsshell.js defines *console.print* differently, so we only define it here
-// if it isn't already defined.
-if (!("print" in console)) {
-    console.print = function(ch) {
-        if (ch === 10) {
-            flushConsoleBuffer();
-        } else {
-            consoleBuffer += String.fromCharCode(ch);
-        }
-    };
-}
+console.print = function(ch) {
+    if (ch === 10) {
+        flushConsoleBuffer();
+    } else {
+        consoleBuffer += String.fromCharCode(ch);
+    }
+};
 
 Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
     console.print(ch);

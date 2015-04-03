@@ -12,10 +12,6 @@ if (typeof console === "undefined") {
   }
 }
 
-console.print = function (c) {
-  putstr(String.fromCharCode(c));
-};
-
 console.info = function (c) {
   putstr(String.fromCharCode(c));
 };
@@ -124,6 +120,11 @@ try {
   // load("bld/classes.jar.js");
   // load("bld/program.jar.js");
   // load("bld/tests.jar.js");
+
+  // Define this down here so it overrides the version defined by native.js.
+  console.print = function (c) {
+    putstr(String.fromCharCode(c));
+  };
 
   var dump = putstr;
 
