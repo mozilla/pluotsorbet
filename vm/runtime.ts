@@ -1482,7 +1482,7 @@ module J2ME {
       }
     }
 
-    if (profile) {
+    if (profile || traceWriter) {
       fn = wrapMethod(fn, methodInfo, methodType);
     }
 
@@ -1797,7 +1797,7 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = jsGlobal[mangledClassAndMethodName];
-    if (profile) {
+    if (profile || traceWriter) {
       fn = wrapMethod(fn, methodInfo, MethodType.Compiled);
     }
     var klass = methodInfo.classInfo.klass;

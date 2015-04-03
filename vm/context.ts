@@ -490,7 +490,7 @@ module J2ME {
     }
 
     start(frames: Frame[]) {
-      this.frames = [Frame.Start];
+      this.frames.push(Frame.Start);
       for (var i = 0; i < frames.length; i++) {
         this.pushFrame(frames[i]);
       }

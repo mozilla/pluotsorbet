@@ -3,10 +3,11 @@
 
 'use strict';
 
-// The real profile and release variable declaration in config.ts is folded away by closure. Until we
+// The real profile and release variable declaration in config.ts are folded away by closure. Until we
 // make closure process this file also, make sure that |profile| is defined in this file.
 var release;
 var profile;
+
 var jvm = new JVM();
 
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
