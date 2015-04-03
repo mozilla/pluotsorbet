@@ -543,16 +543,16 @@ module J2ME {
             var name = this.resolveUtf8(name_index);
             var type = this.resolveUtf8(type_index);
             if (tag === TAGS.CONSTANT_Fieldref) {
-              r = this.resolved[i] = classInfo.getFieldByName(name, type, isStatic);
+              r = classInfo.getFieldByName(name, type, isStatic);
             } else {
-              r = this.resolved[i] = classInfo.getMethodByName(name, type);
+              r = classInfo.getMethodByName(name, type);
             }
             if (!r) {
-              // Set to undefined again, otherwise a new attempt to resolve this method/field
-              // will not fail with a RuntimeException.
-              this.resolved[i] = undefined;
               throw $.newRuntimeException(classInfo.getClassNameSlow() + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found");
             }
+            // Set the method/field as resolved only if it was actually found, otherwise a new attempt to
+            // resolve this method/field will not fail with a RuntimeException.
+            this.resolved[i] = r;
             break;
           default:
             assert(false);
