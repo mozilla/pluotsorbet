@@ -6,6 +6,7 @@ RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
+CONSOLE ?= 1
 VERBOSE ?= 0
 
 # Sensor support
@@ -37,7 +38,6 @@ ifeq ($(VERBOSE),1)
 endif
 
 MAIN_JS_SRCS = \
-  libs/console.js \
   polyfill/canvas-toblob.js \
   polyfill/fromcodepoint.js \
   polyfill/codepointat.js \
@@ -97,6 +97,10 @@ ifeq ($(BENCHMARK),1)
 	MAIN_JS_SRCS += benchmark.js libs/ttest.js
 endif
 
+ifeq ($(CONSOLE),1)
+	MAIN_JS_SRCS += libs/console.js
+endif
+
 # Add main.js last, as it depends on some of the other scripts.
 MAIN_JS_SRCS += main.js
 
@@ -104,7 +108,7 @@ MAIN_JS_SRCS += main.js
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(JSR_256)$(JSR_082)$(JSR_179)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -113,6 +117,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(PROFILE) \
              -D BENCHMARK=$(call toBool,$(BENCHMARK)) \
+             -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
              -D VERSION=$(VERSION)

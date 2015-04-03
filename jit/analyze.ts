@@ -36,7 +36,6 @@ module J2ME {
     "com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B": YieldReason.Root,
     "com/sun/midp/links/LinkPortal.getLinkCount0.()I": YieldReason.Root,
     "com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V": YieldReason.Root,
-    "com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V": YieldReason.Root,
     "com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V": YieldReason.Root,
     "com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I": YieldReason.Root,
     "com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I": YieldReason.Root,

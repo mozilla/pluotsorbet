@@ -49,12 +49,12 @@ javax/microedition/media/test.webm: gfx/images/red.png
 	ffmpeg -loop 1 -i gfx/images/red.png -t 10 javax/microedition/media/test.webm
 
 Testlets.java: $(SRCS) $(JASMIN_SRCS) Makefile
-	echo "public class Testlets {" > $@
-	echo "  static String[] list = {" >> $@
-	grep "implements Testlet" $(SRCS) | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
-	grep "implements gnu/testlet/Testlet" `find . -name "*.j"` | sed -e "s/^.\///" -e "s/\.j.*//" -e "s/\(.*\)/\"\1\",/" >> $@
-	echo "  null};" >> $@
-	echo "};" >> $@
+	@echo "public class Testlets {" > $@
+	@echo "  static String[] list = {" >> $@
+	@grep "implements Testlet" $(SRCS) | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
+	@grep "implements gnu/testlet/Testlet" `find . -name "*.j"` | sed -e "s/^.\///" -e "s/\.j.*//" -e "s/\(.*\)/\"\1\",/" >> $@
+	@echo "  null};" >> $@
+	@echo "};" >> $@
 
 tests.jar: $(SRCS) $(JASMIN_SRCS) Testlets.java
 	rm -rf build
