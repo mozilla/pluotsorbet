@@ -309,7 +309,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
-        J2ME.getLinkedMethod(clinit).call();
+        $.ctx.executeFrame(Frame.create(clinit, []));
     }
 };
 
