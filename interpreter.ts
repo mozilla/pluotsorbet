@@ -117,7 +117,6 @@ module J2ME {
   function tryCatch(e) {
     var ctx = $.ctx;
     var frame = ctx.current();
-    var stack = frame.stack;
 
     var exClass = e.class;
     if (!e.stackTrace) {
@@ -156,8 +155,8 @@ module J2ME {
       }
 
       if (handler_pc != null) {
-        stack.length = 0;
-        stack.push(e);
+        frame.sp = frame.spBase;
+        frame.stackPush(e);
         frame.pc = handler_pc;
 
         if (VM.DEBUG_PRINT_ALL_EXCEPTIONS) {
@@ -171,7 +170,6 @@ module J2ME {
       if (Frame.isMarker(frame)) {
         break;
       }
-      stack = frame.stack;
     } while (true);
 
     if (ctx.current() === Frame.Start) {
@@ -199,8 +197,6 @@ module J2ME {
     var mi = frame.methodInfo;
     var ci = mi.classInfo;
     var rp = ci.constantPool.resolved;
-    var stack = frame.stack;
-
 
     var returnValue = null;
 
@@ -286,14 +282,13 @@ module J2ME {
               mi = frame.methodInfo;
               ci = mi.classInfo;
               rp = ci.constantPool.resolved;
-              stack = frame.stack;
               lastPC = -1;
 
               if (returnKind !== Kind.Void) {
                 if (isTwoSlot(returnKind)) {
-                  stack.push2(returnValue);
+                  frame.stackPush2(returnValue);
                 } else {
-                  stack.push(returnValue);
+                  frame.stackPush(returnValue);
                 }
               }
             }
@@ -307,7 +302,7 @@ module J2ME {
           case Bytecodes.NOP:
             break;
           case Bytecodes.ACONST_NULL:
-            stack.push(null);
+            frame.stackPush(null);
             break;
           case Bytecodes.ICONST_M1:
           case Bytecodes.ICONST_0:
@@ -316,85 +311,85 @@ module J2ME {
           case Bytecodes.ICONST_3:
           case Bytecodes.ICONST_4:
           case Bytecodes.ICONST_5:
-            stack.push(op - Bytecodes.ICONST_0);
+            frame.stackPush(op - Bytecodes.ICONST_0);
             break;
           case Bytecodes.FCONST_0:
           case Bytecodes.FCONST_1:
           case Bytecodes.FCONST_2:
-            stack.push(op - Bytecodes.FCONST_0);
+            frame.stackPush(op - Bytecodes.FCONST_0);
             break;
           case Bytecodes.DCONST_0:
           case Bytecodes.DCONST_1:
-            stack.push2(op - Bytecodes.DCONST_0);
+            frame.stackPush2(op - Bytecodes.DCONST_0);
             break;
           case Bytecodes.LCONST_0:
           case Bytecodes.LCONST_1:
-            stack.push2(Long.fromInt(op - Bytecodes.LCONST_0));
+            frame.stackPush2(Long.fromInt(op - Bytecodes.LCONST_0));
             break;
           case Bytecodes.BIPUSH:
-            stack.push(frame.read8Signed());
+            frame.stackPush(frame.read8Signed());
             break;
           case Bytecodes.SIPUSH:
-            stack.push(frame.read16Signed());
+            frame.stackPush(frame.read16Signed());
             break;
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
             index = (op === Bytecodes.LDC) ? frame.read8() : frame.read16();
             constant = ci.constantPool.resolve(index, TAGS.CONSTANT_Any, false);
-            stack.push(constant);
+            frame.stackPush(constant);
             break;
           case Bytecodes.LDC2_W:
             index = frame.read16();
             constant = ci.constantPool.resolve(index, TAGS.CONSTANT_Any, false);
-            stack.push2(constant);
+            frame.stackPush2(constant);
             break;
           case Bytecodes.ILOAD:
-            stack.push(frame.local[frame.read8()]);
+            frame.stackPush(frame.local[frame.read8()]);
             break;
           case Bytecodes.FLOAD:
-            stack.push(frame.local[frame.read8()]);
+            frame.stackPush(frame.local[frame.read8()]);
             break;
           case Bytecodes.ALOAD:
-            stack.push(frame.local[frame.read8()]);
+            frame.stackPush(frame.local[frame.read8()]);
             break;
           case Bytecodes.ALOAD_ILOAD:
-            stack.push(frame.local[frame.read8()]);
+            frame.stackPush(frame.local[frame.read8()]);
             frame.pc ++;
-            stack.push(frame.local[frame.read8()]);
+            frame.stackPush(frame.local[frame.read8()]);
             break;
           case Bytecodes.LLOAD:
           case Bytecodes.DLOAD:
-            stack.push2(frame.local[frame.read8()]);
+            frame.stackPush2(frame.local[frame.read8()]);
             break;
           case Bytecodes.ILOAD_0:
           case Bytecodes.ILOAD_1:
           case Bytecodes.ILOAD_2:
           case Bytecodes.ILOAD_3:
-            stack.push(frame.local[op - Bytecodes.ILOAD_0]);
+            frame.stackPush(frame.local[op - Bytecodes.ILOAD_0]);
             break;
           case Bytecodes.FLOAD_0:
           case Bytecodes.FLOAD_1:
           case Bytecodes.FLOAD_2:
           case Bytecodes.FLOAD_3:
-            stack.push(frame.local[op - Bytecodes.FLOAD_0]);
+            frame.stackPush(frame.local[op - Bytecodes.FLOAD_0]);
             break;
           case Bytecodes.ALOAD_0:
           case Bytecodes.ALOAD_1:
           case Bytecodes.ALOAD_2:
           case Bytecodes.ALOAD_3:
-            stack.push(frame.local[op - Bytecodes.ALOAD_0]);
+            frame.stackPush(frame.local[op - Bytecodes.ALOAD_0]);
             break;
           case Bytecodes.LLOAD_0:
           case Bytecodes.LLOAD_1:
           case Bytecodes.LLOAD_2:
           case Bytecodes.LLOAD_3:
-            stack.push2(frame.local[op - Bytecodes.LLOAD_0]);
+            frame.stackPush2(frame.local[op - Bytecodes.LLOAD_0]);
             break;
           case Bytecodes.DLOAD_0:
           case Bytecodes.DLOAD_1:
           case Bytecodes.DLOAD_2:
           case Bytecodes.DLOAD_3:
-            stack.push2(frame.local[op - Bytecodes.DLOAD_0]);
+            frame.stackPush2(frame.local[op - Bytecodes.DLOAD_0]);
             break;
           case Bytecodes.IALOAD:
           case Bytecodes.FALOAD:
@@ -402,150 +397,150 @@ module J2ME {
           case Bytecodes.BALOAD:
           case Bytecodes.CALOAD:
           case Bytecodes.SALOAD:
-            index = stack.pop();
-            array = stack.pop();
+            index = frame.stackPop();
+            array = frame.stackPop();
             checkArrayBounds(array, index);
-            stack.push(array[index]);
+            frame.stackPush(array[index]);
             break;
           case Bytecodes.LALOAD:
           case Bytecodes.DALOAD:
-            index = stack.pop();
-            array = stack.pop();
+            index = frame.stackPop();
+            array = frame.stackPop();
             checkArrayBounds(array, index);
-            stack.push2(array[index]);
+            frame.stackPush2(array[index]);
             break;
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
           case Bytecodes.ASTORE:
-            frame.local[frame.read8()] = stack.pop();
+            frame.local[frame.read8()] = frame.stackPop();
             break;
           case Bytecodes.LSTORE:
           case Bytecodes.DSTORE:
-            frame.local[frame.read8()] = stack.pop2();
+            frame.local[frame.read8()] = frame.stackPop2();
             break;
           case Bytecodes.ISTORE_0:
           case Bytecodes.FSTORE_0:
           case Bytecodes.ASTORE_0:
-            frame.local[0] = stack.pop();
+            frame.local[0] = frame.stackPop();
             break;
           case Bytecodes.ISTORE_1:
           case Bytecodes.FSTORE_1:
           case Bytecodes.ASTORE_1:
-            frame.local[1] = stack.pop();
+            frame.local[1] = frame.stackPop();
             break;
           case Bytecodes.ISTORE_2:
           case Bytecodes.FSTORE_2:
           case Bytecodes.ASTORE_2:
-            frame.local[2] = stack.pop();
+            frame.local[2] = frame.stackPop();
             break;
           case Bytecodes.ISTORE_3:
           case Bytecodes.FSTORE_3:
           case Bytecodes.ASTORE_3:
-            frame.local[3] = stack.pop();
+            frame.local[3] = frame.stackPop();
             break;
           case Bytecodes.LSTORE_0:
           case Bytecodes.DSTORE_0:
-            frame.local[0] = stack.pop2();
+            frame.local[0] = frame.stackPop2();
             break;
           case Bytecodes.LSTORE_1:
           case Bytecodes.DSTORE_1:
-            frame.local[1] = stack.pop2();
+            frame.local[1] = frame.stackPop2();
             break;
           case Bytecodes.LSTORE_2:
           case Bytecodes.DSTORE_2:
-            frame.local[2] = stack.pop2();
+            frame.local[2] = frame.stackPop2();
             break;
           case Bytecodes.LSTORE_3:
           case Bytecodes.DSTORE_3:
-            frame.local[3] = stack.pop2();
+            frame.local[3] = frame.stackPop2();
             break;
           case Bytecodes.IASTORE:
           case Bytecodes.FASTORE:
           case Bytecodes.BASTORE:
           case Bytecodes.CASTORE:
           case Bytecodes.SASTORE:
-            value = stack.pop();
-            index = stack.pop();
-            array = stack.pop();
+            value = frame.stackPop();
+            index = frame.stackPop();
+            array = frame.stackPop();
             checkArrayBounds(array, index);
             array[index] = value;
             break;
           case Bytecodes.LASTORE:
           case Bytecodes.DASTORE:
-            value = stack.pop2();
-            index = stack.pop();
-            array = stack.pop();
+            value = frame.stackPop2();
+            index = frame.stackPop();
+            array = frame.stackPop();
             checkArrayBounds(array, index);
             array[index] = value;
             break;
           case Bytecodes.AASTORE:
-            value = stack.pop();
-            index = stack.pop();
-            array = stack.pop();
+            value = frame.stackPop();
+            index = frame.stackPop();
+            array = frame.stackPop();
             checkArrayBounds(array, index);
             checkArrayStore(array, value);
             array[index] = value;
             break;
           case Bytecodes.POP:
-            stack.pop();
+            frame.stackPop();
             break;
           case Bytecodes.POP2:
-            stack.pop2();
+            frame.stackPop2();
             break;
           case Bytecodes.DUP:
-            stack.push(stack[stack.length - 1]);
+            frame.stackPush(frame.stack[frame.sp - 1]);
             break;
           case Bytecodes.DUP_X1:
-            a = stack.pop();
-            b = stack.pop();
-            stack.push(a);
-            stack.push(b);
-            stack.push(a);
+            a = frame.stackPop();
+            b = frame.stackPop();
+            frame.stackPush(a);
+            frame.stackPush(b);
+            frame.stackPush(a);
             break;
           case Bytecodes.DUP_X2:
-            a = stack.pop();
-            b = stack.pop();
-            c = stack.pop();
-            stack.push(a);
-            stack.push(c);
-            stack.push(b);
-            stack.push(a);
+            a = frame.stackPop();
+            b = frame.stackPop();
+            c = frame.stackPop();
+            frame.stackPush(a);
+            frame.stackPush(c);
+            frame.stackPush(b);
+            frame.stackPush(a);
             break;
           case Bytecodes.DUP2:
-            a = stack.pop();
-            b = stack.pop();
-            stack.push(b);
-            stack.push(a);
-            stack.push(b);
-            stack.push(a);
+            a = frame.stackPop();
+            b = frame.stackPop();
+            frame.stackPush(b);
+            frame.stackPush(a);
+            frame.stackPush(b);
+            frame.stackPush(a);
             break;
           case Bytecodes.DUP2_X1:
-            a = stack.pop();
-            b = stack.pop();
-            c = stack.pop();
-            stack.push(b);
-            stack.push(a);
-            stack.push(c);
-            stack.push(b);
-            stack.push(a);
+            a = frame.stackPop();
+            b = frame.stackPop();
+            c = frame.stackPop();
+            frame.stackPush(b);
+            frame.stackPush(a);
+            frame.stackPush(c);
+            frame.stackPush(b);
+            frame.stackPush(a);
             break;
           case Bytecodes.DUP2_X2:
-            a = stack.pop();
-            b = stack.pop();
-            c = stack.pop();
-            var d = stack.pop();
-            stack.push(b);
-            stack.push(a);
-            stack.push(d);
-            stack.push(c);
-            stack.push(b);
-            stack.push(a);
+            a = frame.stackPop();
+            b = frame.stackPop();
+            c = frame.stackPop();
+            var d = frame.stackPop();
+            frame.stackPush(b);
+            frame.stackPush(a);
+            frame.stackPush(d);
+            frame.stackPush(c);
+            frame.stackPush(b);
+            frame.stackPush(a);
             break;
           case Bytecodes.SWAP:
-            a = stack.pop();
-            b = stack.pop();
-            stack.push(a);
-            stack.push(b);
+            a = frame.stackPop();
+            b = frame.stackPop();
+            frame.stackPush(a);
+            frame.stackPush(b);
             break;
           case Bytecodes.IINC:
             index = frame.read8();
@@ -560,301 +555,301 @@ module J2ME {
             frame.pc = frame.readTargetPC();
             break;
           case Bytecodes.IADD:
-            stack.push((stack.pop() + stack.pop()) | 0);
+            frame.stackPush((frame.stackPop() + frame.stackPop()) | 0);
             break;
           case Bytecodes.LADD:
-            stack.push2(stack.pop2().add(stack.pop2()));
+            frame.stackPush2(frame.stackPop2().add(frame.stackPop2()));
             break;
           case Bytecodes.FADD:
-            stack.push(Math.fround(stack.pop() + stack.pop()));
+            frame.stackPush(Math.fround(frame.stackPop() + frame.stackPop()));
             break;
           case Bytecodes.DADD:
-            stack.push2(stack.pop2() + stack.pop2());
+            frame.stackPush2(frame.stackPop2() + frame.stackPop2());
             break;
           case Bytecodes.ISUB:
-            stack.push((-stack.pop() + stack.pop()) | 0);
+            frame.stackPush((-frame.stackPop() + frame.stackPop()) | 0);
             break;
           case Bytecodes.LSUB:
-            stack.push2(stack.pop2().negate().add(stack.pop2()));
+            frame.stackPush2(frame.stackPop2().negate().add(frame.stackPop2()));
             break;
           case Bytecodes.FSUB:
-            stack.push(Math.fround(-stack.pop() + stack.pop()));
+            frame.stackPush(Math.fround(-frame.stackPop() + frame.stackPop()));
             break;
           case Bytecodes.DSUB:
-            stack.push2(-stack.pop2() + stack.pop2());
+            frame.stackPush2(-frame.stackPop2() + frame.stackPop2());
             break;
           case Bytecodes.IMUL:
-            stack.push(Math.imul(stack.pop(), stack.pop()));
+            frame.stackPush(Math.imul(frame.stackPop(), frame.stackPop()));
             break;
           case Bytecodes.LMUL:
-            stack.push2(stack.pop2().multiply(stack.pop2()));
+            frame.stackPush2(frame.stackPop2().multiply(frame.stackPop2()));
             break;
           case Bytecodes.FMUL:
-            stack.push(Math.fround(stack.pop() * stack.pop()));
+            frame.stackPush(Math.fround(frame.stackPop() * frame.stackPop()));
             break;
           case Bytecodes.DMUL:
-            stack.push2(stack.pop2() * stack.pop2());
+            frame.stackPush2(frame.stackPop2() * frame.stackPop2());
             break;
           case Bytecodes.IDIV:
-            b = stack.pop();
-            a = stack.pop();
+            b = frame.stackPop();
+            a = frame.stackPop();
             checkDivideByZero(b);
-            stack.push((a === Constants.INT_MIN && b === -1) ? a : ((a / b) | 0));
+            frame.stackPush((a === Constants.INT_MIN && b === -1) ? a : ((a / b) | 0));
             break;
           case Bytecodes.LDIV:
-            b = stack.pop2();
-            a = stack.pop2();
+            b = frame.stackPop2();
+            a = frame.stackPop2();
             checkDivideByZeroLong(b);
-            stack.push2(a.div(b));
+            frame.stackPush2(a.div(b));
             break;
           case Bytecodes.FDIV:
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(Math.fround(a / b));
+            b = frame.stackPop();
+            a = frame.stackPop();
+            frame.stackPush(Math.fround(a / b));
             break;
           case Bytecodes.DDIV:
-            b = stack.pop2();
-            a = stack.pop2();
-            stack.push2(a / b);
+            b = frame.stackPop2();
+            a = frame.stackPop2();
+            frame.stackPush2(a / b);
             break;
           case Bytecodes.IREM:
-            b = stack.pop();
-            a = stack.pop();
+            b = frame.stackPop();
+            a = frame.stackPop();
             checkDivideByZero(b);
-            stack.push(a % b);
+            frame.stackPush(a % b);
             break;
           case Bytecodes.LREM:
-            b = stack.pop2();
-            a = stack.pop2();
+            b = frame.stackPop2();
+            a = frame.stackPop2();
             checkDivideByZeroLong(b);
-            stack.push2(a.modulo(b));
+            frame.stackPush2(a.modulo(b));
             break;
           case Bytecodes.FREM:
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(Math.fround(a % b));
+            b = frame.stackPop();
+            a = frame.stackPop();
+            frame.stackPush(Math.fround(a % b));
             break;
           case Bytecodes.DREM:
-            b = stack.pop2();
-            a = stack.pop2();
-            stack.push2(a % b);
+            b = frame.stackPop2();
+            a = frame.stackPop2();
+            frame.stackPush2(a % b);
             break;
           case Bytecodes.INEG:
-            stack.push((-stack.pop()) | 0);
+            frame.stackPush((-frame.stackPop()) | 0);
             break;
           case Bytecodes.LNEG:
-            stack.push2(stack.pop2().negate());
+            frame.stackPush2(frame.stackPop2().negate());
             break;
           case Bytecodes.FNEG:
-            stack.push(-stack.pop());
+            frame.stackPush(-frame.stackPop());
             break;
           case Bytecodes.DNEG:
-            stack.push2(-stack.pop2());
+            frame.stackPush2(-frame.stackPop2());
             break;
           case Bytecodes.ISHL:
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a << b);
+            b = frame.stackPop();
+            a = frame.stackPop();
+            frame.stackPush(a << b);
             break;
           case Bytecodes.LSHL:
-            b = stack.pop();
-            a = stack.pop2();
-            stack.push2(a.shiftLeft(b));
+            b = frame.stackPop();
+            a = frame.stackPop2();
+            frame.stackPush2(a.shiftLeft(b));
             break;
           case Bytecodes.ISHR:
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a >> b);
+            b = frame.stackPop();
+            a = frame.stackPop();
+            frame.stackPush(a >> b);
             break;
           case Bytecodes.LSHR:
-            b = stack.pop();
-            a = stack.pop2();
-            stack.push2(a.shiftRight(b));
+            b = frame.stackPop();
+            a = frame.stackPop2();
+            frame.stackPush2(a.shiftRight(b));
             break;
           case Bytecodes.IUSHR:
-            b = stack.pop();
-            a = stack.pop();
-            stack.push(a >>> b);
+            b = frame.stackPop();
+            a = frame.stackPop();
+            frame.stackPush(a >>> b);
             break;
           case Bytecodes.LUSHR:
-            b = stack.pop();
-            a = stack.pop2();
-            stack.push2(a.shiftRightUnsigned(b));
+            b = frame.stackPop();
+            a = frame.stackPop2();
+            frame.stackPush2(a.shiftRightUnsigned(b));
             break;
           case Bytecodes.IAND:
-            stack.push(stack.pop() & stack.pop());
+            frame.stackPush(frame.stackPop() & frame.stackPop());
             break;
           case Bytecodes.LAND:
-            stack.push2(stack.pop2().and(stack.pop2()));
+            frame.stackPush2(frame.stackPop2().and(frame.stackPop2()));
             break;
           case Bytecodes.IOR:
-            stack.push(stack.pop() | stack.pop());
+            frame.stackPush(frame.stackPop() | frame.stackPop());
             break;
           case Bytecodes.LOR:
-            stack.push2(stack.pop2().or(stack.pop2()));
+            frame.stackPush2(frame.stackPop2().or(frame.stackPop2()));
             break;
           case Bytecodes.IXOR:
-            stack.push(stack.pop() ^ stack.pop());
+            frame.stackPush(frame.stackPop() ^ frame.stackPop());
             break;
           case Bytecodes.LXOR:
-            stack.push2(stack.pop2().xor(stack.pop2()));
+            frame.stackPush2(frame.stackPop2().xor(frame.stackPop2()));
             break;
           case Bytecodes.LCMP:
-            b = stack.pop2();
-            a = stack.pop2();
+            b = frame.stackPop2();
+            a = frame.stackPop2();
             if (a.greaterThan(b)) {
-              stack.push(1);
+              frame.stackPush(1);
             } else if (a.lessThan(b)) {
-              stack.push(-1);
+              frame.stackPush(-1);
             } else {
-              stack.push(0);
+              frame.stackPush(0);
             }
             break;
           case Bytecodes.FCMPL:
-            b = stack.pop();
-            a = stack.pop();
+            b = frame.stackPop();
+            a = frame.stackPop();
             if (isNaN(a) || isNaN(b)) {
-              stack.push(-1);
+              frame.stackPush(-1);
             } else if (a > b) {
-              stack.push(1);
+              frame.stackPush(1);
             } else if (a < b) {
-              stack.push(-1);
+              frame.stackPush(-1);
             } else {
-              stack.push(0);
+              frame.stackPush(0);
             }
             break;
           case Bytecodes.FCMPG:
-            b = stack.pop();
-            a = stack.pop();
+            b = frame.stackPop();
+            a = frame.stackPop();
             if (isNaN(a) || isNaN(b)) {
-              stack.push(1);
+              frame.stackPush(1);
             } else if (a > b) {
-              stack.push(1);
+              frame.stackPush(1);
             } else if (a < b) {
-              stack.push(-1);
+              frame.stackPush(-1);
             } else {
-              stack.push(0);
+              frame.stackPush(0);
             }
             break;
           case Bytecodes.DCMPL:
-            b = stack.pop2();
-            a = stack.pop2();
+            b = frame.stackPop2();
+            a = frame.stackPop2();
             if (isNaN(a) || isNaN(b)) {
-              stack.push(-1);
+              frame.stackPush(-1);
             } else if (a > b) {
-              stack.push(1);
+              frame.stackPush(1);
             } else if (a < b) {
-              stack.push(-1);
+              frame.stackPush(-1);
             } else {
-              stack.push(0);
+              frame.stackPush(0);
             }
             break;
           case Bytecodes.DCMPG:
-            b = stack.pop2();
-            a = stack.pop2();
+            b = frame.stackPop2();
+            a = frame.stackPop2();
             if (isNaN(a) || isNaN(b)) {
-              stack.push(1);
+              frame.stackPush(1);
             } else if (a > b) {
-              stack.push(1);
+              frame.stackPush(1);
             } else if (a < b) {
-              stack.push(-1);
+              frame.stackPush(-1);
             } else {
-              stack.push(0);
+              frame.stackPush(0);
             }
             break;
           case Bytecodes.IFEQ:
             pc = frame.readTargetPC();
-            if (stack.pop() === 0) {
+            if (frame.stackPop() === 0) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IFNE:
             pc = frame.readTargetPC();
-            if (stack.pop() !== 0) {
+            if (frame.stackPop() !== 0) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IFLT:
             pc = frame.readTargetPC();
-            if (stack.pop() < 0) {
+            if (frame.stackPop() < 0) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IFGE:
             pc = frame.readTargetPC();
-            if (stack.pop() >= 0) {
+            if (frame.stackPop() >= 0) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IFGT:
             pc = frame.readTargetPC();
-            if (stack.pop() > 0) {
+            if (frame.stackPop() > 0) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IFLE:
             pc = frame.readTargetPC();
-            if (stack.pop() <= 0) {
+            if (frame.stackPop() <= 0) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IF_ICMPEQ:
             pc = frame.readTargetPC();
-            if (stack.pop() === stack.pop()) {
+            if (frame.stackPop() === frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IF_ICMPNE:
             pc = frame.readTargetPC();
-            if (stack.pop() !== stack.pop()) {
+            if (frame.stackPop() !== frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IF_ICMPLT:
             pc = frame.readTargetPC();
-            if (stack.pop() > stack.pop()) {
+            if (frame.stackPop() > frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IF_ICMPGE:
             pc = frame.readTargetPC();
-            if (stack.pop() <= stack.pop()) {
+            if (frame.stackPop() <= frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IF_ICMPGT:
             pc = frame.readTargetPC();
-            if (stack.pop() < stack.pop()) {
+            if (frame.stackPop() < frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IF_ICMPLE:
             pc = frame.readTargetPC();
-            if (stack.pop() >= stack.pop()) {
+            if (frame.stackPop() >= frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IF_ACMPEQ:
             pc = frame.readTargetPC();
-            if (stack.pop() === stack.pop()) {
+            if (frame.stackPop() === frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IF_ACMPNE:
             pc = frame.readTargetPC();
-            if (stack.pop() !== stack.pop()) {
+            if (frame.stackPop() !== frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IFNULL:
             pc = frame.readTargetPC();
-            if (!stack.pop()) {
+            if (!frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.IFNONNULL:
             pc = frame.readTargetPC();
-            if (stack.pop()) {
+            if (frame.stackPop()) {
               frame.pc = pc;
             }
             break;
@@ -866,60 +861,60 @@ module J2ME {
             break;
           case Bytecodes.JSR:
             pc = frame.read16();
-            stack.push(frame.pc);
+            frame.stackPush(frame.pc);
             frame.pc = pc;
             break;
           case Bytecodes.JSR_W:
             pc = frame.read32();
-            stack.push(frame.pc);
+            frame.stackPush(frame.pc);
             frame.pc = pc;
             break;
           case Bytecodes.RET:
             frame.pc = frame.local[frame.read8()];
             break;
           case Bytecodes.I2L:
-            stack.push2(Long.fromInt(stack.pop()));
+            frame.stackPush2(Long.fromInt(frame.stackPop()));
             break;
           case Bytecodes.I2F:
             break;
           case Bytecodes.I2D:
-            stack.push2(stack.pop());
+            frame.stackPush2(frame.stackPop());
             break;
           case Bytecodes.L2I:
-            stack.push(stack.pop2().toInt());
+            frame.stackPush(frame.stackPop2().toInt());
             break;
           case Bytecodes.L2F:
-            stack.push(Math.fround(stack.pop2().toNumber()));
+            frame.stackPush(Math.fround(frame.stackPop2().toNumber()));
             break;
           case Bytecodes.L2D:
-            stack.push2(stack.pop2().toNumber());
+            frame.stackPush2(frame.stackPop2().toNumber());
             break;
           case Bytecodes.F2I:
-            stack.push(util.double2int(stack.pop()));
+            frame.stackPush(util.double2int(frame.stackPop()));
             break;
           case Bytecodes.F2L:
-            stack.push2(Long.fromNumber(stack.pop()));
+            frame.stackPush2(Long.fromNumber(frame.stackPop()));
             break;
           case Bytecodes.F2D:
-            stack.push2(stack.pop());
+            frame.stackPush2(frame.stackPop());
             break;
           case Bytecodes.D2I:
-            stack.push(util.double2int(stack.pop2()));
+            frame.stackPush(util.double2int(frame.stackPop2()));
             break;
           case Bytecodes.D2L:
-            stack.push2(util.double2long(stack.pop2()));
+            frame.stackPush2(util.double2long(frame.stackPop2()));
             break;
           case Bytecodes.D2F:
-            stack.push(Math.fround(stack.pop2()));
+            frame.stackPush(Math.fround(frame.stackPop2()));
             break;
           case Bytecodes.I2B:
-            stack.push((stack.pop() << 24) >> 24);
+            frame.stackPush((frame.stackPop() << 24) >> 24);
             break;
           case Bytecodes.I2C:
-            stack.push(stack.pop() & 0xffff);
+            frame.stackPush(frame.stackPop() & 0xffff);
             break;
           case Bytecodes.I2S:
-            stack.push((stack.pop() << 16) >> 16);
+            frame.stackPush((frame.stackPop() << 16) >> 16);
             break;
           case Bytecodes.TABLESWITCH:
             frame.pc = frame.tableSwitch();
@@ -929,15 +924,15 @@ module J2ME {
             break;
           case Bytecodes.NEWARRAY:
             type = frame.read8();
-            size = stack.pop();
-            stack.push(newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size));
+            size = frame.stackPop();
+            frame.stackPush(newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size));
             break;
           case Bytecodes.ANEWARRAY:
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo);
             classInitAndUnwindCheck(classInfo, frame.pc - 3);
-            size = stack.pop();
-            stack.push(newArray(classInfo.klass, size));
+            size = frame.stackPop();
+            frame.stackPush(newArray(classInfo.klass, size));
             break;
           case Bytecodes.MULTIANEWARRAY:
             index = frame.read16();
@@ -945,46 +940,46 @@ module J2ME {
             var dimensions = frame.read8();
             var lengths = new Array(dimensions);
             for (var i = 0; i < dimensions; i++)
-              lengths[i] = stack.pop();
-            stack.push(J2ME.newMultiArray(classInfo.klass, lengths.reverse()));
+              lengths[i] = frame.stackPop();
+            frame.stackPush(J2ME.newMultiArray(classInfo.klass, lengths.reverse()));
             break;
           case Bytecodes.ARRAYLENGTH:
-            array = stack.pop();
-            stack.push(array.length);
+            array = frame.stackPop();
+            frame.stackPush(array.length);
             break;
           case Bytecodes.ARRAYLENGTH_IF_ICMPGE:
-            array = stack.pop();
-            stack.push(array.length);
+            array = frame.stackPop();
+            frame.stackPush(array.length);
             frame.pc ++;
             pc = frame.readTargetPC();
-            if (stack.pop() <= stack.pop()) {
+            if (frame.stackPop() <= frame.stackPop()) {
               frame.pc = pc;
             }
             break;
           case Bytecodes.GETFIELD:
             index = frame.read16();
             fieldInfo = mi.classInfo.constantPool.resolveField(index, false);
-            object = stack.pop();
-            stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
+            object = frame.stackPop();
+            frame.stackPushKind(fieldInfo.kind, fieldInfo.get(object));
             frame.patch(3, Bytecodes.GETFIELD, Bytecodes.RESOLVED_GETFIELD);
             break;
           case Bytecodes.RESOLVED_GETFIELD:
             fieldInfo = <FieldInfo><any>rp[frame.read16()];
-            object = stack.pop();
-            stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
+            object = frame.stackPop();
+            frame.stackPushKind(fieldInfo.kind, fieldInfo.get(object));
             break;
           case Bytecodes.PUTFIELD:
             index = frame.read16();
             fieldInfo = mi.classInfo.constantPool.resolveField(index, false);
-            value = stack.popKind(fieldInfo.kind);
-            object = stack.pop();
+            value = frame.stackPopKind(fieldInfo.kind);
+            object = frame.stackPop();
             fieldInfo.set(object, value);
             frame.patch(3, Bytecodes.PUTFIELD, Bytecodes.RESOLVED_PUTFIELD);
             break;
           case Bytecodes.RESOLVED_PUTFIELD:
             fieldInfo = <FieldInfo><any>rp[frame.read16()];
-            value = stack.popKind(fieldInfo.kind);
-            object = stack.pop();
+            value = frame.stackPopKind(fieldInfo.kind);
+            object = frame.stackPop();
             fieldInfo.set(object, value);
             break;
           case Bytecodes.GETSTATIC:
@@ -995,7 +990,7 @@ module J2ME {
               return;
             }
             value = fieldInfo.getStatic();
-            stack.pushKind(fieldInfo.kind, value);
+            frame.stackPushKind(fieldInfo.kind, value);
             break;
           case Bytecodes.PUTSTATIC:
             index = frame.read16();
@@ -1004,7 +999,7 @@ module J2ME {
             if (U) {
               return;
             }
-            fieldInfo.setStatic(stack.popKind(fieldInfo.kind));
+            fieldInfo.setStatic(frame.stackPopKind(fieldInfo.kind));
             break;
           case Bytecodes.NEW:
             index = frame.read16();
@@ -1013,12 +1008,12 @@ module J2ME {
             if (U) {
               return;
             }
-            stack.push(newObject(classInfo.klass));
+            frame.stackPush(newObject(classInfo.klass));
             break;
           case Bytecodes.CHECKCAST:
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo);
-            object = stack[stack.length - 1];
+            object = frame.stack[frame.sp - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException(
                   object.klass.classInfo.getClassNameSlow() + " is not assignable to " +
@@ -1028,26 +1023,26 @@ module J2ME {
           case Bytecodes.INSTANCEOF:
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo);
-            object = stack.pop();
+            object = frame.stackPop();
             var result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
-            stack.push(result ? 1 : 0);
+            frame.stackPush(result ? 1 : 0);
             break;
           case Bytecodes.ATHROW:
-            object = stack.pop();
+            object = frame.stackPop();
             if (!object) {
               throw $.newNullPointerException();
             }
             throw object;
             break;
           case Bytecodes.MONITORENTER:
-            object = stack.pop();
+            object = frame.stackPop();
             ctx.monitorEnter(object);
             if (U === VMState.Pausing || U === VMState.Stopping) {
               return;
             }
             break;
           case Bytecodes.MONITOREXIT:
-            object = stack.pop();
+            object = frame.stackPop();
             ctx.monitorExit(object);
             break;
           case Bytecodes.WIDE:
@@ -1065,15 +1060,18 @@ module J2ME {
                 !calleeTargetMethodInfo.isSynchronized &&
                 !calleeTargetMethodInfo.isNative &&
                 calleeTargetMethodInfo.state !== MethodState.Compiled) {
-              var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
-              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
+              var num = calleeTargetMethodInfo.consumeArgumentSlots;
+              var local = [];
+              for (var i = 0; i < num; i++) {
+                local.unshift(frame.stackPop());
+              }
+              var calleeFrame = Frame.create(calleeTargetMethodInfo, local);
               ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
               mi.stats.interpreterCallCount ++;
               ci = mi.classInfo;
               rp = ci.constantPool.resolved;
-              stack = frame.stack;
               lastPC = -1;
               continue;
             }
@@ -1086,25 +1084,25 @@ module J2ME {
                 returnValue = calleeMethod.call(object);
                 break;
               case 1:
-                a = stack.pop();
+                a = frame.stackPop();
                 returnValue = calleeMethod.call(object, a);
                 break;
               case 2:
-                b = stack.pop();
-                a = stack.pop();
+                b = frame.stackPop();
+                a = frame.stackPop();
                 returnValue = calleeMethod.call(object, a, b);
                 break;
               case 3:
-                c = stack.pop();
-                b = stack.pop();
-                a = stack.pop();
+                c = frame.stackPop();
+                b = frame.stackPop();
+                a = frame.stackPop();
                 returnValue = calleeMethod.call(object, a, b, c);
                 break;
               default:
                 Debug.assertUnreachable("Unexpected number of arguments");
                 break;
             }
-            stack.pop();
+            frame.stackPop();
             if (!release) {
               checkReturnValue(calleeMethodInfo, returnValue);
             }
@@ -1113,9 +1111,9 @@ module J2ME {
             }
             if (calleeMethodInfo.returnKind !== Kind.Void) {
               if (isTwoSlot(calleeMethodInfo.returnKind)) {
-                stack.push2(returnValue);
+                frame.stackPush2(returnValue);
               } else {
-                stack.push(returnValue);
+                frame.stackPush(returnValue);
               }
             }
             break;
@@ -1135,7 +1133,7 @@ module J2ME {
             // Fast path for some of the most common interpreter call targets.
             if (calleeMethodInfo.classInfo.getClassNameSlow() === "java/lang/Object" &&
                 calleeMethodInfo.name === "<init>") {
-              stack.pop();
+              frame.stackPop();
               continue;
             }
 
@@ -1173,15 +1171,18 @@ module J2ME {
             }
             // Call method directly in the interpreter if we can.
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
-              var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
-              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
+              var num = calleeTargetMethodInfo.consumeArgumentSlots;
+              var local = [];
+              for (var i = 0; i < num; i++) {
+                local.unshift(frame.stackPop());
+              }
+              var calleeFrame = Frame.create(calleeTargetMethodInfo, local);
               ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
               mi.stats.interpreterCallCount ++;
               ci = mi.classInfo;
               rp = ci.constantPool.resolved;
-              stack = frame.stack;
               lastPC = -1;
               if (calleeTargetMethodInfo.isSynchronized) {
                 if (!calleeFrame.lockObject) {
@@ -1205,31 +1206,27 @@ module J2ME {
                 returnValue = calleeMethod.call(object);
                 break;
               case 1:
-                a = stack.pop();
+                a = frame.stackPop();
                 returnValue = calleeMethod.call(object, a);
                 break;
               case 2:
-                b = stack.pop();
-                a = stack.pop();
+                b = frame.stackPop();
+                a = frame.stackPop();
                 returnValue = calleeMethod.call(object, a, b);
                 break;
               case 3:
-                c = stack.pop();
-                b = stack.pop();
-                a = stack.pop();
+                c = frame.stackPop();
+                b = frame.stackPop();
+                a = frame.stackPop();
                 returnValue = calleeMethod.call(object, a, b, c);
                 break;
               default:
-                if (calleeMethodInfo.hasTwoSlotArguments) {
-                  frame.popArgumentsInto(calleeMethodInfo, argArray);
-                } else {
-                  popManyInto(stack, calleeMethodInfo.argumentSlots, argArray);
-                }
+                frame.popArgumentsInto(calleeMethodInfo, argArray);
                 var returnValue = calleeMethod.apply(object, argArray);
             }
 
             if (!isStatic) {
-              stack.pop();
+              frame.stackPop();
             }
 
             if (!release) {
@@ -1242,20 +1239,20 @@ module J2ME {
 
             if (calleeMethodInfo.returnKind !== Kind.Void) {
               if (isTwoSlot(calleeMethodInfo.returnKind)) {
-                stack.push2(returnValue);
+                frame.stackPush2(returnValue);
               } else {
-                stack.push(returnValue);
+                frame.stackPush(returnValue);
               }
             }
             break;
 
           case Bytecodes.LRETURN:
           case Bytecodes.DRETURN:
-            returnValue = stack.pop();
+            returnValue = frame.stackPop();
           case Bytecodes.IRETURN:
           case Bytecodes.FRETURN:
           case Bytecodes.ARETURN:
-            returnValue = stack.pop();
+            returnValue = frame.stackPop();
           case Bytecodes.RETURN:
             var callee = ctx.popFrame();
             if (callee.lockObject) {
@@ -1272,14 +1269,13 @@ module J2ME {
             mi = frame.methodInfo;
             ci = mi.classInfo;
             rp = ci.constantPool.resolved;
-            stack = frame.stack;
             lastPC = -1;
             if (op === Bytecodes.RETURN) {
               // Nop.
             } else if (op === Bytecodes.LRETURN || op === Bytecodes.DRETURN) {
-              stack.push2(returnValue);
+              frame.stackPush2(returnValue);
             } else {
-              stack.push(returnValue);
+              frame.stackPush(returnValue);
             }
             break;
           default:
@@ -1304,7 +1300,6 @@ module J2ME {
         mi = frame.methodInfo;
         ci = mi.classInfo;
         rp = ci.constantPool.resolved;
-        stack = frame.stack;
         lastPC = -1;
         continue;
       }

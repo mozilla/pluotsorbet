@@ -77,7 +77,9 @@ module J2ME {
   export class Frame {
     methodInfo: MethodInfo;
     local: any [];
-    stack: any [];
+    stack: { [sp: number]: any };
+    sp: number;
+    spBase: number;
     code: Uint8Array;
     pc: number;
     opPC: number;
@@ -112,7 +114,8 @@ module J2ME {
       this.code = methodInfo ? methodInfo.codeAttribute.code : null;
       this.pc = 0;
       this.opPC = 0;
-      this.stack.length = 0;
+      this.stack = {};
+      this.sp = this.spBase = 0;
       this.local = local;
       this.lockObject = null;
     }
@@ -133,8 +136,47 @@ module J2ME {
       Frame.dirtyStack.push(this);
     }
 
-    incLocal(i: number, value: any) {
-      this.local[i] += value | 0;
+    stackPush(value) {
+      this.stack[this.sp++] = value;
+      return value;
+    }
+
+    stackPush2(value) {
+      this.stack[this.sp] = value;
+      this.stack[this.sp + 1] = null;
+      this.sp += 2;
+      return value;
+    }
+
+    stackPop() {
+      return this.stack[--this.sp];
+    }
+
+    stackPop2() {
+      this.sp -= 2;
+      return this.stack[this.sp];
+    }
+
+    stackPushKind(kind: J2ME.Kind, value) {
+      if (isTwoSlot(kind)) {
+        this.stackPush2(value);
+        return;
+      }
+      this.stackPush(value);
+    }
+
+    stackPopKind(kind: J2ME.Kind) {
+      if (isTwoSlot(kind)) {
+        return this.stackPop2();
+      }
+      return this.stackPop();
+    }
+
+    // A convenience function for retrieving values in reverse order
+    // from the end of the stack.  stackRead(1) returns the topmost item
+    // on the stack, while stackRead(2) returns the one underneath it.
+    stackRead(i: number) {
+      return this.stack[this.sp - i];
     }
 
     read8(): number {
@@ -190,7 +232,7 @@ module J2ME {
       var def = this.read32Signed();
       var low = this.read32Signed();
       var high = this.read32Signed();
-      var value = this.stack.pop();
+      var value = this.stackPop();
       var pc;
       if (value < low || value > high) {
         pc = def;
@@ -208,7 +250,7 @@ module J2ME {
       }
       var pc = this.read32Signed();
       var size = this.read32();
-      var value = this.stack.pop();
+      var value = this.stackPop();
       lookup:
       for (var i = 0; i < size; i++) {
         var key = this.read32Signed();
@@ -224,26 +266,25 @@ module J2ME {
     }
 
     wide() {
-      var stack = this.stack;
       var op = this.read8();
       switch (op) {
         case Bytecodes.ILOAD:
         case Bytecodes.FLOAD:
         case Bytecodes.ALOAD:
-          stack.push(this.local[this.read16()]);
+          this.stackPush(this.local[this.read16()]);
           break;
         case Bytecodes.LLOAD:
         case Bytecodes.DLOAD:
-          stack.push2(this.local[this.read16()]);
+          this.stackPush2(this.local[this.read16()]);
           break;
         case Bytecodes.ISTORE:
         case Bytecodes.FSTORE:
         case Bytecodes.ASTORE:
-          this.local[this.read16()] = stack.pop();
+          this.local[this.read16()] = this.stackPop();
           break;
         case Bytecodes.LSTORE:
         case Bytecodes.DSTORE:
-          this.local[this.read16()] = stack.pop2();
+          this.local[this.read16()] = this.stackPop2();
           break;
         case Bytecodes.IINC:
           var index = this.read16();
@@ -265,7 +306,7 @@ module J2ME {
      */
     peekInvokeObject(methodInfo: MethodInfo): java.lang.Object {
       release || assert(!methodInfo.isStatic);
-      var i = this.stack.length - methodInfo.argumentSlots - 1;
+      var i = this.sp - methodInfo.argumentSlots - 1;
       release || assert (i >= 0);
       release || assert (this.stack[i] !== undefined);
       return this.stack[i];
@@ -275,14 +316,20 @@ module J2ME {
       var stack = this.stack;
       var signatureKinds = methodInfo.signatureKinds;
       var argumentSlots = methodInfo.argumentSlots;
-      for (var i = 1, j = stack.length - argumentSlots, k = 0; i < signatureKinds.length; i++) {
-        args[k++] = stack[j++];
-        if (isTwoSlot(signatureKinds[i])) {
-          j++;
+      if (methodInfo.hasTwoSlotArguments) {
+        for (var i = 1, j = this.sp - argumentSlots, k = 0; i < signatureKinds.length; i++) {
+          args[k++] = stack[j++];
+          if (isTwoSlot(signatureKinds[i])) {
+            j++;
+          }
+        }
+      } else {
+        for (var i = 1, j = this.sp - argumentSlots, k = 0; i < signatureKinds.length; i++) {
+          args[k++] = stack[j++];
         }
       }
-      release || assert(j === stack.length && k === signatureKinds.length - 1);
-      stack.length -= argumentSlots;
+      release || assert(j === this.sp && k === signatureKinds.length - 1);
+      this.sp -= argumentSlots;
       args.length = k;
       return args;
     }
@@ -296,7 +343,11 @@ module J2ME {
         return toDebugString(x);
       }).join(", ");
 
-      var stackStr = this.stack.map(function (x) {
+      var stack = [];
+      for (var i = this.spBase; i < this.sp; i++) {
+        stack.push(this.stack[i]);
+      }
+      var stackStr = stack.map(function (x) {
         return toDebugString(x);
       }).join(", ");
 
@@ -635,7 +686,11 @@ module J2ME {
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
       var frame = Frame.create(methodInfo, local);
-      frame.stack = stack;
+      var spBase = frame.spBase;
+      for (var i = 0; i < stack.length; i++) {
+        frame.stack[spBase + i] = stack[i];
+      }
+      frame.sp += stack.length;
       frame.pc = nextPC;
       frame.opPC = pc;
       frame.lockObject = lockObject;

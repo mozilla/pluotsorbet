@@ -9,9 +9,9 @@ function asyncImpl(returnKind, promise) {
 
   promise.then(function(res) {
     if (returnKind === "J" || returnKind === "D") {
-      ctx.current().stack.push2(res);
+      ctx.current().stackPush2(res);
     } else if (returnKind !== "V") {
-      ctx.current().stack.push(res);
+      ctx.current().stackPush(res);
     } else {
       // void, do nothing
     }
