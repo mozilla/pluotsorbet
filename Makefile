@@ -7,6 +7,7 @@ VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
 CONSOLE ?= 1
+VERBOSE ?= 0
 
 # Sensor support
 JSR_256 ?= 1
@@ -26,6 +27,14 @@ ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
 else
   J2ME_JS_OPTIMIZATION_LEVEL = SIMPLE
+endif
+
+# Closure is really chatty, so we shush it by default to reduce log lines
+# for Travis.
+ifeq ($(VERBOSE),1)
+  CLOSURE_WARNING_LEVEL = VERBOSE
+ else
+  CLOSURE_WARNING_LEVEL = QUIET
 endif
 
 MAIN_JS_SRCS = \
@@ -191,7 +200,7 @@ relooper:
 bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
-	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
+	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
@@ -207,7 +216,7 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 # out-language) in order for Closure to compile them, even though for now
 # we're optimizing "WHITESPACE_ONLY".
 bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
-	java -jar build_tools/closure.jar --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
 j2me: bld/j2me.js bld/jsc.js
@@ -216,7 +225,7 @@ aot: bld/classes.jar.js
 bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
-	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_AOT_OPTIMIZATIONS bld/classes.jar.js > bld/classes.jar.cc.js \
+	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
 bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt

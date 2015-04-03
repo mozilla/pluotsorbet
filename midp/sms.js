@@ -79,7 +79,7 @@ function promptForMessageText() {
 
       var text = minutes + ":";
 
-      if (seconds > 10) {
+      if (seconds >= 10) {
         text += seconds;
       } else {
         text += "0" + seconds;

@@ -1273,14 +1273,14 @@ module J2ME {
     // Adapter for the most common case.
     if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
       var method = function fastInterpreterFrameAdapter() {
-        var frame = Frame.create(methodInfo, [], 0);
+        var frame = Frame.create(methodInfo, []);
         var j = 0;
         if (!methodInfo.isStatic) {
-          frame.setLocal(j++, this);
+          frame.local[j++] = this;
         }
         var slots = methodInfo.argumentSlots;
         for (var i = 0; i < slots; i++) {
-          frame.setLocal(j++, arguments[i]);
+          frame.local[j++] = arguments[i];
         }
         return $.ctx.executeFrame(frame);
       };
@@ -1289,25 +1289,25 @@ module J2ME {
     }
 
     var method = function interpreterFrameAdapter() {
-      var frame = Frame.create(methodInfo, [], 0);
+      var frame = Frame.create(methodInfo, []);
       var j = 0;
       if (!methodInfo.isStatic) {
-        frame.setLocal(j++, this);
+        frame.local[j++] = this;
       }
       var signatureKinds = methodInfo.signatureKinds;
       release || assert (arguments.length === signatureKinds.length - 1,
         "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor.");
       for (var i = 1; i < signatureKinds.length; i++) {
-        frame.setLocal(j++, arguments[i - 1]);
+        frame.local[j++] = arguments[i - 1];
         if (isTwoSlot(signatureKinds[i])) {
-          frame.setLocal(j++, null);
+          frame.local[j++] = null;
         }
       }
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
             ? methodInfo.classInfo.getClassObject()
-            : frame.getLocal(0);
+            : frame.local[0];
         }
         $.ctx.monitorEnter(frame.lockObject);
         if (U === VMState.Pausing) {
