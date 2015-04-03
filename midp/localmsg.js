@@ -762,101 +762,94 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         return;
       }
 
-      fs.open("/" + fileName, (function(fd) {
-        var img = null;
+      var imgData = fs.getBlob("/" + fileName);
+      var img = new Image();
+      img.src = URL.createObjectURL(imgData);
 
-        function _cleanupImg() {
-          if (img) {
-            URL.revokeObjectURL(img.src);
-            img.src = '';
-            img = null;
-          }
+      function _cleanupImg() {
+        if (img) {
+          URL.revokeObjectURL(img.src);
+          img.src = '';
+          img = null;
+        }
+      }
+
+      var _sendBackScaledImage = function(blob) {
+        _cleanupImg();
+
+        var ext = "";
+        var extIndex = fileName.lastIndexOf(".");
+        if (extIndex != -1) {
+          ext = fileName.substr(extIndex);
         }
 
-        var _sendBackScaledImage = function(blob) {
-          _cleanupImg();
+        var uniqueFileName = fs.createUniqueFile("/Private/nokiaimageprocessing", "image" + ext, blob);
+        var encoder = new DataEncoder();
 
-          var ext = "";
-          var extIndex = fileName.lastIndexOf(".");
-          if (extIndex != -1) {
-            ext = fileName.substr(extIndex);
-          }
+        encoder.putStart(DataType.STRUCT, "event");
+        encoder.put(DataType.METHOD, "name", "Scale");
+        encoder.put(DataType.BYTE, "trans_id", trans_id);
+        encoder.put(DataType.STRING, "result", "Complete"); // Name unknown
+        encoder.put(DataType.WSTRING, "filename", "Private/nokiaimageprocessing/" + uniqueFileName); // Name unknown
+        encoder.putEnd(DataType.STRUCT, "event");
 
-          var uniqueFileName = fs.createUniqueFile("/Private/nokiaimageprocessing", "image" + ext, blob);
-          var encoder = new DataEncoder();
+        var data = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient({
+          data: data,
+          length: data.length,
+          offset: 0,
+        });
+      }.bind(this);
 
-          encoder.putStart(DataType.STRUCT, "event");
-          encoder.put(DataType.METHOD, "name", "Scale");
-          encoder.put(DataType.BYTE, "trans_id", trans_id);
-          encoder.put(DataType.STRING, "result", "Complete"); // Name unknown
-          encoder.put(DataType.WSTRING, "filename", "Private/nokiaimageprocessing/" + uniqueFileName); // Name unknown
-          encoder.putEnd(DataType.STRUCT, "event");
+      img.onload = (function() {
+        // If the image size is less than the given max_kb, and height/width
+        // are less than max_hres/max_wres, send the original image immediately
+        // without any scaling.
+        if (max_kb > 0 && (max_kb * 1024) >= imgData.size &&
+            (max_hres <= 0 || img.naturalHeight <= max_vres) &&
+            (max_vres <= 0 || img.naturalWidth <= max_hres)) {
+          _sendBackScaledImage(imgData);
+          return;
+        }
 
-          var data = new TextEncoder().encode(encoder.getData());
-          this.sendMessageToClient({
-            data: data,
-            length: data.length,
-            offset: 0,
+        function _imageToBlob(aCanvas, aImage, aHeight, aWidth, aQuality) {
+          aCanvas.width = aWidth;
+          aCanvas.height = aHeight;
+          var ctx = aCanvas.getContext("2d");
+          ctx.drawImage(aImage, 0, 0, aWidth, aHeight);
+
+          return new Promise(function(resolve, reject) {
+            aCanvas.toBlob(resolve, "image/jpeg", aQuality / 100);
           });
-        }.bind(this);
+        }
 
-        var imgData = fs.read(fd);
-        var fileSize = fs.getsize(fd);
-        fs.close(fd);
+        var canvas = document.createElement("canvas");
+        if (max_kb <= 0) {
+          _imageToBlob(canvas, img, Math.min(img.naturalHeight, max_vres),
+                       Math.min(img.naturalWidth, max_hres), quality).then(_sendBackScaledImage);
+          return;
+        }
 
-        img = new Image();
-        img.src = URL.createObjectURL(new Blob([ imgData ]));
+        _imageToBlob(canvas, img, img.naturalHeight,
+                     img.naturalWidth, quality).then(function(blob) {
+          var imgSizeInKb = blob.size / 1024;
 
-        img.onload = (function() {
-          // If the image size is less than the given max_kb, and height/width
-          // are less than max_hres/max_wres, send the original image immediately
-          // without any scaling.
-          if (max_kb > 0 && (max_kb * 1024) >= fileSize &&
-              (max_hres <= 0 || img.naturalHeight <= max_vres) &&
-              (max_vres <= 0 || img.naturalWidth <= max_hres)) {
-            _sendBackScaledImage(new Blob([ imgData ]));
-            return;
-          }
+          // Roughly recalc max_vres and max_hres based on the max_kb and the real resolution.
+          var ratio = Math.sqrt(max_kb / imgSizeInKb);
+          max_hres = Math.min(img.naturalWidth * ratio,
+            max_hres <= 0 ? img.naturalWidth : max_hres);
+          max_vres = Math.min(img.naturalHeight * ratio,
+            max_vres <=0 ? img.naturalHeight : max_vres);
 
-          function _imageToBlob(aCanvas, aImage, aHeight, aWidth, aQuality) {
-            aCanvas.width = aWidth;
-            aCanvas.height = aHeight;
-            var ctx = aCanvas.getContext("2d");
-            ctx.drawImage(aImage, 0, 0, aWidth, aHeight);
+          return _imageToBlob(canvas, img, Math.min(img.naturalHeight, max_vres),
+                              Math.min(img.naturalWidth, max_hres), quality);
+        }).then(_sendBackScaledImage);
+      }).bind(this);
 
-            return new Promise(function(resolve, reject) {
-              aCanvas.toBlob(resolve, "image/jpeg", aQuality / 100);
-            });
-          }
-
-          var canvas = document.createElement("canvas");
-          if (max_kb <= 0) {
-            _imageToBlob(canvas, img, Math.min(img.naturalHeight, max_vres),
-                         Math.min(img.naturalWidth, max_hres), quality).then(_sendBackScaledImage);
-            return;
-          }
-
-          _imageToBlob(canvas, img, img.naturalHeight,
-                       img.naturalWidth, quality).then(function(blob) {
-            var imgSizeInKb = blob.size / 1024;
-
-            // Roughly recalc max_vres and max_hres based on the max_kb and the real resolution.
-            var ratio = Math.sqrt(max_kb / imgSizeInKb);
-            max_hres = Math.min(img.naturalWidth * ratio,
-              max_hres <= 0 ? img.naturalWidth : max_hres);
-            max_vres = Math.min(img.naturalHeight * ratio,
-              max_vres <=0 ? img.naturalHeight : max_vres);
-
-            return _imageToBlob(canvas, img, Math.min(img.naturalHeight, max_vres),
-                                Math.min(img.naturalWidth, max_hres), quality);
-          }).then(_sendBackScaledImage);
-        }).bind(this);
-
-        img.onerror = function(e) {
-          console.error("Error in decoding image");
-          _cleanupImg();
-        };
-      }).bind(this));
+      img.onerror = function(e) {
+        console.error("Error in decoding image");
+        _cleanupImg();
+      };
     break;
 
     default:
