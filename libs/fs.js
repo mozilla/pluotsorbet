@@ -439,25 +439,26 @@ var fs = (function() {
     return record ? record.data : null;
   }
 
-  function open(path, cb) {
+  function open(path) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs open " + path); }
 
     var record = store.getItem(path);
     if (record == null || record.isDir) {
-      cb(-1);
-    } else {
-      openedFiles.set(++lastId, {
-        dirty: false,
-        path: path,
-        data: record.data,
-        mtime: record.mtime,
-        size: record.size,
-        position: 0,
-        record: record,
-      });
-      cb(lastId);
+      return -1;
     }
+
+    openedFiles.set(++lastId, {
+      dirty: false,
+      path: path,
+      data: record.data,
+      mtime: record.mtime,
+      size: record.size,
+      position: 0,
+      record: record,
+    });
+
+    return lastId;
   }
 
   function close(fd) {

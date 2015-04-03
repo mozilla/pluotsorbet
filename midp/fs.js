@@ -79,25 +79,19 @@ Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/
 
 Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] =
 function(filenameBase, name, ext) {
-    var ctx = $.ctx;
-
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase) + "/" + J2ME.fromJavaString(name) + "." + ext;
 
     function open() {
-        asyncImpl("I", new Promise(function(resolve, reject) {
-            fs.open(path, function(fd) {
-                if (fd == -1) {
-                    ctx.setAsCurrentContext();
-                    reject($.newIOException("openRecordStoreFile: open failed"));
-                } else {
-                    resolve(fd); // handle
-                }
-            });
-        }));
+        var fd = fs.open(path);
+        if (fd === -1) {
+            throw $.newIOException("openRecordStoreFile: open failed");
+        }
+
+        return fd;
     }
 
     if (fs.exists(path)) {
-        open();
+        return open();
     } else {
         // Per the reference impl, create the file if it doesn't exist.
         var dirname = fs.dirname(path);
@@ -109,7 +103,7 @@ function(filenameBase, name, ext) {
             throw $.newIOException("openRecordStoreFile: create failed");
         }
 
-        open();
+        return open();
     }
 };
 
@@ -512,20 +506,13 @@ MIDP.openFileHandler = function(fileHandler, mode) {
         throw $.newIOException("file is a directory");
     }
 
-    var ctx = $.ctx;
+    var fd = fs.open(pathname);
+    if (fd === -1) {
+        throw $.newIOException("Failed to open file handler for " + pathname);
+    }
 
-    asyncImpl("V", new Promise(function(resolve, reject) {
-        fs.open(pathname, function(fd) {
-            if (fd === -1) {
-              ctx.setAsCurrentContext();
-              reject($.newIOException("Failed to open file handler for " + pathname));
-              return;
-            }
-            fileHandler.nativeDescriptor = fd;
-            MIDP.markFileHandler(fileHandler, mode, true);
-            resolve();
-        });
-    }));
+    fileHandler.nativeDescriptor = fd;
+    MIDP.markFileHandler(fileHandler, mode, true);
 };
 
 MIDP.closeFileHandler = function(fileHandler, mode) {
@@ -759,27 +746,21 @@ Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(fileName, mode) {
     var path = "/" + J2ME.fromJavaString(fileName);
 
-    var ctx = $.ctx;
-
     function open() {
-        asyncImpl("I", new Promise(function(resolve, reject) {
-            fs.open(path, function(fd) {
-                if (fd == -1) {
-                    ctx.setAsCurrentContext();
-                    reject($.newIOException("RandomAccessStream::open(" + path + ") failed opening the file"));
-                } else {
-                    resolve(fd);
-                }
-            });
-        }));
+        var fd = fs.open(path);
+        if (fd === -1) {
+            throw $.newIOException("RandomAccessStream::open(" + path + ") failed opening the file");
+        }
+
+        return fd;
     }
 
     if (fs.exists(path)) {
-        open();
-    } else if (mode == 1) {
+        return open();
+    } else if (mode === 1) {
         throw $.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist");
     } else if (fs.create(path, new Blob())) {
-        open();
+        return open();
     } else {
         throw $.newIOException("RandomAccessStream::open(" + path + ") failed creating the file");
     }
