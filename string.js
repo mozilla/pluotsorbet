@@ -2,8 +2,6 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 'use strict';
 
-var Override = {};
-
 /**
  * string.js: Native implementations of String and StringBuffer.
  *

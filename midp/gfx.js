@@ -383,7 +383,7 @@ var currentlyFocusedTextEditor;
         return defaultFont;
     }
 
-    Native["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function() {
+    Override["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function() {
         return getDefaultFont();
     };
 
@@ -836,7 +836,7 @@ var currentlyFocusedTextEditor;
         return (red*76 + green*150 + blue*29) >> 8;
     }
 
-    Native["javax/microedition/lcdui/Graphics.init.()V"] = function() {
+    Override["javax/microedition/lcdui/Graphics.<init>.()V"] = function() {
         this.maxWidth = 0;
         this.maxHeight = 0;
         this.transX = 0;

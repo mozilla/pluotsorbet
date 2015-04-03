@@ -49,6 +49,7 @@ MAIN_JS_SRCS = \
   blackBox.js \
   timer.js \
   util.js \
+  override.js \
   native.js \
   string.js \
   libs/load.js \
