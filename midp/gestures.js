@@ -3,7 +3,7 @@
 
 'use strict';
 
-Native["com/nokia/mid/ui/gestures/GestureInteractiveZone.init.(I)V"] = function(gestures) {
+Override["com/nokia/mid/ui/gestures/GestureInteractiveZone.<init>.(I)V"] = function(gestures) {
   this.gestures = gestures;
 };
 
