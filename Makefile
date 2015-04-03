@@ -33,7 +33,7 @@ endif
 # for Travis.
 ifeq ($(VERBOSE),1)
   CLOSURE_WARNING_LEVEL = VERBOSE
- else
+else
   CLOSURE_WARNING_LEVEL = QUIET
 endif
 
