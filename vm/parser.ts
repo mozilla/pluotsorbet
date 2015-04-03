@@ -548,6 +548,9 @@ module J2ME {
               r = this.resolved[i] = classInfo.getMethodByName(name, type);
             }
             if (!r) {
+              // Set to undefined again, otherwise a new attempt to resolve this method/field
+              // will not fail with a RuntimeException.
+              this.resolved[i] = undefined;
               throw $.newRuntimeException(classInfo.getClassNameSlow() + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found");
             }
             break;
