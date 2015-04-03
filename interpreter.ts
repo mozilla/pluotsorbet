@@ -249,7 +249,6 @@ module J2ME {
            mi.state < MethodState.Compiled && // Give up if we're at this state.
            mi.stats.backwardsBranchCount + mi.stats.interpreterCallCount > 10) ||
           config.forceRuntimeCompilation) {
-        try { console.log("COMPILE"); } catch (e) {}
         compileAndLinkMethod(mi);
       }
 
