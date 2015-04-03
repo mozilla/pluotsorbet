@@ -522,8 +522,8 @@ module J2ME {
           this.clearCurrentContext();
           return;
         }
-        this.clearCurrentContext();
       } while (this.current() !== Frame.Start);
+      this.clearCurrentContext();
       this.kill();
     }
 
