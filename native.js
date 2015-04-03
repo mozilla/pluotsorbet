@@ -559,6 +559,24 @@ Native["java/lang/Thread.activeCount.()I"] = function() {
     return $.ctx.runtime.threadCount;
 };
 
+var consoleBuffer = "";
+
+function flushConsoleBuffer() {
+    if (consoleBuffer.length) {
+        var temp = consoleBuffer;
+        consoleBuffer = "";
+        console.info(temp);
+    }
+}
+
+console.print = function(ch) {
+    if (ch === 10) {
+        flushConsoleBuffer();
+    } else {
+        consoleBuffer += String.fromCharCode(ch);
+    }
+};
+
 Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
     console.print(ch);
 };
