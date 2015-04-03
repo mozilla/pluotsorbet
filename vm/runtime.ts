@@ -45,6 +45,7 @@ module J2ME {
   declare var CompiledMethodCache;
 
   export var aotMetaData = <{string: AOTMetaData}>Object.create(null);
+  export var Methods = <{string: Function}>Object.create(null);
 
   /**
    * Turns on just-in-time compilation of methods.
@@ -933,7 +934,7 @@ module J2ME {
     if (unresolvedSymbols[classInfo.mangledName]) {
       return null;
     }
-    var klass = jsGlobal[classInfo.mangledName];
+    var klass = Methods[classInfo.mangledName];
     if (klass) {
       return klass;
     }
@@ -958,14 +959,15 @@ module J2ME {
       });
     }
 
-    if (!jsGlobal.hasOwnProperty(mangledName)) {
+    if (!Object.prototype.hasOwnProperty.call(Methods, mangledName)) {
       unresolvedSymbols[mangledName] = true;
-      Object.defineProperty(jsGlobal, mangledName, {
+      Object.defineProperty(Methods, mangledName, {
         configurable: true,
         get: function () {
           linkWriter && linkWriter.writeLn("Load Klass: " + className);
           CLASSES.loadAndLinkClass(className);
-          return this[mangledName]; // This should not be recursive at this point.
+          unresolvedSymbols[mangledName] = false;
+          return Methods[mangledName]; // This should not be recursive at this point.
         }
       });
     }
@@ -979,7 +981,7 @@ module J2ME {
   }
 
   function setKlassSymbol(mangledName: string, klass: Klass) {
-    Object.defineProperty(jsGlobal, mangledName, {
+    Object.defineProperty(Methods, mangledName, {
       value: klass
     });
   }
@@ -994,12 +996,12 @@ module J2ME {
         source.push(x);
     });
     var emitter = new Emitter(writer, false, true, true);
-    J2ME.emitKlass(emitter, classInfo);
+    J2ME.emitKlass(emitter, classInfo, true);
     (1, eval)(source.join("\n"));
     leaveTimeline("emitKlassConstructor");
     // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.getClassNameSlow());
     // consoleWriter.writeLn(source);
-    klass = <Klass>jsGlobal[mangledName];
+    klass = <Klass>Methods[mangledName];
     release || assert(klass, mangledName);
     klass.toString = function () {
       return "[Synthesized Klass " + classInfo.getClassNameSlow() + "]";
@@ -1322,7 +1324,7 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    var fn = jsGlobal[methodInfo.mangledClassAndMethodName];
+    var fn = Methods[methodInfo.mangledClassAndMethodName];
     if (fn) {
       aotMethodCount++;
       methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
@@ -1336,7 +1338,7 @@ module J2ME {
       }
     }
 
-    return jsGlobal[methodInfo.mangledClassAndMethodName];
+    return Methods[methodInfo.mangledClassAndMethodName];
   }
 
   /**
@@ -1732,10 +1734,10 @@ module J2ME {
     }
     leaveTimeline("Compiling");
     var compiledMethodName = mangledClassAndMethodName;
-    var source = "function " + compiledMethodName +
-                 "(" + compiledMethod.args.join(",") + ") {\n" +
+    var source = "M." + compiledMethodName +
+                 "=function(" + compiledMethod.args.join(",") + ") {\n" +
                    compiledMethod.body +
-                 "\n}";
+                 "\n};";
 
     codeWriter && codeWriter.writeLns(source);
     var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.getClassNameSlow() });
@@ -1769,12 +1771,12 @@ module J2ME {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
-    // This overwrites the method on the global object.
+    // This overwrites the method in J2ME.Methods.
     (1, eval)(source);
     leaveTimeline("Eval Compiled Code");
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-    var fn = jsGlobal[mangledClassAndMethodName];
+    var fn = Methods[mangledClassAndMethodName];
     var klass = methodInfo.classInfo.klass;
     klass.methods[methodInfo.index] = methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
@@ -2131,6 +2133,7 @@ module J2ME {
 var Runtime = J2ME.Runtime;
 
 var AOTMD = J2ME.aotMetaData;
+var M = J2ME.Methods;
 
 /**
  * Are we currently unwinding the stack because of a Yield? This technically
