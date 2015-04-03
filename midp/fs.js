@@ -120,17 +120,24 @@ Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(handle, 
 Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(handle, buf, offset, numBytes) {
     var from = fs.getpos(handle);
     var to = from + numBytes;
-    var readBytes = fs.read(handle, from, to);
 
-    if (readBytes.byteLength <= 0) {
-        throw $.newIOException("handle invalid or segment indices out of bounds");
-    }
+    var ctx = $.ctx;
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        fs.read(handle, from, to, function(readBytes) {
+            if (readBytes.byteLength <= 0) {
+                ctx.setAsCurrentContext();
+                reject($.newIOException("handle invalid or segment indices out of bounds"));
+                return;
+            }
 
-    var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
-    for (var i = 0; i < readBytes.byteLength; i++) {
-        subBuffer[i] = readBytes[i];
-    }
-    return readBytes.byteLength;
+            var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
+            for (var i = 0; i < readBytes.byteLength; i++) {
+                subBuffer[i] = readBytes[i];
+            }
+
+            resolve(readBytes.byteLength);
+        });
+    }));
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(handle, buf, offset, numBytes) {
@@ -588,10 +595,12 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
     }
 
     var curpos = fs.getpos(fd);
-    var data = fs.read(fd, curpos, curpos + len);
-    b.set(data, off);
-
-    return (data.byteLength > 0) ? data.byteLength : -1;
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        fs.read(fd, curpos, curpos + len, function(data) {
+            b.set(data, off);
+            resolve((data.byteLength > 0) ? data.byteLength : -1);
+        });
+    }));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(n) {
@@ -780,17 +789,20 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] =
 function(handle, buffer, offset, length) {
     var from = fs.getpos(handle);
     var to = from + length;
-    var readBytes = fs.read(handle, from, to);
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        fs.read(handle, from, to, function(readBytes) {
+            if (readBytes.byteLength <= 0) {
+                resolve(-1);
+                return;
+            }
 
-    if (readBytes.byteLength <= 0) {
-        return -1;
-    }
-
-    var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
-    for (var i = 0; i < readBytes.byteLength; i++) {
-        subBuffer[i] = readBytes[i];
-    }
-    return readBytes.byteLength;
+            var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
+            for (var i = 0; i < readBytes.byteLength; i++) {
+                subBuffer[i] = readBytes[i];
+            }
+            resolve(readBytes.byteLength);
+        });
+    }));
 };
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] =

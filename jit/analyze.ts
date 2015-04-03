@@ -25,6 +25,9 @@ module J2ME {
    * at the right spots.
    */
   export var yieldMap = {
+    "com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I": YieldReason.Root,
+    "com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I": YieldReason.Root,
+    "com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I": YieldReason.Root,
     "com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V": YieldReason.Root,
     "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V": YieldReason.Root,
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V": YieldReason.Root,
