@@ -72,6 +72,11 @@ module J2ME {
     return this[this.length - i];
   };
 
+  export class StackManager {
+    buffer: { [sp: number]: any } = {};
+    top: number = 0;
+  }
+
   export var frameCount = 0;
 
   export class Frame {
@@ -91,44 +96,46 @@ module J2ME {
     /**
      * Denotes the start of the context frame stack.
      */
-    static Start: Frame = Frame.create(null, null);
+    static Start: Frame = Frame.create(null, null, null);
 
     /**
      * Marks a frame set.
      */
-    static Marker: Frame = Frame.create(null, null);
+    static Marker: Frame = Frame.create(null, null, null);
 
     static isMarker(frame: Frame) {
       return frame.methodInfo === null;
     }
 
-    constructor(methodInfo: MethodInfo, local: any []) {
+    constructor(methodInfo: MethodInfo, local: any [], mgr: StackManager) {
       frameCount ++;
-      this.stack = [];
-      this.reset(methodInfo, local);
+      this.reset(methodInfo, local, mgr);
     }
 
-    reset(methodInfo: MethodInfo, local: any []) {
+    reset(methodInfo: MethodInfo, local: any [], mgr: StackManager) {
       this.methodInfo = methodInfo;
-      this.cp = methodInfo ? methodInfo.classInfo.constantPool : null;
-      this.code = methodInfo ? methodInfo.codeAttribute.code : null;
-      var max_stack = methodInfo ? methodInfo.codeAttribute.max_stack : 0;
+      if (!methodInfo) {
+        return;
+      }
+      this.cp = methodInfo.classInfo.constantPool;
+      this.code = methodInfo.codeAttribute.code;
+      var max_stack = methodInfo.codeAttribute.max_stack;
       this.pc = 0;
       this.opPC = 0;
-      this.stack = {};
-      this.sp = this.spBase = 0;
+      this.sp = this.spBase = mgr.top;
+      mgr.top += max_stack;
       this.local = local;
       this.lockObject = null;
     }
 
-    static create(methodInfo: MethodInfo, local: any []): Frame {
+    static create(methodInfo: MethodInfo, local: any [], mgr: StackManager): Frame {
       var dirtyStack = Frame.dirtyStack;
       if (dirtyStack.length) {
         var frame = dirtyStack.pop();
-        frame.reset(methodInfo, local);
+        frame.reset(methodInfo, local, mgr);
         return frame;
       } else {
-        return new Frame(methodInfo, local);
+        return new Frame(methodInfo, local, mgr);
       }
     }
 
@@ -393,6 +400,8 @@ module J2ME {
      */
     private frames: Frame [];
     bailoutFrames: Frame [];
+    stack: StackManager;
+    bailoutStack: StackManager;
     lockTimeout: number;
     lockLevel: number;
     thread: java.lang.Thread;
@@ -402,6 +411,8 @@ module J2ME {
       var id = this.id = Context._nextId ++;
       this.frames = [];
       this.bailoutFrames = [];
+      this.stack = new StackManager();
+      this.bailoutStack = new StackManager();
       this.runtime = runtime;
       this.runtime.addContext(this);
       this.writer = new IndentingWriter(false, function (s) {
@@ -686,7 +697,7 @@ module J2ME {
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
-      var frame = Frame.create(methodInfo, local);
+      var frame = Frame.create(methodInfo, local, this.bailoutStack);
       var spBase = frame.spBase;
       for (var i = 0; i < stack.length; i++) {
         frame.stack[spBase + i] = stack[i];

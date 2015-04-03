@@ -1065,7 +1065,7 @@ module J2ME {
               for (var i = 0; i < num; i++) {
                 local.unshift(frame.stackPop());
               }
-              var calleeFrame = Frame.create(calleeTargetMethodInfo, local);
+              var calleeFrame = Frame.create(calleeTargetMethodInfo, local, ctx.stack);
               ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
@@ -1176,7 +1176,7 @@ module J2ME {
               for (var i = 0; i < num; i++) {
                 local.unshift(frame.stackPop());
               }
-              var calleeFrame = Frame.create(calleeTargetMethodInfo, local);
+              var calleeFrame = Frame.create(calleeTargetMethodInfo, local, ctx.stack);
               ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
