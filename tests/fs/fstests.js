@@ -24,7 +24,6 @@ var promisify = function(fn) {
 var promiseFS = {};
 [
   "stat",
-  "open",
   "exportStore",
   "importStore",
 ].forEach(function(fn) { promiseFS[fn] = promisify(fn) });
@@ -82,12 +81,11 @@ var getBranch = function(dir) {
             resolve(stat);
           });
         } else {
-          promiseFS.open(path).then(function(fd) {
-            fs.read(fd, undefined, undefined, function(data) {
-              stat.data = Array.prototype.slice.call(data);
-              fs.close(fd);
-              resolve(stat);
-            });
+          var fd = fs.open(path);
+          fs.read(fd, undefined, undefined, function(data) {
+            stat.data = Array.prototype.slice.call(data);
+            fs.close(fd);
+            resolve(stat);
           });
         }
       });
@@ -125,10 +123,9 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.open("/", function(fd) {
-    is(fd, -1, "can't open a directory");
-    next();
-  });
+  var fd = fs.open("/");
+  is(fd, -1, "can't open a directory");
+  next();
 });
 
 tests.push(function() {
@@ -381,10 +378,9 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.open("/tmp/tmp.txt", function(fd) {
-    is(fd, 3, "opened a file");
-    next();
-  });
+  var fd = fs.open("/tmp/tmp.txt");
+  is(fd, 3, "opened a file");
+  next();
 });
 
 tests.push(function() {
@@ -393,11 +389,10 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.open("/tmp/tmp.txt", function(newFd) {
-    is(newFd, 4, "reopened a file");
-    fd = newFd;
-    next();
-  });
+  var newFd = fs.open("/tmp/tmp.txt");
+  is(newFd, 4, "reopened a file");
+  fd = newFd;
+  next();
 });
 
 tests.push(function() {
@@ -719,13 +714,11 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.open("/tmp/stat.txt", function(aFD) {
-        fd = aFD;
-        var stat = fs.stat("/tmp/stat.txt");
-        is(stat.mtime, lastTime, "open doesn't update mtime");
-        lastTime = stat.mtime;
-        next();
-      });
+      fd = fs.open("/tmp/stat.txt");
+      var stat = fs.stat("/tmp/stat.txt");
+      is(stat.mtime, lastTime, "open doesn't update mtime");
+      lastTime = stat.mtime;
+      next();
     }, 1);
   });
 
@@ -808,16 +801,15 @@ tests.push(function() {
   });
 
   tests.push(function() {
-    fs.open("/tmp/stat.txt", function(fd) {
+    var fd = fs.open("/tmp/stat.txt");
+    var stat = fs.stat("/tmp/stat.txt");
+    var mtime = stat.mtime;
+    window.setTimeout(function() {
+      fs.close(fd);
       var stat = fs.stat("/tmp/stat.txt");
-      var mtime = stat.mtime;
-      window.setTimeout(function() {
-        fs.close(fd);
-        var stat = fs.stat("/tmp/stat.txt");
-        is(stat.mtime, mtime, "close without changes doesn't update mtime");
-        next();
-      }, 1);
-    });
+      is(stat.mtime, mtime, "close without changes doesn't update mtime");
+      next();
+    }, 1);
   });
 
   tests.push(function() {
