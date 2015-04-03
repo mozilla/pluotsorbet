@@ -23,6 +23,7 @@
  *    autosize
  *    fontSize
  *    language
+ *    forceRuntimeCompilation
  *
  * Keep this list up-to-date!
  */
