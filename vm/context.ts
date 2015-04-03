@@ -75,6 +75,11 @@ module J2ME {
   export class StackManager {
     buffer: { [sp: number]: any } = {};
     top: number = 0;
+    bailout: boolean;
+
+    constructor(bailout: boolean) {
+      this.bailout = bailout;
+    }
   }
 
   export var frameCount = 0;
@@ -83,6 +88,7 @@ module J2ME {
     methodInfo: MethodInfo;
     local: any [];
     stack: { [sp: number]: any };
+    stackManager: StackManager;
     sp: number;
     spBase: number;
     code: Uint8Array;
@@ -122,6 +128,8 @@ module J2ME {
       var max_stack = methodInfo.codeAttribute.max_stack;
       this.pc = 0;
       this.opPC = 0;
+      this.stack = mgr.buffer;
+      this.stackManager = mgr;
       this.sp = this.spBase = mgr.top;
       mgr.top += max_stack;
       this.local = local;
@@ -142,6 +150,12 @@ module J2ME {
     free() {
       release || assert(!Frame.isMarker(this));
       Frame.dirtyStack.push(this);
+
+      if (this.stackManager.bailout) {
+        return;
+      }
+      release || assert(this.stackManager.top == this.spBase + this.methodInfo.codeAttribute.max_stack);
+      this.stackManager.top = this.spBase;
     }
 
     stackPush(value) {
@@ -151,7 +165,6 @@ module J2ME {
 
     stackPush2(value) {
       this.stack[this.sp] = value;
-      this.stack[this.sp + 1] = null;
       this.sp += 2;
       return value;
     }
@@ -411,8 +424,8 @@ module J2ME {
       var id = this.id = Context._nextId ++;
       this.frames = [];
       this.bailoutFrames = [];
-      this.stack = new StackManager();
-      this.bailoutStack = new StackManager();
+      this.stack = new StackManager(false);
+      this.bailoutStack = new StackManager(true);
       this.runtime = runtime;
       this.runtime.addContext(this);
       this.writer = new IndentingWriter(false, function (s) {
@@ -567,7 +580,8 @@ module J2ME {
         if (U) {
           if (this.bailoutFrames.length) {
             Array.prototype.push.apply(this.frames, this.bailoutFrames);
-            this.bailoutFrames = [];
+            this.bailoutFrames.length = 0;
+            this.bailoutStack.top = 0;
           }
           var frames = this.frames;
           switch (U) {
@@ -699,8 +713,9 @@ module J2ME {
       // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
       var frame = Frame.create(methodInfo, local, this.bailoutStack);
       var spBase = frame.spBase;
+      var s = frame.stack;
       for (var i = 0; i < stack.length; i++) {
-        frame.stack[spBase + i] = stack[i];
+        s[spBase + i] = stack[i];
       }
       frame.sp += stack.length;
       frame.pc = nextPC;

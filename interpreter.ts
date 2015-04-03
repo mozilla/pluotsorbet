@@ -165,6 +165,7 @@ module J2ME {
 
         return;
       }
+      frame.free();
       ctx.popFrame();
       frame = ctx.current();
       if (Frame.isMarker(frame)) {

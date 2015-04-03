@@ -84,7 +84,7 @@ module J2ME {
       throw new Error(message);
     }
 
-    export function assert(condition: any, message: any = "assertion failed") {
+    export function assert(condition: any, message: any = "assertion failed: " + Error().stack) {
       if (condition === "") {     // avoid inadvertent false positive
         condition = true;
       }
