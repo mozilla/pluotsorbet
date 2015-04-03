@@ -445,26 +445,18 @@ var fs = (function() {
 
     var record = store.getItem(path);
     if (record == null || record.isDir) {
-      setZeroTimeout(function() { cb(-1) });
+      cb(-1);
     } else {
-      var reader = new FileReader();
-      reader.addEventListener("error", function() {
-        console.error("Failed to read blob data from: " + path);
-        setZeroTimeout(function() { cb(-1) });
+      openedFiles.set(++lastId, {
+        dirty: false,
+        path: path,
+        data: record.data,
+        mtime: record.mtime,
+        size: record.size,
+        position: 0,
+        record: record,
       });
-      reader.addEventListener("load", function() {
-        openedFiles.set(++lastId, {
-          dirty: false,
-          path: path,
-          buffer: new FileBuffer(new Int8Array(reader.result)),
-          mtime: record.mtime,
-          size: record.size,
-          position: 0,
-          record: record,
-        });
-        cb(lastId);
-      });
-      reader.readAsArrayBuffer(record.data);
+      cb(lastId);
     }
   }
 
@@ -481,29 +473,32 @@ var fs = (function() {
     }
   }
 
-  function read(fd, from, to) {
+  function read(fd, from, to, cb) {
     var file = openedFiles.get(fd);
     if (!file) {
       return null;
     }
     if (DEBUG_FS) { console.log("fs read " + file.path); }
 
-    var buffer = file.buffer;
-
     if (typeof from === "undefined") {
       from = file.position;
     }
 
-    if (!to || to > buffer.contentSize) {
-      to = buffer.contentSize;
+    if (!to || to > file.size) {
+      to = file.size;
     }
 
-    if (from > buffer.contentSize) {
-      from = buffer.contentSize;
+    if (from > file.size) {
+      from = file.size;
     }
 
     file.position += to - from;
-    return buffer.array.subarray(from, to);
+
+    var reader = new FileReader();
+    reader.addEventListener("load", function() {
+      cb(new Int8Array(reader.result));
+    });
+    reader.readAsArrayBuffer(file.data.slice(from, to));
   }
 
   function write(fd, data, from) {
@@ -515,21 +510,20 @@ var fs = (function() {
       from = file.position;
     }
 
-    var buffer = file.buffer;
-
-    if (from > buffer.contentSize) {
-      from = buffer.contentSize;
+    if (from > file.size) {
+      from = file.size;
     }
 
-    var newLength = (from + data.byteLength > buffer.contentSize) ? (from + data.byteLength) : (buffer.contentSize);
+    var parts = [ file.data.slice(0, from), data ];
+    if (from + data.byteLength < file.size) {
+      parts.push(file.data.slice(from + data.byteLength, file.size));
+    }
 
-    buffer.setSize(newLength);
-
-    buffer.array.set(data, from);
+    file.data = new Blob(parts);
 
     file.position = from + data.byteLength;
     file.mtime = Date.now();
-    file.size = buffer.contentSize;
+    file.size = file.data.size;
     file.dirty = true;
   }
 
@@ -548,7 +542,7 @@ var fs = (function() {
       return -1;
     }
 
-    return file.buffer.contentSize;
+    return file.data.size;
   }
 
   function flush(fd) {
@@ -561,7 +555,7 @@ var fs = (function() {
       return;
     }
 
-    openedFile.record.data = new Blob([openedFile.buffer.getContent()]);
+    openedFile.record.data = openedFile.data;
     openedFile.record.mtime = openedFile.mtime;
     openedFile.record.size = openedFile.size;
     store.setItem(openedFile.path, openedFile.record);
@@ -634,13 +628,13 @@ var fs = (function() {
       return false;
     }
 
-    if (size >= record.size) {
+    if (size && size >= record.size) {
       return true;
     }
 
-    record.data = record.data.slice(0, size || 0, record.data.type);
+    record.data = record.data.slice(0, size || 0);
     record.mtime = Date.now();
-    record.size = size || 0;
+    record.size = record.data.size;
     store.setItem(path, record);
     return true;
   }
@@ -650,11 +644,11 @@ var fs = (function() {
 
     if (DEBUG_FS) { console.log("fs ftruncate " + file.path); }
 
-    if (size != file.buffer.contentSize) {
-      file.buffer.setSize(size);
+    if (size != file.size) {
+      file.data = file.data.slice(0, size || 0);
       file.dirty = true;
       file.mtime = Date.now();
-      file.size = size;
+      file.size = file.data.size;
     }
   }
 
@@ -795,7 +789,7 @@ var fs = (function() {
     if (record == null || record.isDir) {
       return -1;
     } else {
-      return record.size;
+      return record.data.size;
     }
   }
 
