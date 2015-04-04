@@ -4,7 +4,7 @@
 */
 
 module J2ME {
-  declare var util, Native, Override;
+  declare var util, Native;
   import assert = J2ME.Debug.assert;
   import concat3 = StringUtilities.concat3;
   import pushMany = ArrayUtilities.pushMany;
@@ -805,11 +805,7 @@ module J2ME {
 
     get isNative(): boolean {
       if (!release) {
-        if (Override[this.implKey]) {
-          if (!Native[this.implKey]) {
-            Native[this.implKey] = Override[this.implKey];
-          }
-
+        if (Native[this.implKey]) {
           return true;
         }
       }
