@@ -543,7 +543,7 @@ var fs = (function() {
       return -1;
     }
 
-    return file.data.size;
+    return file.size;
   }
 
   function flush(fd) {
@@ -790,7 +790,7 @@ var fs = (function() {
     if (record == null || record.isDir) {
       return -1;
     } else {
-      return record.data.size;
+      return record.size;
     }
   }
 
