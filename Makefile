@@ -6,6 +6,8 @@ RELEASE ?= 0
 VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
+CONSOLE ?= 1
+VERBOSE ?= 0
 
 # Sensor support
 JSR_256 ?= 1
@@ -27,8 +29,15 @@ else
   J2ME_JS_OPTIMIZATION_LEVEL = SIMPLE
 endif
 
+# Closure is really chatty, so we shush it by default to reduce log lines
+# for Travis.
+ifeq ($(VERBOSE),1)
+  CLOSURE_WARNING_LEVEL = VERBOSE
+ else
+  CLOSURE_WARNING_LEVEL = QUIET
+endif
+
 MAIN_JS_SRCS = \
-  libs/console.js \
   polyfill/canvas-toblob.js \
   polyfill/fromcodepoint.js \
   polyfill/codepointat.js \
@@ -88,6 +97,10 @@ ifeq ($(BENCHMARK),1)
 	MAIN_JS_SRCS += benchmark.js libs/ttest.js
 endif
 
+ifeq ($(CONSOLE),1)
+	MAIN_JS_SRCS += libs/console.js
+endif
+
 # Add main.js last, as it depends on some of the other scripts.
 MAIN_JS_SRCS += main.js
 
@@ -95,7 +108,7 @@ MAIN_JS_SRCS += main.js
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(JSR_256)$(JSR_082)$(JSR_179)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -104,6 +117,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(PROFILE) \
              -D BENCHMARK=$(call toBool,$(BENCHMARK)) \
+             -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
              -D VERSION=$(VERSION)
@@ -186,7 +200,7 @@ relooper:
 bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
-	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
+	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
@@ -202,7 +216,7 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 # out-language) in order for Closure to compile them, even though for now
 # we're optimizing "WHITESPACE_ONLY".
 bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
-	java -jar build_tools/closure.jar --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
 j2me: bld/j2me.js bld/jsc.js
@@ -211,7 +225,7 @@ aot: bld/classes.jar.js
 bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
-	java -jar build_tools/closure.jar --language_in ECMASCRIPT5 -O J2ME_AOT_OPTIMIZATIONS bld/classes.jar.js > bld/classes.jar.cc.js \
+	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 
 bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt

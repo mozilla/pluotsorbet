@@ -434,6 +434,11 @@ var fs = (function() {
   var openedFiles = new Map();
   var lastId = 2;
 
+  function getBlob(path) {
+    var record = store.getItem(normalizePath(path));
+    return record ? record.data : null;
+  }
+
   function open(path, cb) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs open " + path); }
@@ -919,5 +924,6 @@ var fs = (function() {
     exportStore: exportStore,
     importStore: importStore,
     createUniqueFile: createUniqueFile,
+    getBlob: getBlob,
   };
 })();

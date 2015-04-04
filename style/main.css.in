@@ -356,6 +356,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   overflow: hidden;
 }
 
+/* #if CONSOLE == "true" */
 #consoleContainer {
   overflow: auto;
   margin: 0;
@@ -373,6 +374,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   top: 0;
   bottom: 512px;
 }
+/* #endif */
 
 #profilerContainer {
   display: none;

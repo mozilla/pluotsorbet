@@ -18,6 +18,7 @@ public class SystemOutBench {
       for (int j = 0; j < 100; j++) {
         System.out.print(j % 10);
       }
+      System.out.println();
     }
     time = JVM.monotonicTimeMillis() - start;
     System.out.println();
