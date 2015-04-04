@@ -9,6 +9,9 @@ BENCHMARK ?= 0
 CONSOLE ?= 1
 VERBOSE ?= 0
 
+INCLUDE ?= runtests.mk
+include $(INCLUDE)
+
 # Sensor support
 JSR_256 ?= 1
 export JSR_256
@@ -120,7 +123,10 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
-             -D VERSION=$(VERSION)
+             -D VERSION=$(VERSION) \
+             -D MAIN_CLASS=$(MAIN_CLASS) \
+             -D MIDLET_CLASS=$(MIDLET_CLASS) \
+             $(NULL)
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
