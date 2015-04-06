@@ -18,7 +18,7 @@ function asyncImpl(returnKind, promise) {
   }, function(exception) {
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
-    ctx.frames.push(Frame.create(methodInfo, [exception]));
+    ctx.pushFrame(Frame.create(methodInfo, [exception]));
     ctx.execute();
   });
   $.pause("Async");
