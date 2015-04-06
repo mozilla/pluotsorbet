@@ -17,6 +17,8 @@ var MIDlet = {
 };
 
 var config = {
+  main: "com/sun/midp/main/MIDletSuiteLoader",
+
   // Ignored files are files that always exist and are empty, so we discard
   // writes to them and return no data from reads.  It's useful for log files
   // to which midlets write frequently but never read.  Specify one by adding

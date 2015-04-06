@@ -8,10 +8,7 @@ PROFILE ?= 0
 BENCHMARK ?= 0
 CONSOLE ?= 1
 VERBOSE ?= 0
-MAIN_CLASS ?= com/sun/midp/main/MIDletSuiteLoader
-
-INCLUDE ?= runtests.mk
-include $(INCLUDE)
+CONFIG ?= config/runtests.js
 
 # Sensor support
 JSR_256 ?= 1
@@ -112,7 +109,7 @@ MAIN_JS_SRCS += main.js
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(MIDLET_CLASS)$(JARS)$(GAMEPAD)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(CONFIG)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -125,10 +122,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
              -D VERSION=$(VERSION) \
-             -D MAIN_CLASS=$(MAIN_CLASS) \
-             -D MIDLET_CLASS=$(MIDLET_CLASS) \
-             -D JARS=$(JARS) \
-             -D GAMEPAD=$(GAMEPAD) \
+             -D CONFIG=$(CONFIG) \
              $(NULL)
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)

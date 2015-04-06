@@ -18,6 +18,7 @@ config.ts
 main.html
 config/build.js
 manifest.webapp
+index.html
 index.js
 style/main.css
 
