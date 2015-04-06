@@ -16,10 +16,6 @@ if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
 
 var jars = [];
 
-if (config.midletClassName == "RunTests") {
-  jars.push("tests/tests.jar");
-}
-
 if (typeof Benchmark !== "undefined") {
   Benchmark.startup.init();
 }
