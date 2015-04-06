@@ -3,6 +3,7 @@
 
 'use strict';
 
+var asyncImplStringAsync = "Async";
 function asyncImpl(returnKind, promise) {
   var ctx = $.ctx;
 
@@ -21,7 +22,7 @@ function asyncImpl(returnKind, promise) {
     ctx.pushFrame(Frame.create(methodInfo, [exception]));
     ctx.execute();
   });
-  $.pause("Async");
+  $.pause(asyncImplStringAsync);
 }
 
 var Native = {};
