@@ -5,3 +5,11 @@ config.version = "@VERSION@";
 
 config.main = "@MAIN_CLASS@";
 config.midletClassName = "@MIDLET_CLASS@";
+
+// #if JARS != ""
+config.jars = "@JARS@";
+// #endif
+
+// #if GAMEPAD != ""
+config.gamepad = @GAMEPAD@;
+// #endif
