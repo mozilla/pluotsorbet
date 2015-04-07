@@ -139,7 +139,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js icon
+all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -281,7 +281,6 @@ certs:
 
 img/icon-128.png: $(ICON_128)
 	cp $(ICON_128) img/icon-128.png
-
 img/icon-512.png: $(ICON_512)
 	cp $(ICON_512) img/icon-512.png
 
