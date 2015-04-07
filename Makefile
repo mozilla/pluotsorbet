@@ -7,7 +7,11 @@ PROFILE ?= 0
 BENCHMARK ?= 0
 CONSOLE ?= 1
 VERBOSE ?= 0
+
+# An extra configuration script to load.  Use this to configure the project
+# to run a particular midlet.  By default, it runs the test midlet RunTests.
 CONFIG ?= config/runtests.js
+export CONFIG
 
 # Whether or not to package test files like tests.jar and support scripts.
 # Set this to 1 if running tests on a device or building an app for a midlet

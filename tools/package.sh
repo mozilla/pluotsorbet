@@ -26,6 +26,7 @@ cp index.js $PACKAGE_DIR/.
 cp timer.js $PACKAGE_DIR/.
 cp config/build.js $PACKAGE_DIR/config/.
 cp config/default.js $PACKAGE_DIR/config/.
+cp $CONFIG $PACKAGE_DIR/config/.
 cp config/midlet.js $PACKAGE_DIR/config/.
 cp config/urlparams.js $PACKAGE_DIR/config/.
 cp libs/compiled-method-cache.js $PACKAGE_DIR/libs/.
