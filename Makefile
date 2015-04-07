@@ -12,7 +12,7 @@ CONFIG ?= config/runtests.js
 NAME ?= j2me.js
 DESCRIPTION ?= j2me interpreter for firefox os
 ORIGIN ?= app://j2mejs.mozilla.org
-VERSION ?=$(shell date +%s)
+VERSION ?= $(shell date +%s)
 
 # Sensor support
 JSR_256 ?= 1
@@ -126,7 +126,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
              -D CONFIG=$(CONFIG) \
-             -D NAME=$(NAME) \
+             -D NAME="$(NAME)" \
              -D DESCRIPTION="$(DESCRIPTION)" \
              -D ORIGIN=$(ORIGIN) \
              -D VERSION=$(VERSION) \
