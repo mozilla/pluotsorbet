@@ -3,12 +3,16 @@ BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
-VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
 CONSOLE ?= 1
 VERBOSE ?= 0
 CONFIG ?= config/runtests.js
+
+NAME ?= j2me.js
+DESCRIPTION ?= j2me interpreter for firefox os
+ORIGIN ?= app://j2mejs.mozilla.org
+VERSION ?=$(shell date +%s)
 
 # Sensor support
 JSR_256 ?= 1
@@ -109,7 +113,7 @@ MAIN_JS_SRCS += main.js
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(CONFIG)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(CONFIG)$(NAME)$(DESCRIPTION)$(ORIGIN)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -121,8 +125,11 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
-             -D VERSION=$(VERSION) \
              -D CONFIG=$(CONFIG) \
+             -D NAME=$(NAME) \
+             -D DESCRIPTION="$(DESCRIPTION)" \
+             -D ORIGIN=$(ORIGIN) \
+             -D VERSION=$(VERSION) \
              $(NULL)
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
