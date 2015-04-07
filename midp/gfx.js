@@ -112,8 +112,32 @@ var currentlyFocusedTextEditor;
         return 1;
     };
 
+    var hasNewFrame = true;
+    var ctxs = [];
+    function gotNewFrame(timestamp) {
+        if (ctxs.length > 0) {
+            var ctx = ctxs.pop();
+            window.requestAnimationFrame(gotNewFrame);
+            ctx.execute();
+        } else {
+            hasNewFrame = true;
+        }
+    }
 
-    addUnimplementedNative("com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V");
+    Native["com/sun/midp/lcdui/RepaintEventProducer.waitForAnimationFrame.()V"] = function() {
+        if (hasNewFrame) {
+            hasNewFrame = false;
+            window.requestAnimationFrame(gotNewFrame);
+        } else {
+            ctxs.unshift($.ctx);
+            $.pause(asyncImplStringAsync);
+        }
+    }
+
+    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function() {
+        // This is a no-op: The foreground display gets drawn directly
+        // to the screen.
+    };
 
     function swapRB(pixel) {
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
