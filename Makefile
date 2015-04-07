@@ -8,6 +8,8 @@ BENCHMARK ?= 0
 CONSOLE ?= 1
 VERBOSE ?= 0
 CONFIG ?= config/runtests.js
+TEST ?= 1
+export TEST
 
 NAME ?= j2me.js
 DESCRIPTION ?= j2me interpreter for firefox os

@@ -58,10 +58,11 @@ cp -R style $PACKAGE_DIR/.
 rm -r $PACKAGE_DIR/style/*.in
 
 # setup tests dir, for now just the jar and js files
-# TODO: only copy these files if we're building for testing.
-mkdir $PACKAGE_DIR/tests
-cp tests/tests.jar $PACKAGE_DIR/tests/.
-cp tests/*.js $PACKAGE_DIR/tests/.
+if [ $TEST -eq 1 ]; then
+  mkdir $PACKAGE_DIR/tests
+  cp tests/tests.jar $PACKAGE_DIR/tests/.
+  cp tests/*.js $PACKAGE_DIR/tests/.
+fi
 
 # copy icons
 mkdir $PACKAGE_DIR/img
