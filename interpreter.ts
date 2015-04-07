@@ -10,7 +10,6 @@ module J2ME {
 
   import Bytecodes = Bytecode.Bytecodes;
   import assert = Debug.assert;
-  import popManyInto = ArrayUtilities.popManyInto;
 
   export var interpreterCounter = null; // new Metrics.Counter(true);
   export var interpreterMethodCounter = new Metrics.Counter(true);

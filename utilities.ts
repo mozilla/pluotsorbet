@@ -124,21 +124,6 @@ module J2ME {
       return arrays;
     }
 
-    /**
-     * Pops elements from a source array into a destination array. This avoids
-     * allocations and should be faster. The elements in the destination array
-     * are pushed in the same order as they appear in the source array:
-     *
-     * popManyInto([1, 2, 3], 2, dst) => dst = [2, 3]
-     */
-    export function popManyInto(src: any [], count: number, dst: any []) {
-      release || assert(src.length >= count);
-      for (var i = count - 1; i >= 0; i--) {
-        dst[i] = src.pop();
-      }
-      dst.length = count;
-    }
-
     export function pushMany(dst: any [], src: any []) {
       for (var i = 0; i < src.length; i++) {
         dst.push(src[i]);
