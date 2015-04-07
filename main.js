@@ -172,7 +172,7 @@ function startTimeline() {
   jsGlobal.profiling = true;
   requestTimelineBuffers(function (buffers) {
     for (var i = 0; i < buffers.length; i++) {
-      buffers[i].reset();
+      buffers[i].reset(jsGlobal.START_TIME);
     }
     for (var runtime of J2ME.RuntimeTemplate.all) {
       for (var ctx of runtime.allCtxs) {
