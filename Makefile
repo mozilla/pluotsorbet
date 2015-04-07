@@ -7,7 +7,11 @@ VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
 CONSOLE ?= 1
+
+# Whether or not to print certain verbose messages during the build process.
+# We use this to keep the build log on Travis below its 10K line display limit.
 VERBOSE ?= 0
+export VERBOSE
 
 # Sensor support
 JSR_256 ?= 1

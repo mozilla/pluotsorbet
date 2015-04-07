@@ -69,8 +69,13 @@ def wait_server(port):
 def run_test(script_path):
   global exit_code
 
-  script_process = subprocess.Popen(['casperjs', '--engine=slimerjs', 'test', script_path],
-                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1)
+  args = ['casperjs', '--engine=slimerjs']
+  if os.environ['VERBOSE'] != '0':
+    args.append('--log-level=debug')
+  args.extend(['test', script_path])
+
+  script_process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,  stderr=subprocess.STDOUT,
+                                    bufsize=1)
   output_streams = list(server_output_streams)
   output_streams.append(script_process.stdout)
 
