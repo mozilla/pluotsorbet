@@ -58,7 +58,7 @@ cp -R style $PACKAGE_DIR/.
 rm -r $PACKAGE_DIR/style/*.in
 
 # setup tests dir, for now just the jar and js files
-if [ $TEST -eq 1 ]; then
+if [ $PACKAGE_TESTS -eq 1 ]; then
   mkdir $PACKAGE_DIR/tests
   cp tests/tests.jar $PACKAGE_DIR/tests/.
   cp tests/*.js $PACKAGE_DIR/tests/.

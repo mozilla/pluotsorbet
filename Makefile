@@ -8,8 +8,12 @@ BENCHMARK ?= 0
 CONSOLE ?= 1
 VERBOSE ?= 0
 CONFIG ?= config/runtests.js
-TEST ?= 1
-export TEST
+
+# Whether or not to package test files like tests.jar and support scripts.
+# Set this to 1 if running tests on a device or building an app for a midlet
+# in the tests/ subdirectory, like Asteroids.
+PACKAGE_TESTS ?= 0
+export PACKAGE_TESTS
 
 NAME ?= j2me.js
 DESCRIPTION ?= j2me interpreter for firefox os
