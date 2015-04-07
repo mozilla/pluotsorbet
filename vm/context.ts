@@ -3,6 +3,9 @@
  Copyright (c) 2013 Yaroslav Gaponov <yaroslav.gaponov@gmail.com>
 */
 
+declare var Shumway;
+declare var profiling;
+
 interface Array<T> {
   push2: (value) => void;
   pop2: () => any;
@@ -336,12 +339,13 @@ module J2ME {
      *   js call stack:  I ..... I .......
      *
      */
-    frames: Frame [];
+    private frames: Frame [];
     bailoutFrames: Frame [];
     lockTimeout: number;
     lockLevel: number;
     thread: java.lang.Thread;
     writer: IndentingWriter;
+    methodTimeline: any;
     constructor(public runtime: Runtime) {
       var id = this.id = Context._nextId ++;
       this.frames = [];
@@ -351,6 +355,10 @@ module J2ME {
       this.writer = new IndentingWriter(false, function (s) {
         console.log(s);
       });
+      if (profile && typeof Shumway !== "undefined") {
+        this.methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Thread: " + this.runtime.id + ":" + this.id);
+        methodTimelines.push(this.methodTimeline);
+      }
     }
 
     public static color(id) {
@@ -399,6 +407,21 @@ module J2ME {
       return frames[frames.length - 1];
     }
 
+    popFrame(): Frame {
+      var frame = this.frames.pop();
+      if (profile) {
+        this.leaveMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
+      }
+      return frame;
+    }
+
+    pushFrame(frame: Frame) {
+      if (profile) {
+        this.enterMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
+      }
+      this.frames.push(frame);
+    }
+
     private popMarkerFrame() {
       var marker = this.frames.pop();
       release || assert (Frame.isMarker(marker));
@@ -406,7 +429,8 @@ module J2ME {
 
     executeFrame(frame: Frame) {
       var frames = this.frames;
-      frames.push(Frame.Marker, frame);
+      frames.push(Frame.Marker);
+      this.pushFrame(frame);
 
       try {
         var returnValue = VM.execute();
@@ -466,8 +490,10 @@ module J2ME {
     }
 
     start(frames: Frame[]) {
-      frames.unshift(Frame.Start);
-      this.frames = frames;
+      this.frames.push(Frame.Start);
+      for (var i = 0; i < frames.length; i++) {
+        this.pushFrame(frames[i]);
+      }
       this.resume();
     }
 
@@ -497,6 +523,7 @@ module J2ME {
           return;
         }
       } while (this.current() !== Frame.Start);
+      this.clearCurrentContext();
       this.kill();
     }
 
@@ -613,6 +640,32 @@ module J2ME {
       frame.opPC = pc;
       frame.lockObject = lockObject;
       this.bailoutFrames.unshift(frame);
+    }
+
+    /**
+     * Re-enters all the frames that are currently on the stack so the full stack
+     * trace shows up in the profiler.
+     */
+    restartMethodTimeline() {
+      for (var i = 0; i < this.frames.length; i++) {
+        var frame = this.frames[i];
+        if (J2ME.Frame.isMarker(frame)) {
+          continue;
+        }
+        this.methodTimeline.enter(frame.methodInfo.implKey, MethodType.Interpreted);
+      }
+    }
+
+    enterMethodTimeline(key: string, methodType: MethodType) {
+      if (profiling) {
+        this.methodTimeline.enter(key, MethodType[methodType]);
+      }
+    }
+
+    leaveMethodTimeline(key: string, methodType: MethodType) {
+      if (profiling) {
+        this.methodTimeline.leave(key, MethodType[methodType]);
+      }
     }
   }
 }

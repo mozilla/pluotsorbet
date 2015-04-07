@@ -27,8 +27,15 @@ module Shumway.Tools.Profiler {
 
     private static TICK_MAX_WIDTH = 75;
 
-    constructor(controller: Controller, type: FlameChartHeaderType) {
+    private _name: HTMLDivElement;
+
+    constructor(controller: Controller, type: FlameChartHeaderType, name?: string) {
       this._type = type;
+      var nameDiv = document.createElement("div");
+      nameDiv.classList.add("profiler-timeline-name");
+      nameDiv.textContent = name;
+      this._name = nameDiv;
+      controller.container.appendChild(nameDiv);
       super(controller);
     }
 
@@ -58,6 +65,11 @@ module Shumway.Tools.Profiler {
       }
 
       context.restore();
+    }
+
+    public destroy() {
+      this._controller.container.removeChild(this._name);
+      super.destroy();
     }
 
     private _drawLabels(rangeStart: number, rangeEnd: number) {
