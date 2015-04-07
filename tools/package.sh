@@ -66,4 +66,5 @@ fi
 
 # copy icons
 mkdir $PACKAGE_DIR/img
-cp img/*.png $PACKAGE_DIR/img/.
+cp img/icon-128.png $PACKAGE_DIR/img/.
+cp img/icon-512.png $PACKAGE_DIR/img/.

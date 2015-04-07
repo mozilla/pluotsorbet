@@ -16,6 +16,9 @@ DESCRIPTION ?= j2me interpreter for firefox os
 ORIGIN ?= app://j2mejs.mozilla.org
 VERSION ?= $(shell date +%s)
 
+ICON_128 ?= img/default-icon-128.png
+ICON_512 ?= img/default-icon-512.png
+
 # Sensor support
 JSR_256 ?= 1
 export JSR_256
@@ -136,7 +139,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
+all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js icon
 
 $(shell mkdir -p build_tools)
 
@@ -276,8 +279,16 @@ $(LANG_DESTS): $(LANG_FILES)
 certs:
 	make -C certs
 
+img/icon-128.png: $(ICON_128)
+	cp $(ICON_128) img/icon-128.png
+
+img/icon-512.png: $(ICON_512)
+	cp $(ICON_512) img/icon-512.png
+
+icon: img/icon-128.png img/icon-512.png
+
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs j2me aot bld/main-all.js
+app: config-build java certs j2me aot bld/main-all.js icon
 	tools/package.sh
 
 benchmarks: java tests
@@ -292,3 +303,4 @@ clean:
 	rm -rf java/l10n/
 	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 	make -C bench clean
+	rm -f img/icon-128.png img/icon-512.png

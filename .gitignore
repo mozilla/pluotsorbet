@@ -18,6 +18,8 @@ config.ts
 main.html
 config/build.js
 manifest.webapp
+img/icon-128.png
+img/icon-512.png
 index.html
 index.js
 style/main.css
