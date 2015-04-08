@@ -320,9 +320,8 @@ Remember:
 ## Overriding Java functions with JavaScript functions
 
 To override a Java function with a JavaScript function, simply define a Native as
-described earlier. This is useful to debug third-party closed source MIDlets.
-Any Java functions can be overriden, not only Java functions with the `native`
-keyword.
+described earlier. Any Java functions can be overridden, not only Java functions
+with the `native` keyword.
 
 Overriding Java functions only works in debug mode (RELEASE=0).
 
