@@ -566,6 +566,17 @@ var fs = (function() {
     openedFile.record.size = openedFile.size;
     store.setItem(openedFile.path, openedFile.record);
     openedFile.dirty = false;
+
+    // Update in-memory copies of the same file, only if they haven't been
+    // modified.
+    // If they've been modified, the behavior is undefined.
+    for (var entry of openedFiles) {
+      if (!entry[1].dirty && entry[1].path === openedFile.path) {
+        entry[1].mtime = openedFile.mtime;
+        entry[1].size = openedFile.size;
+        entry[1].buffer = new FileBuffer(new Int8Array(openedFile.buffer.getContent()));
+      }
+    }
   }
 
   function flushAll() {
