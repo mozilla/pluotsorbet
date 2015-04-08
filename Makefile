@@ -1,4 +1,4 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks package
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
@@ -308,8 +308,8 @@ app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR)
 	tools/package.sh
 
 package: app
-	rm -f package.zip
-	cd output && zip -r ../package.zip *
+	rm -f '$(NAME)-$(VERSION).zip'
+	cd output && zip -r '../$(NAME)-$(VERSION).zip' *
 
 benchmarks: java tests
 	make -C bench
