@@ -6,7 +6,11 @@ RELEASE ?= 0
 PROFILE ?= 0
 BENCHMARK ?= 0
 CONSOLE ?= 1
+
+# Whether or not to print certain verbose messages during the build process.
+# We use this to keep the build log on Travis below its 10K line display limit.
 VERBOSE ?= 0
+export VERBOSE
 
 # An extra configuration script to load.  Use this to configure the project
 # to run a particular midlet.  By default, it runs the test midlet RunTests.
@@ -303,6 +307,10 @@ icon: img/icon-128.png img/icon-512.png
 app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR)
 	tools/package.sh
 
+package: app
+	rm -f package.zip
+	cd output && zip -r ../package.zip *
+
 benchmarks: java tests
 	make -C bench
 
@@ -316,3 +324,4 @@ clean:
 	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 	make -C bench clean
 	rm -f img/icon-128.png img/icon-512.png
+	rm -f package.zip
