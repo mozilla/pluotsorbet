@@ -19,6 +19,11 @@ export CONFIG
 PACKAGE_TESTS ?= 0
 export PACKAGE_TESTS
 
+# If we're going to package tests, we need to make sure they've been made.
+ifeq ($(PACKAGE_TESTS),1)
+  TESTS_JAR = tests/tests.jar
+endif
+
 NAME ?= j2me.js
 DESCRIPTION ?= j2me interpreter for firefox os
 ORIGIN ?= app://j2mejs.mozilla.org
@@ -295,7 +300,7 @@ img/icon-512.png: $(ICON_512)
 icon: img/icon-128.png img/icon-512.png
 
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs j2me aot bld/main-all.js icon
+app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR)
 	tools/package.sh
 
 benchmarks: java tests
