@@ -117,7 +117,6 @@ module J2ME {
   function tryCatch(e) {
     var ctx = $.ctx;
     var frame = ctx.current();
-    var frames = ctx.frames;
     var stack = frame.stack;
 
     var exClass = e.class;
@@ -167,8 +166,8 @@ module J2ME {
 
         return;
       }
-      frames.pop();
-      frame = frames[frames.length - 1];
+      ctx.popFrame();
+      frame = ctx.current();
       if (Frame.isMarker(frame)) {
         break;
       }
@@ -197,7 +196,6 @@ module J2ME {
     // These must always be kept up to date with the current frame.
     var frame = ctx.current();
     release || assert (!Frame.isMarker(frame));
-    var frames = ctx.frames;
     var mi = frame.methodInfo;
     var ci = mi.classInfo;
     var rp = ci.constantPool.resolved;
@@ -264,7 +262,7 @@ module J2ME {
               onStackReplacementCount++;
 
               // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.
-              frames.pop();
+              ctx.popFrame();
 
               // Remember the return kind since we'll need it later.
               var returnKind = mi.returnKind;
@@ -273,7 +271,7 @@ module J2ME {
               O = frame;
 
               // Set the current frame before doing the OSR in case an exception is thrown.
-              frame = frames[frames.length - 1];
+              frame = ctx.current();
 
               // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
               returnValue = O.methodInfo.fn();
@@ -1069,7 +1067,7 @@ module J2ME {
                 calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
               ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
-              frames.push(calleeFrame);
+              ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
               mi.stats.interpreterCallCount ++;
@@ -1177,7 +1175,7 @@ module J2ME {
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
               ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
-              frames.push(calleeFrame);
+              ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
               mi.stats.interpreterCallCount ++;
@@ -1259,12 +1257,12 @@ module J2ME {
           case Bytecodes.ARETURN:
             returnValue = stack.pop();
           case Bytecodes.RETURN:
-            var callee = frames.pop();
+            var callee = ctx.popFrame();
             if (callee.lockObject) {
               ctx.monitorExit(callee.lockObject);
             }
             callee.free();
-            frame = frames[frames.length - 1];
+            frame = ctx.current();
             if (Frame.isMarker(frame)) { // Marker or Start Frame
               if (op === Bytecodes.RETURN) {
                 return undefined;

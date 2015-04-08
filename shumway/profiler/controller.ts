@@ -124,7 +124,7 @@ module Shumway.Tools.Profiler {
         this._overviewHeader = new Profiler.FlameChartHeader(this, FlameChartHeaderType.OVERVIEW);
         this._overview = new Profiler.FlameChartOverview(this, FlameChartOverviewMode.OVERLAY);
         this._activeProfile.forEachSnapshot(function (snapshot:TimelineBufferSnapshot, index:number) {
-          self._headers.push(new Profiler.FlameChartHeader(self, FlameChartHeaderType.CHART));
+          self._headers.push(new Profiler.FlameChartHeader(self, FlameChartHeaderType.CHART, snapshot.name));
           self._charts.push(new Profiler.FlameChart(self, snapshot));
         });
         window.addEventListener("resize", this._onResize.bind(this));
