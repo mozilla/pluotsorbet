@@ -311,7 +311,18 @@ var Benchmark = (function() {
         console.log("FINISHED BUILDING BASELINE");
       }
       console.log("Raw Values:\n" + "Current: " + JSON.stringify(storage.current) + "\nBaseline: " + JSON.stringify(storage.baseline))
-      console.log("\n" + prettyTable(rows, [LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT]));
+      var configRows = [
+        ["Config", "Value"],
+        ["User Agent", window.navigator.userAgent],
+        ["Rounds", storage.numRounds],
+        ["Delay(ms)", storage.roundDelay],
+        ["Delete FS", storage.deleteFs ? "yes" : "no"],
+        ["Delete JIT CACHE", storage.deleteJitCache ? "yes" : "no"],
+      ];
+      var out = "\n" +
+                prettyTable(configRows, [LEFT, LEFT]) + "\n" +
+                prettyTable(rows, [LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT]);
+      console.log(out);
       saveStorage();
     }
 
