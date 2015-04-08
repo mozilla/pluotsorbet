@@ -620,7 +620,7 @@ module J2ME {
           this.bodyEmitter.writeLn("ins=O.lockObject;");
         }
         this.bodyEmitter.writeLn("pc=O.pc;");
-        this.bodyEmitter.writeLn("O=null;");
+        this.bodyEmitter.writeLn("O.free();O=null;");
         if (this.methodInfo.isSynchronized) {
           this.bodyEmitter.leaveAndEnter("}else{");
           this.emitMonitorEnter(this.bodyEmitter, 0, this.lockObject);
