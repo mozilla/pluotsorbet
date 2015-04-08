@@ -18,7 +18,6 @@ casper.on('remote.message', function(message) {
 
 casper.options.waitTimeout = 80000;
 casper.options.verbose = true;
-casper.options.logLevel = "debug";
 casper.options.viewportSize = { width: 240, height: 320 };
 casper.options.clientScripts = [
   "tests/mocks/getUserMedia.js",
