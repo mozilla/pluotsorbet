@@ -17,7 +17,6 @@
   <!-- #if CONFIG -->
   <script type="text/javascript" src="@CONFIG@" defer></script>
   <!-- #endif -->
-  <script type="text/javascript" src="config/midlet.js" defer></script>
   <script type="text/javascript" src="config/build.js" defer></script>
   <script type="text/javascript" src="config/urlparams.js" defer></script>
 

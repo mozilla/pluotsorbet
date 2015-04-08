@@ -27,7 +27,6 @@ cp timer.js $PACKAGE_DIR/.
 cp config/build.js $PACKAGE_DIR/config/.
 cp config/default.js $PACKAGE_DIR/config/.
 cp $CONFIG $PACKAGE_DIR/config/.
-cp config/midlet.js $PACKAGE_DIR/config/.
 cp config/urlparams.js $PACKAGE_DIR/config/.
 cp libs/compiled-method-cache.js $PACKAGE_DIR/libs/.
 cp libs/load.js $PACKAGE_DIR/libs/.
@@ -51,8 +50,8 @@ cp java/*.jar $PACKAGE_DIR/java
 # copy entire certs dir, it's possible we just need the ks files
 cp -R certs $PACKAGE_DIR/.
 
-# Merge app.js into a config file that gets loaded.
-cat config/app.js >> $PACKAGE_DIR/config/midlet.js
+# Merge app.js into another config file.
+cat config/app.js >> $PACKAGE_DIR/config/default.js
 
 # copy entire contents of style dir, except *.in preprocessor source files
 cp -R style $PACKAGE_DIR/.
