@@ -7,6 +7,10 @@ PROFILE ?= 0
 BENCHMARK ?= 0
 CONSOLE ?= 1
 
+# The directory into which the *app* target should copy the files.
+PACKAGE_DIR ?= output
+export PACKAGE_DIR
+
 # Whether or not to print certain verbose messages during the build process.
 # We use this to keep the build log on Travis below its 10K line display limit.
 VERBOSE ?= 0
