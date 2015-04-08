@@ -101,8 +101,9 @@ class String {
      * Initializes a newly created <code>String</code> object so that it
      * represents an empty character sequence.
      */
+    private native void init();
     public String() {
-        value = new char[0];
+        init();
     }
 
     /**
@@ -112,10 +113,9 @@ class String {
      *
      * @param   value   a <code>String</code>.
      */
+    private native void init(String value);
     public String(String value) {
-        count = value.length();
-        this.value = new char[count];
-        value.getChars(0, count, this.value, 0);
+        init(value);
     }
 
     /**
@@ -128,10 +128,9 @@ class String {
      * @param  value   the initial value of the string.
      * @throws NullPointerException if <code>value</code> is <code>null</code>.
      */
+    private native void init(char value[]);
     public String(char value[]) {
-        this.count = value.length;
-        this.value = new char[count];
-        JVM.unchecked_char_arraycopy(value, 0, this.value, 0, count);
+        init(value);
     }
 
     /**
@@ -152,33 +151,9 @@ class String {
      * @exception NullPointerException if <code>value</code> is
      *               <code>null</code>.
      */
+    private native void init(char value[], int offset, int count);
     public String(char value[], int offset, int count) {
-        if (offset < 0) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       offset
-/* #endif */
-            );
-        }
-        if (count < 0) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       count
-/* #endif */
-            );
-        }
-        // Note: offset or count might be near -1>>>1.
-        if (offset > value.length - count) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       offset + count
-/* #endif */
-            );
-        }
-
-        this.value = new char[count];
-        this.count = count;
-        JVM.unchecked_char_arraycopy(value, offset, this.value, 0, count);
+        init(value, offset, count);
     }
 
     /**
@@ -196,10 +171,11 @@ class String {
      *             If the named encoding is not supported
      * @since      JDK1.1
      */
+    private native void init(byte bytes[], int off, int len, String enc);
     public String(byte bytes[], int off, int len, String enc)
         throws UnsupportedEncodingException
     {
-        this(Helper.byteToCharArray(bytes, off, len, enc));
+        init(bytes, off, len, enc);
     }
 
     /**
@@ -215,10 +191,11 @@ class String {
      *             If the named encoding is not supported
      * @since      JDK1.1
      */
+    private native void init(byte bytes[], String enc);
     public String(byte bytes[], String enc)
         throws UnsupportedEncodingException
     {
-        this(bytes, 0, bytes.length, enc);
+        init(bytes, enc);
     }
 
     /**
@@ -232,8 +209,9 @@ class String {
      * @param  len     Number of bytes to convert
      * @since  JDK1.1
      */
+    private native void init(byte bytes[], int off, int len);
     public String(byte bytes[], int off, int len) {
-        this(Helper.byteToCharArray(bytes, off, len));
+        init(bytes, off, len);
     }
 
     /**
@@ -245,8 +223,9 @@ class String {
      * @param  bytes   The bytes to be converted into characters
      * @since  JDK1.1
      */
+    private native void init(byte bytes[]);
     public String(byte bytes[]) {
-        this(bytes, 0, bytes.length);
+        init(bytes);
     }
 
     /**
@@ -259,18 +238,15 @@ class String {
      * @throws NullPointerException If <code>buffer</code> is
      * <code>null</code>.
      */
+    private native void init(StringBuffer buffer);
     public String (StringBuffer buffer) {
-        buffer.setShared();
-        this.value = buffer.getValue();
-        this.offset = 0;
-        this.count = buffer.length();
+        init(buffer);
     }
 
     // Package private constructor which shares value array for speed.
+    private native void init(int offset, int count, char value[]);
     String(int offset, int count, char value[]) {
-        this.value = value;
-        this.offset = offset;
-        this.count = count;
+        init(offset, count, value);
     }
 
     /**
@@ -281,9 +257,7 @@ class String {
      * @return  the length of the sequence of characters represented by this
      *          object.
      */
-    public int length() {
-        return count;
-    }
+    public native int length();
 
     /**
      * Returns the character at the specified index. An index ranges
@@ -298,16 +272,7 @@ class String {
      *             argument is negative or not less than the length of this
      *             string.
      */
-    public char charAt(int index) {
-        if ((index < 0) || (index >= count)) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       index
-/* #endif */
-            );
-        }
-        return value[index + offset];
-    }
+    public native char charAt(int index);
 
     /**
      * Copies characters from this string into the destination character
@@ -340,32 +305,7 @@ class String {
      *                <code>dst.length</code></ul>
      * @exception NullPointerException if <code>dst</code> is <code>null</code>
      */
-    public void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin) {
-        if (srcBegin < 0) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       srcBegin
-/* #endif */
-            );
-        }
-        if (srcEnd > count) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       srcEnd
-/* #endif */
-            );
-        }
-        if (srcBegin > srcEnd) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       srcEnd - srcBegin
-/* #endif */
-            );
-        }
-        // NOTE: dst not checked, cannot use unchecked arraycopy
-        System.arraycopy(value, offset + srcBegin, dst, dstBegin,
-                         srcEnd - srcBegin);
-    }
+    public native void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin);
 
     /**
      * Convert this <code>String</code> into bytes according to the specified
@@ -378,9 +318,7 @@ class String {
      *             If the named encoding is not supported
      * @since      JDK1.1
      */
-    public byte[] getBytes(String enc) throws UnsupportedEncodingException {
-        return Helper.charToByteArray(value, offset, count, enc);
-    }
+    public native byte[] getBytes(String enc) throws UnsupportedEncodingException;
 
     /**
      * Convert this <code>String</code> into bytes according to the platform's
@@ -389,9 +327,7 @@ class String {
      * @return  the resultant byte array.
      * @since   JDK1.1
      */
-    public byte[] getBytes() {
-        return Helper.charToByteArray(value, offset, count);
-    }
+    public native byte[] getBytes();
 
     /**
      * Compares this string to the specified object.
@@ -406,28 +342,7 @@ class String {
      * @see     java.lang.String#compareTo(java.lang.String)
      * @see     java.lang.String#equalsIgnoreCase(java.lang.String)
      */
-    public boolean equals(Object anObject) {
-        if (this == anObject) {
-            return true;
-        }
-        if (anObject instanceof String) {
-            String anotherString = (String)anObject;
-            int n = count;
-            if (n == anotherString.count) {
-                char v1[] = value;
-                char v2[] = anotherString.value;
-                int i = offset;
-                int j = anotherString.offset;
-                while (n-- != 0) {
-                    if (v1[i++] != v2[j++]) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-        return false;
-    }
+    public native boolean equals(Object anObject);
 
     /**
      * Compares this <code>String</code> to another <code>String</code>,
@@ -453,10 +368,7 @@ class String {
      * @see     java.lang.Character#toLowerCase(char)
      * @see     java.lang.Character#toUpperCase(char)
      */
-    public boolean equalsIgnoreCase(String anotherString) {
-        return (anotherString != null) && (anotherString.count == count) &&
-            regionMatches(true, 0, anotherString, 0, count);
-    }
+    public native boolean equalsIgnoreCase(String anotherString);
 
     /**
      * Compares two strings lexicographically.
@@ -501,37 +413,7 @@ class String {
      * @exception java.lang.NullPointerException if <code>anotherString</code>
      *          is <code>null</code>.
      */
-    public int compareTo(String anotherString) {
-        int len1 = count;
-        int len2 = anotherString.count;
-        int n = Math.min(len1, len2);
-        char v1[] = value;
-        char v2[] = anotherString.value;
-        int i = offset;
-        int j = anotherString.offset;
-
-        if (i == j) {
-            int k = i;
-            int lim = n + i;
-            while (k < lim) {
-                char c1 = v1[k];
-                char c2 = v2[k];
-                if (c1 != c2) {
-                    return c1 - c2;
-                }
-                k++;
-           }
-        } else {
-            while (n-- != 0) {
-                char c1 = v1[i++];
-                char c2 = v2[j++];
-                if (c1 != c2) {
-                    return c1 - c2;
-                }
-            }
-        }
-        return len1 - len2;
-    }
+    public native int compareTo(String anotherString);
 
     /**
      * Tests if two string regions are equal.
@@ -583,45 +465,9 @@ class String {
      *          or case insensitive depends on the <code>ignoreCase</code>
      *          argument.
      */
-    public boolean regionMatches(boolean ignoreCase,
+    public native boolean regionMatches(boolean ignoreCase,
                                          int toffset,
-                                       String other, int ooffset, int len) {
-        char ta[] = value;
-        int to = offset + toffset;
-        int tlim = offset + count;
-        char pa[] = other.value;
-        int po = other.offset + ooffset;
-
-        // Note: toffset, ooffset, or len might be near -1>>>1.
-        if ((ooffset < 0) || (toffset < 0) || (toffset > (long)count - len) ||
-            (ooffset > (long)other.count - len)) {
-            return false;
-        }
-        while (len-- > 0) {
-            char c1 = ta[to++];
-            char c2 = pa[po++];
-            if (c1 == c2)
-                continue;
-            if (ignoreCase) {
-                // If characters don't match but case may be ignored,
-                // try converting both characters to uppercase.
-                // If the results match, then the comparison scan should
-                // continue.
-                char u1 = Character.toUpperCase(c1);
-                char u2 = Character.toUpperCase(c2);
-                if (u1 == u2)
-                    continue;
-                // Unfortunately, conversion to uppercase does not work properly
-                // for the Georgian alphabet, which has strange rules about case
-                // conversion.  So we need to make one last check before
-                // exiting.
-                if (Character.toLowerCase(u1) == Character.toLowerCase(u2))
-                    continue;
-            }
-            return false;
-        }
-        return true;
-    }
+                                       String other, int ooffset, int len);
 
     /**
      * Tests if this string starts with the specified prefix beginning
@@ -642,24 +488,7 @@ class String {
      * @exception java.lang.NullPointerException if <code>prefix</code> is
      *          <code>null</code>.
      */
-    public boolean startsWith(String prefix, int toffset) {
-        char ta[] = value;
-        int to = offset + toffset;
-        int tlim = offset + count;
-        char pa[] = prefix.value;
-        int po = prefix.offset;
-        int pc = prefix.count;
-        // Note: toffset might be near -1>>>1.
-        if ((toffset < 0) || (toffset > count - pc)) {
-            return false;
-        }
-        while (--pc >= 0) {
-            if (ta[to++] != pa[po++]) {
-                return false;
-            }
-        }
-        return true;
-    }
+    public native boolean startsWith(String prefix, int toffset);
 
     /**
      * Tests if this string starts with the specified prefix.
@@ -676,9 +505,7 @@ class String {
      *          <code>null</code>.
      * @since   JDK1.0
      */
-    public boolean startsWith(String prefix) {
-        return startsWith(prefix, 0);
-    }
+    public native boolean startsWith(String prefix);
 
     /**
      * Tests if this string ends with the specified suffix.
@@ -693,9 +520,7 @@ class String {
      * @exception java.lang.NullPointerException if <code>suffix</code> is
      *          <code>null</code>.
      */
-    public boolean endsWith(String suffix) {
-        return startsWith(suffix, count - suffix.count);
-    }
+    public native boolean endsWith(String suffix);
 
     /**
      * Returns a hashcode for this string. The hashcode for a
@@ -710,17 +535,7 @@ class String {
      *
      * @return  a hash code value for this object.
      */
-    public int hashCode() {
-        int h = 0;
-        int off = offset;
-        char val[] = value;
-        int len = count;
-
-        for (int i = 0; i < len; i++) {
-            h = 31*h + val[off++];
-        }
-        return h;
-    }
+    public native int hashCode();
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -739,9 +554,7 @@ class String {
      *          character sequence represented by this object, or
      *          <code>-1</code> if the character does not occur.
      */
-    public int indexOf(int ch) {
-        return indexOf(ch, 0);
-    }
+    public native int indexOf(int ch);
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -771,23 +584,7 @@ class String {
      *          than or equal to <code>fromIndex</code>, or <code>-1</code>
      *          if the character does not occur.
      */
-    public int indexOf(int ch, int fromIndex) {
-	int max = offset + count;
-	char v[] = value;
-
-	if (fromIndex < 0) {
-	    fromIndex = 0;
-	} else if (fromIndex >= count) {
-	    // Note: fromIndex might be near -1>>>1.
-	    return -1;
-	}
-	for (int i = offset + fromIndex ; i < max ; i++) {
-	    if (v[i] == ch) {
-		return i - offset;
-	    }
-	}
-	return -1;
-    }
+    public native int indexOf(int ch, int fromIndex);
 
     /**
      * Returns the index within this string of the last occurrence of the
@@ -804,9 +601,7 @@ class String {
      *          character sequence represented by this object, or
      *          <code>-1</code> if the character does not occur.
      */
-    public int lastIndexOf(int ch) {
-        return lastIndexOf(ch, count - 1);
-    }
+    public native int lastIndexOf(int ch);
 
     /**
      * Returns the index within this string of the last occurrence of the
@@ -831,17 +626,7 @@ class String {
      *          than or equal to <code>fromIndex</code>, or <code>-1</code>
      *          if the character does not occur before that point.
      */
-    public int lastIndexOf(int ch, int fromIndex) {
-        int min = offset;
-        char v[] = value;
-
-        for (int i = offset + ((fromIndex >= count) ? count - 1 : fromIndex) ; i >= min ; i--) {
-            if (v[i] == ch) {
-                return i - offset;
-            }
-        }
-        return -1;
-    }
+    public native int lastIndexOf(int ch, int fromIndex);
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -860,9 +645,7 @@ class String {
      * @exception java.lang.NullPointerException if <code>str</code> is
      *          <code>null</code>.
      */
-    public int indexOf(String str) {
-        return indexOf(str, 0);
-    }
+    public native int indexOf(String str);
 
     /**
      * Returns the index within this string of the first occurrence of the
@@ -890,54 +673,7 @@ class String {
      * @exception java.lang.NullPointerException if <code>str</code> is
      *          <code>null</code>
      */
-    public int indexOf(String str, int fromIndex) {
-        char v1[] = value;
-        char v2[] = str.value;
-        int max = offset + (count - str.count);
-        if (fromIndex >= count) {
-            if (count == 0 && fromIndex == 0 && str.count == 0) {
-                /* There is an empty string at index 0 in an empty string. */
-                return 0;
-            }
-            /* Note: fromIndex might be near -1>>>1 */
-            return -1;
-        }
-        if (fromIndex < 0) {
-            fromIndex = 0;
-        }
-        if (str.count == 0) {
-            return fromIndex;
-        }
-
-        int strOffset = str.offset;
-        char first  = v2[strOffset];
-        int i = offset + fromIndex;
-
-    startSearchForFirstChar:
-        while (true) {
-
-            /* Look for first character. */
-            while (i <= max && v1[i] != first) {
-                i++;
-            }
-            if (i > max) {
-                return -1;
-            }
-
-            /* Found first character, now look at the rest of v2 */
-            int j = i + 1;
-            int end = j + str.count - 1;
-            int k = strOffset + 1;
-            while (j < end) {
-                if (v1[j++] != v2[k++]) {
-                    i++;
-                    /* Look for str's first char again. */
-                    continue startSearchForFirstChar;
-                }
-            }
-            return i - offset;  /* Found whole string. */
-        }
-    }
+    public native int indexOf(String str, int fromIndex);
 
     /**
      * Returns a new string that is a substring of this string. The
@@ -956,9 +692,7 @@ class String {
      *             <code>beginIndex</code> is negative or larger than the
      *             length of this <code>String</code> object.
      */
-    public String substring(int beginIndex) {
-        return substring(beginIndex, count);
-    }
+    public native String substring(int beginIndex);
 
     /**
      * Returns a new string that is a substring of this string. The
@@ -982,31 +716,7 @@ class String {
      *             <code>beginIndex</code> is larger than
      *             <code>endIndex</code>.
      */
-    public String substring(int beginIndex, int endIndex) {
-        if (beginIndex < 0) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       beginIndex
-/* #endif */
-            );
-        }
-        if (endIndex > count) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       endIndex
-/* #endif */
-            );
-        }
-        if (beginIndex > endIndex) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       endIndex - beginIndex
-/* #endif */
-            );
-        }
-        return ((beginIndex == 0) && (endIndex == count)) ? this :
-            new String(offset + beginIndex, endIndex - beginIndex, value);
-    }
+    public native String substring(int beginIndex, int endIndex);
 
     /**
      * Concatenates the specified string to the end of this string.
@@ -1030,16 +740,7 @@ class String {
      * @exception java.lang.NullPointerException if <code>str</code> is
      *          <code>null</code>.
      */
-    public String concat(String str) {
-        int otherLen = str.length();
-        if (otherLen == 0) {
-            return this;
-        }
-        char buf[] = new char[count + otherLen];
-        getChars(0, count, buf, 0);
-        str.getChars(0, otherLen, buf, count);
-        return new String(0, count + otherLen, buf);
-    }
+    public native String concat(String str);
 
     /**
      * Returns a new string resulting from replacing all occurrences of
@@ -1070,33 +771,7 @@ class String {
      * @return  a string derived from this string by replacing every
      *          occurrence of <code>oldChar</code> with <code>newChar</code>.
      */
-    public String replace(char oldChar, char newChar) {
-        if (oldChar != newChar) {
-            int len = count;
-            int i = -1;
-            char[] val = value; /* avoid getfield opcode */
-            int off = offset;   /* avoid getfield opcode */
-
-            while (++i < len) {
-                if (val[off + i] == oldChar) {
-                    break;
-                }
-            }
-            if (i < len) {
-                char buf[] = new char[len];
-                for (int j = 0 ; j < i ; j++) {
-                    buf[j] = val[off+j];
-                }
-                while (i < len) {
-                    char c = val[off + i];
-                    buf[i] = (c == oldChar) ? newChar : c;
-                    i++;
-                }
-                return new String(0, len, buf);
-            }
-        }
-        return this;
-    }
+    public native String replace(char oldChar, char newChar);
 
     /**
      * Converts all of the characters in this <code>String</code> to lower case.
@@ -1105,28 +780,7 @@ class String {
      * @see Character#toLowerCase
      * @see String#toUpperCase
      */
-    public String toLowerCase() {
-        int i;
-
-        scan : {
-            for(i = 0 ; i < count ; i++) {
-                char c = value[offset+i];
-                if (c != Character.toLowerCase(c)) {
-                    break scan;
-                }
-            }
-            return this;
-        }
-
-        char buf[] = new char[count];
-
-        JVM.unchecked_char_arraycopy(value, offset, buf, 0, i);
-
-        for(; i < count ; i++) {
-            buf[i] = Character.toLowerCase(value[offset+i]);
-        }
-        return new String(0, count, buf);
-    }
+    public native String toLowerCase();
 
     /**
      * Converts all of the characters in this <code>String</code> to upper case.
@@ -1135,28 +789,7 @@ class String {
      * @see Character#toLowerCase
      * @see String#toUpperCase
      */
-    public String toUpperCase() {
-        int i;
-
-        scan : {
-            for(i = 0 ; i < count ; i++) {
-                char c = value[offset+i];
-                if (c != Character.toUpperCase(c)) {
-                    break scan;
-                }
-            }
-            return this;
-        }
-
-        char buf[] = new char[count];
-
-        JVM.unchecked_char_arraycopy(value, offset, buf, 0, i);
-
-        for(; i < count ; i++) {
-            buf[i] = Character.toUpperCase(value[offset+i]);
-        }
-        return new String(0, count, buf);
-    }
+    public native String toUpperCase();
 
     /**
      * Removes white space from both ends of this string.
@@ -1186,29 +819,14 @@ class String {
      *
      * @return  this string, with white space removed from the front and end.
      */
-    public String trim() {
-        int len = count;
-        int st = 0;
-        int off = offset;      /* avoid getfield opcode */
-        char[] val = value;    /* avoid getfield opcode */
-
-        while ((st < len) && (val[off + st] <= ' ')) {
-            st++;
-        }
-        while ((st < len) && (val[off + len - 1] <= ' ')) {
-            len--;
-        }
-        return ((st > 0) || (len < count)) ? substring(st, len) : this;
-    }
+    public native String trim();
 
     /**
      * This object (which is already a string!) is itself returned.
      *
      * @return  the string itself.
      */
-    public String toString() {
-        return this;
-    }
+    public native String toString();
 
     /**
      * Converts this string to a new character array.
@@ -1217,11 +835,7 @@ class String {
      *          of this string and whose contents are initialized to contain
      *          the character sequence represented by this string.
      */
-    public char[] toCharArray() {
-        char result[] = new char[count];
-        getChars(0, count, result, 0);
-        return result;
-    }
+    public native char[] toCharArray();
 
     /**
      * Returns the string representation of the <code>Object</code> argument.
@@ -1246,9 +860,7 @@ class String {
      * @return  a newly allocated string representing the same sequence of
      *          characters contained in the character array argument.
      */
-    public static String valueOf(char data[]) {
-        return new String(data);
-    }
+    public native static String valueOf(char data[]);
 
     /**
      * Returns the string representation of a specific subarray of the
@@ -1274,9 +886,7 @@ class String {
      *          <code>offset+count</code> is larger than
      *          <code>data.length</code>.
      */
-    public static String valueOf(char data[], int offset, int count) {
-        return new String(data, offset, count);
-    }
+    public native static String valueOf(char data[], int offset, int count);
 
     /**
      * Returns the string representation of the <code>boolean</code> argument.
@@ -1286,9 +896,7 @@ class String {
      *          <code>"true"</code> is returned; otherwise, a string equal to
      *          <code>"false"</code> is returned.
      */
-    public static String valueOf(boolean b) {
-        return b ? "true" : "false";
-    }
+    public native static String valueOf(boolean b);
 
     /**
      * Returns the string representation of the <code>char</code>
@@ -1298,10 +906,7 @@ class String {
      * @return  a newly allocated string of length <code>1</code> containing
      *          as its single character the argument <code>c</code>.
      */
-    public static String valueOf(char c) {
-        char data[] = {c};
-        return new String(0, 1, data);
-    }
+    public native static String valueOf(char c);
 
     /**
      * Returns the string representation of the <code>int</code> argument.
@@ -1314,9 +919,7 @@ class String {
      *          the <code>int</code> argument.
      * @see     java.lang.Integer#toString(int, int)
      */
-    public static String valueOf(int i) {
-        return Integer.toString(i, 10);
-    }
+    public native static String valueOf(int i);
 
     /**
      * Returns the string representation of the <code>long</code> argument.
@@ -1329,9 +932,7 @@ class String {
      *          the <code>long</code> argument.
      * @see     java.lang.Long#toString(long)
      */
-    public static String valueOf(long l) {
-        return Long.toString(l, 10);
-    }
+    public native static String valueOf(long l);
 
     /**
      * Returns the string representation of the <code>float</code> argument.
