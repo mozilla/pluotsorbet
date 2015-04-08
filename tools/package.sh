@@ -3,8 +3,6 @@
 # run from your root j2me.js checkout after you've run |make test|.
 # NB: I'm making no effort for this to be efficient or clever.
 
-PACKAGE_DIR="output"
-
 rm -rf $PACKAGE_DIR/
 mkdir $PACKAGE_DIR
 mkdir $PACKAGE_DIR/bld

@@ -1,4 +1,11 @@
-# A makefile for building the Asteroid Zone app: make -f asteroidzone.mk
+# A makefile for building the Asteroid Zone app.  To make the asteroidzone/
+# directory for pushing to a device via WebIDE:
+#
+#   make -f asteroidzone.mk app
+#
+# To make a ZIP package containing the app for distribution to others:
+#
+#   make -f asteroidzone.mk package
 
 JSR_256 = 0
 JSR_082 = 0
@@ -7,6 +14,7 @@ JSR_179 = 0
 RELEASE = 1
 PACKAGE_TESTS = 1
 CONSOLE = 0
+PACKAGE_DIR = asteroidzone
 
 CONFIG=config/asteroidzone.js
 
