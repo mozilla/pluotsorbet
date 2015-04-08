@@ -272,6 +272,10 @@ certs:
 app: config-build java certs j2me aot bld/main-all.js
 	tools/package.sh
 
+package: app
+	rm -f package.zip
+	cd output && zip -r ../package.zip *
+
 benchmarks: java tests
 	make -C bench
 
@@ -284,3 +288,4 @@ clean:
 	rm -rf java/l10n/
 	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 	make -C bench clean
+	rm -f package.zip
