@@ -9,7 +9,6 @@ casper.on('remote.message', function(message) {
 
 casper.options.waitTimeout = 60000;
 casper.options.verbose = true;
-casper.options.logLevel = "debug";
 
 casper.options.onWaitTimeout = function() {
     this.echo("data:image/png;base64," + this.captureBase64('png'));
