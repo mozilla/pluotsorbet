@@ -16,10 +16,6 @@ if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
 
 var jars = [];
 
-if (config.midletClassName == "RunTests") {
-  jars.push("tests/tests.jar");
-}
-
 if (typeof Benchmark !== "undefined") {
   Benchmark.startup.init();
 }
@@ -172,7 +168,7 @@ function startTimeline() {
   jsGlobal.profiling = true;
   requestTimelineBuffers(function (buffers) {
     for (var i = 0; i < buffers.length; i++) {
-      buffers[i].reset();
+      buffers[i].reset(jsGlobal.START_TIME);
     }
     for (var runtime of J2ME.RuntimeTemplate.all) {
       for (var ctx of runtime.allCtxs) {

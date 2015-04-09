@@ -237,11 +237,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
             new CldcAccessControlContext(midletSuite));
     }
 
-    /** Restricts suite access to internal API */
-    protected void restrictAPIAccess() {
-        // IMPL_NOTE: No restrictions by default
-    }
-
     /**
      * Starts MIDlet suite in the prepared environment
      * Overrides super method to hint VM of system startup
@@ -350,9 +345,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
             // Export suite arguments as properties, so well
             // set any other properties to control a suite
             setSuiteProperties();
-
-            // Restrict suite access to internal API
-            restrictAPIAccess();
 
             if (Logging.REPORT_LEVEL <= Logging.WARNING) {
                 Logging.report(Logging.WARNING, LogChannels.LC_CORE,

@@ -74,6 +74,14 @@ module J2ME {
         // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
         "com/sun/cldc/isolate/Isolate",
         "org/mozilla/internal/Sys",
+        "java/lang/System",
+        "java/lang/RuntimeException",
+        "java/lang/IllegalStateException",
+        "java/lang/Long",
+        "java/lang/NullPointerException",
+        "java/lang/Boolean",
+        "java/util/Hashtable",
+        "java/lang/IndexOutOfBoundsException",
       ];
 
       for (var i = 0; i < classNames.length; i++) {
