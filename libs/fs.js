@@ -564,14 +564,6 @@ var fs = (function() {
     }
   }
 
-function getblobs(fd) {
-  return openedFiles.get(fd).blobs.map(function(blob) {
-    return {
-      size: blob.size,
-    };
-  });
-}
-
   function write(fd, data, from) {
     var file = openedFiles.get(fd);
 
@@ -1042,6 +1034,5 @@ function getblobs(fd) {
     importStore: importStore,
     createUniqueFile: createUniqueFile,
     getBlob: getBlob,
-    getblobs: getblobs,
   };
 })();
