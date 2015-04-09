@@ -548,6 +548,7 @@ tests.push(function() {
 tests.push(function() {
   fs.write(fd, new TextEncoder().encode("marco"), 2);
   ok(true, "write overwriting and appending");
+  is(fs.getsize(fd), 7, "file is now 7 bytes long");
   next();
 });
 
@@ -565,6 +566,7 @@ tests.push(function() {
   fs.setpos(fd, 0);
   fs.write(fd, new TextEncoder().encode("marco"), 20);
   ok(true, "write appending with from > size of file");
+  is(fs.getsize(fd), 12, "file is now 12 bytes long");
   next();
 });
 
@@ -911,6 +913,243 @@ tests.push(function() {
     return getBranch("/");
   }).then(function(after) {
     ok(QUnit.equiv(before, after), "files are equivalent after export/import");
+    next();
+  });
+});
+
+// Tests for the Blobs array
+// These tests are specifically tailored to test different conditions of write/read with
+// the FS implementation with an array of blobs.
+// They're particularly useful in that scenario, but they're valuable in their own right.
+
+tests.push(function() {
+  fs.create("/tmp/blobs", new Blob());
+  ok(true, "/tmp/blobs created");
+  next();
+});
+
+tests.push(function() {
+  fd = fs.open("/tmp/blobs");
+  ok(fd > 0, "/tmp/blobs opened");
+  next();
+});
+
+function createArray(length, val) {
+  var array = new Uint8Array(length);
+  for (var i = 0; i < length; i++) {
+    array[i] = val;
+  }
+  return array;
+}
+
+tests.push(function() {
+  // Appending write, result: 111
+  fs.write(fd, createArray(3, 1), 0);
+  is(fs.getsize(fd), 3, "Appending write - size = 3");
+  next();
+});
+
+tests.push(function() {
+  var result = new Uint8Array(3);
+  fs.read(fd, 0, 3, result, function(numRead) {
+    is(numRead, 3, "3 bytes read");
+    is(result[0], 1, "Read 1");
+    is(result[1], 1, "Read 1");
+    is(result[2], 1, "Read 1");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Appending write, result: 111-22
+  fs.write(fd, createArray(2, 2), 3);
+  is(fs.getsize(fd), 5, "Appending write 2 - size = 5");
+  next();
+});
+
+tests.push(function() {
+  var result = new Uint8Array(5);
+  fs.read(fd, 0, 5, result, function(numRead) {
+    is(numRead, 5, "5 bytes read");
+    is(result[0], 1, "Read 1");
+    is(result[1], 1, "Read 1");
+    is(result[2], 1, "Read 1");
+    is(result[3], 2, "Read 2");
+    is(result[4], 2, "Read 2");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Overwriting write with offset (without appending anything), result: 11-3-22
+  fs.write(fd, createArray(1, 3), 2);
+  is(fs.getsize(fd), 5, "Overwriting write with offset (without appending anything) - size = 5");
+  next();
+})
+
+tests.push(function() {
+  var result = new Uint8Array(5);
+  fs.read(fd, 0, 5, result, function(numRead) {
+    is(numRead, 5, "5 bytes read");
+    is(result[0], 1, "Read 1");
+    is(result[1], 1, "Read 1");
+    is(result[2], 3, "Read 3");
+    is(result[3], 2, "Read 2");
+    is(result[4], 2, "Read 2");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Overwriting write without offset (without appending anything), result: 44-3-22
+  fs.write(fd, createArray(2, 4), 0);
+  is(fs.getsize(fd), 5, "Overwriting write without offset (without appending anything) - size = 5");
+  next();
+});
+
+tests.push(function() {
+  var result = new Uint8Array(5);
+  fs.read(fd, 0, 5, result, function(numRead) {
+    is(numRead, 5, "5 bytes read");
+    is(result[0], 4, "Read 4");
+    is(result[1], 4, "Read 4");
+    is(result[2], 3, "Read 3");
+    is(result[3], 2, "Read 2");
+    is(result[4], 2, "Read 2");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Overwriting write with offset in blob (appending a few bytes), result: 44-3-2-555
+  fs.write(fd, createArray(3, 5), 4);
+  is(fs.getsize(fd), 7, "Overwriting write with offset in blob (appending a few bytes) - size = 7");
+  next();
+});
+
+tests.push(function() {
+  var result = new Uint8Array(7);
+  fs.read(fd, 0, 7, result, function(numRead) {
+    is(numRead, 7, "7 bytes read");
+    is(result[0], 4, "Read 4");
+    is(result[1], 4, "Read 4");
+    is(result[2], 3, "Read 3");
+    is(result[3], 2, "Read 2");
+    is(result[4], 5, "Read 5");
+    is(result[5], 5, "Read 5");
+    is(result[6], 5, "Read 5");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Overwriting write without offset in blob (appending a few bytes), result: 44-3-2-6666
+  fs.write(fd, createArray(4, 6), 4);
+  is(fs.getsize(fd), 8, "size = 8");
+  next();
+});
+
+tests.push(function() {
+  // Read the entire file
+  var result = new Uint8Array(8);
+  fs.read(fd, 0, 8, result, function(numRead) {
+    is(numRead, 8, "Read the entire file - 8 bytes read");
+    is(result[0], 4, "Read 4");
+    is(result[1], 4, "Read 4");
+    is(result[2], 3, "Read 3");
+    is(result[3], 2, "Read 2");
+    is(result[4], 6, "Read 6");
+    is(result[5], 6, "Read 6");
+    is(result[6], 6, "Read 6");
+    is(result[7], 6, "Read 6");
+    next();
+  })
+});
+
+tests.push(function() {
+  // Read from the first blob
+  var result = new Uint8Array(1);
+  fs.read(fd, 0, 1, result, function(numRead) {
+    is(numRead, 1, "Read from the first blob - 1 byte read");
+    is(result[0], 4, "Read 4");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Read whole first blob
+  var result = new Uint8Array(2);
+  fs.read(fd, 0, 2, result, function(numRead) {
+    is(numRead, 2, "Read whole first blob - 2 bytes read");
+    is(result[0], 4, "Read 4");
+    is(result[1], 4, "Read 4");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Read whole first and second blob
+  var result = new Uint8Array(4);
+  fs.read(fd, 0, 4, result, function(numRead) {
+    is(numRead, 4, "Read whole first and second blob - 4 bytes read");
+    is(result[0], 4, "Read 4");
+    is(result[1], 4, "Read 4");
+    is(result[2], 3, "Read 3");
+    is(result[3], 2, "Read 2");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Read first blob with offset
+  var result = new Uint8Array(2);
+  fs.read(fd, 1, 2, result, function(numRead) {
+    is(numRead, 1, "Read first blob with offset - 1 bytes read");
+    is(result[0], 4, "Read 4");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Read a part of the first up to a part of the fourth
+  var result = new Uint8Array(5);
+  fs.read(fd, 1, 6, result, function(numRead) {
+    is(numRead, 5, "Read a part of the first up to a part of the fourth - 5 bytes read");
+    is(result[0], 4, "Read 4");
+    is(result[1], 3, "Read 3");
+    is(result[2], 2, "Read 2");
+    is(result[3], 6, "Read 6");
+    is(result[4], 6, "Read 6");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Truncate in the middle of a blob
+  fs.ftruncate(fd, 5);
+  is(fs.getsize(fd), 5, "Truncated to 5 bytes");
+  var result = new Uint8Array(5);
+  fs.read(fd, 0, 5, result, function(numRead) {
+    is(numRead, 5, "5 bytes read");
+    is(result[0], 4, "Read 4");
+    is(result[1], 4, "Read 4");
+    is(result[2], 3, "Read 3");
+    is(result[3], 2, "Read 2");
+    is(result[4], 6, "Read 6");
+    next();
+  });
+});
+
+tests.push(function() {
+  // Truncate at the end of a blob
+  fs.ftruncate(fd, 3);
+  is(fs.getsize(fd), 3, "Truncated to 3 bytes");
+  var result = new Uint8Array(3);
+  fs.read(fd, 0, 3, result, function(numRead) {
+    is(numRead, 3, "4 bytes read");
+    is(result[0], 4, "Read 4");
+    is(result[1], 4, "Read 4");
+    is(result[2], 3, "Read 3");
     next();
   });
 });
