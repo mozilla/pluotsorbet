@@ -81,7 +81,6 @@ module J2ME {
     code: Uint8Array;
     pc: number;
     opPC: number;
-    cp: any;
     lockObject: java.lang.Object;
 
     static dirtyStack: Frame [] = [];
@@ -108,7 +107,6 @@ module J2ME {
 
     reset(methodInfo: MethodInfo, local: any []) {
       this.methodInfo = methodInfo;
-      this.cp = methodInfo ? methodInfo.classInfo.constantPool : null;
       this.code = methodInfo ? methodInfo.codeAttribute.code : null;
       this.pc = 0;
       this.opPC = 0;
