@@ -82,7 +82,8 @@ var getBranch = function(dir) {
           });
         } else {
           var fd = fs.open(path);
-          fs.read(fd, undefined, undefined, function(data) {
+          var data = new Uint8Array(fs.getsize(fd));
+          fs.read(fd, undefined, undefined, data, function() {
             stat.data = Array.prototype.slice.call(data);
             fs.close(fd);
             resolve(stat);
@@ -396,22 +397,25 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.read(fd, undefined, undefined, function(data) {
-    is(data.byteLength, 0, "read from an empty file");
+  var data = new Uint8Array(0);
+  fs.read(fd, undefined, undefined, data, function(numRead) {
+    is(numRead, 0, "read from an empty file");
     next();
   });
 });
 
 tests.push(function() {
-  fs.read(fd, 5, undefined, function(data) {
-    is(data.byteLength, 0, "trying to read empty file with from > file size");
+  var data = new Uint8Array(0);
+  fs.read(fd, 5, undefined, data, function(numRead) {
+    is(numRead, 0, "trying to read empty file with from > file size");
     next();
   });
 });
 
 tests.push(function() {
-  fs.read(fd, 0, 5, function(data) {
-    is(data.byteLength, 0, "trying to read too much with empty file");
+  var data = new Uint8Array(0);
+  fs.read(fd, 0, 5, data, function(numRead) {
+    is(numRead, 0, "trying to read too much with empty file");
     next();
   });
 });
@@ -422,22 +426,25 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.read(fd, 10, undefined, function(data) {
-    is(data.byteLength, 0, "trying to read with from > file size");
+  var data = new Uint8Array(0);
+  fs.read(fd, 10, undefined, data, function(numRead) {
+    is(numRead, 0, "trying to read with from > file size");
     next();
   });
 });
 
 tests.push(function() {
-  fs.read(fd, 5, undefined, function(data) {
-    is(data.byteLength, 0, "trying to read with from == file size");
+  var data = new Uint8Array(0);
+  fs.read(fd, 5, undefined, data, function(numRead) {
+    is(numRead, 0, "trying to read with from == file size");
     next();
   });
 });
 
 tests.push(function() {
-  fs.read(fd, 0, 10, function(data) {
-    is(data.byteLength, 5, "trying to read too much");
+  var data = new Uint8Array(5);
+  fs.read(fd, 0, 10, data, function(numRead) {
+    is(numRead, 5, "read from a file with 5 bytes");
     is(new TextDecoder().decode(data), "marco", "read correct");
     next();
   });
@@ -445,8 +452,9 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.read(fd, undefined, undefined, function(data) {
-    is(data.byteLength, 5, "read from a file with 5 bytes");
+  var data = new Uint8Array(5);
+  fs.read(fd, undefined, undefined, data, function(numRead) {
+    is(numRead, 5, "read from a file with 5 bytes");
     is(new TextDecoder().decode(data), "marco", "read correct");
     next();
   });
@@ -460,40 +468,45 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.read(fd, undefined, undefined, function(data) {
-    is(data.byteLength, 6, "read from a file with 6 bytes");
+  var data = new Uint8Array(6);
+  fs.read(fd, undefined, undefined, data, function(numRead) {
+    is(numRead, 6, "read from a file with 6 bytes");
     is(new TextDecoder().decode(data), "marco2", "read correct");
     next();
   });
 });
 
 tests.push(function() {
-  fs.read(fd, 1, undefined, function(data) {
-    is(data.byteLength, 5, "read 5 bytes from a file with 6 bytes");
+  var data = new Uint8Array(5);
+  fs.read(fd, 1, undefined, data, function(numRead) {
+    is(numRead, 5, "read 5 bytes from a file with 6 bytes");
     is(new TextDecoder().decode(data), "arco2", "read correct");
     next();
   });
 });
 
 tests.push(function() {
-  fs.read(fd, 0, 1, function(data) {
-    is(data.byteLength, 1, "read 1 byte from a file with 6 bytes");
+  var data = new Uint8Array(1);
+  fs.read(fd, 0, 1, data, function(numRead) {
+    is(numRead, 1, "read 1 byte from a file with 6 bytes");
     is(new TextDecoder().decode(data), "m", "read correct");
     next();
   });
 });
 
 tests.push(function() {
-  fs.read(fd, 1, 3, function(data) {
-    is(data.byteLength, 2, "read 2 bytes from a file with 6 bytes");
+  var data = new Uint8Array(2);
+  fs.read(fd, 1, 3, data, function(numRead) {
+    is(numRead, 2, "read 2 bytes from a file with 6 bytes");
     is(new TextDecoder().decode(data), "ar", "read correct");
     next();
   });
 });
 
 tests.push(function() {
-  fs.read(fd, 1, 1, function(data) {
-    is(data.byteLength, 0, "read 0 bytes from a file with 5 bytes");
+  var data = new Uint8Array(0);
+  fs.read(fd, 1, 1, data, function(numRead) {
+    is(numRead, 0, "read 0 bytes from a file with 5 bytes");
     is(new TextDecoder().decode(data), "", "read correct");
     next();
   });
@@ -507,8 +520,9 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.read(fd, undefined, undefined, function(data) {
-    is(data.byteLength, 6, "read from a file with 6 bytes");
+  var data = new Uint8Array(6);
+  fs.read(fd, undefined, undefined, data, function(numRead) {
+    is(numRead, 6, "read from a file with 6 bytes");
     is(new TextDecoder().decode(data), "mmarco", "read correct");
     next();
   });
@@ -523,8 +537,9 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.read(fd, undefined, undefined, function(data) {
-    is(data.byteLength, 6, "read from a file with 6 bytes");
+  var data = new Uint8Array(6);
+  fs.read(fd, undefined, undefined, data, function(numRead) {
+    is(numRead, 6, "read from a file with 6 bytes");
     is(new TextDecoder().decode(data), "marrco", "read correct");
     next();
   });
@@ -538,8 +553,9 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.read(fd, undefined, undefined, function(data) {
-    is(data.byteLength, 7, "read from a file with 7 bytes");
+  var data = new Uint8Array(7);
+  fs.read(fd, undefined, undefined, data, function(numRead) {
+    is(numRead, 7, "read from a file with 7 bytes");
     is(new TextDecoder().decode(data), "mamarco", "read correct");
     next();
   });
@@ -554,8 +570,9 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.read(fd, undefined, undefined, function(data) {
-    is(data.byteLength, 12, "read from a file with 12 bytes");
+  var data = new Uint8Array(12);
+  fs.read(fd, undefined, undefined, data, function(numRead) {
+    is(numRead, 12, "read from a file with 12 bytes");
     is(new TextDecoder().decode(data), "mamarcomarco", "read correct");
     next();
   });
@@ -595,7 +612,8 @@ tests.push(function() {
 
   is(fs.getsize(fd), 6071, "file size is now 6071");
 
-  fs.read(fd, 0, undefined, function(data) {
+  var data = new Uint8Array(6071);
+  fs.read(fd, 0, undefined, data, function() {
     is(new TextDecoder().decode(data).substring(0, 6), "mamarc", "read correct");
     next();
   });
@@ -607,7 +625,8 @@ tests.push(function() {
 
   is(fs.getsize(fd), 131079, "file size is now 131079");
 
-  var data = fs.read(fd, 0, undefined, function(data) {
+  var data = new Uint8Array(131079);
+  fs.read(fd, 0, undefined, data, function() {
     is(new TextDecoder().decode(data).substring(0, 6), "mamarc", "read correct");
     next();
   });
