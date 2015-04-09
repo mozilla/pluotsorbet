@@ -117,19 +117,14 @@ Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(handle,
 
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
-        fs.read(handle, from, to, function(readBytes) {
-            if (readBytes.byteLength <= 0) {
+        fs.read(handle, from, to, buf.subarray(offset), function(numRead) {
+            if (numRead <= 0) {
                 ctx.setAsCurrentContext();
                 reject($.newIOException("handle invalid or segment indices out of bounds"));
                 return;
             }
 
-            var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
-            for (var i = 0; i < readBytes.byteLength; i++) {
-                subBuffer[i] = readBytes[i];
-            }
-
-            resolve(readBytes.byteLength);
+            resolve(numRead);
         });
     }));
 };
@@ -583,9 +578,8 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
 
     var curpos = fs.getpos(fd);
     asyncImpl("I", new Promise(function(resolve, reject) {
-        fs.read(fd, curpos, curpos + len, function(data) {
-            b.set(data, off);
-            resolve((data.byteLength > 0) ? data.byteLength : -1);
+        fs.read(fd, curpos, curpos + len, b.subarray(off), function(numRead) {
+            resolve((numRead > 0) ? numRead : -1);
         });
     }));
 };
@@ -771,17 +765,8 @@ function(handle, buffer, offset, length) {
     var from = fs.getpos(handle);
     var to = from + length;
     asyncImpl("I", new Promise(function(resolve, reject) {
-        fs.read(handle, from, to, function(readBytes) {
-            if (readBytes.byteLength <= 0) {
-                resolve(-1);
-                return;
-            }
-
-            var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
-            for (var i = 0; i < readBytes.byteLength; i++) {
-                subBuffer[i] = readBytes[i];
-            }
-            resolve(readBytes.byteLength);
+        fs.read(handle, from, to, buffer.subarray(offset), function(numRead) {
+            resolve((numRead > 0) ? numRead : -1);
         });
     }));
 };
