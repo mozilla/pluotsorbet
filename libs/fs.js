@@ -580,37 +580,29 @@ var fs = (function() {
     // Fast path for appending writes.
     if (from === file.size) {
       blobs.push(new Blob([ data ]));
-      file.size = from + data.byteLength;
-      file.position = file.size;
-      file.mtime = Date.now();
-      file.dirty = true;
-      return;
-    }
-
-    var start = findBlob(blobs, from, 0);
-    var end = findBlob(blobs, start.pos + data.byteLength, start.blobIndex);
-
-    if (end.blobIndex < blobs.length) {
-      if (start.pos > 0) {
-        blobs.splice(start.blobIndex, end.blobIndex - start.blobIndex + 1, blobs[start.blobIndex].slice(0, start.pos), new Blob([data]), blobs[end.blobIndex].slice(end.pos));
-      } else {
-        blobs.splice(start.blobIndex, end.blobIndex - start.blobIndex + 1, new Blob([data]), blobs[end.blobIndex].slice(end.pos));
-      }
-    } else if (start.blobIndex < blobs.length) {
-      if (start.pos > 0) {
-        blobs.splice(start.blobIndex, 1, blobs[start.blobIndex].slice(0, start.pos), new Blob([data]));
-      } else {
-        blobs.splice(start.blobIndex, 1, new Blob([data]))
-      }
     } else {
-      blobs.push(new Blob([data]));
-    }
+      var start = findBlob(blobs, from, 0);
+      var end = findBlob(blobs, start.pos + data.byteLength, start.blobIndex);
 
-    if (from + data.byteLength > file.size) {
-      file.size = from + data.byteLength;
+      if (end.blobIndex < blobs.length) {
+        if (start.pos > 0) {
+          blobs.splice(start.blobIndex, end.blobIndex - start.blobIndex + 1, blobs[start.blobIndex].slice(0, start.pos), new Blob([data]), blobs[end.blobIndex].slice(end.pos));
+        } else {
+          blobs.splice(start.blobIndex, end.blobIndex - start.blobIndex + 1, new Blob([data]), blobs[end.blobIndex].slice(end.pos));
+        }
+      } else if (start.blobIndex < blobs.length) {
+        if (start.pos > 0) {
+          blobs.splice(start.blobIndex, blobs.length - start.blobIndex + 1, blobs[start.blobIndex].slice(0, start.pos), new Blob([data]));
+        } else {
+          blobs.splice(start.blobIndex, blobs.length - start.blobIndex + 1, new Blob([data]))
+        }
+      }
     }
 
     file.position = from + data.byteLength;
+    if (file.position > file.size) {
+      file.size = from + data.byteLength;
+    }
     file.mtime = Date.now();
     file.dirty = true;
   }
