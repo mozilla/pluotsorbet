@@ -451,7 +451,7 @@ var fs = (function() {
     openedFiles.set(++lastId, {
       dirty: false,
       path: path,
-      data: record.data,
+      blobs: [ record.data ],
       mtime: record.mtime,
       size: record.size,
       position: 0,
@@ -474,12 +474,24 @@ var fs = (function() {
     }
   }
 
-  function read(fd, from, to, cb) {
-    var file = openedFiles.get(fd);
-    if (!file) {
-      return null;
+  function findBlob(blobs, from, fromBlob) {
+    while (from != 0 && fromBlob < blobs.length) {
+      if (from < blobs[fromBlob].size) {
+        break;
+      }
+
+      from -= blobs[fromBlob].size;
+      fromBlob++;
     }
-    if (DEBUG_FS) { console.log("fs read " + file.path); }
+
+    return {
+      pos: from,
+      blobIndex: fromBlob,
+    };
+  }
+
+  function read(fd, from, to, resultArray, cb) {
+    var file = openedFiles.get(fd);
 
     if (typeof from === "undefined") {
       from = file.position;
@@ -493,19 +505,75 @@ var fs = (function() {
       from = file.size;
     }
 
+    if (to - from === 0) {
+      setZeroTimeout(cb.bind(null, 0));
+      return;
+    }
+
     file.position += to - from;
 
-    var reader = new FileReader();
-    reader.addEventListener("load", function() {
-      cb(new Int8Array(reader.result));
-    });
-    reader.readAsArrayBuffer(file.data.slice(from, to));
+    var blobs = file.blobs;
+
+    var startBlob = 0;
+    var pos = from;
+    while (pos != 0 && startBlob < blobs.length) {
+      if (pos < blobs[startBlob].size) {
+        break;
+      }
+
+      pos -= blobs[startBlob].size;
+      startBlob++;
+    }
+
+    var toRead = to - from;
+
+    var offset = 0;
+
+    function next(i) {
+      var reader = new FileReader();
+
+      var curOffset = offset;
+
+      reader.addEventListener("loadend", function() {
+        var array = new Uint8Array(reader.result);
+
+        resultArray.set(array, curOffset);
+
+        toRead -= array.byteLength;
+        if (toRead === 0) {
+          cb(to - from);
+        }
+      });
+
+      var toReadStart = 0;
+      if (i === startBlob) {
+        toReadStart = pos;
+      }
+
+      var toReadEnd = blobs[i].size;
+      if (offset + blobs[i].size > to - from) {
+        toReadEnd = to - from - offset + toReadStart;
+      }
+
+      reader.readAsArrayBuffer(blobs[i].slice(toReadStart, toReadEnd));
+      offset += toReadEnd - toReadStart;
+    }
+
+    for (var i = startBlob; offset < to - from; i++) {
+      next(i);
+    }
   }
+
+function getblobs(fd) {
+  return openedFiles.get(fd).blobs.map(function(blob) {
+    return {
+      size: blob.size,
+    };
+  });
+}
 
   function write(fd, data, from) {
     var file = openedFiles.get(fd);
-
-    if (DEBUG_FS) { console.log("fs write " + file.path); }
 
     if (typeof from == "undefined") {
       from = file.position;
@@ -515,16 +583,43 @@ var fs = (function() {
       from = file.size;
     }
 
-    var parts = [ file.data.slice(0, from), data ];
-    if (from + data.byteLength < file.size) {
-      parts.push(file.data.slice(from + data.byteLength, file.size));
+    var blobs = file.blobs;
+
+    // Fast path for appending writes.
+    if (from === file.size) {
+      blobs.push(new Blob([ data ]));
+      file.size = from + data.byteLength;
+      file.position = file.size;
+      file.mtime = Date.now();
+      file.dirty = true;
+      return;
     }
 
-    file.data = new Blob(parts);
+    var start = findBlob(blobs, from, 0);
+    var end = findBlob(blobs, start.pos + data.byteLength, start.blobIndex);
+
+    if (end.blobIndex < blobs.length) {
+      if (start.pos > 0) {
+        blobs.splice(start.blobIndex, end.blobIndex - start.blobIndex + 1, blobs[start.blobIndex].slice(0, start.pos), new Blob([data]), blobs[end.blobIndex].slice(end.pos));
+      } else {
+        blobs.splice(start.blobIndex, end.blobIndex - start.blobIndex + 1, new Blob([data]), blobs[end.blobIndex].slice(end.pos));
+      }
+    } else if (start.blobIndex < blobs.length) {
+      if (start.pos > 0) {
+        blobs.splice(start.blobIndex, 1, blobs[start.blobIndex].slice(0, start.pos), new Blob([data]));
+      } else {
+        blobs.splice(start.blobIndex, 1, new Blob([data]))
+      }
+    } else {
+      blobs.push(new Blob([data]));
+    }
+
+    if (from + data.byteLength > file.size) {
+      file.size = from + data.byteLength;
+    }
 
     file.position = from + data.byteLength;
     file.mtime = Date.now();
-    file.size = file.data.size;
     file.dirty = true;
   }
 
@@ -556,11 +651,29 @@ var fs = (function() {
       return;
     }
 
-    openedFile.record.data = openedFile.data;
+    openedFile.record.data = new Blob(openedFile.blobs);
     openedFile.record.mtime = openedFile.mtime;
     openedFile.record.size = openedFile.size;
     store.setItem(openedFile.path, openedFile.record);
     openedFile.dirty = false;
+
+    /*openedFiles.set(++lastId, {
+      dirty: false,
+      path: path,
+      blobs: [ record.data ],
+      mtime: record.mtime,
+      size: record.size,
+      position: 0,
+      record: record,
+    });*/
+
+    for (var entry of openedFiles) {
+      if (entry[1].path === openedFile.path) {
+        entry[1].blobs = [ openedFile.record.data ];
+        entry[1].mtime = openedFile.mtime;
+        entry[1].size = openedFile.size;
+      }
+    }
   }
 
   function flushAll() {
@@ -645,12 +758,21 @@ var fs = (function() {
 
     if (DEBUG_FS) { console.log("fs ftruncate " + file.path); }
 
-    if (size != file.size) {
-      file.data = file.data.slice(0, size || 0);
-      file.dirty = true;
-      file.mtime = Date.now();
-      file.size = file.data.size;
+    if (size >= file.size) {
+      return;
     }
+
+    var end = findBlob(file.blobs, size, 0);
+    if (end.pos > 0) {
+      file.blobs.splice(end.blobIndex, 1, file.blobs[end.blobIndex].slice(0, end.pos));
+      file.blobs = file.blobs.slice(0, end.blobIndex + 1);
+    } else {
+      file.blobs = file.blobs.slice(0, end.blobIndex);
+    }
+    
+    file.dirty = true;
+    file.mtime = Date.now();
+    file.size = size;
   }
 
   function remove(path) {
@@ -920,5 +1042,6 @@ var fs = (function() {
     importStore: importStore,
     createUniqueFile: createUniqueFile,
     getBlob: getBlob,
+    getblobs: getblobs,
   };
 })();
