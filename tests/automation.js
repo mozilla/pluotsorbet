@@ -176,7 +176,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 21 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 22 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -296,6 +296,21 @@ casper.test.begin("unit tests", 21 + gfxTests.length, function(test) {
         casper.waitForText("Hello World from foreground MIDlet", function() {
             test.assertTextExists("prop1=hello prop2=ciao");
         });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundExit.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log", function() {
+      casper.evaluate(function() {
+        window.close = function() {
+          document.title = "window.close called";
+        }
+      });
+
+      casper.waitFor(function() {
+        return !!this.getTitle();
+      }, function() {
+        test.assertEquals(this.getTitle(), "window.close called", "window.close called");
+      });
     });
 
     casper
