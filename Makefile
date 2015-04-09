@@ -1,13 +1,44 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks package
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
-VERSION ?=$(shell date +%s)
 PROFILE ?= 0
 BENCHMARK ?= 0
 CONSOLE ?= 1
+
+# The directory into which the *app* target should copy the files.
+PACKAGE_DIR ?= output
+export PACKAGE_DIR
+
+# Whether or not to print certain verbose messages during the build process.
+# We use this to keep the build log on Travis below its 10K line display limit.
 VERBOSE ?= 0
+export VERBOSE
+
+# An extra configuration script to load.  Use this to configure the project
+# to run a particular midlet.  By default, it runs the test midlet RunTests.
+CONFIG ?= config/runtests.js
+export CONFIG
+
+# Whether or not to package test files like tests.jar and support scripts.
+# Set this to 1 if running tests on a device or building an app for a midlet
+# in the tests/ subdirectory, like Asteroids.
+PACKAGE_TESTS ?= 0
+export PACKAGE_TESTS
+
+# If we're going to package tests, we need to make sure they've been made.
+ifeq ($(PACKAGE_TESTS),1)
+  TESTS_JAR = tests/tests.jar
+endif
+
+NAME ?= j2me.js
+DESCRIPTION ?= j2me interpreter for firefox os
+ORIGIN ?= app://j2mejs.mozilla.org
+VERSION ?= $(shell date +%s)
+
+ICON_128 ?= img/default-icon-128.png
+ICON_512 ?= img/default-icon-512.png
 
 # Sensor support
 JSR_256 ?= 1
@@ -33,7 +64,7 @@ endif
 # for Travis.
 ifeq ($(VERBOSE),1)
   CLOSURE_WARNING_LEVEL = VERBOSE
- else
+else
   CLOSURE_WARNING_LEVEL = QUIET
 endif
 
@@ -108,7 +139,7 @@ MAIN_JS_SRCS += main.js
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(CONFIG)$(NAME)$(DESCRIPTION)$(ORIGIN)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -120,7 +151,12 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
-             -D VERSION=$(VERSION)
+             -D CONFIG=$(CONFIG) \
+             -D NAME="$(NAME)" \
+             -D DESCRIPTION="$(DESCRIPTION)" \
+             -D ORIGIN=$(ORIGIN) \
+             -D VERSION=$(VERSION) \
+             $(NULL)
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
@@ -264,9 +300,20 @@ $(LANG_DESTS): $(LANG_FILES)
 certs:
 	make -C certs
 
+img/icon-128.png: $(ICON_128)
+	cp $(ICON_128) img/icon-128.png
+img/icon-512.png: $(ICON_512)
+	cp $(ICON_512) img/icon-512.png
+
+icon: img/icon-128.png img/icon-512.png
+
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs j2me aot bld/main-all.js
+app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR)
 	tools/package.sh
+
+package: app
+	rm -f '$(NAME)-$(VERSION).zip'
+	cd output && zip -r '../$(NAME)-$(VERSION).zip' *
 
 benchmarks: java tests
 	make -C bench
@@ -280,3 +327,5 @@ clean:
 	rm -rf java/l10n/
 	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
 	make -C bench clean
+	rm -f img/icon-128.png img/icon-512.png
+	rm -f package.zip

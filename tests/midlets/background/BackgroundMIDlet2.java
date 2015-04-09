@@ -6,6 +6,8 @@ import javax.microedition.io.Connector;
 import com.nokia.mid.s40.io.LocalMessageProtocolServerConnection;
 import com.nokia.mid.s40.bg.BGUtils;
 
+// Test executing the Foreground MIDlet after starting the localmsg server.
+
 public class BackgroundMIDlet2 extends MIDlet {
     public BackgroundMIDlet2() {
     }

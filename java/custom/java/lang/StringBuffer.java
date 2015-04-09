@@ -109,8 +109,9 @@ public final class StringBuffer {
      * Constructs a string buffer with no characters in it and an 
      * initial capacity of 16 characters. 
      */
+    private native void init();
     public StringBuffer() {
-        value = new char[16];
+        init();
     }
 
     /**
@@ -121,8 +122,9 @@ public final class StringBuffer {
      * @exception  NegativeArraySizeException  if the <code>length</code>
      *               argument is less than <code>0</code>.
      */
+    private native void init(int length);
     public StringBuffer(int length) {
-        value = new char[length];
+        init(length);
     }
 
     /**
@@ -134,9 +136,9 @@ public final class StringBuffer {
      *
      * @param   str   the initial contents of the buffer.
      */
+    private native void init(String str);
     public StringBuffer(String str) {
-        this(str.length() + 16);
-        append(str);
+        init(str);
     }
 
     /**
@@ -145,9 +147,7 @@ public final class StringBuffer {
      * @return  the length of the sequence of characters currently 
      *          represented by this string buffer.
      */
-    public int length() {
-        return count;
-    }
+    public native int length();
 
     /**
      * Returns the current capacity of the String buffer. The capacity
@@ -156,20 +156,13 @@ public final class StringBuffer {
      *
      * @return  the current capacity of this string buffer.
      */
-    public int capacity() {
-        return value.length;
-    }
+    public native int capacity();
 
     /**
      * Copies the buffer value.  This is normally only called when shared
      * is true.  It should only be called from a synchronized method.
      */
-    private final void copy() {
-        char newValue[] = new char[value.length];
-        JVM.unchecked_char_arraycopy(value, 0, newValue, 0, count);
-        value = newValue;
-        shared = false;
-    }
+    private native final void copy();
 
     /**
      * Ensures that the capacity of the buffer is at least equal to the
@@ -186,32 +179,7 @@ public final class StringBuffer {
      *
      * @param   minimumCapacity   the minimum desired capacity.
      */
-    public void ensureCapacity(int minimumCapacity) {
-        if (minimumCapacity > value.length) {
-            expandCapacity(minimumCapacity);
-        }
-    }
-
-    /**
-     * This implements the expansion semantics of ensureCapacity but is
-     * unsynchronized for use internally by methods which are already
-     * synchronized.
-     *
-     * @see java.lang.StringBuffer#ensureCapacity(int)
-     */
-    private void expandCapacity(int minimumCapacity) {
-        int newCapacity = (value.length + 1) * 2;
-        if (newCapacity < 0) {
-            newCapacity = Integer.MAX_VALUE;
-        } else if (minimumCapacity > newCapacity) {
-            newCapacity = minimumCapacity;
-        }
-        
-        char newValue[] = new char[newCapacity];
-        JVM.unchecked_char_arraycopy(value, 0, newValue, 0, count);
-        value = newValue;
-        shared = false;
-    }
+    public native void ensureCapacity(int minimumCapacity);
 
     /**
      * Sets the length of this string buffer.
@@ -241,38 +209,7 @@ public final class StringBuffer {
      *               <code>newLength</code> argument is negative.
      * @see        java.lang.StringBuffer#length()
      */
-    public void setLength(int newLength) {
-        if (newLength < 0) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       newLength
-/* #endif */
-            );
-        }
-        
-        if (newLength > value.length) {
-            expandCapacity(newLength);
-        }
-
-        if (count < newLength) {
-            if (shared) copy();
-            for (; count < newLength; count++) {
-                value[count] = '\0';
-            }
-        } else {
-            count = newLength;
-            if (shared) {
-                if (newLength > 0) {
-                    copy();
-                } else {
-                    // If newLength is zero, assume the StringBuffer is being
-                    // stripped for reuse; Make new buffer of default size
-                    value = new char[16];
-                    shared = false;
-                }
-            }
-        }
-    }
+    public native void setLength(int newLength);
 
     /**
      * The specified character of the sequence currently represented by 
@@ -290,16 +227,7 @@ public final class StringBuffer {
      *             negative or greater than or equal to <code>length()</code>.
      * @see        java.lang.StringBuffer#length()
      */
-    public char charAt(int index) {
-        if ((index < 0) || (index >= count)) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       index
-/* #endif */
-            );
-        }
-        return value[index];
-    }
+    public native char charAt(int index);
 
     /**
      * Characters are copied from this string buffer into the 
@@ -332,31 +260,7 @@ public final class StringBuffer {
      *             <code>dst.length</code>
      *             </ul>
      */
-    public void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin) {
-        if (srcBegin < 0) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       srcBegin
-/* #endif */
-            );
-        }
-        if ((srcEnd < 0) || (srcEnd > count)) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       srcEnd
-/* #endif */
-            );
-        }
-        if (srcBegin > srcEnd) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       "srcBegin > srcEnd"
-/* #endif */
-            );
-        }
-        // NOTE: dst not checked, cannot use unchecked arraycopy
-        System.arraycopy(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
-    }
+    public native void getChars(int srcBegin, int srcEnd, char dst[], int dstBegin);
 
     /**
      * The character at the specified index of this string buffer is set 
@@ -374,17 +278,7 @@ public final class StringBuffer {
      *             negative or greater than or equal to <code>length()</code>.
      * @see        java.lang.StringBuffer#length()
      */
-    public void setCharAt(int index, char ch) {
-        if ((index < 0) || (index >= count)) {
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       index
-/* #endif */
-            );
-        }
-        if (shared) copy();
-        value[index] = ch;
-    }
+    public native void setCharAt(int index, char ch);
 
     /**
      * Appends the string representation of the <code>Object</code> 
@@ -423,19 +317,7 @@ public final class StringBuffer {
      * @param   str   a string.
      * @return  a reference to this <code>StringBuffer</code>.
      */
-      public StringBuffer append(String str) {
-          if (str == null) {
-              str = "null";
-          }
-  
-          int len = str.length();
-          int newcount = count + len;
-          if (newcount > value.length)
-              expandCapacity(newcount);
-          str.getChars(0, len, value, count);
-          count = newcount;
-          return this;
-      }
+      public native StringBuffer append(String str);
 
     /**
      * Appends the string representation of the <code>char</code> array 
@@ -453,15 +335,7 @@ public final class StringBuffer {
      * @param   str   the characters to be appended.
      * @return  a reference to this <code>StringBuffer</code> object.
      */
-    public StringBuffer append(char str[]) {
-        int len = str.length;
-        int newcount = count + len;
-        if (newcount > value.length)
-            expandCapacity(newcount);
-        JVM.unchecked_char_arraycopy(str, 0, value, count, len);
-        count = newcount;
-        return this;
-    }
+    public native StringBuffer append(char str[]);
 
     /**
      * Appends the string representation of a subarray of the 
@@ -482,15 +356,7 @@ public final class StringBuffer {
      * @param   len      the number of characters to append.
      * @return  a reference to this <code>StringBuffer</code> object.
      */
-    public StringBuffer append(char str[], int offset, int len) {
-        int newcount = count + len;
-        if (newcount > value.length)
-            expandCapacity(newcount);
-        // NOTE: str and offset not checked, cannot use unchecked arraycopy
-        System.arraycopy(str, offset, value, count, len);
-        count = newcount;
-        return this;
-    }
+    public native StringBuffer append(char str[], int offset, int len);
 
     /**
      * Appends the string representation of the <code>boolean</code> 
@@ -505,9 +371,7 @@ public final class StringBuffer {
      * @see     java.lang.String#valueOf(boolean)
      * @see     java.lang.StringBuffer#append(java.lang.String)
      */
-    public StringBuffer append(boolean b) {
-        return append(String.valueOf(b));
-    }
+    public native StringBuffer append(boolean b);
 
     /**
      * Appends the string representation of the <code>char</code> 
@@ -524,13 +388,7 @@ public final class StringBuffer {
      * @param   c   a <code>char</code>.
      * @return  a reference to this <code>StringBuffer</code> object.
      */
-    public StringBuffer append(char c) {
-        int newcount = count + 1;
-        if (newcount > value.length)
-            expandCapacity(newcount);
-        value[count++] = c;
-        return this;
-    }
+    public native StringBuffer append(char c);
 
     /**
      * Appends the string representation of the <code>int</code> 
@@ -545,9 +403,7 @@ public final class StringBuffer {
      * @see     java.lang.String#valueOf(int)
      * @see     java.lang.StringBuffer#append(java.lang.String)
      */
-    public StringBuffer append(int i) {
-        return append(String.valueOf(i));
-    }
+    public native StringBuffer append(int i);
 
     /**
      * Appends the string representation of the <code>long</code> 
@@ -562,9 +418,7 @@ public final class StringBuffer {
      * @see     java.lang.String#valueOf(long)
      * @see     java.lang.StringBuffer#append(java.lang.String)
      */
-    public StringBuffer append(long l) {
-        return append(String.valueOf(l));
-    }
+    public native StringBuffer append(long l);
 
     /**
      * Appends the string representation of the <code>float</code>
@@ -617,28 +471,7 @@ public final class StringBuffer {
      *             greater than <code>end</code>.
      * @since      JDK1.2
      */
-    public StringBuffer delete(int start, int end) {
-        if (start < 0)
-            throw new StringIndexOutOfBoundsException(
-/* #ifdef VERBOSE_EXCEPTIONS */
-/// skipped                       start
-/* #endif */
-            );
-        if (end > count)
-            end = count;
-        if (start > end)
-            throw new StringIndexOutOfBoundsException();
-
-        int len = end - start;
-        if (len > 0) {
-            if (shared)
-                copy();
-            JVM.unchecked_char_arraycopy(value, start+len, 
-                                         value, start, count-end);
-            count -= len;
-        }
-        return this;
-    }
+    public native StringBuffer delete(int start, int end);
 
     /**
      * Removes the character at the specified position in this
@@ -652,16 +485,7 @@ public final class StringBuffer {
      *              <code>length()</code>.
      * @since       JDK1.2
      */
-    public StringBuffer deleteCharAt(int index) {
-        if ((index < 0) || (index >= count))
-            throw new StringIndexOutOfBoundsException();
-        if (shared)
-            copy();
-        JVM.unchecked_char_arraycopy(value, index+1, 
-                                     value, index, count-index-1);
-        count--;
-        return this;
-    }
+    public native StringBuffer deleteCharAt(int index);
 
     /**
      * Inserts the string representation of the <code>Object</code> 
@@ -720,26 +544,7 @@ public final class StringBuffer {
      * @exception  StringIndexOutOfBoundsException  if the offset is invalid.
      * @see        java.lang.StringBuffer#length()
      */
-    public StringBuffer insert(int offset, String str) {
-        if ((offset < 0) || (offset > count)) {
-            throw new StringIndexOutOfBoundsException();
-        }
-
-        if (str == null) {
-            str = String.valueOf(str);
-        }
-        int len = str.length();
-        int newcount = count + len;
-        if (newcount > value.length)
-            expandCapacity(newcount);
-        else if (shared)
-            copy();
-        JVM.unchecked_char_arraycopy(value, offset, 
-                                     value, offset + len, count - offset);
-        str.getChars(0, len, value, offset);
-        count = newcount;
-        return this;
-    }
+    public native StringBuffer insert(int offset, String str);
 
     /**
      * Inserts the string representation of the <code>char</code> array 
@@ -762,22 +567,7 @@ public final class StringBuffer {
      * @return     a reference to this <code>StringBuffer</code> object.
      * @exception  StringIndexOutOfBoundsException  if the offset is invalid.
      */
-    public StringBuffer insert(int offset, char str[]) {
-        if ((offset < 0) || (offset > count)) {
-            throw new StringIndexOutOfBoundsException();
-        }
-        int len = str.length;
-        int newcount = count + len;
-        if (newcount > value.length)
-            expandCapacity(newcount);
-        else if (shared)
-            copy();
-        JVM.unchecked_char_arraycopy(value, offset, 
-                                     value, offset + len, count - offset);
-        JVM.unchecked_char_arraycopy(str, 0, value, offset, len);
-        count = newcount;
-        return this;
-    }
+    public native StringBuffer insert(int offset, char str[]);
 
     /**
      * Inserts the string representation of the <code>boolean</code> 
@@ -800,9 +590,7 @@ public final class StringBuffer {
      * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      */
-    public StringBuffer insert(int offset, boolean b) {
-        return insert(offset, String.valueOf(b));
-    }
+    public native StringBuffer insert(int offset, boolean b);
 
     /**
      * Inserts the string representation of the <code>char</code> 
@@ -828,18 +616,7 @@ public final class StringBuffer {
      * @exception  IndexOutOfBoundsException  if the offset is invalid.
      * @see        java.lang.StringBuffer#length()
      */
-    public StringBuffer insert(int offset, char c) {
-        int newcount = count + 1;
-        if (newcount > value.length)
-            expandCapacity(newcount);
-        else if (shared)
-            copy();
-        // NOTE: offset not checked, cannot use unchecked arraycopy
-        System.arraycopy(value, offset, value, offset + 1, count - offset);
-        value[offset] = c;
-        count = newcount;
-        return this;
-    }
+    public native StringBuffer insert(int offset, char c);
 
     /**
      * Inserts the string representation of the second <code>int</code> 
@@ -862,9 +639,7 @@ public final class StringBuffer {
      * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      */
-    public StringBuffer insert(int offset, int i) {
-        return insert(offset, String.valueOf(i));
-    }
+    public native StringBuffer insert(int offset, int i);
 
     /**
      * Inserts the string representation of the <code>long</code> 
@@ -887,9 +662,7 @@ public final class StringBuffer {
      * @see        java.lang.StringBuffer#insert(int, java.lang.String)
      * @see        java.lang.StringBuffer#length()
      */
-    public StringBuffer insert(int offset, long l) {
-        return insert(offset, String.valueOf(l));
-    }
+    public native StringBuffer insert(int offset, long l);
 
     /**
      * Inserts the string representation of the <code>float</code>
@@ -956,16 +729,7 @@ public final class StringBuffer {
      * @return  a reference to this <code>StringBuffer</code> object..
      * @since   JDK1.0.2
      */
-    public StringBuffer reverse() {
-        if (shared) copy();
-        int n = count - 1;
-        for (int j = (n-1) >> 1; j >= 0; --j) {
-            char temp = value[j];
-            value[j] = value[n - j];
-            value[n - j] = temp;
-        }
-        return this;
-    }
+    public native StringBuffer reverse();
 
     /**
      * Converts to a string representing the data in this string buffer.
@@ -986,14 +750,12 @@ public final class StringBuffer {
      *
      * @return  a string representation of the string buffer.
      */
-    public String toString() {
-        return new String(this);
-    }
+    public native String toString();
 
     // The following two methods are needed by String to efficiently
     // convert a StringBuffer into a String.  They are not public.
     // They shouldn't be called by anyone but String.
-    final void setShared() { shared = true; } 
-    final char[] getValue() { return value; }
+    final native void setShared();
+    final native char[] getValue();
 
 }

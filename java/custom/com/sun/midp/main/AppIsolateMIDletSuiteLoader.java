@@ -90,19 +90,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
             midletExecuteEventProducer);
     }
 
-    /** Restricts suite access to internal API */
-    protected void restrictAPIAccess() {
-        if (midletSuite.checkPermission(
-            Permissions.getName(Permissions.AMS)) != 1) {
-
-            // Permission is not allowed.
-            //
-            // Shutdown access to Isolate references before a MIDlet is
-            // loaded. This will not effect the reference already obtained.
-            currentIsolate.setAPIAccess(false);
-        }
-    }
-
     /**
      * Posts suite task error to event system.
      *

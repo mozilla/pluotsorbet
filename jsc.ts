@@ -71,6 +71,8 @@ jsGlobal.config = {
 jsGlobal.Promise = function() {
 }
 
+var Native = {};
+
 module J2ME {
   declare var process, require, global, quit, help, scriptArgs, arguments, snarf, ZipFile, JARStore;
 

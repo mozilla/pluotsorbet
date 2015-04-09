@@ -317,6 +317,14 @@ Remember:
   * `$` is current runtime and `$.ctx` current Context
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
 
+## Overriding Java functions with JavaScript functions
+
+To override a Java function with a JavaScript function, simply define a Native as
+described earlier. Any Java functions can be overridden, not only Java functions
+with the `native` keyword.
+
+Overriding Java functions only works in debug mode (RELEASE=0).
+
 ## Packaging
 
 `make app` packages j2me.js into an Open Web App in output directory.

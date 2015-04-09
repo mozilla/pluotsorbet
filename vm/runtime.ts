@@ -40,7 +40,7 @@ declare var throwPause;
 declare var throwYield;
 
 module J2ME {
-  declare var Native, Override, config;
+  declare var Native, config;
   declare var VM;
   declare var CompiledMethodCache;
 
@@ -1224,27 +1224,6 @@ module J2ME {
     };
   }
 
-  // OverrideMap is constructed lazily.
-  var overrideMap = null;
-
-  /**
-   * Builds a hashmap that keeps track of the class names that have overriden methods. This is a temporary
-   * solution to avoid creating methodInfo implKeys unnecessarily for methods whose class has no overriden
-   * methods.
-   *
-   * TODO: This mechanism should be deleted once we get rid of overrides.
-   */
-  function getOverrideMap() {
-    if (!overrideMap) {
-      overrideMap = new Uint8Hashtable(10);
-      for (var k in Override) {
-        var className = k.substring(0, k.indexOf("."));
-        overrideMap.put(cacheUTF8(className), true);
-      }
-    }
-    return overrideMap;
-  }
-
   function findNativeMethodImplementation(methodInfo: MethodInfo) {
     // Look in bindings first.
     var binding = findNativeMethodBinding(methodInfo);
@@ -1261,11 +1240,6 @@ module J2ME {
         return function missingImplementation() {
           stderrWriter.errorLn("implKey " + implKey + " is native but does not have an implementation.");
         }
-      }
-    } else if (getOverrideMap().get(methodInfo.classInfo.utf8Name)) {
-      var implKey = methodInfo.implKey;
-      if (implKey in Override) {
-        return release ? Override[implKey] : reportError(Override[implKey], implKey);
       }
     }
     return null;
@@ -1398,6 +1372,18 @@ module J2ME {
       // Profiling for interpreted functions is handled by the context.
       return fn;
     }
+    var code;
+    if (methodInfo.isNative) {
+      if (methodInfo.returnKind === Kind.Void) {
+        code = new Uint8Array([Bytecode.Bytecodes.RETURN]);
+      } else if (isTwoSlot(methodInfo.returnKind)) {
+        code = new Uint8Array([Bytecode.Bytecodes.LRETURN]);
+      } else {
+        code = new Uint8Array([Bytecode.Bytecodes.IRETURN]);
+      }
+    }
+
+
     return function (a, b, c, d) {
       var key = methodInfo.implKey;
       try {
@@ -1421,9 +1407,13 @@ module J2ME {
             r = fn.apply(this, arguments);
         }
         if (U) {
-          // TODO: Indicate unwinding on the method timeline.
-          if (methodType === MethodType.Native) {
-            ctx.leaveMethodTimeline(key, methodType);
+          if (methodInfo.isNative) {
+            // A fake frame that just returns is pushed so when the ctx resumes from the unwind
+            // the frame will be popped triggering a leaveMethodTimeline.
+            var fauxFrame = Frame.create(null, []);
+            fauxFrame.methodInfo = methodInfo;
+            fauxFrame.code = code;
+            ctx.bailoutFrames.unshift(fauxFrame);
           }
         } else {
           ctx.leaveMethodTimeline(key, methodType);
@@ -1462,7 +1452,7 @@ module J2ME {
     var methodType;
     var nativeMethod = findNativeMethodImplementation(methodInfo);
     if (nativeMethod) {
-      linkWriter && linkWriter.writeLn("Method: " + methodInfo.name + methodInfo.signature + " -> Native / Override");
+      linkWriter && linkWriter.writeLn("Method: " + methodInfo.name + methodInfo.signature + " -> Native");
       fn = nativeMethod;
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;

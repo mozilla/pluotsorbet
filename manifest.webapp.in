@@ -1,13 +1,15 @@
 {
-  "name": "j2me.js",
-  "description": "j2me interpreter for firefox os",
+  "name": "@NAME@",
+  "description": "@DESCRIPTION@",
   "launch_path": "/index.html",
-  "origin": "app://j2mejs.mozilla.org",
+  "origin": "@ORIGIN@",
+  "version": "@VERSION@",
   "icons": {
-    "128": "/img/icon-128.png"
+    "128": "/img/icon-128.png",
+    "512": "/img/icon-512.png"
   },
   "developer": {
-    "name": "Mozilla",
+    "name": "Mozilla Apps",
     "url": "http://mozilla.org"
   },
   "default_locale": "en",
