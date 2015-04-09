@@ -649,21 +649,14 @@ var fs = (function() {
     store.setItem(openedFile.path, openedFile.record);
     openedFile.dirty = false;
 
-    /*openedFiles.set(++lastId, {
-      dirty: false,
-      path: path,
-      blobs: [ record.data ],
-      mtime: record.mtime,
-      size: record.size,
-      position: 0,
-      record: record,
-    });*/
-
+    // Update in-memory copies of the same file, only if they haven't been
+    // modified.
+    // If they've been modified, the behavior is undefined.
     for (var entry of openedFiles) {
-      if (entry[1].path === openedFile.path) {
-        entry[1].blobs = [ openedFile.record.data ];
+      if (!entry[1].dirty && entry[1].path === openedFile.path) {
         entry[1].mtime = openedFile.mtime;
         entry[1].size = openedFile.size;
+        entry[1].blobs = [ openedFile.record.data ];
       }
     }
   }

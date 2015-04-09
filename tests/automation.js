@@ -176,7 +176,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 22 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 24 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -271,6 +271,15 @@ casper.test.begin("unit tests", 22 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests/recordstore/WriterMIDlet&jad=tests/midlets/RecordStore/recordstore.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextDoesntExist("FAIL");
+            test.assertTextExists("SUCCESS 8/8", "Test RecordStore with multiple MIDlets");
         });
     });
 
