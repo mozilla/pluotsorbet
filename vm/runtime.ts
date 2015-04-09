@@ -1372,6 +1372,18 @@ module J2ME {
       // Profiling for interpreted functions is handled by the context.
       return fn;
     }
+    var code;
+    if (methodInfo.isNative) {
+      if (methodInfo.returnKind === Kind.Void) {
+        code = new Uint8Array([Bytecode.Bytecodes.RETURN]);
+      } else if (isTwoSlot(methodInfo.returnKind)) {
+        code = new Uint8Array([Bytecode.Bytecodes.LRETURN]);
+      } else {
+        code = new Uint8Array([Bytecode.Bytecodes.IRETURN]);
+      }
+    }
+
+
     return function (a, b, c, d) {
       var key = methodInfo.implKey;
       try {
@@ -1395,9 +1407,13 @@ module J2ME {
             r = fn.apply(this, arguments);
         }
         if (U) {
-          // TODO: Indicate unwinding on the method timeline.
-          if (methodType === MethodType.Native) {
-            ctx.leaveMethodTimeline(key, methodType);
+          if (methodInfo.isNative) {
+            // A fake frame that just returns is pushed so when the ctx resumes from the unwind
+            // the frame will be popped triggering a leaveMethodTimeline.
+            var fauxFrame = Frame.create(null, []);
+            fauxFrame.methodInfo = methodInfo;
+            fauxFrame.code = code;
+            ctx.bailoutFrames.unshift(fauxFrame);
           }
         } else {
           ctx.leaveMethodTimeline(key, methodType);
