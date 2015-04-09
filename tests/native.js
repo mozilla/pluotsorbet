@@ -192,3 +192,45 @@ Native["org/mozilla/Test.callAsyncNative.()V"] = function() {
   // synchronous, and you just want to force the thread to yield.
   // asyncImpl("V", Promise.resolve());
 };
+
+var readerOpened = false;
+var readerOpenedWaiting = null;
+
+Native["tests/recordstore/ReaderMIDlet.readerOpened.()V"] = function() {
+  readerOpened = true;
+
+  if (readerOpenedWaiting) {
+    readerOpenedWaiting();
+  }
+};
+
+Native["tests/recordstore/WriterMIDlet.waitReaderOpened.()V"] = function() {
+  asyncImpl("V", new Promise(function(resolve, reject) {
+    if (readerOpened) {
+      resolve();
+    } else {
+      readerOpenedWaiting = resolve;
+    }
+  }));
+};
+
+var writerWrote = false;
+var writerWroteWaiting = null;
+
+Native["tests/recordstore/WriterMIDlet.writerWrote.()V"] = function() {
+  writerWrote = true;
+
+  if (writerWroteWaiting) {
+    writerWroteWaiting();
+  }
+};
+
+Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function() {
+  asyncImpl("V", new Promise(function(resolve, reject) {
+    if (writerWrote) {
+      resolve();
+    } else {
+      writerWroteWaiting = resolve;
+    }
+  }));
+};

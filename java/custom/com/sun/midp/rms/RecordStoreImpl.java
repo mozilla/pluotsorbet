@@ -451,7 +451,7 @@ public class RecordStoreImpl implements AbstractRecordStoreImpl {
                     dbFile.write(dbHeaderData, RS2_NEXT_ID, 3*4+8);
                     dbHeader.headerUpdated(dbHeaderData);
                     dbIndex.recordStoreVersionUpdated(newVersion);
-                    // dbFile.commitWrite();
+                    dbFile.commitWrite();
                 } catch (java.io.IOException ioe) {
                     throw new RecordStoreException("error writing new record "
                             + "data");
@@ -511,7 +511,7 @@ public class RecordStoreImpl implements AbstractRecordStoreImpl {
                 dbFile.write(dbHeaderData, RS3_NUM_LIVE, 2*4+8);
                 dbHeader.headerUpdated(dbHeaderData);
                 dbIndex.recordStoreVersionUpdated(newVersion);
-                // dbFile.commitWrite();
+                dbFile.commitWrite();
 
             } catch (java.io.IOException ioe) {
                 throw new RecordStoreException("error updating file after" +
@@ -711,7 +711,7 @@ public class RecordStoreImpl implements AbstractRecordStoreImpl {
                 dbFile.write(dbHeaderData, RS4_VERSION, 4+8);
                 dbHeader.headerUpdated(dbHeaderData);
                 dbIndex.recordStoreVersionUpdated(newVersion);
-                // dbFile.commitWrite();
+                dbFile.commitWrite();
             } catch (java.io.IOException ioe) {
                 throw new RecordStoreException("error setting record data");
             } finally {

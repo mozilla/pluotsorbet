@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+MIDlet-1: MIDlet1,,tests.recordstore.WriterMIDlet
+MIDlet-2: MIDlet2,,tests.recordstore.ReaderMIDlet
+MIDlet-Permissions: javax.microedition.io.PushRegistry
+MIDlet-Vendor: Mozilla
+MIDlet-Name: RecordStoreMIDlet
+MIDlet-Version: 1.0
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.1
