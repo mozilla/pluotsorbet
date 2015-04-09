@@ -9,9 +9,9 @@ function asyncImpl(returnKind, promise) {
 
   promise.then(function(res) {
     if (returnKind === "J" || returnKind === "D") {
-      ctx.current().stack.push2(res);
+      ctx.current().stackPush2(res);
     } else if (returnKind !== "V") {
-      ctx.current().stack.push(res);
+      ctx.current().stackPush(res);
     } else {
       // void, do nothing
     }
@@ -19,7 +19,7 @@ function asyncImpl(returnKind, promise) {
   }, function(exception) {
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
-    ctx.pushFrame(Frame.create(methodInfo, [exception]));
+    ctx.pushFrame(Frame.create(methodInfo, [exception], ctx.stack));
     ctx.execute();
   });
   $.pause(asyncImplStringAsync);
@@ -310,7 +310,8 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
-        $.ctx.executeFrame(Frame.create(clinit, []));
+        var ctx = $.ctx;
+        ctx.executeFrame(Frame.create(clinit, [], ctx.bailoutStack));
     }
 };
 
@@ -539,7 +540,7 @@ Native["java/lang/Thread.start0.()V"] = function() {
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
-    newCtx.start([Frame.create(run, [ this ])]);
+    newCtx.start([Frame.create(run, [ this ], newCtx.stack)]);
 }
 
 Native["java/lang/Thread.isAlive.()Z"] = function() {

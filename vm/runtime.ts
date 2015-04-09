@@ -1250,7 +1250,8 @@ module J2ME {
     // Adapter for the most common case.
     if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
       var method = function fastInterpreterFrameAdapter() {
-        var frame = Frame.create(methodInfo, []);
+        var ctx = $.ctx;
+        var frame = Frame.create(methodInfo, [], ctx.bailoutStack);
         var j = 0;
         if (!methodInfo.isStatic) {
           frame.local[j++] = this;
@@ -1259,39 +1260,43 @@ module J2ME {
         for (var i = 0; i < slots; i++) {
           frame.local[j++] = arguments[i];
         }
-        return $.ctx.executeFrame(frame);
+        return ctx.executeFrame(frame);
       };
       (<any>method).methodInfo = methodInfo;
       return method;
     }
 
     var method = function interpreterFrameAdapter() {
-      var frame = Frame.create(methodInfo, []);
+      var ctx = $.ctx;
+      var local = [];
+      var frame;
       var j = 0;
       if (!methodInfo.isStatic) {
-        frame.local[j++] = this;
+        local[j++] = this;
       }
       var signatureKinds = methodInfo.signatureKinds;
       release || assert (arguments.length === signatureKinds.length - 1,
         "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor.");
       for (var i = 1; i < signatureKinds.length; i++) {
-        frame.local[j++] = arguments[i - 1];
+        local[j++] = arguments[i - 1];
         if (isTwoSlot(signatureKinds[i])) {
-          frame.local[j++] = null;
+          local[j++] = null;
         }
       }
       if (methodInfo.isSynchronized) {
-        if (!frame.lockObject) {
-          frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getClassObject()
-            : frame.local[0];
-        }
-        $.ctx.monitorEnter(frame.lockObject);
+        var lockObject = methodInfo.isStatic
+          ? methodInfo.classInfo.getClassObject()
+          : local[0];
+        ctx.monitorEnter(lockObject);
         if (U === VMState.Pausing) {
-          $.ctx.pushFrame(frame);
+          frame = Frame.create(methodInfo, local, ctx.stack);
+          frame.lockObject = lockObject;
+          ctx.pushFrame(frame);
           return;
         }
       }
+      frame = Frame.create(methodInfo, local, ctx.bailoutStack);
+      frame.lockObject = lockObject;
       return $.ctx.executeFrame(frame);
     };
     (<any>method).methodInfo = methodInfo;
