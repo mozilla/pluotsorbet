@@ -471,6 +471,15 @@ var TextEditorProvider = (function() {
 
     InputEditor.prototype = extendsObject({
         activate: function() {
+            this.textEditorElem.onkeydown = function(e) {
+                // maxlength is ignored when the input type is "number"
+                if (this.textEditorElem.value.length >= this.getAttribute("maxlength")) {
+                    return !util.isPrintable(e.keyCode);
+                }
+
+                return true;
+            }.bind(this);
+
             this.textEditorElem.oninput = function() {
                 this.content = this.textEditorElem.value;
                 if (this.oninputCallback) {
