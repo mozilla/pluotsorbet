@@ -605,6 +605,20 @@ tests.push(function() {
 tests.push(function() {
   fs.ftruncate(fd, 6);
   is(fs.getsize(fd), 6, "truncated file's size is 6");
+  fs.flush(fd);
+  next();
+});
+
+tests.push(function() {
+  fs.ftruncate(fd, 99);
+  is(fs.getsize(fd), 6, "file not truncated to a larger size");
+  next();
+});
+
+tests.push(function() {
+  fs.truncate("/tmp/tmp.txt", 99);
+  fs.flush(fd);
+  is(fs.size("/tmp/tmp.txt"), 6, "file not truncated to a larger size");
   next();
 });
 

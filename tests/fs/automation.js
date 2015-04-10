@@ -54,7 +54,7 @@ casper.test.begin("fs tests", 7, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 216 pass, 0 fail", "run fs.js unit tests");
+        test.assertTextExists("DONE: 218 pass, 0 fail", "run fs.js unit tests");
     });
 
     casper
@@ -77,7 +77,7 @@ casper.test.begin("fs tests", 7, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 216 pass, 0 fail", "run fs.js unit tests");
+        test.assertTextExists("DONE: 218 pass, 0 fail", "run fs.js unit tests");
     });
 
     casper
@@ -100,7 +100,7 @@ casper.test.begin("fs tests", 7, function(test) {
     casper
     .thenOpen("http://localhost:8000/tests/fs/fstests.html")
     .waitForText("DONE", function() {
-        test.assertTextExists("DONE: 216 pass, 0 fail", "run fs.js unit tests");
+        test.assertTextExists("DONE: 218 pass, 0 fail", "run fs.js unit tests");
     });
 
     // Run the FileConnection TCK unit tests.
