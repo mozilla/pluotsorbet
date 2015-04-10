@@ -474,7 +474,7 @@ var TextEditorProvider = (function() {
             this.textEditorElem.onkeydown = function(e) {
                 // maxlength is ignored when the input type is "number"
                 if (this.textEditorElem.value.length >= this.getAttribute("maxlength")) {
-                    return !util.isPrintable(e.keyCode);
+                    return e.keyCode !== 0 && !util.isPrintable(e.keyCode);
                 }
 
                 return true;
