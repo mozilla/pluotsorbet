@@ -505,62 +505,47 @@ var fs = (function() {
       from = file.size;
     }
 
-    if (to - from === 0) {
+    var toRead = to - from;
+    var toReadRemaining = toRead;
+
+    if (toRead === 0) {
       setZeroTimeout(cb.bind(null, 0));
       return;
     }
 
-    file.position += to - from;
+    file.position += toRead;
 
     var blobs = file.blobs;
 
-    var startBlob = 0;
-    var pos = from;
-    while (pos != 0 && startBlob < blobs.length) {
-      if (pos < blobs[startBlob].size) {
-        break;
-      }
-
-      pos -= blobs[startBlob].size;
-      startBlob++;
-    }
-
-    var toRead = to - from;
-
-    var offset = 0;
-
-    function next(i) {
+    function readBlob(blob, offset) {
       var reader = new FileReader();
 
-      var curOffset = offset;
-
       reader.addEventListener("loadend", function() {
-        var array = new Uint8Array(reader.result);
+        var array = new Int8Array(reader.result);
 
-        resultArray.set(array, curOffset);
+        resultArray.set(array, offset);
 
-        toRead -= array.byteLength;
-        if (toRead === 0) {
-          cb(to - from);
+        toReadRemaining -= array.byteLength;
+        if (toReadRemaining === 0) {
+          cb(toRead);
         }
       });
 
-      var toReadStart = 0;
-      if (i === startBlob) {
-        toReadStart = pos;
-      }
-
-      var toReadEnd = blobs[i].size;
-      if (offset + blobs[i].size > to - from) {
-        toReadEnd = to - from - offset + toReadStart;
-      }
-
-      reader.readAsArrayBuffer(blobs[i].slice(toReadStart, toReadEnd));
-      offset += toReadEnd - toReadStart;
+      reader.readAsArrayBuffer(blob);
     }
 
-    for (var i = startBlob; offset < to - from; i++) {
-      next(i);
+    var start = findBlob(blobs, from, 0);
+    var i = start.blobIndex;
+    var offset = 0;
+    while (offset < toRead) {
+      var sliceStart = (i !== start.blobIndex) ? 0 : start.pos;
+
+      var sliceEnd = (offset + blobs[i].size <= toRead) ? blobs[i].size : toRead - offset + sliceStart;
+
+      readBlob(blobs[i].slice(sliceStart, sliceEnd), offset);
+
+      offset += sliceEnd - sliceStart;
+      i++;
     }
   }
 
@@ -741,12 +726,12 @@ var fs = (function() {
 
     var end = findBlob(file.blobs, size, 0);
     if (end.pos > 0) {
-      file.blobs.splice(end.blobIndex, 1, file.blobs[end.blobIndex].slice(0, end.pos));
+      file.blobs[end.blobIndex] = file.blobs[end.blobIndex].slice(0, end.pos);
       file.blobs = file.blobs.slice(0, end.blobIndex + 1);
     } else {
       file.blobs = file.blobs.slice(0, end.blobIndex);
     }
-    
+
     file.dirty = true;
     file.mtime = Date.now();
     file.size = size;
