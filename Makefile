@@ -313,7 +313,7 @@ app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR)
 
 package: app
 	rm -f '$(NAME)-$(VERSION).zip'
-	cd output && zip -r '../$(NAME)-$(VERSION).zip' *
+	cd $(PACKAGE_DIR) && zip -r '../$(NAME)-$(VERSION).zip' *
 
 benchmarks: java tests
 	make -C bench
