@@ -71,7 +71,7 @@ module J2ME {
    * Emits array bounds checks. Although this is necessary for correctness, most
    * applications work without them.
    */
-  export var emitCheckArrayBounds = true;
+  export var emitCheckArrayBounds = false;
 
   /**
    * Inline calls to runtime methods whenever possible.
@@ -1304,7 +1304,7 @@ module J2ME {
         case Bytecodes.I2B: v = "(" + x + "<<24)>>24"; break;
         case Bytecodes.I2C: v = x + "&0xffff"; break;
         case Bytecodes.I2S: v = "(" + x + "<<16)>>16"; break;
-        case Bytecodes.L2I: v = x + ".toInt()"; break;
+        case Bytecodes.L2I: v = x + ".low_"; break;
         case Bytecodes.L2F: v = "Math.fround(" + x + ".toNumber())"; break;
         case Bytecodes.L2D: v = x + ".toNumber()"; break;
         case Bytecodes.D2I:
