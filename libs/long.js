@@ -45,6 +45,7 @@
     function Long(low, high) {
         this.low_ = low | 0; // force into 32 signed bits.
         this.high_ = high | 0; // force into 32 signed bits.
+        this.string_ = null;
     }
 
     var IntCache = {};
@@ -183,7 +184,9 @@
         if (radix < 2 || 36 < radix) {
             throw Error('radix out of range: ' + radix);
         }
-
+        if (radix === 10 && this.string_) {
+            return this.string_;
+        }
         if (this.isZero()) {
             return '0';
         }
@@ -197,7 +200,11 @@
                 var rem = div.multiply(radixLong).subtract(this);
                 return div.toString(radix) + rem.toInt().toString(radix);
             } else {
-                return '-' + this.negate().toString(radix);
+                var result = '-' + this.negate().toString(radix);
+                if (radix === 10) {
+                    this.string_ = result;
+                }
+                return result;
             }
         }
 
@@ -214,7 +221,11 @@
 
             rem = remDiv;
             if (rem.isZero()) {
-                return digits + result;
+                result = digits + result;
+                if (radix === 10) {
+                    this.string_ = result;
+                }
+                return result;
             } else {
                 while (digits.length < 6) {
                     digits = '0' + digits;
