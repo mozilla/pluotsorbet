@@ -342,6 +342,15 @@
     *     if the given one is greater.
     */
     Long.prototype.compare = function (other) {
+        if (other.isZero()) {
+            if (this.isZero()) {
+                return 0;
+            } else if (this.high_ < 0) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
         if (this.equals(other)) {
             return 0;
         }
