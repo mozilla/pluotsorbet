@@ -48,6 +48,9 @@ function promptForMessageText() {
     el.querySelector('p.verificationText').textContent = MIDlet.SMSDialogVerificationText;
 
     var input = el.querySelector('input');
+    if (MIDlet.SMSDialogInputType) {
+      input.type = MIDlet.SMSDialogInputType;
+    }
     var btnCancel = el.querySelector('button.cancel');
     var btnDone = el.querySelector('button.recommend');
 
@@ -55,6 +58,15 @@ function promptForMessageText() {
     input.addEventListener('input', function() {
         btnDone.disabled = (input.value.length === 0);
     });
+    if (MIDlet.SMSDialogInputMaxLength) {
+      input.onkeydown = function(e) {
+        if (input.value.length >= MIDlet.SMSDialogInputMaxLength) {
+          return e.keyCode !== 0 && !util.isPrintable(e.keyCode);
+        }
+
+        return true;
+      }
+    }
 
     btnCancel.addEventListener('click', function() {
         console.warn('SMS prompt canceled.');
