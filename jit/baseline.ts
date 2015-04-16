@@ -71,7 +71,7 @@ module J2ME {
    * Emits array bounds checks. Although this is necessary for correctness, most
    * applications work without them.
    */
-  export var emitCheckArrayBounds = false;
+  export var emitCheckArrayBounds = true;
 
   /**
    * Inline calls to runtime methods whenever possible.
