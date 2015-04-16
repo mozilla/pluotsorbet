@@ -89,6 +89,11 @@
         }
     };
 
+    var LongCache = new Array(4093);
+    for (var i = 0; i < LongCache.length; i++) {
+      LongCache[i] = null;
+    }
+
     /**
     * Returns a Long representing the 64-bit integer that comes by concatenating
     * the given high and low bits.  Each is assumed to use 32 bits.
@@ -107,7 +112,14 @@
                 case 4: return FOUR;
             }
         }
-        return new Long(lowBits, highBits);
+        // Cache Longs.
+        var index = (((((lowBits * 32) | 0) + highBits) | 0) & 0x7fffffff) % 4093;
+        var entry = LongCache[index];
+        if (entry && entry.high_ === highBits && entry.low_ === lowBits) {
+            return entry;
+        } else {
+            return (LongCache[index] = new Long(lowBits, highBits));
+        }
     };
 
     /**
