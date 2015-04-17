@@ -96,7 +96,17 @@
     * @param {number} highBits The high 32-bits.
     * @return {!Long} The corresponding Long value.
     */
+    var count = 0;
     function fromBits(lowBits, highBits) {
+        if (highBits === 0) {
+            switch (lowBits) {
+                case 0: return ZERO;
+                case 1: return ONE;
+                case 2: return TWO;
+                case 3: return THREE;
+                case 4: return FOUR;
+            }
+        }
         return new Long(lowBits, highBits);
     };
 
@@ -345,6 +355,14 @@
     * @return {!Long} The sum of this and the given Long.
     */
     Long.prototype.add = function (other) {
+        if (other === ONE && this.high_ === 0) {
+            switch (this.low_) {
+                case 0: return ONE;
+                case 1: return TWO;
+                case 2: return THREE;
+                case 3: return FOUR;
+            }
+        }
         // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
         var a48 = this.high_ >>> 16;
         var a32 = this.high_ & 0xFFFF;
@@ -620,6 +638,9 @@
     *     zeros placed into the new leading bits.
     */
     Long.prototype.shiftRightUnsigned = function (numBits) {
+        if (this === ZERO) {
+            return this;
+        }
         numBits &= 63;
         if (numBits == 0) {
             return this;
@@ -638,6 +659,10 @@
 
     var ZERO = fromInt(0);
     var ONE = fromInt(1);
+    var TWO = fromInt(2);
+    var THREE = fromInt(3);
+    var FOUR = fromInt(4);
+
     var NEG_ONE = fromInt(-1);
     var MAX_VALUE = fromBits(0xFFFFFFFF, 0x7FFFFFFF);
     var MIN_VALUE = fromBits(0, 0x80000000);
