@@ -102,8 +102,9 @@
     * @param {number} highBits The high 32-bits.
     * @return {!Long} The corresponding Long value.
     */
-    var count = 0;
     function fromBits(lowBits, highBits) {
+        // Don't allocate Long objects for -1, 0, 1, 2, 3, 4. These low/high bit patterns occur
+        // frequently in computations.
         if (highBits === 0) {
             switch (lowBits) {
                 case 0: return ZERO;
@@ -112,6 +113,8 @@
                 case 3: return THREE;
                 case 4: return FOUR;
             }
+        } else if (highBits === -1 && lowBits === -1) {
+          return NEG_ONE;
         }
         // Cache Longs.
         var index = (((((lowBits * 32) | 0) + highBits) | 0) & 0x7fffffff) % 4093;
