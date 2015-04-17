@@ -114,14 +114,17 @@
                 case 4: return FOUR;
             }
         } else if (highBits === -1 && lowBits === -1) {
-          return NEG_ONE;
+            return NEG_ONE;
         }
-        // Cache Longs.
+        // Cache recently used Longs by hashing low/high bits to the range 0 -> 4092.  Most
+        // Long objects are redundant temporarily computed values so they benefit from this
+        // caching scheme.
         var index = (((((lowBits * 32) | 0) + highBits) | 0) & 0x7fffffff) % 4093;
         var entry = LongCache[index];
         if (entry && entry.high_ === highBits && entry.low_ === lowBits) {
             return entry;
         } else {
+            // Update the cache entry on a miss, thus adapting to new computation phases.
             return (LongCache[index] = new Long(lowBits, highBits));
         }
     };
@@ -390,6 +393,8 @@
     * @return {!Long} The sum of this and the given Long.
     */
     Long.prototype.add = function (other) {
+        // 1 + 0, 1 + 1, 1 + 2, 1 + 3 are frequently occuring operations, special
+        // case them to avoid extra computations.
         if (other === ONE && this.high_ === 0) {
             switch (this.low_) {
                 case 0: return ONE;
