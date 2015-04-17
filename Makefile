@@ -319,7 +319,7 @@ benchmarks: java tests
 	make -C bench
 
 clean:
-	rm -rf bld
+	rm -rf bld $(PACKAGE_DIR)
 	rm -f $(PREPROCESS_DESTS)
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean
