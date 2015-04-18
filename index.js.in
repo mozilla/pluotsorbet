@@ -744,3 +744,7 @@ DumbPipe.registerOpener("backgroundCheck", function(message, sender) {
     });
   }
 });
+
+DumbPipe.registerOpener("mozActivity", function(message, sender) {
+  new MozActivity(message);
+});
