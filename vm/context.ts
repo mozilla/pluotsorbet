@@ -3,6 +3,9 @@
  Copyright (c) 2013 Yaroslav Gaponov <yaroslav.gaponov@gmail.com>
 */
 
+declare var Shumway;
+declare var profiling;
+
 interface Array<T> {
   push2: (value) => void;
   pop2: () => any;
@@ -78,8 +81,6 @@ module J2ME {
     code: Uint8Array;
     pc: number;
     opPC: number;
-    cp: any;
-    localBase: number;
     lockObject: java.lang.Object;
 
     static dirtyStack: Frame [] = [];
@@ -87,42 +88,41 @@ module J2ME {
     /**
      * Denotes the start of the context frame stack.
      */
-    static Start: Frame = Frame.create(null, null, 0);
+    static Start: Frame = Frame.create(null, null);
 
     /**
      * Marks a frame set.
      */
-    static Marker: Frame = Frame.create(null, null, 0);
+    static Marker: Frame = Frame.create(null, null);
 
     static isMarker(frame: Frame) {
       return frame.methodInfo === null;
     }
 
-    constructor(methodInfo: MethodInfo, local: any [], localBase: number) {
+    constructor(methodInfo: MethodInfo, local: any []) {
       frameCount ++;
-      this.reset(methodInfo, local, localBase);
+      this.stack = [];
+      this.reset(methodInfo, local);
     }
 
-    reset(methodInfo: MethodInfo, local: any [], localBase: number) {
+    reset(methodInfo: MethodInfo, local: any []) {
       this.methodInfo = methodInfo;
-      this.cp = methodInfo ? methodInfo.classInfo.constantPool : null;
       this.code = methodInfo ? methodInfo.codeAttribute.code : null;
       this.pc = 0;
       this.opPC = 0;
-      this.stack = [];
+      this.stack.length = 0;
       this.local = local;
-      this.localBase = localBase;
       this.lockObject = null;
     }
 
-    static create(methodInfo: MethodInfo, local: any [], localBase: number): Frame {
+    static create(methodInfo: MethodInfo, local: any []): Frame {
       var dirtyStack = Frame.dirtyStack;
       if (dirtyStack.length) {
         var frame = dirtyStack.pop();
-        frame.reset(methodInfo, local, localBase);
+        frame.reset(methodInfo, local);
         return frame;
       } else {
-        return new Frame(methodInfo, local, localBase);
+        return new Frame(methodInfo, local);
       }
     }
 
@@ -131,17 +131,8 @@ module J2ME {
       Frame.dirtyStack.push(this);
     }
 
-    getLocal(i: number): any {
-      return this.local[this.localBase + i];
-    }
-
-    setLocal(i: number, value: any) {
-      this.local[this.localBase + i] = value;
-    }
-
     incLocal(i: number, value: any) {
-      var j = this.localBase + i;
-      this.local[j] = this.local[j] + value | 0;
+      this.local[i] += value | 0;
     }
 
     read8(): number {
@@ -237,28 +228,28 @@ module J2ME {
         case Bytecodes.ILOAD:
         case Bytecodes.FLOAD:
         case Bytecodes.ALOAD:
-          stack.push(this.getLocal(this.read16()));
+          stack.push(this.local[this.read16()]);
           break;
         case Bytecodes.LLOAD:
         case Bytecodes.DLOAD:
-          stack.push2(this.getLocal(this.read16()));
+          stack.push2(this.local[this.read16()]);
           break;
         case Bytecodes.ISTORE:
         case Bytecodes.FSTORE:
         case Bytecodes.ASTORE:
-          this.setLocal(this.read16(), stack.pop());
+          this.local[this.read16()] = stack.pop();
           break;
         case Bytecodes.LSTORE:
         case Bytecodes.DSTORE:
-          this.setLocal(this.read16(), stack.pop2());
+          this.local[this.read16()] = stack.pop2();
           break;
         case Bytecodes.IINC:
           var index = this.read16();
           var value = this.read16Signed();
-          this.setLocal(index, this.getLocal(index) + value);
+          this.local[index] += value;
           break;
         case Bytecodes.RET:
-          this.pc = this.getLocal(this.read16());
+          this.pc = this.local[this.read16()];
           break;
         default:
           var opName = Bytecodes[op];
@@ -346,12 +337,13 @@ module J2ME {
      *   js call stack:  I ..... I .......
      *
      */
-    frames: Frame [];
+    private frames: Frame [];
     bailoutFrames: Frame [];
     lockTimeout: number;
     lockLevel: number;
     thread: java.lang.Thread;
     writer: IndentingWriter;
+    methodTimeline: any;
     constructor(public runtime: Runtime) {
       var id = this.id = Context._nextId ++;
       this.frames = [];
@@ -361,6 +353,10 @@ module J2ME {
       this.writer = new IndentingWriter(false, function (s) {
         console.log(s);
       });
+      if (profile && typeof Shumway !== "undefined") {
+        this.methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Thread: " + this.runtime.id + ":" + this.id);
+        methodTimelines.push(this.methodTimeline);
+      }
     }
 
     public static color(id) {
@@ -409,6 +405,21 @@ module J2ME {
       return frames[frames.length - 1];
     }
 
+    popFrame(): Frame {
+      var frame = this.frames.pop();
+      if (profile) {
+        this.leaveMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
+      }
+      return frame;
+    }
+
+    pushFrame(frame: Frame) {
+      if (profile) {
+        this.enterMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
+      }
+      this.frames.push(frame);
+    }
+
     private popMarkerFrame() {
       var marker = this.frames.pop();
       release || assert (Frame.isMarker(marker));
@@ -416,7 +427,8 @@ module J2ME {
 
     executeFrame(frame: Frame) {
       var frames = this.frames;
-      frames.push(Frame.Marker, frame);
+      frames.push(Frame.Marker);
+      this.pushFrame(frame);
 
       try {
         var returnValue = VM.execute();
@@ -476,8 +488,10 @@ module J2ME {
     }
 
     start(frames: Frame[]) {
-      frames.unshift(Frame.Start);
-      this.frames = frames;
+      this.frames.push(Frame.Start);
+      for (var i = 0; i < frames.length; i++) {
+        this.pushFrame(frames[i]);
+      }
       this.resume();
     }
 
@@ -507,6 +521,7 @@ module J2ME {
           return;
         }
       } while (this.current() !== Frame.Start);
+      this.clearCurrentContext();
       this.kill();
     }
 
@@ -617,12 +632,38 @@ module J2ME {
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
-      var frame = Frame.create(methodInfo, local, 0);
+      var frame = Frame.create(methodInfo, local);
       frame.stack = stack;
       frame.pc = nextPC;
       frame.opPC = pc;
       frame.lockObject = lockObject;
       this.bailoutFrames.unshift(frame);
+    }
+
+    /**
+     * Re-enters all the frames that are currently on the stack so the full stack
+     * trace shows up in the profiler.
+     */
+    restartMethodTimeline() {
+      for (var i = 0; i < this.frames.length; i++) {
+        var frame = this.frames[i];
+        if (J2ME.Frame.isMarker(frame)) {
+          continue;
+        }
+        this.methodTimeline.enter(frame.methodInfo.implKey, MethodType.Interpreted);
+      }
+    }
+
+    enterMethodTimeline(key: string, methodType: MethodType) {
+      if (profiling) {
+        this.methodTimeline.enter(key, MethodType[methodType]);
+      }
+    }
+
+    leaveMethodTimeline(key: string, methodType: MethodType) {
+      if (profiling) {
+        this.methodTimeline.leave(key, MethodType[methodType]);
+      }
     }
   }
 }

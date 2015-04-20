@@ -1,4 +1,4 @@
-///<reference path='build/j2me-jsc.d.ts' />
+///<reference path='bld/j2me-jsc.d.ts' />
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
 
@@ -71,6 +71,8 @@ jsGlobal.config = {
 jsGlobal.Promise = function() {
 }
 
+var Native = {};
+
 module J2ME {
   declare var process, require, global, quit, help, scriptArgs, arguments, snarf, ZipFile, JARStore;
 
@@ -84,7 +86,7 @@ module J2ME {
     }
   }
 
-  loadFiles("libs/long.js", "blackBox.js", "build/j2me-jsc.js", "libs/zipfile.js", "libs/jarstore.js", "libs/encoding.js", "util.js");
+  loadFiles("libs/long.js", "blackBox.js", "bld/j2me-jsc.js", "libs/zipfile.js", "libs/jarstore.js", "libs/encoding.js", "util.js");
 
   phase = ExecutionPhase.Compiler;
 

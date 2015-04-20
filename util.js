@@ -126,12 +126,34 @@ var util = (function () {
     return chars;
   }
 
+  // rgbaToCSS() can be called frequently. Using |rgbaBuf| avoids creating
+  // many intermediate strings.
+  var rgbaBuf = ["rgba(", 0, ",", 0, ",", 0, ",", 0, ")"];
+
+  function rgbaToCSS(r, g, b, a) {
+    rgbaBuf[1] = r;
+    rgbaBuf[3] = g;
+    rgbaBuf[5] = b;
+    rgbaBuf[7] = a;
+    return rgbaBuf.join('');
+  }
+
   function abgrIntToCSS(pixel) {
     var a = (pixel >> 24) & 0xff;
     var b = (pixel >> 16) & 0xff;
     var g = (pixel >> 8) & 0xff;
     var r = pixel & 0xff;
-    return "rgba(" + r + "," + g + "," + b + "," + (a/255) + ")";
+    return rgbaToCSS(r, g, b, a/255);
+  }
+
+  function isPrintable(val) {
+    // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
+    return ((val >= 48 && val <= 57)  ||  // number keys
+            val === 32 || val === 13 ||   // spacebar & return key(s) (if you want to allow carriage returns)
+            (val >= 65 && val <= 90)   || // letter keys
+            (val >= 96 && val <= 111)  || // numpad keys
+            (val >= 186 && val <= 192) || // ;=,-./` (in order)
+            (val >= 219 && val <= 222));  // [\]' (in order)
   }
 
   return {
@@ -147,6 +169,8 @@ var util = (function () {
     compareTypedArrays: compareTypedArrays,
     pad: pad,
     toCodePointArray: toCodePointArray,
+    rgbaToCSS: rgbaToCSS,
     abgrIntToCSS: abgrIntToCSS,
+    isPrintable: isPrintable,
   };
 })();

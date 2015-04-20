@@ -17,6 +17,8 @@
 
 package asteroids;
 
+import com.sun.cldchi.jvm.JVM;
+
 import javax.microedition.midlet.*;
 import javax.microedition.lcdui.*;
 import java.util.*;
@@ -222,6 +224,8 @@ public class Field extends Canvas implements Runnable {
      * Overriden from Canvas.
      */
     protected void paint(Graphics g) {
+        long paintStartTime = JVM.monotonicTimeMillis();
+
         Graphics gr = (_buffer != null) ? _buffer.getGraphics() : g;
         gr.setColor(0x00FFFFFF);;
         gr.fillRect(0, 0, getWidth() - 1, getHeight() - 1);
@@ -281,6 +285,11 @@ public class Field extends Canvas implements Runnable {
         }
         if (_buffer != null) {
             g.drawImage(_buffer, 0, 0, Graphics.TOP|Graphics.LEFT);
+        }
+
+        paintavg += JVM.monotonicTimeMillis() - paintStartTime;
+        if (frames % 60 == 0) {
+            System.out.println("paintavg(x1000) = " + (1000 * Field.paintavg / Field.frames));
         }
     }
 
@@ -375,11 +384,10 @@ public class Field extends Canvas implements Runnable {
      */
     public void run() {
         try {
-            while (!_paused) {
-                long time1 = System.currentTimeMillis();
+            if (!_paused) {
+                long time1 = JVM.monotonicTimeMillis();
                 long time2;
                 long time3;
-                long ellapsed = 0;
                 if (!_frozen) {
 
                // If the field has been cleared, change the level.
@@ -440,30 +448,21 @@ public class Field extends Canvas implements Runnable {
                    }
 
                     // Determine the time spent to compute the frame.
-                    time2 = System.currentTimeMillis();
+                    time2 = JVM.monotonicTimeMillis();
                     computeavg += (time2 - time1);
 
-                    // Force a screen refresh.
+                    // We're done computing the frame so schedule
+                    // a repaint event
                     repaint();
-                    serviceRepaints();
 
-                    // Determine the time spent to draw the frame.
-                    time3 = System.currentTimeMillis();
-                    paintavg += (time3 - time2);
                     frames++;
+                }
 
-                    // Determine the total time for the frame.
-                    ellapsed = time3 - time1;
-                }
-                // Sleep for a while (at least 20ms)
-                try {
-                  Thread.currentThread().sleep(Math.max(50 - ellapsed, 20));
-                  // Thread.yield();
-                } catch(java.lang.InterruptedException e) {
-                }
+                // Schedule another step of frame computation
+                Game.display.callSerially(this);
+
               if (frames % 60 == 0) {
-                System.out.println("computeavg = " + (Field.computeavg / Field.frames));
-                System.out.println("paintavg = " + (Field.paintavg / Field.frames));
+                System.out.println("computeavg(x1000) = " + (1000 * Field.computeavg / Field.frames));
               }
             }
         } catch (Exception e) {

@@ -163,3 +163,74 @@ Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)
 // Many tests create FileConnection objects to files with the "/" root,
 // so add it to the list of valid roots.
 MIDP.fsRoots.push("/");
+
+Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(label) {
+  if (typeof Benchmark !== "undefined") {
+    asyncImpl("V", Benchmark.sampleMemory().then(function(memory) {
+      var keys = ["totalSize", "domSize", "styleSize", "jsObjectsSize", "jsStringsSize", "jsOtherSize", "otherSize"];
+      var rows = [];
+      rows.push(keys);
+      rows.push(keys.map(function(k) { return memory[k] }));
+      var RIGHT = Benchmark.RIGHT;
+      var alignment = [RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT];
+      console.log((J2ME.fromJavaString(label) || "Memory sample") + ":\n" + Benchmark.prettyTable(rows, alignment));
+    }));
+  }
+};
+
+Native["org/mozilla/Test.callSyncNative.()V"] = function() {
+  // A noop sync implementation for comparison with the noop async one.
+};
+
+Native["org/mozilla/Test.callAsyncNative.()V"] = function() {
+  // A noop async implementation for comparison with the noop sync one.
+  asyncImpl("V", new Promise(function (resolve, reject) {
+    resolve();
+  }));
+
+  // This is even faster, but not very handy, unless your native is really
+  // synchronous, and you just want to force the thread to yield.
+  // asyncImpl("V", Promise.resolve());
+};
+
+var readerOpened = false;
+var readerOpenedWaiting = null;
+
+Native["tests/recordstore/ReaderMIDlet.readerOpened.()V"] = function() {
+  readerOpened = true;
+
+  if (readerOpenedWaiting) {
+    readerOpenedWaiting();
+  }
+};
+
+Native["tests/recordstore/WriterMIDlet.waitReaderOpened.()V"] = function() {
+  asyncImpl("V", new Promise(function(resolve, reject) {
+    if (readerOpened) {
+      resolve();
+    } else {
+      readerOpenedWaiting = resolve;
+    }
+  }));
+};
+
+var writerWrote = false;
+var writerWroteWaiting = null;
+
+Native["tests/recordstore/WriterMIDlet.writerWrote.()V"] = function() {
+  writerWrote = true;
+
+  if (writerWroteWaiting) {
+    writerWroteWaiting();
+  }
+};
+
+Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function() {
+  asyncImpl("V", new Promise(function(resolve, reject) {
+    if (writerWrote) {
+      resolve();
+    } else {
+      writerWroteWaiting = resolve;
+    }
+  }));
+};

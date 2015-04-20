@@ -232,16 +232,9 @@ var TextEditorProvider = (function() {
         activate: function() {
             this.textEditorElem.onkeydown = function(e) {
                 if (this.getContentSize() >= this.getAttribute("maxlength")) {
-                    // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
-                    if ((e.keyCode >= 48 && e.keyCode <= 57)  || // number keys
-                        e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
-                        (e.keyCode >= 65 && e.keyCode <= 90)   || // letter keys
-                        (e.keyCode >= 96 && e.keyCode <= 111)  || // numpad keys
-                        (e.keyCode >= 186 && e.keyCode <= 192) || // ;=,-./` (in order)
-                        (e.keyCode >= 219 && e.keyCode <= 222)) { // [\]' (in order)
-                        return false;
-                    }
+                    return !util.isPrintable(e.keyCode);
                 }
+
                 return true;
             }.bind(this);
 
@@ -262,7 +255,7 @@ var TextEditorProvider = (function() {
 
                 // Replace <br> by \n so that textContent attribute doesn't
                 // strip new lines.
-                html = html.replace("<br>", "\n", "g");
+                html = html.replace(/<br>/g, "\n");
 
                 // Convert the emoji images back to characters.
                 // The original character is stored in the alt attribute of its
@@ -294,7 +287,7 @@ var TextEditorProvider = (function() {
 
         setContent: function(content) {
             // Filter all the \r characters as we use \n.
-            content = content.replace("\r", "", "g");
+            content = content.replace(/\r/g, "");
 
             this.content = content;
 
@@ -322,7 +315,7 @@ var TextEditorProvider = (function() {
             }.bind(this);
 
             // Replace "\n" by <br>
-            html = html.replace("\n", "<br>", "g");
+            html = html.replace(/\n/g, "<br>");
 
             html = html.replace(emoji.regEx, toImg) + "<br>";
 
@@ -471,6 +464,15 @@ var TextEditorProvider = (function() {
 
     InputEditor.prototype = extendsObject({
         activate: function() {
+            this.textEditorElem.onkeydown = function(e) {
+                // maxlength is ignored when the input type is "number"
+                if (this.textEditorElem.value.length >= this.getAttribute("maxlength")) {
+                    return e.keyCode !== 0 && !util.isPrintable(e.keyCode);
+                }
+
+                return true;
+            }.bind(this);
+
             this.textEditorElem.oninput = function() {
                 this.content = this.textEditorElem.value;
                 if (this.oninputCallback) {
@@ -539,8 +541,7 @@ var TextEditorProvider = (function() {
         },
 
         getContentHeight: function() {
-            var lineHeight = this.font.klass.classInfo.getField("I.height.I").get(this.font);
-            return ((this.content.match(/\n/g) || []).length + 1) * lineHeight;
+            return ((this.content.match(/\n/g) || []).length + 1) * this.font.height;
         },
     }, CommonEditorPrototype);
 

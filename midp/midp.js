@@ -76,31 +76,12 @@ var MIDP = (function() {
     console.info(J2ME.fromJavaString(message));
   };
 
-  Native["com/sun/midp/security/Permissions.loadGroupList.()[Ljava/lang/String;"] = function() {
-    return J2ME.newStringArray(0);
-  };
-
-  Native["com/sun/midp/security/Permissions.getGroupMessages.(Ljava/lang/String;)[Ljava/lang/String;"] = function(jName) {
-    return null;
-  };
-
-  Native["com/sun/midp/security/Permissions.loadGroupPermissions.(Ljava/lang/String;)[Ljava/lang/String;"] = function(name) {
-    return J2ME.newStringArray(0);
-  };
-
-  Native["com/sun/midp/security/Permissions.loadDomainList.()[Ljava/lang/String;"] = function() {
-    return J2ME.newStringArray(0);
-  };
-
   Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
     return 1;
   };
 
   Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
     return 1;
-  };
-
-  Native["com/sun/midp/security/Permissions.loadingFinished.()V"] = function() {
   };
 
   Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
@@ -132,12 +113,12 @@ var MIDP = (function() {
 
   Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(state) {
     var suiteId = (config.midletClassName === "internal") ? -1 : 1;
-    state.klass.classInfo.getField("I.suiteId.I").set(state, suiteId);
-    state.klass.classInfo.getField("I.midletClassName.Ljava/lang/String;").set(state, J2ME.newString(config.midletClassName));
+    state.suiteId = suiteId;
+    state.midletClassName = J2ME.newString(config.midletClassName);
     var args = config.args;
-    state.klass.classInfo.getField("I.arg0.Ljava/lang/String;").set(state, J2ME.newString((args.length > 0) ? args[0] : ""));
-    state.klass.classInfo.getField("I.arg1.Ljava/lang/String;").set(state, J2ME.newString((args.length > 1) ? args[1] : ""));
-    state.klass.classInfo.getField("I.arg2.Ljava/lang/String;").set(state, J2ME.newString((args.length > 2) ? args[2] : ""));
+    state.arg0 = J2ME.newString((args.length > 0) ? args[0] : "");
+    state.arg1 = J2ME.newString((args.length > 1) ? args[1] : "");
+    state.arg2 = J2ME.newString((args.length > 2) ? args[2] : "");
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {
@@ -170,10 +151,6 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(midletIsolateId) {
-  };
-
-  Native["com/sun/midp/main/AppIsolateMIDletSuiteLoader.allocateReservedResources0.()Z"] = function() {
-    return 1;
   };
 
   Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
@@ -538,7 +515,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function() {
-    this.klass.classInfo.getField("I.pushInterruptSetting.B").set(this, 1);
+    this.pushInterruptSetting = 1;
     console.warn("com/sun/midp/midletsuite/SuiteSettings.load.()V incomplete");
   };
 
@@ -548,7 +525,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function() {
     // The MIDlet has to be trusted for opening SSL connections using port 443.
-    this.klass.classInfo.getField("I.trusted.Z").set(this, 1);
+    this.trusted = 1;
     console.warn("com/sun/midp/midletsuite/InstallInfo.load.()V incomplete");
   };
 
@@ -894,7 +871,7 @@ var MIDP = (function() {
     var value = MIDP.localizedStrings[id];
 
     if (!value) {
-      throw $.newIllegalStateException();
+      throw $.newIllegalStateException("String with ID (" + id + ") doesn't exist");
     }
 
     return J2ME.newString(value);
@@ -1189,8 +1166,14 @@ var MIDP = (function() {
     return J2ME.newString("");
   };
 
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
+
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z", 0);
+
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", null);
+
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
-    console.warn("com/sun/j2me/content/AppProxy.isInSvmMode.()Z not implemented");
+    // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;
   };
 

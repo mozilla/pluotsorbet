@@ -12,10 +12,6 @@ if (typeof console === "undefined") {
   }
 }
 
-console.print = function (c) {
-  putstr(String.fromCharCode(c));
-};
-
 console.info = function (c) {
   putstr(String.fromCharCode(c));
 };
@@ -112,18 +108,23 @@ var profileTimeline = false;
 
 try {
   if (profileTimeline) {
-    load("build/shumway.js");
+    load("bld/shumway.js");
   }
-  load("libs/relooper.js", "build/j2me.js","libs/zipfile.js", "blackBox.js",
+  load("libs/relooper.js", "bld/j2me.js","libs/zipfile.js", "blackBox.js",
     "libs/encoding.js", "util.js", "libs/jarstore.js",
-    "override.js", "native.js", "string.js", "tests/override.js",
+    "native.js", "string.js",
     "midp/midp.js", "midp/gestures.js",
     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
-    "build/classes.jar.js");
+    "bld/classes.jar.js");
 
-  // load("build/classes.jar.js");
-  // load("build/program.jar.js");
-  // load("build/tests.jar.js");
+  // load("bld/classes.jar.js");
+  // load("bld/program.jar.js");
+  // load("bld/tests.jar.js");
+
+  // Define this down here so it overrides the version defined by native.js.
+  console.print = function (c) {
+    putstr(String.fromCharCode(c));
+  };
 
   var dump = putstr;
 

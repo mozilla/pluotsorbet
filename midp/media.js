@@ -73,6 +73,7 @@ Media.extToFormat = new Map([
     ["ogg", "ogg"],
     ["mp4", "MPEG4"],
     ["webm", "WebM"],
+    ["amr", "amr"],
 ]);
 
 Media.contentTypeToFormat = new Map([
@@ -227,8 +228,6 @@ function AudioPlayer(playerContainer) {
         }
     }.bind(this));
 
-    /* @type HTMLAudioElement */
-    this.audio = new Audio();
     this.paused = true;
     this.loaded = false;
     this.volume = 100;
@@ -357,11 +356,7 @@ ImagePlayer.prototype.realize = function() {
         };
 
         if (this.url.startsWith("file")) {
-            fs.open(this.url.substring(7), (function(fd) {
-                var imgData = fs.read(fd);
-                fs.close(fd);
-                this.image.src = URL.createObjectURL(new Blob([ imgData ]));
-            }).bind(this));
+            this.image.src = URL.createObjectURL(fs.getBlob(this.url.substring(7)));
         } else {
             this.image.src = this.url;
         }
@@ -448,12 +443,8 @@ VideoPlayer.prototype.realize = function() {
         };
 
         if (this.playerContainer.url.startsWith("file")) {
-            fs.open(this.playerContainer.url.substring(7), (function(fd) {
-                var videoData = fs.read(fd);
-                fs.close(fd);
-                this.video.src = URL.createObjectURL(new Blob([ videoData ]),
-                                                     { type: this.playerContainer.contentType });
-            }).bind(this));
+            this.video.src = URL.createObjectURL(fs.getBlob(this.playerContainer.url.substring(7)),
+                                                 { type: this.playerContainer.contentType });
         } else {
             this.video.src = this.playerContainer.url;
         }
@@ -609,11 +600,11 @@ ImageRecorder.prototype.getHeight = function() {
 }
 
 ImageRecorder.prototype.setLocation = function(x, y, w, h) {
-    var displayElem = document.getElementById("display");
+    var displayContainer = document.getElementById("display-container");
     this.sender({
         type: "setPosition",
-        x: x + displayElem.offsetLeft,
-        y: y + displayElem.offsetTop,
+        x: x + displayContainer.offsetLeft,
+        y: y + displayContainer.offsetTop,
         w: w,
         h: h,
     });

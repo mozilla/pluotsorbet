@@ -13,8 +13,10 @@ public class GestureInteractiveZone {
     public static final int GESTURE_RECOGNITION_END = 0x8000;
     public static final int GESTURE_ALL = 0xC0FF;
 
+    native void init(int gestures);
+
     public GestureInteractiveZone(int gestures) throws IllegalArgumentException {
-        // Overridden in midp/gestures.js
+        init(gestures);
     }
 
     public GestureInteractiveZone(int gestures, int timeInterval) throws IllegalArgumentException {

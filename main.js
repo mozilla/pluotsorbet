@@ -3,9 +3,11 @@
 
 'use strict';
 
-// The real profile variable declaration in config.ts is folded away by closure. Until we
+// The real profile and release variable declaration in config.ts are folded away by closure. Until we
 // make closure process this file also, make sure that |profile| is defined in this file.
+var release;
 var profile;
+
 var jvm = new JVM();
 
 if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
@@ -13,10 +15,6 @@ if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
 }
 
 var jars = [];
-
-if (config.midletClassName == "RunTests") {
-  jars.push("tests/tests.jar");
-}
 
 if (typeof Benchmark !== "undefined") {
   Benchmark.startup.init();
@@ -151,7 +149,6 @@ if (config.downloadJAD) {
 
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
-                       loadScript("tests/override.js"),
                        loadScript("tests/mozactivitymock.js"),
                        loadScript("tests/config.js"));
 }
@@ -167,10 +164,31 @@ function toggle(button) {
 var bigBang = 0;
 
 function startTimeline() {
+  jsGlobal.START_TIME = performance.now();
+  jsGlobal.profiling = true;
   requestTimelineBuffers(function (buffers) {
     for (var i = 0; i < buffers.length; i++) {
-      buffers[i].reset();
+      buffers[i].reset(jsGlobal.START_TIME);
     }
+    for (var runtime of J2ME.RuntimeTemplate.all) {
+      for (var ctx of runtime.allCtxs) {
+        ctx.restartMethodTimeline();
+      }
+    }
+  });
+}
+
+function stopTimeline(cb) {
+  jsGlobal.profiling = false;
+  requestTimelineBuffers(function(buffers) {
+    // Some of the methods may have not exited yet. Leave them
+    // so they show up in the profile.
+    for (var i = 0; i < buffers.length; i++) {
+      while(buffers[i].depth > 0) {
+        buffers[i].leave();
+      }
+    }
+    cb(buffers);
   });
 }
 
@@ -180,7 +198,7 @@ function stopAndSaveTimeline() {
   var writer = new J2ME.IndentingWriter(false, function (s) {
     output.push(s);
   });
-  requestTimelineBuffers(function (buffers) {
+  stopTimeline(function (buffers) {
     var snapshots = [];
     for (var i = 0; i < buffers.length; i++) {
       snapshots.push(buffers[i].createSnapshot());
@@ -211,6 +229,11 @@ function start() {
   // For profiler mode 2, we start the timeline and stop it later by calling |stopAndSaveTimeline|.
   profile === 2 && startTimeline();
   jvm.startIsolate0(config.main, config.args);
+}
+
+// If we're not running a MIDlet, we need to wait everything to be loaded.
+if (!config.midletClassName || config.midletClassName == "RunTests") {
+  loadingPromises = loadingPromises.concat(loadingMIDletPromises);
 }
 
 Promise.all(loadingPromises).then(start, function (reason) {
@@ -394,11 +417,15 @@ window.onload = function() {
 
 function requestTimelineBuffers(fn) {
   if (J2ME.timeline) {
-    fn([
-      J2ME.timeline,
+    var activeTimeLines = [
       J2ME.threadTimeline,
-      J2ME.methodTimeline
-    ]);
+      J2ME.timeline,
+    ];
+    var methodTimeLines = J2ME.methodTimelines;
+    for (var i = 0; i < methodTimeLines.length; i++) {
+      activeTimeLines.push(methodTimeLines[i]);
+    }
+    fn(activeTimeLines);
     return;
   }
   return fn([]);
@@ -420,11 +447,12 @@ var profiler = profile === 1 ? (function() {
   var elPageContainer = document.getElementById("pageContainer");
   elPageContainer.classList.add("profile-mode");
 
+  var elProfilerContainer = document.getElementById("profilerContainer");
   var elProfilerToolbar = document.getElementById("profilerToolbar");
   var elProfilerMessage = document.getElementById("profilerMessage");
   var elProfilerPanel = document.getElementById("profilePanel");
-  var elBtnMinimize = document.getElementById("profilerMinimizeButton");
   var elBtnStartStop = document.getElementById("profilerStartStop");
+  var elBtnAdjustHeight = document.getElementById("profilerAdjustHeight");
 
   var controller;
   var startTime;
@@ -434,6 +462,7 @@ var profiler = profile === 1 ? (function() {
   var Profiler = function() {
     controller = new Shumway.Tools.Profiler.Controller(elProfilerPanel);
     elBtnStartStop.addEventListener("click", this._onStartStopClick.bind(this));
+    elBtnAdjustHeight.addEventListener("click", this._onAdjustHeightClick.bind(this));
 
     var self = this;
     window.addEventListener("keypress", function (event) {
@@ -444,12 +473,7 @@ var profiler = profile === 1 ? (function() {
   }
 
   Profiler.prototype.start = function(maxTime, resetTimelines) {
-    window.profile = true;
-    requestTimelineBuffers(function (buffers) {
-      for (var i = 0; i < buffers.length; i++) {
-        buffers[i].reset();
-      }
-    });
+    startTimeline();
     controller.deactivateProfile();
     maxTime = maxTime || 0;
     elProfilerToolbar.classList.add("withEmphasis");
@@ -463,7 +487,7 @@ var profiler = profile === 1 ? (function() {
   }
 
   Profiler.prototype.createProfile = function() {
-    requestTimelineBuffers(function (buffers) {
+    stopTimeline(function (buffers) {
       controller.createProfile(buffers);
       elProfilerToolbar.classList.remove("withEmphasis");
       elBtnStartStop.textContent = "Start";
@@ -471,7 +495,6 @@ var profiler = profile === 1 ? (function() {
       clearTimeout(timeoutHandle);
       timerHandle = 0;
       timeoutHandle = 0;
-      window.profile = false;
       showTimeMessage(false);
     });
   }
@@ -487,6 +510,10 @@ var profiler = profile === 1 ? (function() {
   Profiler.prototype.resize = function() {
     controller.resize();
   }
+
+  Profiler.prototype._onAdjustHeightClick = function(e) {
+    elProfilerContainer.classList.toggle("max");
+  };
 
   Profiler.prototype._onMinimizeClick = function(e) {
     if (elProfilerContainer.classList.contains("collapsed")) {

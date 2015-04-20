@@ -25,17 +25,18 @@ module J2ME {
    * at the right spots.
    */
   export var yieldMap = {
+    "com/sun/midp/lcdui/RepaintEventProducer.waitForAnimationFrame.()V": YieldReason.Root,
     "com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V": YieldReason.Root,
     "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V": YieldReason.Root,
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V": YieldReason.Root,
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V": YieldReason.Root,
+    "com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I": YieldReason.Root,
     "java/lang/Thread.sleep.(J)V": YieldReason.Root,
     "com/sun/cldc/isolate/Isolate.waitStatus.(I)V": YieldReason.Root,
     "com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z": YieldReason.Root,
     "com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B": YieldReason.Root,
     "com/sun/midp/links/LinkPortal.getLinkCount0.()I": YieldReason.Root,
     "com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V": YieldReason.Root,
-    "com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V": YieldReason.Root,
     "com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V": YieldReason.Root,
     "com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I": YieldReason.Root,
     "com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I": YieldReason.Root,
@@ -74,6 +75,8 @@ module J2ME {
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.dumbPipe.()Z": YieldReason.Root,
     "gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I": YieldReason.Root,
+    "org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V": YieldReason.Root,
+    "org/mozilla/Test.callAsyncNative.()V": YieldReason.Root,
   };
 
   export var yieldVirtualMap = {

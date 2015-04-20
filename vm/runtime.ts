@@ -40,7 +40,7 @@ declare var throwPause;
 declare var throwYield;
 
 module J2ME {
-  declare var Native, Override;
+  declare var Native, config;
   declare var VM;
   declare var CompiledMethodCache;
 
@@ -133,8 +133,8 @@ module J2ME {
   declare var Shumway;
 
   export var timeline;
-  export var methodTimeline;
   export var threadTimeline;
+  export var methodTimelines = [];
   export var nativeCounter = release ? null : new Metrics.Counter(true);
   export var runtimeCounter = release ? null : new Metrics.Counter(true);
   export var baselineMethodCounter = release ? null : new Metrics.Counter(true);
@@ -145,7 +145,6 @@ module J2ME {
 
   if (typeof Shumway !== "undefined") {
     timeline = new Shumway.Tools.Profiler.TimelineBuffer("Runtime");
-    methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Methods");
     threadTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Threads");
   }
 
@@ -334,9 +333,6 @@ module J2ME {
     return c >= 48 && c <= 57;
   }
 
-  var invalidChars = "[];/<>()";
-  var replaceChars = "abc_defg";
-
   function needsEscaping(s: string): boolean {
     var l = s.length;
     for (var i = 0; i < l; i++) {
@@ -423,6 +419,7 @@ module J2ME {
     staticFields: any;
     classObjects: any;
     ctx: Context;
+    allCtxs: Set<Context>;
 
     isolate: com.sun.cldc.isolate.Isolate;
     mainThread: java.lang.Thread;
@@ -441,6 +438,7 @@ module J2ME {
       this.staticFields = {};
       this.classObjects = {};
       this.ctx = null;
+      this.allCtxs = new Set();
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
       this._nextHashCode = this._runtimeId << 24;
     }
@@ -509,6 +507,7 @@ module J2ME {
     addContext(ctx) {
       ++this.threadCount;
       RuntimeTemplate.all.add(this);
+      this.allCtxs.add(ctx);
     }
 
     removeContext(ctx) {
@@ -516,6 +515,7 @@ module J2ME {
         RuntimeTemplate.all.delete(this);
         this.updateStatus(RuntimeStatus.Stopped);
       }
+      this.allCtxs.delete(ctx);
     }
 
     newStringConstant(s: string): java.lang.String {
@@ -1224,27 +1224,6 @@ module J2ME {
     };
   }
 
-  // OverrideMap is constructed lazily.
-  var overrideMap = null;
-
-  /**
-   * Builds a hashmap that keeps track of the class names that have overriden methods. This is a temporary
-   * solution to avoid creating methodInfo implKeys unnecessarily for methods whose class has no overriden
-   * methods.
-   *
-   * TODO: This mechanism should be deleted once we get rid of overrides.
-   */
-  function getOverrideMap() {
-    if (!overrideMap) {
-      overrideMap = new Uint8Hashtable(10);
-      for (var k in Override) {
-        var className = k.substring(0, k.indexOf("."));
-        overrideMap.put(cacheUTF8(className), true);
-      }
-    }
-    return overrideMap;
-  }
-
   function findNativeMethodImplementation(methodInfo: MethodInfo) {
     // Look in bindings first.
     var binding = findNativeMethodBinding(methodInfo);
@@ -1262,11 +1241,6 @@ module J2ME {
           stderrWriter.errorLn("implKey " + implKey + " is native but does not have an implementation.");
         }
       }
-    } else if (getOverrideMap().get(methodInfo.classInfo.utf8Name)) {
-      var implKey = methodInfo.implKey;
-      if (implKey in Override) {
-        return release ? Override[implKey] : reportError(Override[implKey], implKey);
-      }
     }
     return null;
   }
@@ -1276,14 +1250,14 @@ module J2ME {
     // Adapter for the most common case.
     if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
       var method = function fastInterpreterFrameAdapter() {
-        var frame = Frame.create(methodInfo, [], 0);
+        var frame = Frame.create(methodInfo, []);
         var j = 0;
         if (!methodInfo.isStatic) {
-          frame.setLocal(j++, this);
+          frame.local[j++] = this;
         }
         var slots = methodInfo.argumentSlots;
         for (var i = 0; i < slots; i++) {
-          frame.setLocal(j++, arguments[i]);
+          frame.local[j++] = arguments[i];
         }
         return $.ctx.executeFrame(frame);
       };
@@ -1292,29 +1266,29 @@ module J2ME {
     }
 
     var method = function interpreterFrameAdapter() {
-      var frame = Frame.create(methodInfo, [], 0);
+      var frame = Frame.create(methodInfo, []);
       var j = 0;
       if (!methodInfo.isStatic) {
-        frame.setLocal(j++, this);
+        frame.local[j++] = this;
       }
       var signatureKinds = methodInfo.signatureKinds;
       release || assert (arguments.length === signatureKinds.length - 1,
         "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor.");
       for (var i = 1; i < signatureKinds.length; i++) {
-        frame.setLocal(j++, arguments[i - 1]);
+        frame.local[j++] = arguments[i - 1];
         if (isTwoSlot(signatureKinds[i])) {
-          frame.setLocal(j++, null);
+          frame.local[j++] = null;
         }
       }
       if (methodInfo.isSynchronized) {
         if (!frame.lockObject) {
           frame.lockObject = methodInfo.isStatic
             ? methodInfo.classInfo.getClassObject()
-            : frame.getLocal(0);
+            : frame.local[0];
         }
         $.ctx.monitorEnter(frame.lockObject);
         if (U === VMState.Pausing) {
-          $.ctx.frames.push(frame);
+          $.ctx.pushFrame(frame);
           return;
         }
       }
@@ -1394,10 +1368,27 @@ module J2ME {
   }
 
   function profilingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
+    if (methodType === MethodType.Interpreted) {
+      // Profiling for interpreted functions is handled by the context.
+      return fn;
+    }
+    var code;
+    if (methodInfo.isNative) {
+      if (methodInfo.returnKind === Kind.Void) {
+        code = new Uint8Array([Bytecode.Bytecodes.RETURN]);
+      } else if (isTwoSlot(methodInfo.returnKind)) {
+        code = new Uint8Array([Bytecode.Bytecodes.LRETURN]);
+      } else {
+        code = new Uint8Array([Bytecode.Bytecodes.IRETURN]);
+      }
+    }
+
+
     return function (a, b, c, d) {
-      var key = MethodType[methodType] + " " + methodInfo.implKey;
+      var key = methodInfo.implKey;
       try {
-        methodTimeline.enter(key);
+        var ctx = $.ctx;
+        ctx.enterMethodTimeline(key, methodType);
         var r;
         switch (arguments.length) {
           case 0:
@@ -1415,9 +1406,20 @@ module J2ME {
           default:
             r = fn.apply(this, arguments);
         }
-        methodTimeline.leave(key);
+        if (U) {
+          if (methodInfo.isNative) {
+            // A fake frame that just returns is pushed so when the ctx resumes from the unwind
+            // the frame will be popped triggering a leaveMethodTimeline.
+            var fauxFrame = Frame.create(null, []);
+            fauxFrame.methodInfo = methodInfo;
+            fauxFrame.code = code;
+            ctx.bailoutFrames.unshift(fauxFrame);
+          }
+        } else {
+          ctx.leaveMethodTimeline(key, methodType);
+        }
       } catch (e) {
-        methodTimeline.leave(key);
+        ctx.leaveMethodTimeline(key, methodType);
         throw e;
       }
       return r;
@@ -1450,7 +1452,7 @@ module J2ME {
     var methodType;
     var nativeMethod = findNativeMethodImplementation(methodInfo);
     if (nativeMethod) {
-      linkWriter && linkWriter.writeLn("Method: " + methodInfo.name + methodInfo.signature + " -> Native / Override");
+      linkWriter && linkWriter.writeLn("Method: " + methodInfo.name + methodInfo.signature + " -> Native");
       fn = nativeMethod;
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;
@@ -1470,12 +1472,8 @@ module J2ME {
       }
     }
 
-    if (false && methodTimeline) {
-      fn = profilingWrapper(fn, methodInfo, methodType);
-    }
-
-    if (traceWriter) {
-      fn = tracingWrapper(fn, methodInfo, methodType);
+    if (profile || traceWriter) {
+      fn = wrapMethod(fn, methodInfo, methodType);
     }
 
     klass.M[methodInfo.index] = methodInfo.fn = fn;
@@ -1702,7 +1700,7 @@ module J2ME {
     }
 
     // Don't compile methods that are too large.
-    if (methodInfo.codeAttribute.code.length > 2000) {
+    if (methodInfo.codeAttribute.code.length > 2000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
       methodInfo.state = MethodState.NotCompiled;
       return;
@@ -1765,6 +1763,17 @@ module J2ME {
     }
   }
 
+  function wrapMethod(fn, methodInfo: MethodInfo, methodType: MethodType) {
+    if (profile) {
+      fn = profilingWrapper(fn, methodInfo, methodType);
+    }
+
+    if (traceWriter) {
+      fn = tracingWrapper(fn, methodInfo, methodType);
+    }
+    return fn;
+  }
+
   /**
    * Links up compiled method at runtime.
    */
@@ -1778,6 +1787,9 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
     var fn = jsGlobal[mangledClassAndMethodName];
+    if (profile || traceWriter) {
+      fn = wrapMethod(fn, methodInfo, MethodType.Compiled);
+    }
     var klass = methodInfo.classInfo.klass;
     klass.M[methodInfo.index] = methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
@@ -1799,6 +1811,9 @@ module J2ME {
   }
 
   export function isAssignableTo(from: Klass, to: Klass): boolean {
+    if (from === to) {
+      return true;
+    }
     if (to.isInterfaceKlass) {
       return from.interfaces.indexOf(to) >= 0;
     } else if (to.isArrayKlass) {

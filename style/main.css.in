@@ -1,0 +1,472 @@
+html {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  font-size: 10px;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#display-container {
+  position: relative;
+  float: right;
+  width: 240px;
+  height: 100%;
+}
+
+#display {
+  position: relative;
+  top: 0px;
+  right: 0px;
+  border-bottom: 1px solid #ababab;
+  width: 100%;
+  height: 320px;
+  z-index: 1;
+  background: black;
+}
+
+/* Set the display size. */
+.size-320x240 #display-container {
+  width: 320px !important;
+}
+
+.size-320x240 #pageContainer {
+  width: calc(100% - 320px) !important;
+}
+
+.size-320x240 #display {
+  height: 240px !important;
+}
+
+.size-320x240 #settings {
+  height: calc(100% - 240px) !important;
+}
+
+
+.size-320x480 #display-container {
+  width: 320px !important;
+}
+
+.size-320x480 #pageContainer {
+  width: calc(100% - 320px) !important;
+}
+
+.size-320x480 #display {
+  height: 480px !important;
+}
+
+.size-320x480 #settings {
+  height: calc(100% - 480px) !important;
+}
+
+.size-480x320 #display-container {
+  width: 480px !important;
+}
+
+.size-480x320 #pageContainer {
+  width: calc(100% - 480px) !important;
+}
+
+.size-480x320 #display {
+  height: 320px !important;
+}
+
+.size-480x320 #settings {
+  height: calc(100% - 320px) !important;
+}
+/* Float the back button to the bottom right corner */
+#back-button {
+  position: absolute;
+  right: 0;
+  bottom: 3px;
+  box-sizing: border-box;
+  width: 3rem;
+  height: 4rem;
+  padding: 0;
+  font-size: 0;
+  overflow: hidden;
+  background: url("headers/images/icons/back.png") rgba(249, 124, 23, 0.7) no-repeat scroll center center;
+  border: medium none;
+  border-radius: 20px 0 0 0;
+  z-index: 999;
+}
+
+#back-button:hover {
+  background-color: rgba(249, 124, 23, 1);
+}
+
+button {
+  display: none;
+}
+
+#settings {
+  background: #f4f4f4;
+  box-sizing: border-box;
+  right: 1px;
+  width: 100%;
+  height: calc(100% - 320px);
+  border-left: 1px solid #ababab;
+  overflow-y: auto;
+}
+
+#settings section {
+  margin: 0;
+  border-bottom: 1px solid #ababab;
+  overflow: hidden;
+  padding: 0.5rem 0;
+}
+
+#settings section > div,
+#settings section > button,
+#settings section > select,
+#settings section > label,
+#settings section > input {
+  display: block;
+  width: 80%;
+  margin: 0.5rem auto;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  font-size: 12px;
+  text-align: center;
+}
+
+.log-item-log {
+  color: #555;
+}
+
+.log-item-warn {
+  color: #c70;
+}
+
+.log-item-error {
+  color: red;
+  font-weight: bold;
+}
+
+.log-item-trace:before { content: 'T'; padding-right: 1rem; font-weight: bold; }
+.log-item-log:before { content: 'L'; padding-right: 1rem; font-weight: bold; }
+.log-item-info:before { content: 'I'; padding-right: 1rem; font-weight: bold; }
+.log-item-warn:before { content: 'W'; padding-right: 1rem; font-weight: bold; }
+.log-item-error:before { content: 'E'; padding-right: 1rem; font-weight: bold; }
+
+#gamepad button {
+  display: none;
+  position: absolute;
+  z-index: 102;
+  height: 40px;
+  width: 40px;
+}
+
+#gamepad #up { left: 75px; bottom: 40px; }
+#gamepad #down { left: 75px; bottom: 0px; }
+#gamepad #left { left: 25px; bottom: 20px; }
+#gamepad #right { left: 125px; bottom: 20px; }
+#gamepad #fire { left: 250px; bottom: 20px; }
+
+.gamepad body > #gamepad {
+  display: block;
+  z-index: 102;
+}
+
+.gamepad body > #gamepad button {
+  display: block;
+}
+
+/* Auto-Size (for devices): Hide everything except the canvas. */
+.autosize body > pre,
+.autosize body > div {
+  display: none;
+}
+
+.autosize #display-container {
+  position: absolute;
+  display: block;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.autosize #display {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: black;
+}
+
+.autosize #settings {
+  display: none;
+}
+
+/* Prevent scrolling. */
+.autosize, .autosize body {
+  overflow: hidden;
+}
+
+.sms-listener-prompt input {
+  display: block;
+  margin-top: 1rem;
+  box-sizing: border-box;
+  width: 100%;
+  font-size: 1.6rem;
+  padding: 0.5rem;
+}
+
+form[role="dialog"][data-type="confirm"].lcdui-alert section {
+  text-align: center;
+  overflow: auto;
+}
+
+#image-launcher {
+  position: absolute;
+  z-index: 102;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: none center center / contain no-repeat #000;
+}
+
+.lcdui-alert menu,
+.download-progress-dialog menu {
+  text-align: center;
+}
+
+.splash-screen {
+  display: none;
+  z-index: 102;
+  background: #2d2d2d;
+  overflow: hidden;
+  color: #fff;
+  text-align: center;
+}
+
+.autosize .splash-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.splash-screen > .title {
+  margin-bottom: 0;
+}
+
+.splash-progress-container {
+  position: absolute;
+  top: calc(50% - 17px);
+  left: calc(50% - 17px);
+}
+
+#background-screen {
+  z-index: 102;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: auto;
+  bottom: auto;
+  background-color: white;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-image: url("../img/icon-128.png");
+}
+
+.debug-mode #background-screen {
+  width: 100%;
+  height: 100%;
+}
+
+.autosize #background-screen {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/**
+ * STYLE OVERRIDES FOR DEBUG MODE:
+ *
+ * These styles override the default dialog style so that (a) the
+ * dialog fits in our small 240x320 debug-mode canvas, and (b) so that
+ * the dialog, which normally overlays the entire screen, only covers
+ * the same area as the canvas (only for debugging).
+ *
+ * Note: The absurd selector is absurd so that we can override the
+ * built-in styles, which refer to all of those attributes, without
+ * modifying the original dialog CSS, for future maintainability.
+ */
+.debug-mode form[role="dialog"][data-type="confirm"].lcdui-alert,
+.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt,
+.debug-mode form[role="dialog"][data-type="confirm"].nokia-fileui-prompt,
+.debug-mode form[role="dialog"][data-type="confirm"].download-progress-dialog {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  left: auto;
+  bottom: auto;
+  width: 100%;
+  height: 100%;
+  z-index: 102;
+  background: black;
+  box-sizing: border-box;
+}
+
+/* Hide the unnecessary scroll bar in the SMS verification dialog. */
+.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt section,
+.debug-mode form[role="dialog"][data-type="confirm"].nokia-fileui-prompt section,
+.debug-mode form[role="dialog"][data-type="confirm"].download-progress-dialog section {
+  overflow: hidden;
+}
+/* Trim down fonts to fix on our 240x320 debug-mode canvas. */
+.debug-mode form[role="dialog"][data-type="confirm"].lcdui-alert p,
+.debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt p {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.debug-mode .splash-screen {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0px;
+  right: 0px;
+  left: auto;
+  bottom: auto;
+  box-sizing: border-box;
+}
+
+#pageContainer {
+  position: relative;
+  background-color: #333333;
+  top: 0;
+  left: 0;
+  width: calc(100% - 240px);
+  height: 100%;
+  float: left;
+  overflow: hidden;
+}
+
+/* #if CONSOLE == "true" */
+#consoleContainer {
+  overflow: auto;
+  margin: 0;
+  background-color: #ffffff;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+}
+
+.profile-mode #consoleContainer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 512px;
+}
+/* #endif */
+
+#profilerContainer {
+  display: none;
+}
+
+.profile-mode #profilerContainer {
+  display: block;
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  right: 0px;
+  height: 512px;
+  background-color: #111;
+  overflow: auto;
+}
+
+.profile-mode #profilerContainer.max {
+  height: 100%;
+}
+
+#profilerToolbar {
+  color: white;
+  padding: 2px;
+}
+
+#profilerStartStop, #profilerAdjustHeight {
+  display: inline;
+  color: red;
+  cursor: hand;
+  padding-right: 20px;
+}
+
+#profiler {
+  /* Add a bumper for scrolling since the profiler intercepts
+   * scroll events, making it impossible to scroll to more timelines. */
+  margin-right: 20px;
+}
+
+.profiler-tooltip {
+  position: absolute;
+  font-family: sans-serif;
+  color: #ddd;
+}
+.profiler-tooltip {
+  background-color: #111;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  padding: 5px;
+}
+.profiler-tooltip > div > h1 {
+  font-size: 11px;
+  margin: 1px 0 2px 0;
+}
+.profiler-tooltip > div > p {
+  font-size: 10px;
+  margin: 0 0 1px 0;
+}
+.profiler-tooltip > div > hr {
+  margin: 2px auto 4px auto;
+  border: none;
+  border-bottom: 1px solid #555;
+}
+.profiler-timeline-name {
+  color: #ddd;
+}
+
+/* Styles for text editors */
+.text-editor {
+  position: absolute;
+  border: none;
+  resize: none;
+  visibility: hidden;
+}
+
+.text-editor.show{
+  visibility: visible;
+}
+
+div.text-editor {
+  margin: 0;
+  padding: 0;
+  box-sizing:  border-box;
+  word-break: break-all;
+  word-wrap: break-word;
+  overflow: auto;
+  white-space: pre-wrap;
+  -moz-appearance: textfield-multiline;
+  display: block;
+  left: 0;
+  top: 0;
+}
+
+#hidden-textarea-editor {
+  visibility: hidden;
+}

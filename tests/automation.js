@@ -16,9 +16,8 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 70000;
+casper.options.waitTimeout = 80000;
 casper.options.verbose = true;
-casper.options.logLevel = "debug";
 casper.options.viewportSize = { width: 240, height: 320 };
 casper.options.clientScripts = [
   "tests/mocks/getUserMedia.js",
@@ -30,57 +29,129 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferent: 1942 },
-  { name: "gfx/CanvasTest", maxDifferent: 0 },
-  { name: "gfx/CanvasWithHeaderTest", maxDifferent: 1400 },
-  { name: "gfx/DrawRegionTest", maxDifferent: 0 },
-  { name: "gfx/ImageRenderingTest", maxDifferent: 0 },
-  { name: "gfx/FillRectTest", maxDifferent: 0 },
-  { name: "gfx/DrawAndFillRoundRectTest", maxDifferent: 2000 },
-  { name: "gfx/DrawAndFillArcTest", maxDifferent: 2000 },
-  { name: "gfx/DrawStringTest", maxDifferent: 345 },
-  { name: "gfx/DrawRedStringTest", maxDifferent: 513 },
-  { name: "gfx/TextBoxTest", maxDifferent: 0, todo: true },
-  { name: "gfx/DirectUtilsCreateImageTest", maxDifferent: 0 },
-  { name: "gfx/GetPixelsDrawPixelsTest", maxDifferent: 0 },
-  { name: "gfx/OffScreenCanvasTest", maxDifferent: 0 },
-  { name: "gfx/ARGBColorTest", maxDifferent: 0 },
-  { name: "gfx/GetRGBDrawRGBTest", maxDifferent: 0 },
-  { name: "gfx/GetRGBDrawRGBWidthHeightTest", maxDifferent: 0 },
-  { name: "gfx/GetRGBDrawRGBxyTest", maxDifferent: 0 },
-  { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferent: 0, todo: true },
-  { name: "gfx/ClippingTest", maxDifferent: 0 },
-  { name: "gfx/ImageProcessingTest", maxDifferent: 6466 },
-  { name: "gfx/CreateImageWithRegionTest", maxDifferent: 0 },
-  { name: "gfx/DrawSubstringTest", maxDifferent: 332 },
-  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferent: 1500 },
-  { name: "gfx/DirectUtilsClipAfter", maxDifferent: 0 },
-  { name: "gfx/DirectUtilsClipAfterOnScreen", maxDifferent: 0, todo: true },
-  { name: "gfx/DirectUtilsClipAfterOnScreen2", maxDifferent: 0 },
-  { name: "gfx/DirectUtilsClipAfterWithNormalImage", maxDifferent: 0 },
-  { name: "gfx/DirectUtilsClipBefore", maxDifferent: 0 },
-  { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferent: 0, todo: true },
-  { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferent: 0 },
-  { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferent: 0 },
-  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferent: 0 },
-  { name: "gfx/ClippingWithAnchorTest", maxDifferent: 0 },
-  { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferent: 0 },
-  { name: "gfx/DrawStringRightAnchorTest", maxDifferent: 333 },
-  { name: "gfx/DrawStringBaselineAnchorTest", maxDifferent: 327 },
-  { name: "gfx/DrawStringBottomAnchorTest", maxDifferent: 347 },
-  { name: "gfx/DrawStringHCenterAnchorTest", maxDifferent: 333 },
-  { name: "gfx/RectAfterText", maxDifferent: 637 },
-  { name: "gfx/DrawStringWithEmojiTest", maxDifferent: 1133 },
-  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferent: 1133 },
-  { name: "gfx/DrawCharsWithEmojiTest", maxDifferent: 1133 },
-  { name: "gfx/CreateImmutableCopyTest", maxDifferent: 0 },
-  { name: "gfx/LauncherTest", maxDifferent: 0 },
-  { name: "gfx/MediaImageTest", maxDifferent: 0 },
-  { name: "gfx/TextEditorGfxTest", maxDifferent: 1375 },
-  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferent: 244 },
-  { name: "gfx/VideoPlayerTest", maxDifferent: 0 },
-  { name: "gfx/ImageCapture", maxDifferent: 0 },
-  { name: "gfx/CameraTest", maxDifferent: 0 },
+  { name: "gfx/AlertTest", maxDifferentLinux: 1266, maxDifferentMac: 2029 },
+  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1403, maxDifferentMac: 2186 },
+  { name: "gfx/CanvasTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/CanvasWithHeaderTest", maxDifferentLinux: 823, maxDifferentMac: 1351 },
+  { name: "gfx/ImageRenderingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/FillRectTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DrawAndFillRoundRectTest", maxDifferentLinux: 243, maxDifferentMac: 1592 },
+  { name: "gfx/DrawAndFillArcTest", maxDifferentLinux: 5, maxDifferentMac: 1765 },
+  { name: "gfx/DrawStringTest", maxDifferentLinux: 232, maxDifferentMac: 321 },
+  { name: "gfx/DrawRedStringTest", maxDifferentLinux: 338, maxDifferentMac: 485 },
+  { name: "gfx/TextBoxTest", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
+  { name: "gfx/DirectUtilsCreateImageTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/GetPixelsDrawPixelsTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/OffScreenCanvasTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/ARGBColorTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/GetRGBDrawRGBTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/GetRGBDrawRGBWidthHeightTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/GetRGBDrawRGBxyTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
+  { name: "gfx/ClippingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/ImageProcessingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/CreateImageWithRegionTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DrawSubstringTest", maxDifferentLinux: 205, maxDifferentMac: 295 },
+  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferentLinux: 0, maxDifferentMac: 788 },
+  { name: "gfx/DirectUtilsClipAfter", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DirectUtilsClipAfterOnScreen", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
+  { name: "gfx/DirectUtilsClipAfterOnScreen2", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DirectUtilsClipAfterWithNormalImage", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DirectUtilsClipBefore", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
+  { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/ClippingWithAnchorTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DrawStringRightAnchorTest", maxDifferentLinux: 252, maxDifferentMac: 319 },
+  { name: "gfx/DrawStringBaselineAnchorTest", maxDifferentLinux: 233, maxDifferentMac: 292 },
+  { name: "gfx/DrawStringBottomAnchorTest", maxDifferentLinux: 233, maxDifferentMac: 322 },
+  { name: "gfx/DrawStringHCenterAnchorTest", maxDifferentLinux: 213, maxDifferentMac: 301 },
+  { name: "gfx/RectAfterText", maxDifferentLinux: 438, maxDifferentMac: 576 },
+  { name: "gfx/DrawStringWithEmojiTest", maxDifferentLinux: 968, maxDifferentMac: 1151 },
+  { name: "gfx/DrawSubstringWithEmojiTest", maxDifferentLinux: 968, maxDifferentMac: 1151 },
+  { name: "gfx/DrawCharsWithEmojiTest", maxDifferentLinux: 968, maxDifferentMac: 1151 },
+  { name: "gfx/CreateImmutableCopyTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/LauncherTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/MediaImageTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/TextEditorGfxTest", maxDifferentLinux: 968, maxDifferentMac: 1057 },
+  { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferentLinux: 159, maxDifferentMac: 248 },
+  { name: "gfx/VideoPlayerTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/ImageCapture", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/CameraTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DrawRegionTransMirrorAnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorAnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorAnchorBottomRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorAnchorTopHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorAnchorTopLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorAnchorTopRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorAnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorAnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorAnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorBottomRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorTopHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorTopLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorTopRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot180AnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorBottomRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorTopHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorTopLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorTopRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot270AnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorBottomRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorTopHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorTopLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorTopRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransMirrorRot90AnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorBottomRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorTopHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorTopLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorTopRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransNoneAnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorBottomRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorTopHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorTopLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorTopRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot180AnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorBottomRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorTopHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorTopLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorTopRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot270AnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorBottomRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorTopHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorTopLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorTopRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/DrawRegionTransRot90AnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
 ];
 
 /**
@@ -105,7 +176,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -156,6 +227,11 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
     .withFrame(0, basicUnitTests);
 
+    // Run the same unit tests again with baseline JIT enabled for all methods.
+    casper
+    .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log&forceRuntimeCompilation=1")
+    .withFrame(0, basicUnitTests);
+
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
     .withFrame(0, function() {
@@ -191,10 +267,28 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
     });
 
     casper
+    .thenOpen("http://localhost:8000/index.html?main=MainStaticInitializer&logLevel=info&logConsole=web,page,raw")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextExists("I 1) static init\n" +
+                                  "I 2) main");
+        });
+    });
+
+    casper
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests/recordstore/WriterMIDlet&jad=tests/midlets/RecordStore/recordstore.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextDoesntExist("FAIL");
+            test.assertTextExists("SUCCESS 8/8", "Test RecordStore with multiple MIDlets");
         });
     });
 
@@ -220,6 +314,21 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
         casper.waitForText("Hello World from foreground MIDlet", function() {
             test.assertTextExists("prop1=hello prop2=ciao");
         });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundExit.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log", function() {
+      casper.evaluate(function() {
+        window.close = function() {
+          document.title = "window.close called";
+        }
+      });
+
+      casper.waitFor(function() {
+        return !!this.getTitle();
+      }, function() {
+        test.assertEquals(this.getTitle(), "window.close called", "window.close called");
+      });
     });
 
     casper
@@ -321,8 +430,12 @@ casper.test.begin("unit tests", 20 + gfxTests.length, function(test) {
                                 }
                             }
 
-                            var message = different + " <= " + testCase.maxDifferent;
-                            if (different > testCase.maxDifferent) {
+                            var maxDifferent = navigator.platform.indexOf("Linux") != -1 ?
+                                                 testCase.maxDifferentLinux :
+                                                 testCase.maxDifferentMac;
+
+                            var message = different + " <= " + maxDifferent;
+                            if (different > maxDifferent) {
                                 console.log(got.canvas.toDataURL());
                                 if (!testCase.todo) {
                                   console.log("FAIL - " + message);
