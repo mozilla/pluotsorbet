@@ -24,6 +24,7 @@
  *    fontSize
  *    language
  *    forceRuntimeCompilation
+ *    deferStartup - Number of milliseconds to wait after loading JS sources and before starting the VM.
  *
  * Keep this list up-to-date!
  */
