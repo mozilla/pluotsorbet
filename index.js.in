@@ -10,7 +10,8 @@
   var loadingPromises = [];
   if (config.midletClassName == "RunTests") {
     loadingPromises.push(loadScript("tests/contacts.js"),
-                         loadScript("tests/index.js"));
+                         loadScript("tests/index.js"),
+                         loadScript("tests/mozactivitymock.js"));
   }
 
   if (navigator.userAgent.indexOf('Chrome') > -1) {
@@ -743,4 +744,12 @@ DumbPipe.registerOpener("backgroundCheck", function(message, sender) {
       navigator.mozAlarms.add(new Date(Date.now() + MIDlet.wakeUpAlarm), 'ignoreTimezone', {});
     });
   }
+});
+
+DumbPipe.registerOpener("mozActivity", function(message, sender) {
+  var activity = new MozActivity(message);
+
+  activity.onsuccess = sender.bind(null, { type: "onsuccess" });
+
+  activity.onerror = sender.bind(null, { type: "onerror" });
 });

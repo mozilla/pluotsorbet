@@ -186,22 +186,25 @@ Native["com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I"] =
 function(handle, type, host, destPort, sourcePort, message) {
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
-        var activity = new MozActivity({
+        var pipe = DumbPipe.open("mozActivity", {
             name: "new",
             data: {
-              type: "websms/sms",
-              number: J2ME.fromJavaString(host),
-              body: new TextDecoder('utf-16be').decode(message),
+                type: "websms/sms",
+                number: J2ME.fromJavaString(host),
+                body: new TextDecoder('utf-16be').decode(message),
             },
+        }, function(message) {
+            switch (message.type) {
+                case "onsuccess":
+                    DumbPipe.close(pipe);
+                    resolve(message.byteLength);
+                    break;
+
+                case "onerror":
+                    ctx.setAsCurrentContext();
+                    reject($.newIOException("Error while sending SMS message"));
+                    break;
+            }
         });
-
-        activity.onsuccess = function() {
-          resolve(message.byteLength);
-        };
-
-        activity.onerror = function() {
-          ctx.setAsCurrentContext();
-          reject($.newIOException("Error while sending SMS message"));
-        };
     }));
 };
