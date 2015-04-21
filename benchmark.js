@@ -386,6 +386,9 @@ var Benchmark = (function() {
     CENTER: CENTER,
     RIGHT: RIGHT,
     startup: {
+      setStartTime: function () {
+        startup.startTime = performance.now();
+      },
       init: function() {
         if (!storage.running) {
           return;
