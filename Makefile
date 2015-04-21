@@ -79,6 +79,7 @@ MAIN_JS_SRCS = \
   polyfill/fround.js \
   blackBox.js \
   timer.js \
+  libs/encoding.js \
   util.js \
   native.js \
   string.js \
@@ -86,7 +87,6 @@ MAIN_JS_SRCS = \
   libs/zipfile.js \
   libs/jarstore.js \
   libs/long.js \
-  libs/encoding.js \
   libs/fs.js \
   libs/fs-init.js \
   libs/forge/util.js \
@@ -246,6 +246,10 @@ bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
 	tsc --sourcemap --target ES5 jsc.ts --out bld/jsc.js
+
+bld/shell.js: shell/references.ts shell/dom.ts shell/shell.ts
+	@echo "Building J2ME JSC CLI"
+	tsc --sourcemap --target ES5 shell/references.ts shell/shell.ts --out bld/shell.js
 
 # Some scripts use ES6 features, so we have to specify ES6 as the in-language
 # (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
