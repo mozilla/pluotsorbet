@@ -146,6 +146,16 @@ var util = (function () {
     return rgbaToCSS(r, g, b, a/255);
   }
 
+  function isPrintable(val) {
+    // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
+    return ((val >= 48 && val <= 57)  ||  // number keys
+            val === 32 || val === 13 ||   // spacebar & return key(s) (if you want to allow carriage returns)
+            (val >= 65 && val <= 90)   || // letter keys
+            (val >= 96 && val <= 111)  || // numpad keys
+            (val >= 186 && val <= 192) || // ;=,-./` (in order)
+            (val >= 219 && val <= 222));  // [\]' (in order)
+  }
+
   return {
     INT_MAX: INT_MAX,
     INT_MIN: INT_MIN,
@@ -161,5 +171,6 @@ var util = (function () {
     toCodePointArray: toCodePointArray,
     rgbaToCSS: rgbaToCSS,
     abgrIntToCSS: abgrIntToCSS,
+    isPrintable: isPrintable,
   };
 })();

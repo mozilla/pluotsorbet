@@ -149,7 +149,7 @@ if (config.downloadJAD) {
 
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
-                       loadScript("tests/mozactivitymock.js"),
+                       loadScript("tests/mozactivitymock.unprivileged.js"),
                        loadScript("tests/config.js"));
 }
 

@@ -313,13 +313,13 @@ app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR)
 
 package: app
 	rm -f '$(NAME)-$(VERSION).zip'
-	cd output && zip -r '../$(NAME)-$(VERSION).zip' *
+	cd $(PACKAGE_DIR) && zip -r '../$(NAME)-$(VERSION).zip' *
 
 benchmarks: java tests
 	make -C bench
 
 clean:
-	rm -rf bld
+	rm -rf bld $(PACKAGE_DIR)
 	rm -f $(PREPROCESS_DESTS)
 	make -C tools/jasmin-2.4 clean
 	make -C tests clean

@@ -95,7 +95,7 @@ var MIDP = (function() {
         DumbPipe.close(DumbPipe.open("windowOpen", request));
       }
     } else if (request.startsWith("x-contacts:add?number=")) {
-      new MozActivity({
+      DumbPipe.close(DumbPipe.open("mozActivity", {
         name: "new",
         data: {
           type: "webcontacts/contact",
@@ -103,7 +103,7 @@ var MIDP = (function() {
             tel: request.substring(22),
           },
         },
-      });
+      }));
     } else {
       console.warn("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z not implemented for: " + request);
     }

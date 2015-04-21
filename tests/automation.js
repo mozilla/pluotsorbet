@@ -176,7 +176,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 24 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -263,6 +263,15 @@ casper.test.begin("unit tests", 24 + gfxTests.length, function(test) {
                                   "I 3\n" +
                                   "I marc\n" +
                                   "I Main isolate still running");
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?main=MainStaticInitializer&logLevel=info&logConsole=web,page,raw")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextExists("I 1) static init\n" +
+                                  "I 2) main");
         });
     });
 
