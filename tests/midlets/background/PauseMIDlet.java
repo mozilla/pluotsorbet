@@ -7,6 +7,8 @@ import javax.microedition.midlet.*;
 import com.sun.midp.main.MIDletSuiteUtils;
 
 public class PauseMIDlet extends MIDlet {
+    int started = 0;
+
     class TestCanvas extends Canvas {
         protected void paint(Graphics g) {
             g.setColor(0x00FFFFFF);
@@ -19,7 +21,7 @@ public class PauseMIDlet extends MIDlet {
         test.setFullScreenMode(true);
         Display.getDisplay(this).setCurrent(test);
 
-        System.out.println("startApp");
+        System.out.println("startApp" + (++started));
     }
 
     public void pauseApp() {

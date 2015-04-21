@@ -176,7 +176,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 27 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 26 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -550,17 +550,15 @@ casper.test.begin("unit tests", 27 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/pause.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
-        casper.waitForText("startApp", function() {
+        casper.waitForText("startApp1", function() {
             casper.waitForText("pauseApp", function() {
-                casper.waitForText("startApp", function() {
-                    var content = this.getPageContent();
-                    test.assertEquals(content.match(/startApp/g).length, 2, "MIDlet started twice");
-                    test.assertEquals(content.match(/pauseApp/g).length, 1, "MIDlet paused once");
+                casper.waitForText("startApp2", function() {
+                    test.assert(true, "MIDlet started, paused and then started again");
                 });
 
                 // Start the app again
                 this.evaluate(function() {
-                  visibilityChange(false);
+                    visibilityChange(false);
                 });
             });
 
