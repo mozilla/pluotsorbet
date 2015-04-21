@@ -11,6 +11,7 @@ module J2ME {
   import unique = ArrayUtilities.unique;
   import hashBytesTo32BitsMurmur = HashUtilities.hashBytesTo32BitsMurmur;
   export enum UTF8Chars {
+    a = 97,
     Z = 90,
     C = 67,
     F = 70,
@@ -696,7 +697,50 @@ module J2ME {
     return "$" + StringUtilities.variableLengthEncodeInt32(hash);
   }
 
+  /**
+   * Encodes variable length utf8 alpha strings of the form [a-z]* to
+   * 32 bit numbers. Below are some sample encodings:
+   *
+   *  "" => 0
+   *  "a" => 1
+   *  "b" => 2 ...
+   *  "z" => 26
+   *  "aa" => 27
+   *  "ab" => 28 ...
+   *  "zz" => 703
+   *  "aaa" => 704
+   *  "azz" => 1378
+   *  "zzz" => 18278
+   *
+   *  The goal of this encoding is to map short strings to low numeric values
+   *  that we can then use to index into tables.
+   */
+  export function lowerCaseAlphaToInt32(utf8String: Uint8Array): number {
+    // We can't encode strings larger than 6 characters because we don't
+    // have enough bits. Technically the limit is somewhere between 6 and 7
+    // but we don't bother to check that here.
+    if (utf8String.length > 6) {
+      // It's okay to return |-1| as a fail value since we'll never use the
+      // highest order bit for encoding.
+      return -1;
+    }
+    var s = 0;
+    for (var i = 0; i < utf8String.length; i++) {
+      var v = utf8String[i] - UTF8Chars.a;
+      if (v < 0 || v >= 26) { // Only 'a' ... 'z' is allowed.
+        return -1;
+      }
+      s *= 26;
+      s += (1 + v); // 'a' is mapped to 1.
+    }
+    return s;
+  }
+
   export function mangleClassName(utf8Name: Uint8Array) {
+    var hash = lowerCaseAlphaToInt32(utf8Name);
+    if (hash > 0 && hash < 2048) {
+      return "$" + fromUTF8(utf8Name);
+    }
     var hash = hashBytesTo32BitsMurmur(utf8Name, 0, utf8Name.length);
     return concat3("$",
                    StringUtilities.variableLengthEncodeInt32(hash),
