@@ -131,10 +131,10 @@ var Benchmark = (function() {
   }
 
   var valueFormatters = {
-    totalStartupTime: msFormatter,
+    startupTime: msFormatter,
     vmStartupTime: msFormatter,
-    backgroundStartupTime: msFormatter,
-    foregroundStartupTime: msFormatter,
+    bgStartupTime: msFormatter,
+    fgStartupTime: msFormatter,
     totalSize: byteFormatter,
     domSize: byteFormatter,
     styleSize: byteFormatter,
@@ -184,10 +184,10 @@ var Benchmark = (function() {
     run: function(settings) {
       storage.round = 0;
       var current = storage.current = {};
-      current.totalStartupTime = [];
+      current.startupTime = [];
       current.vmStartupTime = [];
-      current.backgroundStartupTime = [];
-      current.foregroundStartupTime = [];
+      current.bgStartupTime = [];
+      current.fgStartupTime = [];
       if (settings.recordMemory) {
         storage.recordMemory = true;
         current.totalSize     = [];
@@ -231,7 +231,7 @@ var Benchmark = (function() {
       }
       var took = now - this.startTime[which];
       storage.current[which].push(took);
-      if (which === "totalStartupTime") {
+      if (which === "startupTime") {
         storage.round++;
         saveStorage();
         this.runNextRound();
@@ -341,7 +341,7 @@ var Benchmark = (function() {
   // Start right away instead of in init() so we can see any speedups in script loading.
   if (storage.running) {
     var now = performance.now();
-    startup.startTimer("totalStartupTime", now);
+    startup.startTimer("startupTime", now);
     startup.startTimer("vmStartupTime", now);
   }
 
@@ -399,7 +399,7 @@ var Benchmark = (function() {
     RIGHT: RIGHT,
     startup: {
       setStartTime: function () {
-        startup.startTime["totalStartupTime"] = startup.startTime["vmStartupTime"] = performance.now();
+        startup.startTime["startupTime"] = startup.startTime["vmStartupTime"] = performance.now();
       },
       init: function() {
         if (!storage.running) {
@@ -414,7 +414,7 @@ var Benchmark = (function() {
             vmCalled = true;
             var now = performance.now();
             startup.stopTimer("vmStartupTime", now);
-            startup.startTimer("backgroundStartupTime", now);
+            startup.startTimer("bgStartupTime", now);
           }
           vmOriginalFn.apply(null, arguments);
         };
@@ -423,8 +423,8 @@ var Benchmark = (function() {
         var bgOriginalFn = Native[bgImplKey];
         Native[bgImplKey] = function() {
           var now = performance.now();
-          startup.stopTimer("backgroundStartupTime", now);
-          startup.startTimer("foregroundStartupTime", now);
+          startup.stopTimer("bgStartupTime", now);
+          startup.startTimer("fgStartupTime", now);
           return bgOriginalFn.apply(null, arguments);
         };
 
@@ -432,8 +432,8 @@ var Benchmark = (function() {
         var fgOriginalFn = Native[fgImplKey];
         Native[fgImplKey] = function() {
           var now = performance.now();
-          startup.stopTimer("foregroundStartupTime", now);
-          startup.stopTimer("totalStartupTime", now);
+          startup.stopTimer("fgStartupTime", now);
+          startup.stopTimer("startupTime", now);
           fgOriginalFn.apply(null, arguments);
         };
       },
