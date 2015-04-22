@@ -59,19 +59,6 @@ var MIDP = (function() {
 
   var manifest = {};
 
-  Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
-    var bytes = JARStore.loadFileFromJAR(J2ME.fromJavaString(jar), J2ME.fromJavaString(entryName));
-    if (!bytes) {
-      throw $.newIOException();
-    }
-    var length = bytes.byteLength;
-    var array = J2ME.newByteArray(length);
-    for (var n = 0; n < length; ++n) {
-      array[n] = bytes[n];
-    }
-    return array;
-  };
-
   Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(severity, channelID, message) {
     console.info(J2ME.fromJavaString(message));
   };
