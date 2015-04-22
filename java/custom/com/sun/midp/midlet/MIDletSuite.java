@@ -69,27 +69,11 @@ public interface MIDletSuite {
     public String getProperty(String key);
 
     /**
-     * Gets push setting for interrupting other MIDlets.
-     * Reuses the Permissions.
-     *
-     * @return push setting for interrupting MIDlets the value
-     *        will be permission level from {@link Permissions}
-     */
-    public byte getPushInterruptSetting();
-
-    /**
      * Gets push options for this suite.
      *
      * @return push options are defined in {@link PushRegistryImpl}
      */
     public int getPushOptions();
-
-    /**
-     * Gets list of permissions for this suite.
-     *
-     * @return array of permissions from {@link Permissions}
-     */
-    public byte[] getPermissions();
 
     /**
      * Replace or add a property to the suite for this run only.
@@ -225,14 +209,6 @@ public interface MIDletSuite {
      * @return true if the suite is trusted false if not
      */
      public boolean isTrusted();
-
-    /**
-     * Check whether the suite classes are preverified and
-     * the suite content hasn't been changed since installation
-     *
-     * @return true if no more verification needed, false otherwise
-     */
-    public boolean isVerified();
 
     /**
      * Determine if the a MIDlet from this suite can be run. Note that
