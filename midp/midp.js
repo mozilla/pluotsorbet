@@ -485,14 +485,6 @@ var MIDP = (function() {
     mouseDownInfo = null; // Clear the way for the next gesture.
   });
 
-  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function() {
-    return 0;
-  };
-
-  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(id) {
-    return id <= 1 ? 1 : 0;
-  };
-
   Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(id) {
     return J2ME.newString(id.toString());
   };
