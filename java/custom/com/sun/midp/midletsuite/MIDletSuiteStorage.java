@@ -155,28 +155,6 @@ public class MIDletSuiteStorage {
     }
 
     /**
-     * Get the midlet suite's class path including a path to the MONET
-     * image of the specified suite and a path to the suite's jar file.
-     *
-     * @param id unique ID of the suite
-     *
-     * @return class path or null if the suite does not exist
-     */
-    public synchronized String[] getMidletSuiteClassPath(int id) {
-        String jarFile = getMidletSuiteJarPath(id);
-        return new String[] {jarFile};
-    }
-
-    /**
-     * Get the class path for a suite.
-     *
-     * @param id unique ID of the suite
-     *
-     * @return class path or null if the suite does not exist
-     */
-    public synchronized native String getMidletSuiteJarPath(int id);
-
-    /**
      * Get the storage id for a suite.
      *
      * @param id unique ID of the suite

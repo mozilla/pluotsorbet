@@ -216,7 +216,7 @@ public class AmsUtil {
         String[] args = {Integer.toString(id), midlet, displayName, arg0,
                          arg1, arg2, Integer.toString(externalAppId),
                          isDebugMode ? "1" : "0"};
-        String[] classpath = midletSuiteStorage.getMidletSuiteClassPath(id);
+        String[] classpath = new String[] { "" };
 
         if (classpath[0] == null) {
             /*
