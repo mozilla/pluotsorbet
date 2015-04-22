@@ -296,7 +296,7 @@ var Benchmark = (function() {
           if (p < 0.05) {
             pMessage = currentMean < baselineMean ? "BETTER" : "WORSE";
           } else {
-            pMessage = "INSIGNIFICANT";
+            pMessage = "SAME";
           }
         } else {
           pMessage = "n/a";
