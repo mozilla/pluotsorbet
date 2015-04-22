@@ -38,7 +38,6 @@ import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
 
 import com.sun.midp.main.CldcMIDletStateListener;
-import com.sun.midp.main.CldcPlatformRequest;
 
 /**
  * The MIDletStateHandler starts and controls MIDlets through the lifecycle
@@ -170,14 +169,13 @@ public class MIDletStateHandler {
      */
     public void initMIDletStateHandler(
         SecurityToken token,
-        CldcMIDletStateListener theMIDletStateListener,
-        CldcPlatformRequest thePlatformRequestHandler) {
+        CldcMIDletStateListener theMIDletStateListener) {
 
         token.checkIfPermissionAllowed(Permissions.AMS);
 
         listener = theMIDletStateListener;
 
-        MIDletPeer.initClass(this, listener, thePlatformRequestHandler);
+        MIDletPeer.initClass(this, listener);
     }
 
     /**

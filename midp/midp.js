@@ -84,7 +84,7 @@ var MIDP = (function() {
     return 1;
   };
 
-  Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
+  Native["com/sun/midp/midlet/MIDletPeer.platformRequest.(Ljava/lang/String;)Z"] = function(request) {
     request = J2ME.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
       if (request.endsWith(".jad")) {
