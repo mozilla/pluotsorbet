@@ -123,10 +123,6 @@ public class MIDletSuiteLoader extends CldcMIDletSuiteLoader {
         MIDletProxy.initClass(foregroundEventProducer, midletEventProducer);
         MIDletProxyList.initClass(midletProxyList);
 
-        // Listen for start MIDlet requests from the other isolates
-        ExecuteMIDletEventListener.startListening(internalSecurityToken,
-						  eventQueue);
-
         // Init gloabal systems common for all isolates
         initGlobalSystems();
     }

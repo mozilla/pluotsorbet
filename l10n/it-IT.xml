@@ -90,8 +90,6 @@
                 Value="The application has unexpectedly quit because it ran out of memory."/>
 <localized_string Key="AMS_MIDLETSUITELDR_UNEXPECTEDLY_QUIT"
                 Value="The application has unexpectedly quit. Contact the application provider to resolve the issue."/>
-<localized_string Key="AMS_MIDLETSUITELDR_CANT_EXE_NEXT_MIDLET"
-                Value="Can't execute next MIDlet."/>
 <localized_string Key="AMS_MIDLETSUITELDR_RESOURCE_LIMIT_ERROR"
                 Value="No more concurrent applications allowed."/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_DISABLED"
