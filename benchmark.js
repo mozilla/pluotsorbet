@@ -306,7 +306,7 @@ var Benchmark = (function() {
           if (p < 0.05) {
             pMessage = currentMean < baselineMean ? "BETTER" : "WORSE";
           } else {
-            pMessage = "INSIGNIFICANT";
+            pMessage = "SAME";
           }
         } else {
           pMessage = "n/a";
@@ -397,6 +397,9 @@ var Benchmark = (function() {
     CENTER: CENTER,
     RIGHT: RIGHT,
     startup: {
+      setStartTime: function () {
+        startup.startTime = performance.now();
+      },
       init: function() {
         if (!storage.running) {
           return;
