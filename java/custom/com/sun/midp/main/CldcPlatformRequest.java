@@ -46,20 +46,6 @@ import com.sun.midp.security.SecurityToken;
  * Implements platform request functionality for CLDC platform.
  */
 public class CldcPlatformRequest {
-
-    /** Class name of the installer use for plaformRequest. */
-    static final String INSTALLER_CLASS =
-        "com.sun.midp.installer.GraphicalInstaller";
-
-    /** Media-Type for valid application descriptor files. */
-    static final String JAD_MT = "text/vnd.sun.j2me.app-descriptor";
-
-    /** Media-Type for valid Jar file. */
-    static final String JAR_MT_1 = "application/java";
-
-    /** Media-Type for valid Jar file. */
-    static final String JAR_MT_2 = "application/java-archive";
-
     /** This class has a different security domain than the application. */
     private SecurityToken securityToken;
 
@@ -153,109 +139,6 @@ public class CldcPlatformRequest {
         }
 
         return dispatchPlatformRequest(URL);
-    }
-
-    /**
-     * Find out if the given URL is a JAD or JAR HTTP URL by performing a
-     * HTTP head request and checking the MIME type.
-     *
-     * @param url The URL for to check
-     *
-     * @return true if the URL points to a MIDlet suite
-     */
-
-    private boolean isMidletSuiteUrl(String url) {
-        Connection conn = null;
-        HttpConnection httpConnection = null;
-        String profile;
-        int space;
-        String configuration;
-        String locale;
-        int responseCode;
-        String mediaType;
-
-        try {
-            conn = Connector.open(url, Connector.READ);
-        } catch (IllegalArgumentException e) {
-            return false;
-        } catch (IOException e) {
-            return false;
-        }
-
-        try {
-            if (!(conn instanceof HttpConnection)) {
-                // only HTTP or HTTPS are supported
-                return false;
-            }
-
-            httpConnection = (HttpConnection)conn;
-
-            httpConnection.setRequestMethod(HttpConnection.HEAD);
-
-            httpConnection.setRequestProperty("Accept", "*/*");
-
-            profile = System.getProperty("microedition.profiles");
-            space = profile.indexOf(' ');
-            if (space != -1) {
-                profile = profile.substring(0, space);
-            }
-
-            configuration = System.getProperty("microedition.configuration");
-            httpConnection.setRequestProperty("User-Agent",
-                "Profile/" + profile + " Configuration/" + configuration);
-
-            httpConnection.setRequestProperty("Accept-Charset",
-                                              "UTF-8, ISO-8859-1");
-
-            /* locale can be null */
-            locale = System.getProperty("microedition.locale");
-            if (locale != null) {
-                httpConnection.setRequestProperty("Accept-Language", locale);
-            }
-
-            responseCode = httpConnection.getResponseCode();
-
-            if (responseCode != HttpConnection.HTTP_OK) {
-                return false;
-            }
-
-            mediaType = Util.getHttpMediaType(httpConnection.getType());
-            if (mediaType == null) {
-                return false;
-            }
-
-            if (mediaType.equals(JAD_MT) || mediaType.equals(JAR_MT_1) ||
-                    mediaType.equals(JAR_MT_2)) {
-                return true;
-            }
-
-            return false;
-        } catch (IOException ioe) {
-            return false;
-        } finally {
-            try {
-                conn.close();
-            } catch (Exception e) {
-                if (Logging.REPORT_LEVEL <= Logging.WARNING) {
-                    Logging.report(Logging.WARNING, LogChannels.LC_AMS,
-                                  "Exception while closing  connection");
-                }
-            }
-        }
-    }
-
-    /**
-     * Dispatches the a JAD or JAD HTTP URL to the Graphical Installer.
-     *
-     * @param url The URL to dispatch
-     *
-     * @return true if the MIDlet suite MUST first exit before the
-     * content can be fetched.
-     */
-    private boolean dispatchMidletSuiteUrl(String url) {
-        return MIDletSuiteUtils.executeWithArgs(securityToken,
-            MIDletSuite.INTERNAL_SUITE_ID, INSTALLER_CLASS,
-                "MIDlet Suite Installer", "PR", url, null);
     }
 
     /**
