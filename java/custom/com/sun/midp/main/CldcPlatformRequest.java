@@ -143,30 +143,6 @@ public class CldcPlatformRequest {
     public boolean dispatch(String URL)
             throws ConnectionNotFoundException {
         if ("".equals(URL)) {
-            if (Configuration.getIntProperty(
-                    "useJavaInstallerForPlaformRequest", 0) != 0) {
-                /*
-                 * This is request to try to cancel the last request.
-                 *
-                 * If the next MIDlet to run is the installer then it can be
-                 * cancelled.
-                 */
-                if (INSTALLER_CLASS.equals(
-                    MIDletSuiteUtils.getNextMIDletToRun())) {
-                    /*
-                     * Try to cancel the installer midlet. Note this call only
-                     * works now because suite are not run concurrently and
-                     * must be queued to be run after this MIDlet is
-                     * destroyed.
-                     * This cancel code can be remove when the installer is
-                     * runs concurrently with this suite.
-                     */
-                    MIDletSuiteUtils.execute(securityToken,
-                        MIDletSuite.UNUSED_SUITE_ID, null, null);
-                    return false;
-                }
-            }
-
             /*
              * Give the platform a chance to cancel the request.
              * Note: if the application was launched already this will
@@ -174,17 +150,6 @@ public class CldcPlatformRequest {
              */
             dispatchPlatformRequest("");
             return false;
-        }
-
-        /*
-         * Remove this "if", when not using the Installer MIDlet,
-         * or the native installer will not be launched.
-         */
-        if (Configuration.getIntProperty(
-                "useJavaInstallerForPlaformRequest", 0) != 0) {
-            if (isMidletSuiteUrl(URL)) {
-                return dispatchMidletSuiteUrl(URL);
-            }
         }
 
         return dispatchPlatformRequest(URL);
