@@ -37,6 +37,7 @@ import com.sun.midp.log.*;
 import com.sun.midp.publickeystore.WebPublicKeyStore;
 import com.sun.midp.rms.RmsEnvironment;
 import com.sun.midp.rms.RecordStoreRegistry;
+import com.sun.midp.midletsuite.SuiteContainerAdapter;
 
 /**
  * The class presents abstract MIDlet suite loader with routines to prepare
@@ -205,8 +206,8 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
             midletStateHandler,
             eventQueue);
         
-        MidletSuiteContainer msc = 
-                new MidletSuiteContainer(MIDletSuiteStorage.getMIDletSuiteStorage(internalSecurityToken));
+        SuiteContainerAdapter msc =
+                new SuiteContainerAdapter(MIDletSuiteStorage.getMIDletSuiteStorage(internalSecurityToken));
         RmsEnvironment.init(internalSecurityToken, msc);
     }
 
