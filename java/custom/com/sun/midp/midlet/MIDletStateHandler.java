@@ -37,6 +37,10 @@ import com.sun.midp.security.SecurityToken;
 import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
 
+import com.sun.midp.main.CldcMIDletStateListener;
+import com.sun.midp.main.CldcMIDletLoader;
+import com.sun.midp.main.CldcPlatformRequest;
+
 /**
  * The MIDletStateHandler starts and controls MIDlets through the lifecycle
  * states.
@@ -95,7 +99,7 @@ public class MIDletStateHandler {
     /** the current MIDlet suite. */
     private MIDletSuite midletSuite;
     /** loads the MIDlets from a suite's JAR in a VM specific way. */
-    private MIDletLoader midletLoader;
+    private CldcMIDletLoader midletLoader;
     /** array of MIDlets. */
     private MIDletPeer[] midlets;
     /** current number of MIDlets [0..n-1]. */
@@ -106,7 +110,7 @@ public class MIDletStateHandler {
     /** The event handler of all MIDlets in an Isolate. */
     private static MIDletStateHandler stateHandler;
     /** The listener for the state of all MIDlets in an Isolate. */
-    private static MIDletStateListener listener;
+    private static CldcMIDletStateListener listener;
 
     /** Serializes the creation of MIDlets. */
     private static Object createMIDletLock = new Object();
@@ -169,9 +173,9 @@ public class MIDletStateHandler {
      */
     public void initMIDletStateHandler(
         SecurityToken token,
-        MIDletStateListener theMIDletStateListener,
-        MIDletLoader theMidletLoader,
-        PlatformRequest thePlatformRequestHandler) {
+        CldcMIDletStateListener theMIDletStateListener,
+        CldcMIDletLoader theMidletLoader,
+        CldcPlatformRequest thePlatformRequestHandler) {
 
         token.checkIfPermissionAllowed(Permissions.AMS);
 

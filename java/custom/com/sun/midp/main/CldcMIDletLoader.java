@@ -33,7 +33,7 @@ import com.sun.midp.security.SecurityToken;
 /**
  * The class implements the MIDlet loader for the CLDC VM.
  */
-class CldcMIDletLoader implements MIDletLoader {
+public class CldcMIDletLoader {
     /** This class has a different security domain than the application. */
     private SecurityToken classSecurityToken;
 

@@ -34,6 +34,8 @@ import javax.microedition.midlet.MIDletStateChangeException;
 import com.sun.midp.security.Permissions;
 import com.sun.midp.security.SecurityToken;
 
+import com.sun.midp.main.CldcMIDletStateListener;
+import com.sun.midp.main.CldcPlatformRequest;
 
 /**
  * MIDletPeer maintains the current state of the MIDlet and forwards updates
@@ -92,10 +94,10 @@ public class MIDletPeer implements MIDletEventConsumer {
     private static MIDletStateHandler midletStateHandler;
 
     /** The call when a MIDlet's state changes. */
-    private static MIDletStateListener midletStateListener;
+    private static CldcMIDletStateListener midletStateListener;
 
     /** Handles platform requests. */
-    private static PlatformRequest platformRequest;
+    private static CldcPlatformRequest platformRequest;
 
     /** The MIDletTunnel implementation from javax.microedition.midlet */
     private static MIDletTunnel tunnel;
@@ -110,8 +112,8 @@ public class MIDletPeer implements MIDletEventConsumer {
      */
     static void initClass(
         MIDletStateHandler theMIDletStateHandler,
-        MIDletStateListener theMIDletStateListener,
-        PlatformRequest thePlatformRequestHandler) {
+        CldcMIDletStateListener theMIDletStateListener,
+        CldcPlatformRequest thePlatformRequestHandler) {
 
         midletStateHandler = theMIDletStateHandler;
         midletStateListener = theMIDletStateListener;

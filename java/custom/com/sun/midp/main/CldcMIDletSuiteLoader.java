@@ -194,14 +194,11 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
         midletStateHandler =
             MIDletStateHandler.getMidletStateHandler();
 
-        MIDletStateListener midletStateListener =
-            new CldcMIDletStateListener(internalSecurityToken,
-                                        displayContainer,
-                                        midletControllerEventProducer);
-
         midletStateHandler.initMIDletStateHandler(
             internalSecurityToken,
-            midletStateListener,
+            new CldcMIDletStateListener(internalSecurityToken,
+                                        displayContainer,
+                                        midletControllerEventProducer),
             new CldcMIDletLoader(internalSecurityToken),
             new CldcPlatformRequest(internalSecurityToken));
 

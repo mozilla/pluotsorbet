@@ -39,14 +39,13 @@ import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
 
 import com.sun.midp.midlet.MIDletSuite;
-import com.sun.midp.midlet.PlatformRequest;
 
 import com.sun.midp.security.SecurityToken;
 
 /**
  * Implements platform request functionality for CLDC platform.
  */
-class CldcPlatformRequest implements PlatformRequest {
+public class CldcPlatformRequest {
 
     /** Class name of the installer use for plaformRequest. */
     static final String INSTALLER_CLASS =
