@@ -668,15 +668,4 @@ public final class MIDletSuiteImpl implements MIDletSuite {
             throw new IllegalStateException(s);
         }
     }
-
-    /**
-     * Determine if the a MIDlet from this suite can be run. Note that
-     * disable suites can still have their settings changed and their
-     * install info displayed.
-     *
-     * @return true if suite is enabled, false otherwise
-     */
-    public boolean isEnabled() {
-        return suiteSettings.isEnabled();
-    }
 }

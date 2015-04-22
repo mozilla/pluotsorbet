@@ -137,7 +137,7 @@ public class MIDletSuiteInfo {
 
         suiteId = theID;
 
-        enabled = theMidletSuite.isEnabled();
+        enabled = true;
     }
 
     /**

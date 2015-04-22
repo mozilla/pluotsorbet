@@ -208,15 +208,6 @@ public interface MIDletSuite {
      public boolean isTrusted();
 
     /**
-     * Determine if the a MIDlet from this suite can be run. Note that
-     * disable suites can still have their settings changed and their
-     * install info displayed.
-     *
-     * @return true if suite is enabled, false otherwise
-     */
-    public boolean isEnabled();
-
-    /**
      * Close the opened MIDletSuite
      */
     public void close();

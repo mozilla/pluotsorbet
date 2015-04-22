@@ -326,11 +326,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
                 return;
             }
 
-            if (!midletSuite.isEnabled()) {
-                reportError(Constants.MIDLET_SUITE_DISABLED);
-                return;
-            }
-
             /*
              * Now that we have the suite and reserved its resources
              * we can initialize any classes that need MIDlet Suite
