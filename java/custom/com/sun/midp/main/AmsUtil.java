@@ -302,60 +302,6 @@ public class AmsUtil {
         return isolate;
     }
 
-    /*
-     * Check whether MIDlet-Heap-Size attribute is defined for the
-     * MIDlet. It specifies maximum heap memory available for the MIDlet.
-     *
-     * The value is in bytes and must be a positive integer. The
-     * only abbreviation in the value definition supported is K that
-     * stands for kilobytes.
-     *
-     * If the amount declared exceeds the maximum heap limit allowed
-     * for a single MIDlet, the attribute is ignored and the default
-     * heap limit is used.
-     *
-     * Heap size is a total heap memory available for the isolate
-     * where the MIDlet is launched. The size includes memory
-     * occupied by the implementation for internal system purposes.
-     * Thus the real heap size available for the MIDlet may be less.
-     *
-     * @param suiteId ID of an installed suite
-     * @param midletName class name of MIDlet to invoke
-     *
-     * @return heap size limit if it's explicitly defined for the MIDlet,
-     *         or -1 if it's not defined or invalid
-     */
-    static private int getMidletHeapSize(int suiteId, String midletName) {
-        int heapSize = -1;
-
-        if (Constants.EXTENDED_MIDLET_ATTRIBUTES_ENABLED) {
-            String heapSizeProp = MIDletSuiteUtils.getSuiteProperty(
-                suiteId, midletName, MIDletSuite.HEAP_SIZE_PROP);
-
-            if (heapSizeProp != null) {
-                boolean sizeInKilos = false;
-
-                int propLen = heapSizeProp.length();
-                if (propLen > 0) {
-                    char lastChar = heapSizeProp.charAt(propLen - 1);
-                    if ((lastChar == 'K') || (lastChar == 'k')) {
-                        heapSizeProp = heapSizeProp.substring(0, propLen - 1);
-                        sizeInKilos = true;
-                    }
-                }
-
-                try {
-                    heapSize = Integer.parseInt(heapSizeProp);
-                    heapSize = sizeInKilos ? heapSize * 1024 : heapSize;
-                } catch (NumberFormatException e) {
-                    // ignore the attribute if the value is not valid
-                }
-            }
-        }
-
-        return heapSize;
-    }
-
     /**
      * Terminates an isolate.
      *

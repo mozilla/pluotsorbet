@@ -40,9 +40,6 @@ public interface MIDletSuite {
 
     /** MIDlet property for the suite name. */
     public static final String SUITE_NAME_PROP    = "MIDlet-Name";
- 
-    /** MIDlet property for the maximum heap size allowed for the MIDlet. */
-    public static final String HEAP_SIZE_PROP = "MIDlet-Heap-Size";
 
     /**
      * MIDlet property defines whether the MIDlet is paused while it's in
