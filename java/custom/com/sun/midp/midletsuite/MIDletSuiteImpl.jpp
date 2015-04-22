@@ -53,7 +53,6 @@ import com.sun.midp.io.j2me.storage.*;
 
 import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
-import com.sun.midp.main.MIDletSuiteVerifier;
 
 import com.sun.midp.util.Properties;
 import com.sun.midp.configurator.Constants;
