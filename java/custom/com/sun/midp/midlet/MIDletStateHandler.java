@@ -38,7 +38,6 @@ import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
 
 import com.sun.midp.main.CldcMIDletStateListener;
-import com.sun.midp.main.CldcMIDletLoader;
 import com.sun.midp.main.CldcPlatformRequest;
 
 /**
@@ -98,8 +97,6 @@ import com.sun.midp.main.CldcPlatformRequest;
 public class MIDletStateHandler {
     /** the current MIDlet suite. */
     private MIDletSuite midletSuite;
-    /** loads the MIDlets from a suite's JAR in a VM specific way. */
-    private CldcMIDletLoader midletLoader;
     /** array of MIDlets. */
     private MIDletPeer[] midlets;
     /** current number of MIDlets [0..n-1]. */
@@ -174,13 +171,11 @@ public class MIDletStateHandler {
     public void initMIDletStateHandler(
         SecurityToken token,
         CldcMIDletStateListener theMIDletStateListener,
-        CldcMIDletLoader theMidletLoader,
         CldcPlatformRequest thePlatformRequestHandler) {
 
         token.checkIfPermissionAllowed(Permissions.AMS);
 
         listener = theMIDletStateListener;
-        midletLoader = theMidletLoader;
 
         MIDletPeer.initClass(this, listener, thePlatformRequestHandler);
     }
@@ -742,8 +737,12 @@ public class MIDletStateHandler {
                                        externalAppId);
 
                 try {
-                    midlet = midletLoader.newInstance(getMIDletSuite(),
-                                                      classname);
+                    Class midletClass = Class.forName(classname);
+                    if (!Class.forName("javax.microedition.midlet.MIDlet").isAssignableFrom(midletClass)) {
+                        throw new InstantiationException("Class not a MIDlet");
+                    }
+
+                    midlet = (MIDlet)midletClass.newInstance();
                     return midlet;
                 } finally {
                     if (midlet == null) {

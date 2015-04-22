@@ -199,7 +199,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
             new CldcMIDletStateListener(internalSecurityToken,
                                         displayContainer,
                                         midletControllerEventProducer),
-            new CldcMIDletLoader(internalSecurityToken),
             new CldcPlatformRequest(internalSecurityToken));
 
         midletEventListener = new MIDletEventListener(
