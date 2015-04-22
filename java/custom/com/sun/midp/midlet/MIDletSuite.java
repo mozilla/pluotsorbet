@@ -38,49 +38,8 @@ public interface MIDletSuite {
     /** Suite ID used for internal midlet suites. */
     public final static int INTERNAL_SUITE_ID = -1;
 
-    /** Filename of Manifest inside the application archive. */
-    public static final String JAR_MANIFEST       = "META-INF/MANIFEST.MF";
-
-    /** MIDlet property for the size of the application data. */
-    public static final String DATA_SIZE_PROP     = "MIDlet-Data-Size";
-
-    /** MIDlet property for the size of the application archive. */
-    public static final String JAR_SIZE_PROP      = "MIDlet-Jar-Size";
-
-    /** MIDlet property for the application archive URL. */
-    public static final String JAR_URL_PROP       = "MIDlet-Jar-URL";
-
     /** MIDlet property for the suite name. */
     public static final String SUITE_NAME_PROP    = "MIDlet-Name";
-
-    /** MIDlet property for the suite vendor. */
-    public static final String VENDOR_PROP        = "MIDlet-Vendor";
-
-    /** MIDlet property for the suite version. */
-    public static final String VERSION_PROP       = "MIDlet-Version";
-
-    /** MIDlet property for the suite description. */
-    public static final String DESC_PROP        = "MIDlet-Description";
-
-    /** MIDlet property for the microedition configuration. */
-    public static final String CONFIGURATION_PROP =
-        "MicroEdition-Configuration";
-
-    /** MIDlet property for the profile. */
-    public static final String PROFILE_PROP       = "MicroEdition-Profile";
-
-    /** MIDlet Runtime Execution Environment (MIDP.CLDC by default) */
-    public static final String RUNTIME_EXEC_ENV_PROP =
-        "Runtime-Execution-Environment";
-
-    /** Default value for the Runtime-Execution-Environment property */
-    public static final String RUNTIME_EXEC_ENV_DEFAULT = "MIDP.CLDC";
-
-    /** MIDlet property for the required permissions. */
-    public static final String PERMISSIONS_PROP     = "MIDlet-Permissions";
-
-    /** MIDlet property for the optional permissions. */
-    public static final String PERMISSIONS_OPT_PROP = "MIDlet-Permissions-Opt";
  
     /** MIDlet property for the maximum heap size allowed for the MIDlet. */
     public static final String HEAP_SIZE_PROP = "MIDlet-Heap-Size";
@@ -96,9 +55,6 @@ public interface MIDletSuite {
 
     /** MIDlet property for launching the MIDlet directly in the background. */
     public static final String LAUNCH_BG_PROP = "MIDlet-Launch-Background";
-
-    /** MIDlet property for launching the MIDlet during system start-up. */
-    public static final String LAUNCH_POWER_ON_PROP = "MIDlet-Launch-Power-On";
 
 
     /**
