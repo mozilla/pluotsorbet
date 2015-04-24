@@ -1327,10 +1327,7 @@ module J2ME {
 
       var instanceSymbols = classBindings.fields.instanceSymbols;
 
-      var fieldNames = Object.keys(instanceSymbols);
-
-      for (var i = 0; i < fieldNames.length; i++) {
-        var fieldName = fieldNames[i];
+      for (var fieldName in instanceSymbols) {
         var fieldSignature = instanceSymbols[fieldName];
 
         var field = classInfo.getFieldByName(toUTF8(fieldName), toUTF8(fieldSignature), false);
