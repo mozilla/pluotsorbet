@@ -1321,47 +1321,47 @@ module J2ME {
    */
   function linkKlassFields(klass: Klass) {
     var classInfo = klass.classInfo;
-    var fields = classInfo.getFields();
-    var classBindings = BindingsMap.get(klass.classInfo.utf8Name);
+    var classBindings = BindingsMap.get(classInfo.utf8Name);
     if (classBindings && classBindings.fields) {
-      for (var i = 0; i < fields.length; i++) {
-        var field = fields[i];
-        // TODO Startup Performance: This iterates over all the fields then looks for symbols
-        // that need to be linked. We should instead scan the symbol list and then look for
-        // matching fields in the class. Doing this will avoid creating the key below that is
-        // only used to lookup symbols.
-        var key = ByteStream.readString(field.utf8Name) + "." + ByteStream.readString(field.utf8Signature);
-        var symbols = field.isStatic ? classBindings.fields.staticSymbols :
-                                       classBindings.fields.instanceSymbols;
-        if (symbols && symbols[key]) {
-          release || assert(!field.isStatic, "Static fields are not supported yet.");
-          var symbolName = symbols[key];
-          var object = field.isStatic ? klass : klass.prototype;
-          release || assert (!object.hasOwnProperty(symbolName), "Should not overwrite existing properties.");
-          var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
-          var setter;
-          if (release) {
-            setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
-          } else {
-            setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
-          }
-          Object.defineProperty(object, symbolName, {
-            get: getter,
-            set: setter,
-            configurable: true,
-            enumerable: false
-          });
-          delete symbols[key];
+      release || assert(!classBindings.fields.staticSymbols, "Static fields are not supported yet");
+
+      var instanceSymbols = classBindings.fields.instanceSymbols;
+
+      var fieldNames = Object.keys(instanceSymbols);
+
+      for (var i = 0; i < fieldNames.length; i++) {
+        var fieldName = fieldNames[i];
+        var fieldSignature = instanceSymbols[fieldName];
+
+        var field = classInfo.getFieldByName(toUTF8(fieldName), toUTF8(fieldSignature), false);
+
+        release || assert(!field.isStatic, "Static field was defined as instance in BindingsMap");
+        var object = field.isStatic ? klass : klass.prototype;
+        release || assert (!object.hasOwnProperty(fieldName), "Should not overwrite existing properties.");
+        var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
+        var setter;
+        if (release) {
+          setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
+        } else {
+          setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
         }
+        Object.defineProperty(object, fieldName, {
+          get: getter,
+          set: setter,
+          configurable: true,
+          enumerable: false
+        });
+        delete instanceSymbols[fieldName];
       }
+
       if (!release) {
         if (classBindings.fields.staticSymbols) {
-          var staticSymbols = Object.keys(classBindings.fields.staticSymbols);
-          assert(staticSymbols.length === 0, "Unlinked symbols: " + staticSymbols.join(", "));
+          var staticSymbolNames = Object.keys(classBindings.fields.staticSymbols);
+          assert(staticSymbolNames.length === 0, "Unlinked symbols: " + staticSymbolNames.join(", "));
         }
         if (classBindings.fields.instanceSymbols) {
-          var instanceSymbols = Object.keys(classBindings.fields.instanceSymbols);
-          assert(instanceSymbols.length === 0, "Unlinked symbols: " + instanceSymbols.join(", "));
+          var instanceSymbolNames = Object.keys(classBindings.fields.instanceSymbols);
+          assert(instanceSymbolNames.length === 0, "Unlinked symbols: " + instanceSymbolNames.join(", "));
         }
       }
     }
