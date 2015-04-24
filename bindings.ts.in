@@ -1,5 +1,5 @@
 module J2ME {
-  export var Bindings = {
+  var Bindings = {
     "java/lang/Object": {
       native: {
         "hashCode.()I": function (): number {
@@ -14,7 +14,7 @@ module J2ME {
     "java/lang/Class": {
       fields: {
         instanceSymbols: {
-          "status.I": "status"
+          "status": "I"
         }
       },
       methods: {
@@ -26,256 +26,260 @@ module J2ME {
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
-          "priority.I": "priority"
+          "priority": "I"
         }
       }
     },
     "com/sun/cldc/isolate/Isolate": {
       fields: {
         instanceSymbols: {
-          "_mainArgs.[Ljava/lang/String;": "_mainArgs",
-          "_mainClass.Ljava/lang/String;": "_mainClass",
+          "_mainArgs": "[Ljava/lang/String;",
+          "_mainClass": "Ljava/lang/String;",
         }
       }
     },
     "java/io/ByteArrayOutputStream": {
       fields: {
         instanceSymbols: {
-          "count.I": "count",
-          "buf.[B": "buf"
+          "count": "I",
+          "buf": "[B"
         }
       }
     },
     "com/sun/cldc/i18n/j2me/UTF_8_Writer": {
       fields: {
         instanceSymbols: {
-          "pendingSurrogate.I": "pendingSurrogate"
+          "pendingSurrogate": "I"
         }
       }
     },
+// #if JSR_179 == 1
     "com/sun/j2me/location/CriteriaImpl": {
       fields: {
         instanceSymbols: {
-          "providerName.Ljava/lang/String;": "providerName"
+          "providerName": "Ljava/lang/String;"
         }
       }
     },
     "com/sun/j2me/location/LocationProviderInfo": {
       fields: {
         instanceSymbols: {
-          "canReportAltitude.Z": "canReportAltitude",
-          "canReportSpeedCource.Z": "canReportSpeedCource",
-          "averageResponseTime.I": "averageResponseTime"
+          "canReportAltitude": "Z",
+          "canReportSpeedCource": "Z",
+          "averageResponseTime": "I"
         }
       }
     },
     "com/sun/j2me/location/LocationInfo": {
       fields: {
         instanceSymbols: {
-          "isValid.Z": "isValid",
-          "timestamp.J": "timestamp",
-          "latitude.D": "latitude",
-          "longitude.D": "longitude",
-          "altitude.F": "altitude",
-          "horizontalAccuracy.F": "horizontalAccuracy",
-          "verticalAccuracy.F": "verticalAccuracy",
-          "speed.F": "speed",
-          "course.F": "course",
-          "method.I": "method"
+          "isValid": "Z",
+          "timestamp": "J",
+          "latitude": "D",
+          "longitude": "D",
+          "altitude": "F",
+          "horizontalAccuracy": "F",
+          "verticalAccuracy": "F",
+          "speed": "F",
+          "course": "F",
+          "method": "I"
         }
       }
     },
+// #endif
+// #if JSR_256 == 1
     "com/sun/javame/sensor/ChannelModel": {
       fields: {
         instanceSymbols: {
-          "scale.I": "scale",
-          "name.Ljava/lang/String;": "name",
-          "unit.Ljava/lang/String;": "unit",
-          "dataType.I": "dataType",
-          "accuracy.I": "accuracy",
-          "mrangeCount.I": "mrangeCount",
-          "mrageArray.[J": "mrageArray"
+          "scale": "I",
+          "name": "Ljava/lang/String;",
+          "unit": "Ljava/lang/String;",
+          "dataType": "I",
+          "accuracy": "I",
+          "mrangeCount": "I",
+          "mrageArray": "[J"
         }
       }
     },
     "com/sun/javame/sensor/SensorModel": {
       fields: {
         instanceSymbols: {
-          "description.Ljava/lang/String;": "description",
-          "model.Ljava/lang/String;": "model",
-          "quantity.Ljava/lang/String;": "quantity",
-          "contextType.Ljava/lang/String;": "contextType",
-          "connectionType.I": "connectionType",
-          "maxBufferSize.I": "maxBufferSize",
-          "availabilityPush.Z": "availabilityPush",
-          "conditionPush.Z": "conditionPush",
-          "channelCount.I": "channelCount",
-          "errorCodes.[I": "errorCodes",
-          "errorMsgs.[Ljava/lang/String;": "errorMsgs",
-          "properties.[Ljava/lang/String;": "properties"
+          "description": "Ljava/lang/String;",
+          "model": "Ljava/lang/String;",
+          "quantity": "Ljava/lang/String;",
+          "contextType": "Ljava/lang/String;",
+          "connectionType": "I",
+          "maxBufferSize": "I",
+          "availabilityPush": "Z",
+          "conditionPush": "Z",
+          "channelCount": "I",
+          "errorCodes": "[I",
+          "errorMsgs": "[Ljava/lang/String;",
+          "properties": "[Ljava/lang/String;"
         }
       }
     },
+// #endif
     "com/nokia/mid/ui/DirectGraphicsImp": {
       fields: {
         instanceSymbols: {
-          "graphics.Ljavax/microedition/lcdui/Graphics;": "graphics"
+          "graphics": "Ljavax/microedition/lcdui/Graphics;"
         }
       }
     },
     "javax/microedition/lcdui/Command": {
       fields: {
         instanceSymbols: {
-          "id.I": "id",
-          "commandType.I": "commandType",
-          "shortLabel.Ljava/lang/String;": "shortLabel",
-          "priority.I": "priority",
+          "id": "I",
+          "commandType": "I",
+          "shortLabel": "Ljava/lang/String;",
+          "priority": "I",
         }
       }
     },
     "javax/microedition/lcdui/Font": {
       fields: {
         instanceSymbols: {
-          "baseline.I": "baseline",
-          "height.I": "height",
+          "baseline": "I",
+          "height": "I",
         }
       }
     },
     "javax/microedition/lcdui/Image": {
       fields: {
         instanceSymbols: {
-          "imageData.Ljavax/microedition/lcdui/ImageData;": "imageData",
-          "width.I": "width",
-          "height.I": "height"
+          "imageData": "Ljavax/microedition/lcdui/ImageData;",
+          "width": "I",
+          "height": "I"
         }
       }
     },
     "javax/microedition/lcdui/ImageData": {
       fields: {
         instanceSymbols: {
-          "width.I": "width",
-          "height.I": "height",
-          "isMutable.Z": "isMutable",
+          "width": "I",
+          "height": "I",
+          "isMutable": "Z",
         }
       }
     },
     "com/nokia/mid/ui/TextEditor": {
       fields: {
         instanceSymbols: {
-          "font.Ljavax/microedition/lcdui/Font;": "font",
+          "font": "Ljavax/microedition/lcdui/Font;",
         }
       }
     },
     "com/sun/midp/events/Event": {
       fields: {
         instanceSymbols: {
-          "type.I": "type",
-          "next.Lcom/sun/midp/events/Event;": "next",
+          "type": "I",
+          "next": "Lcom/sun/midp/events/Event;",
         }
       }
     },
     "com/sun/midp/events/NativeEvent": {
       fields: {
         instanceSymbols: {
-          "intParam1.I": "intParam1",
-          "intParam2.I": "intParam2",
-          "intParam3.I": "intParam3",
-          "intParam4.I": "intParam4",
-          "intParam5.I": "intParam5",
-          "intParam6.I": "intParam6",
-          "intParam7.I": "intParam7",
-          "intParam8.I": "intParam8",
-          "intParam9.I": "intParam9",
-          "intParam10.I": "intParam10",
-          "intParam11.I": "intParam11",
-          "intParam12.I": "intParam12",
-          "intParam13.I": "intParam13",
-          "intParam14.I": "intParam14",
-          "intParam15.I": "intParam15",
-          "intParam16.I": "intParam16",
-          "floatParam1.F": "floatParam1",
-          "stringParam1.Ljava/lang/String;": "stringParam1",
-          "stringParam2.Ljava/lang/String;": "stringParam2",
-          "stringParam3.Ljava/lang/String;": "stringParam3",
-          "stringParam4.Ljava/lang/String;": "stringParam4",
-          "stringParam5.Ljava/lang/String;": "stringParam5",
-          "stringParam6.Ljava/lang/String;": "stringParam6",
+          "intParam1": "I",
+          "intParam2": "I",
+          "intParam3": "I",
+          "intParam4": "I",
+          "intParam5": "I",
+          "intParam6": "I",
+          "intParam7": "I",
+          "intParam8": "I",
+          "intParam9": "I",
+          "intParam10": "I",
+          "intParam11": "I",
+          "intParam12": "I",
+          "intParam13": "I",
+          "intParam14": "I",
+          "intParam15": "I",
+          "intParam16": "I",
+          "floatParam1": "F",
+          "stringParam1": "Ljava/lang/String;",
+          "stringParam2": "Ljava/lang/String;",
+          "stringParam3": "Ljava/lang/String;",
+          "stringParam4": "Ljava/lang/String;",
+          "stringParam5": "Ljava/lang/String;",
+          "stringParam6": "Ljava/lang/String;",
         }
       }
     },
     "com/sun/cdc/io/j2me/file/DefaultFileHandler": {
       fields: {
         instanceSymbols: {
-          "nativePath.Ljava/lang/String;": "nativePath",
-          "nativeDescriptor.I": "nativeDescriptor",
-          "isOpenForRead.Z": "isOpenForRead",
-          "isOpenForWrite.Z": "isOpenForWrite"
+          "nativePath": "Ljava/lang/String;",
+          "nativeDescriptor": "I",
+          "isOpenForRead": "Z",
+          "isOpenForWrite": "Z"
         }
       }
     },
     "com/sun/midp/rms/RecordStoreSharedDBHeader": {
       fields: {
         instanceSymbols: {
-          "lookupId.I": "lookupId",
+          "lookupId": "I",
         }
       }
     },
     "com/sun/cdc/io/j2me/file/Protocol": {
       fields: {
         instanceSymbols: {
-          "fileHandler.Lcom/sun/cdc/io/j2me/file/BaseFileHandler;": "fileHandler",
+          "fileHandler": "Lcom/sun/cdc/io/j2me/file/BaseFileHandler;",
         }
       }
     },
     "com/sun/j2me/pim/PIMFieldDescriptor": {
       fields: {
         instanceSymbols: {
-          "field.I": "field",
-          "dataType.I": "dataType",
-          "maxValues.I": "maxValues",
+          "field": "I",
+          "dataType": "I",
+          "maxValues": "I",
         }
       }
     },
     "com/sun/midp/io/j2me/sms/Protocol$SMSPacket": {
       fields: {
         instanceSymbols: {
-          "message.[B": "message",
-          "address.[B": "address",
-          "port.I": "port",
-          "sentAt.J": "sentAt",
-          "messageType.I": "messageType",
+          "message": "[B",
+          "address": "[B",
+          "port": "I",
+          "sentAt": "J",
+          "messageType": "I",
         }
       }
     },
     "com/sun/midp/main/CommandState": {
       fields: {
         instanceSymbols: {
-          "suiteId.I": "suiteId",
-          "midletClassName.Ljava/lang/String;": "midletClassName",
-          "arg0.Ljava/lang/String;": "arg0",
-          "arg1.Ljava/lang/String;": "arg1",
-          "arg2.Ljava/lang/String;": "arg2",
+          "suiteId": "I",
+          "midletClassName": "Ljava/lang/String;",
+          "arg0": "Ljava/lang/String;",
+          "arg1": "Ljava/lang/String;",
+          "arg2": "Ljava/lang/String;",
         }
       }
     },
     "com/sun/midp/midletsuite/SuiteSettings": {
       fields: {
         instanceSymbols: {
-          "pushInterruptSetting.B": "pushInterruptSetting",
+          "pushInterruptSetting": "B",
         }
       }
     },
     "com/sun/midp/midletsuite/InstallInfo": {
       fields: {
         instanceSymbols: {
-          "trusted.Z": "trusted",
+          "trusted": "Z",
         }
       }
     },
     "com/sun/midp/links/Link": {
       fields: {
         instanceSymbols: {
-          "nativePointer.I": "nativePointer",
+          "nativePointer": "I",
         }
       }
     }
