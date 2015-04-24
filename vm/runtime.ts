@@ -1567,7 +1567,7 @@ module J2ME {
       return forwarder;
     }
     runtimeCounter && runtimeCounter.count("makeInterfaceMethodForwarder");
-    return interfaceMethodForwarders[index] = new Function("this.v" + index + ".apply(this, arguments);");
+    return interfaceMethodForwarders[index] = new Function("return this.v" + index + ".apply(this, arguments);");
   }
 
   // Cache virtual trampolines.
