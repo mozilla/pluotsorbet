@@ -1,5 +1,5 @@
 module J2ME {
-  export var Bindings = {
+  var Bindings = {
     "java/lang/Object": {
       native: {
         "hashCode.()I": function (): number {
