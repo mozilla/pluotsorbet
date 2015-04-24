@@ -53,6 +53,7 @@ module J2ME {
         }
       }
     },
+// #if JSR_179 == 1
     "com/sun/j2me/location/CriteriaImpl": {
       fields: {
         instanceSymbols: {
@@ -85,6 +86,8 @@ module J2ME {
         }
       }
     },
+// #endif
+// #if JSR_256 == 1
     "com/sun/javame/sensor/ChannelModel": {
       fields: {
         instanceSymbols: {
@@ -116,6 +119,7 @@ module J2ME {
         }
       }
     },
+// #endif
     "com/nokia/mid/ui/DirectGraphicsImp": {
       fields: {
         instanceSymbols: {
