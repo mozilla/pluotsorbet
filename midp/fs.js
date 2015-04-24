@@ -134,7 +134,7 @@ Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(handle,
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(handle, buf, offset, numBytes) {
-    fs.write(handle, buf.subarray(offset, offset + numBytes));
+    fs.write(handle, buf, offset, numBytes);
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(handle) {
@@ -623,20 +623,14 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
     DEBUG_FS && console.log("DefaultFileHandler.write: " + J2ME.fromJavaString(this.nativePath) + " " + off + "+" + len);
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.write: ignored file");
-        asyncImpl("I", Promise.resolve(len));
-        return;
+        return len;
     }
 
     var fd = this.nativeDescriptor;
-    fs.write(fd, b.subarray(off, off + len));
-
+    fs.write(fd, b, off, len);
     // The return value is the "length of data really written," which is
     // always the same as the length requested in our implementation.
-    //
-    // We always write asynchronously to ensure that a thread that writes
-    // a bunch of data doesn't starve a UI thread and reduce responsiveness.
-    //
-    asyncImpl("I", Promise.resolve(len));
+    return len;
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
@@ -795,7 +789,7 @@ function(handle, buffer, offset, length) {
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] =
 function(handle, buffer, offset, length) {
-    fs.write(handle, buffer.subarray(offset, offset + length));
+    fs.write(handle, buffer, offset, length);
 };
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V"] = function(handle) {

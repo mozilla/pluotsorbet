@@ -93,6 +93,10 @@ var getBranch = function(dir) {
   });
 };
 
+function fsWrite(fd, data, position) {
+  return fs.write(fd, data, 0, data.length, position);
+}
+
 var fd;
 
 tests.push(function() {
@@ -417,7 +421,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.write(fd, new TextEncoder().encode("marco"));
+  fsWrite(fd, new TextEncoder().encode("marco"));
   next();
 });
 
@@ -450,7 +454,7 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.write(fd, new TextEncoder().encode("marco2"));
+  fsWrite(fd, new TextEncoder().encode("marco2"));
   next();
 });
 
@@ -491,7 +495,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.write(fd, new TextEncoder().encode("marco"), 1);
+  fsWrite(fd, new TextEncoder().encode("marco"), 1);
   ok(true, "write with from");
   next();
 });
@@ -506,7 +510,7 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.write(fd, new TextEncoder().encode("mar"));
+  fsWrite(fd, new TextEncoder().encode("mar"));
   ok(true, "write overwriting first bytes");
   next();
 });
@@ -520,7 +524,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  fs.write(fd, new TextEncoder().encode("marco"), 2);
+  fsWrite(fd, new TextEncoder().encode("marco"), 2);
   ok(true, "write overwriting and appending");
   next();
 });
@@ -535,7 +539,7 @@ tests.push(function() {
 
 tests.push(function() {
   fs.setpos(fd, 0);
-  fs.write(fd, new TextEncoder().encode("marco"), 20);
+  fsWrite(fd, new TextEncoder().encode("marco"), 20);
   ok(true, "write appending with from > size of file");
   next();
 });
@@ -578,7 +582,7 @@ tests.push(function() {
 
 tests.push(function() {
   // Test writing enough data to make the fs internal buffer increase (exponentially)
-  fs.write(fd, new Uint8Array(6065), 6);
+  fsWrite(fd, new Uint8Array(6065), 6);
 
   is(fs.getsize(fd), 6071, "file size is now 6071");
 
@@ -591,7 +595,7 @@ tests.push(function() {
 
 tests.push(function() {
   // Test writing enough data to make the fs internal buffer increase (linearly)
-  fs.write(fd, new Uint8Array(131073), 6);
+  fsWrite(fd, new Uint8Array(131073), 6);
 
   is(fs.getsize(fd), 131079, "file size is now 131079");
 
@@ -725,7 +729,7 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.write(fd, new TextEncoder().encode("mi"));
+      fsWrite(fd, new TextEncoder().encode("mi"));
       var stat = fs.stat("/tmp/stat.txt");
       ok(stat.mtime, lastTime, "write without flush doesn't update mtime");
       next();
@@ -734,7 +738,7 @@ tests.push(function() {
 
   tests.push(function() {
     window.setTimeout(function() {
-      fs.write(fd, new TextEncoder().encode("sc"));
+      fsWrite(fd, new TextEncoder().encode("sc"));
       fs.flush(fd);
       var stat = fs.stat("/tmp/stat.txt");
       ok(stat.mtime > lastTime, "write and then flush updates mtime");

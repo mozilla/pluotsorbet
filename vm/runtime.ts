@@ -1700,7 +1700,7 @@ module J2ME {
     }
 
     // Don't compile methods that are too large.
-    if (methodInfo.codeAttribute.code.length > 2000 && !config.forceRuntimeCompilation) {
+    if (methodInfo.codeAttribute.code.length > 4000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
       methodInfo.state = MethodState.NotCompiled;
       return;
