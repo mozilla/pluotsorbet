@@ -12,7 +12,8 @@ public class Regex {
       String number = "5555231119";
       boolean m1 = false;
       boolean m2 = false;
-      for (int i = 0; i < 1000; i++) {
+      System.out.println("Count: " + 1000000);
+      for (int i = 0; i < 1000000; i++) {
         m1 = r1.match(number);
         m2 = r2.match(number);
       }
