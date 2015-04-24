@@ -34,6 +34,7 @@ import javax.microedition.midlet.MIDletStateChangeException;
 import com.sun.midp.security.Permissions;
 import com.sun.midp.security.SecurityToken;
 
+import com.sun.midp.main.CldcMIDletStateListener;
 
 /**
  * MIDletPeer maintains the current state of the MIDlet and forwards updates
@@ -92,10 +93,7 @@ public class MIDletPeer implements MIDletEventConsumer {
     private static MIDletStateHandler midletStateHandler;
 
     /** The call when a MIDlet's state changes. */
-    private static MIDletStateListener midletStateListener;
-
-    /** Handles platform requests. */
-    private static PlatformRequest platformRequest;
+    private static CldcMIDletStateListener midletStateListener;
 
     /** The MIDletTunnel implementation from javax.microedition.midlet */
     private static MIDletTunnel tunnel;
@@ -110,12 +108,10 @@ public class MIDletPeer implements MIDletEventConsumer {
      */
     static void initClass(
         MIDletStateHandler theMIDletStateHandler,
-        MIDletStateListener theMIDletStateListener,
-        PlatformRequest thePlatformRequestHandler) {
+        CldcMIDletStateListener theMIDletStateListener) {
 
         midletStateHandler = theMIDletStateHandler;
         midletStateListener = theMIDletStateListener;
-        platformRequest = thePlatformRequestHandler;
     }
 
     /**
@@ -358,11 +354,8 @@ public class MIDletPeer implements MIDletEventConsumer {
      * the platform cannot handle the URL requested.
      *
      */
-    public final boolean platformRequest(String URL)
-            throws ConnectionNotFoundException {
-
-        return platformRequest.dispatch(URL);
-    }
+    public native final boolean platformRequest(String URL)
+            throws ConnectionNotFoundException;
 
     /**
      * Change the state and notify.

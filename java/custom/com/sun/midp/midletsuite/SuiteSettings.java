@@ -49,9 +49,6 @@ public class SuiteSettings {
     /** The ID of this suite. */
     int suiteId;
 
-    /** If true, MIDlet from this suite can be run. */
-    boolean enabled;
-
     /**
      * Public constructor for SuiteSettings.
      *
@@ -59,7 +56,6 @@ public class SuiteSettings {
      */
     public SuiteSettings(int id) {
         suiteId = id;
-        enabled = true; /* default is to enable a newly installed suite */
         permissions = Permissions.getEmptySet();
     }
 
@@ -134,17 +130,6 @@ public class SuiteSettings {
      */
     public int getSuiteId() {
         return suiteId;
-    }
-
-    /**
-     * Determine if the a MIDlet from this suite can be run. Note that
-     * disable suites can still have their settings changed and their
-     * install info displayed.
-     *
-     * @return true if suite is enabled, false otherwise
-     */
-    public boolean isEnabled() {
-        return enabled;
     }
 
     /**
