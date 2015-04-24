@@ -4,13 +4,13 @@
 var lastSMSNumber = null;
 var lastSMSBody = null;
 
-Native["javax/wireless/messaging/SendSMSTest.getNumber.()Ljava/lang/String;"] = function() {
-  return J2ME.newString(lastSMSNumber);
-};
+DumbPipe.registerOpener("lastSMSNumber", function(message, sender) {
+  sender(lastSMSNumber);
+});
 
-Native["javax/wireless/messaging/SendSMSTest.getBody.()Ljava/lang/String;"] = function() {
-  return J2ME.newString(lastSMSBody);
-};
+DumbPipe.registerOpener("lastSMSBody", function(message, sender) {
+  sender(lastSMSBody);
+});
 
 function MozActivity(obj) {
   if (obj.name === "new") {

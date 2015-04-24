@@ -620,7 +620,7 @@ module J2ME {
           this.bodyEmitter.writeLn("ins=O.lockObject;");
         }
         this.bodyEmitter.writeLn("pc=O.pc;");
-        this.bodyEmitter.writeLn("O=null;");
+        this.bodyEmitter.writeLn("O.free();O=null;");
         if (this.methodInfo.isSynchronized) {
           this.bodyEmitter.leaveAndEnter("}else{");
           this.emitMonitorEnter(this.bodyEmitter, 0, this.lockObject);
@@ -900,11 +900,13 @@ module J2ME {
         args.unshift(this.pop(signatureKinds[i]));
       }
       var object = null, call;
+      var classConstant = this.localClassConstant(methodInfo.classInfo);
+      var methodConstant = "(" + classConstant + ".M[" + methodInfo.index + "]||" + classConstant + ".m(" + methodInfo.index + "))";
       if (opcode !== Bytecodes.INVOKESTATIC) {
         object = this.pop(Kind.Reference);
         if (opcode === Bytecodes.INVOKESPECIAL) {
           args.unshift(object);
-          call = this.localClassConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ").call(" + args.join(",") + ")";
+          call = methodConstant + ".call(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
           call = object + "." + methodInfo.virtualName + "(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
@@ -913,7 +915,7 @@ module J2ME {
           Debug.unexpected(Bytecodes[opcode]);
         }
       } else {
-        call = this.localClassConstant(methodInfo.classInfo) + ".m(" + methodInfo.index + ")" + "(" + args.join(",") + ")";
+        call = methodConstant + "(" + args.join(",") + ")";
       }
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);

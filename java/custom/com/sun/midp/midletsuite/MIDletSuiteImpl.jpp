@@ -53,7 +53,6 @@ import com.sun.midp.io.j2me.storage.*;
 
 import com.sun.midp.log.Logging;
 import com.sun.midp.log.LogChannels;
-import com.sun.midp.main.MIDletSuiteVerifier;
 
 import com.sun.midp.util.Properties;
 import com.sun.midp.configurator.Constants;
@@ -562,19 +561,6 @@ public final class MIDletSuiteImpl implements MIDletSuite {
     }
 
     /**
-     * Gets push setting for interrupting other MIDlets.
-     * Reuses the Permissions.
-     *
-     * @return push setting for interrupting MIDlets the value
-     *        will be permission level from {@link Permissions}
-     */
-    public byte getPushInterruptSetting() {
-        guaranteeMIDletSuiteLocked("getPushInterruptSetting");
-
-        return suiteSettings.getPushInterruptSetting();
-    }
-
-    /**
      * Gets push options for this suite.
      *
      * @return push options are defined in {@link PushRegistryImpl}
@@ -583,17 +569,6 @@ public final class MIDletSuiteImpl implements MIDletSuite {
         guaranteeMIDletSuiteLocked("getPushOptions");
 
         return suiteSettings.getPushOptions();
-    }
-
-    /**
-     * Gets list of permissions for this suite.
-     *
-     * @return array of permissions from {@link Permissions}
-     */
-    public byte[] getPermissions() {
-        guaranteeMIDletSuiteLocked("getPermissions");
-
-        return suiteSettings.getPermissions();
     }
 
     /**
@@ -691,50 +666,5 @@ public final class MIDletSuiteImpl implements MIDletSuite {
         if (!locked) {
             throw new IllegalStateException(s);
         }
-    }
-
-    /**
-     * Check that suite classes were verified during installation, and
-     * hash value of the suite hasn't changed since installation
-     *
-     * @return true if suite has verified classes, false otherwise
-     */
-    public boolean isVerified() {
-        boolean res = false;
-        final byte[] verifyHash = installInfo.getVerifyHash();
-
-        if (verifyHash != null) {
-            if (!Constants.VERIFY_SUITE_HASH) {
-                res = true;
-            } else {
-                try {
-                    String jarPath = getMIDletSuiteStorage().
-                        getMidletSuiteJarPath(id);
-                    if (MIDletSuiteVerifier.checkJarHash(
-                            jarPath, verifyHash)) {
-                        res = true;
-                    }
-                } catch (Exception e) {
-                    /**
-                     * Any exception caught here means that we can't
-                     * guarantee the suite classes are verified, so do
-                     * nothing and just return false value by default.
-                     */
-                }
-            }
-        }
-
-        return res;
-    }
-
-    /**
-     * Determine if the a MIDlet from this suite can be run. Note that
-     * disable suites can still have their settings changed and their
-     * install info displayed.
-     *
-     * @return true if suite is enabled, false otherwise
-     */
-    public boolean isEnabled() {
-        return suiteSettings.isEnabled();
     }
 }

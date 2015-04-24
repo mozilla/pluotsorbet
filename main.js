@@ -16,10 +16,6 @@ if ("gamepad" in config && !/no|0/.test(config.gamepad)) {
 
 var jars = [];
 
-if (config.midletClassName == "RunTests") {
-  jars.push("tests/tests.jar");
-}
-
 if (typeof Benchmark !== "undefined") {
   Benchmark.startup.init();
 }
@@ -153,7 +149,7 @@ if (config.downloadJAD) {
 
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
-                       loadScript("tests/mozactivitymock.js"),
+                       loadScript("tests/mozactivitymock.unprivileged.js"),
                        loadScript("tests/config.js"));
 }
 
@@ -226,13 +222,24 @@ function stopAndSaveTimeline() {
 }
 
 function start() {
-  J2ME.Context.setWriters(new J2ME.IndentingWriter());
-  // For profile mode 1, we start the profiler and wait 2 seconds and show the flame chart UI.
-  profile === 1 && profiler.start(2000, false);
-  bigBang = performance.now();
-  // For profiler mode 2, we start the timeline and stop it later by calling |stopAndSaveTimeline|.
-  profile === 2 && startTimeline();
-  jvm.startIsolate0(config.main, config.args);
+  var deferStartup = config.deferStartup | 0;
+  if (deferStartup && typeof Benchmark !== "undefined") {
+    setTimeout(function () {
+      Benchmark.startup.setStartTime(performance.now());
+      run();
+    }, deferStartup);
+  } else {
+    run();
+  }
+  function run() {
+    J2ME.Context.setWriters(new J2ME.IndentingWriter());
+    // For profile mode 1, we start the profiler and wait 2 seconds and show the flame chart UI.
+    profile === 1 && profiler.start(2000, false);
+    bigBang = performance.now();
+    // For profiler mode 2, we start the timeline and stop it later by calling |stopAndSaveTimeline|.
+    profile === 2 && startTimeline();
+    jvm.startIsolate0(config.main, config.args);
+  }
 }
 
 // If we're not running a MIDlet, we need to wait everything to be loaded.

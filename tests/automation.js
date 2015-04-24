@@ -176,7 +176,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 21 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -267,10 +267,28 @@ casper.test.begin("unit tests", 21 + gfxTests.length, function(test) {
     });
 
     casper
+    .thenOpen("http://localhost:8000/index.html?main=MainStaticInitializer&logLevel=info&logConsole=web,page,raw")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextExists("I 1) static init\n" +
+                                  "I 2) main");
+        });
+    });
+
+    casper
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests/alarm/MIDlet1&jad=tests/midlets/alarm/alarm.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests/recordstore/WriterMIDlet&jad=tests/midlets/RecordStore/recordstore.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextDoesntExist("FAIL");
+            test.assertTextExists("SUCCESS 8/8", "Test RecordStore with multiple MIDlets");
         });
     });
 
@@ -296,6 +314,21 @@ casper.test.begin("unit tests", 21 + gfxTests.length, function(test) {
         casper.waitForText("Hello World from foreground MIDlet", function() {
             test.assertTextExists("prop1=hello prop2=ciao");
         });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundExit.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log", function() {
+      casper.evaluate(function() {
+        window.close = function() {
+          document.title = "window.close called";
+        }
+      });
+
+      casper.waitFor(function() {
+        return !!this.getTitle();
+      }, function() {
+        test.assertEquals(this.getTitle(), "window.close called", "window.close called");
+      });
     });
 
     casper

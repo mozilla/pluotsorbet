@@ -48,6 +48,9 @@ function promptForMessageText() {
     el.querySelector('p.verificationText').textContent = MIDlet.SMSDialogVerificationText;
 
     var input = el.querySelector('input');
+    if (MIDlet.SMSDialogInputType) {
+      input.type = MIDlet.SMSDialogInputType;
+    }
     var btnCancel = el.querySelector('button.cancel');
     var btnDone = el.querySelector('button.recommend');
 
@@ -55,6 +58,15 @@ function promptForMessageText() {
     input.addEventListener('input', function() {
         btnDone.disabled = (input.value.length === 0);
     });
+    if (MIDlet.SMSDialogInputMaxLength) {
+      input.onkeydown = function(e) {
+        if (input.value.length >= MIDlet.SMSDialogInputMaxLength) {
+          return e.keyCode !== 0 && !util.isPrintable(e.keyCode);
+        }
+
+        return true;
+      }
+    }
 
     btnCancel.addEventListener('click', function() {
         console.warn('SMS prompt canceled.');
@@ -174,22 +186,25 @@ Native["com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I"] =
 function(handle, type, host, destPort, sourcePort, message) {
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
-        var activity = new MozActivity({
+        var pipe = DumbPipe.open("mozActivity", {
             name: "new",
             data: {
-              type: "websms/sms",
-              number: J2ME.fromJavaString(host),
-              body: new TextDecoder('utf-16be').decode(message),
+                type: "websms/sms",
+                number: J2ME.fromJavaString(host),
+                body: new TextDecoder('utf-16be').decode(message),
             },
+        }, function(message) {
+            switch (message.type) {
+                case "onsuccess":
+                    DumbPipe.close(pipe);
+                    resolve(message.byteLength);
+                    break;
+
+                case "onerror":
+                    ctx.setAsCurrentContext();
+                    reject($.newIOException("Error while sending SMS message"));
+                    break;
+            }
         });
-
-        activity.onsuccess = function() {
-          resolve(message.byteLength);
-        };
-
-        activity.onerror = function() {
-          ctx.setAsCurrentContext();
-          reject($.newIOException("Error while sending SMS message"));
-        };
     }));
 };

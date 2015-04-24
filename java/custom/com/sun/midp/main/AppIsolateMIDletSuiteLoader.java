@@ -40,9 +40,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
     /** Cached reference to the current Isolate */
     protected Isolate currentIsolate;
 
-    /** Event producer to send events for other MIDlets execution */
-    protected MIDletExecuteEventProducer midletExecuteEventProducer;
-
     /**
      * Creates class instance and gets suite parameters
      * from array with arguments
@@ -69,14 +66,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
      */
     protected void createSuiteEnvironment() {
         super.createSuiteEnvironment();
-
-        // Create event producer to execute other MIDlets
-        // from non-AMS tasks
-        midletExecuteEventProducer =
-            new MIDletExecuteEventProducer(
-                internalSecurityToken,
-                eventQueue,
-                amsIsolateId);
     }
 
     /**
@@ -85,22 +74,6 @@ public class AppIsolateMIDletSuiteLoader extends CldcMIDletSuiteLoader {
      */
     protected void initSuiteEnvironment() {
         super.initSuiteEnvironment();
-
-        AmsUtil.initClassInAppIsolate(
-            midletExecuteEventProducer);
-    }
-
-    /** Restricts suite access to internal API */
-    protected void restrictAPIAccess() {
-        if (midletSuite.checkPermission(
-            Permissions.getName(Permissions.AMS)) != 1) {
-
-            // Permission is not allowed.
-            //
-            // Shutdown access to Isolate references before a MIDlet is
-            // loaded. This will not effect the reference already obtained.
-            currentIsolate.setAPIAccess(false);
-        }
     }
 
     /**

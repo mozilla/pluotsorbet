@@ -77,6 +77,8 @@ module J2ME {
     "gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I": YieldReason.Root,
     "org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/Test.callAsyncNative.()V": YieldReason.Root,
+    "javax/wireless/messaging/SendSMSTest.getNumber.()Ljava/lang/String;": YieldReason.Root,
+    "javax/wireless/messaging/SendSMSTest.getBody.()Ljava/lang/String;": YieldReason.Root,
   };
 
   export var yieldVirtualMap = {

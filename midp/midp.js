@@ -59,19 +59,6 @@ var MIDP = (function() {
 
   var manifest = {};
 
-  Native["com/sun/midp/jarutil/JarReader.readJarEntry0.(Ljava/lang/String;Ljava/lang/String;)[B"] = function(jar, entryName) {
-    var bytes = JARStore.loadFileFromJAR(J2ME.fromJavaString(jar), J2ME.fromJavaString(entryName));
-    if (!bytes) {
-      throw $.newIOException();
-    }
-    var length = bytes.byteLength;
-    var array = J2ME.newByteArray(length);
-    for (var n = 0; n < length; ++n) {
-      array[n] = bytes[n];
-    }
-    return array;
-  };
-
   Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(severity, channelID, message) {
     console.info(J2ME.fromJavaString(message));
   };
@@ -84,7 +71,7 @@ var MIDP = (function() {
     return 1;
   };
 
-  Native["com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z"] = function(request) {
+  Native["com/sun/midp/midlet/MIDletPeer.platformRequest.(Ljava/lang/String;)Z"] = function(request) {
     request = J2ME.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
       if (request.endsWith(".jad")) {
@@ -95,7 +82,7 @@ var MIDP = (function() {
         DumbPipe.close(DumbPipe.open("windowOpen", request));
       }
     } else if (request.startsWith("x-contacts:add?number=")) {
-      new MozActivity({
+      DumbPipe.close(DumbPipe.open("mozActivity", {
         name: "new",
         data: {
           type: "webcontacts/contact",
@@ -103,7 +90,7 @@ var MIDP = (function() {
             tel: request.substring(22),
           },
         },
-      });
+      }));
     } else {
       console.warn("com/sun/midp/main/CldcPlatformRequest.dispatchPlatformRequest.(Ljava/lang/String;)Z not implemented for: " + request);
     }
@@ -485,14 +472,6 @@ var MIDP = (function() {
     mouseDownInfo = null; // Clear the way for the next gesture.
   });
 
-  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.loadSuitesIcons0.()I"] = function() {
-    return 0;
-  };
-
-  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteExists.(I)Z"] = function(id) {
-    return id <= 1 ? 1 : 0;
-  };
-
   Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(id) {
     return J2ME.newString(id.toString());
   };
@@ -500,10 +479,6 @@ var MIDP = (function() {
   Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(suiteId) {
     // We should be able to use the same storage ID for all MIDlet suites.
     return 0; // storageId
-  };
-
-  Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteJarPath.(I)Ljava/lang/String;"] = function(id) {
-    return J2ME.newString("");
   };
 
   Native["com/sun/midp/midletsuite/MIDletSuiteImpl.lockMIDletSuite.(IZ)V"] = function(id, lock) {

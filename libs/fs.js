@@ -566,6 +566,17 @@ var fs = (function() {
     openedFile.record.size = openedFile.size;
     store.setItem(openedFile.path, openedFile.record);
     openedFile.dirty = false;
+
+    // Update in-memory copies of the same file, only if they haven't been
+    // modified.
+    // If they've been modified, the behavior is undefined.
+    for (var entry of openedFiles) {
+      if (!entry[1].dirty && entry[1].path === openedFile.path) {
+        entry[1].mtime = openedFile.mtime;
+        entry[1].size = openedFile.size;
+        entry[1].buffer = new FileBuffer(new Int8Array(openedFile.buffer.getContent()));
+      }
+    }
   }
 
   function flushAll() {
@@ -587,7 +598,11 @@ var fs = (function() {
   // filesystem implementation requires the `finalize` method to save cached
   // file data if user doesn't flush or close the file explicitly. To avoid
   // losing data, we flush files periodically.
-  setInterval(flushAll, 5000);
+  // We start to flush periodically after startup has been completed (25 seconds
+  // is a good estimate).
+  setTimeout(function() {
+    setInterval(flushAll, 5000);
+  }, 20000);
 
   // Flush files when app goes into background.
   window.addEventListener("pagehide", flushAll);

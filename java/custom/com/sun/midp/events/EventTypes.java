@@ -203,7 +203,8 @@ public final class EventTypes {
      * <li> stringParam5 = arg2;
      * </ul>
      */
-    public static final int EXECUTE_MIDLET_EVENT  =  28;
+    // Commented out because we've removed the code that handles this event.
+    //public static final int EXECUTE_MIDLET_EVENT  =  28;
 
     /**
      * Major ID for a request to destroy  a MIDlet event.

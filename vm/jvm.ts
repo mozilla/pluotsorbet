@@ -69,11 +69,17 @@ module J2ME {
         args[n] = mainArgs[n];
       }
 
-      ctx.start([
-        Frame.create(entryPoint, [ args ]),
-        Frame.create(CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V"),
-                     [ runtime.mainThread, J2ME.newString("main") ])
-      ]);
+      var frames = [Frame.create(entryPoint, [ args ])];
+
+      var clinit = classInfo.staticInitializer;
+      if (clinit) {
+        frames.push(Frame.create(clinit, []));
+      }
+
+      frames.push(Frame.create(CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V"),
+                               [ runtime.mainThread, J2ME.newString("main") ]));
+
+      ctx.start(frames);
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 

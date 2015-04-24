@@ -37,6 +37,7 @@ import com.sun.midp.log.*;
 import com.sun.midp.publickeystore.WebPublicKeyStore;
 import com.sun.midp.rms.RmsEnvironment;
 import com.sun.midp.rms.RecordStoreRegistry;
+import com.sun.midp.midletsuite.SuiteContainerAdapter;
 
 /**
  * The class presents abstract MIDlet suite loader with routines to prepare
@@ -194,24 +195,19 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
         midletStateHandler =
             MIDletStateHandler.getMidletStateHandler();
 
-        MIDletStateListener midletStateListener =
-            new CldcMIDletStateListener(internalSecurityToken,
-                                        displayContainer,
-                                        midletControllerEventProducer);
-
         midletStateHandler.initMIDletStateHandler(
             internalSecurityToken,
-            midletStateListener,
-            new CldcMIDletLoader(internalSecurityToken),
-            new CldcPlatformRequest(internalSecurityToken));
+            new CldcMIDletStateListener(internalSecurityToken,
+                                        displayContainer,
+                                        midletControllerEventProducer));
 
         midletEventListener = new MIDletEventListener(
             internalSecurityToken,
             midletStateHandler,
             eventQueue);
         
-        MidletSuiteContainer msc = 
-                new MidletSuiteContainer(MIDletSuiteStorage.getMIDletSuiteStorage(internalSecurityToken));
+        SuiteContainerAdapter msc =
+                new SuiteContainerAdapter(MIDletSuiteStorage.getMIDletSuiteStorage(internalSecurityToken));
         RmsEnvironment.init(internalSecurityToken, msc);
     }
 
@@ -235,11 +231,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
         /* Set up permission checking for this suite. */
         AccessController.setAccessControlContext(
             new CldcAccessControlContext(midletSuite));
-    }
-
-    /** Restricts suite access to internal API */
-    protected void restrictAPIAccess() {
-        // IMPL_NOTE: No restrictions by default
     }
 
     /**
@@ -335,11 +326,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
                 return;
             }
 
-            if (!midletSuite.isEnabled()) {
-                reportError(Constants.MIDLET_SUITE_DISABLED);
-                return;
-            }
-
             /*
              * Now that we have the suite and reserved its resources
              * we can initialize any classes that need MIDlet Suite
@@ -350,9 +336,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
             // Export suite arguments as properties, so well
             // set any other properties to control a suite
             setSuiteProperties();
-
-            // Restrict suite access to internal API
-            restrictAPIAccess();
 
             if (Logging.REPORT_LEVEL <= Logging.WARNING) {
                 Logging.report(Logging.WARNING, LogChannels.LC_CORE,

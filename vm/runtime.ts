@@ -841,7 +841,7 @@ module J2ME {
     /**
      * Linked class methods.
      */
-    methods: Function[];
+    M: Function[];
   }
 
   export class RuntimeKlass {
@@ -1372,6 +1372,18 @@ module J2ME {
       // Profiling for interpreted functions is handled by the context.
       return fn;
     }
+    var code;
+    if (methodInfo.isNative) {
+      if (methodInfo.returnKind === Kind.Void) {
+        code = new Uint8Array([Bytecode.Bytecodes.RETURN]);
+      } else if (isTwoSlot(methodInfo.returnKind)) {
+        code = new Uint8Array([Bytecode.Bytecodes.LRETURN]);
+      } else {
+        code = new Uint8Array([Bytecode.Bytecodes.IRETURN]);
+      }
+    }
+
+
     return function (a, b, c, d) {
       var key = methodInfo.implKey;
       try {
@@ -1395,9 +1407,13 @@ module J2ME {
             r = fn.apply(this, arguments);
         }
         if (U) {
-          // TODO: Indicate unwinding on the method timeline.
-          if (methodType === MethodType.Native) {
-            ctx.leaveMethodTimeline(key, methodType);
+          if (methodInfo.isNative) {
+            // A fake frame that just returns is pushed so when the ctx resumes from the unwind
+            // the frame will be popped triggering a leaveMethodTimeline.
+            var fauxFrame = Frame.create(null, []);
+            fauxFrame.methodInfo = methodInfo;
+            fauxFrame.code = code;
+            ctx.bailoutFrames.unshift(fauxFrame);
           }
         } else {
           ctx.leaveMethodTimeline(key, methodType);
@@ -1460,7 +1476,7 @@ module J2ME {
       fn = wrapMethod(fn, methodInfo, methodType);
     }
 
-    klass.methods[methodInfo.index] = methodInfo.fn = fn;
+    klass.M[methodInfo.index] = methodInfo.fn = fn;
 
     if (!methodInfo.isStatic && methodInfo.virtualName) {
       release || assert(klass.prototype.hasOwnProperty(methodInfo.virtualName));
@@ -1614,13 +1630,13 @@ module J2ME {
 
   function klassMethodLink(index: number) {
     var klass: Klass = this;
-    var fn = klass.methods[index];
+    var fn = klass.M[index];
     if (fn) {
       return fn;
     }
     linkKlassMethod(klass, klass.classInfo.getMethodByIndex(index));
-    release || assert(klass.methods[index], "Method should be linked now.");
-    return klass.methods[index];
+    release || assert(klass.M[index], "Method should be linked now.");
+    return klass.M[index];
   }
 
   function klassResolveConstantPoolEntry(index: number) {
@@ -1651,7 +1667,7 @@ module J2ME {
     // Method linking.
     klass.m = klassMethodLink;
     klass.c = klassResolveConstantPoolEntry;
-    klass.methods = new Array(classInfo.getMethodCount());
+    klass.M = new Array(classInfo.getMethodCount());
   }
 
   /**
@@ -1775,7 +1791,7 @@ module J2ME {
       fn = wrapMethod(fn, methodInfo, MethodType.Compiled);
     }
     var klass = methodInfo.classInfo.klass;
-    klass.methods[methodInfo.index] = methodInfo.fn = fn;
+    klass.M[methodInfo.index] = methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 

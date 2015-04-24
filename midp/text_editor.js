@@ -232,16 +232,9 @@ var TextEditorProvider = (function() {
         activate: function() {
             this.textEditorElem.onkeydown = function(e) {
                 if (this.getContentSize() >= this.getAttribute("maxlength")) {
-                    // http://stackoverflow.com/questions/12467240/determine-if-javascript-e-keycode-is-a-printable-non-control-character
-                    if ((e.keyCode >= 48 && e.keyCode <= 57)  || // number keys
-                        e.keyCode === 32 || e.keyCode === 13 || // spacebar & return key(s) (if you want to allow carriage returns)
-                        (e.keyCode >= 65 && e.keyCode <= 90)   || // letter keys
-                        (e.keyCode >= 96 && e.keyCode <= 111)  || // numpad keys
-                        (e.keyCode >= 186 && e.keyCode <= 192) || // ;=,-./` (in order)
-                        (e.keyCode >= 219 && e.keyCode <= 222)) { // [\]' (in order)
-                        return false;
-                    }
+                    return !util.isPrintable(e.keyCode);
                 }
+
                 return true;
             }.bind(this);
 
@@ -471,6 +464,15 @@ var TextEditorProvider = (function() {
 
     InputEditor.prototype = extendsObject({
         activate: function() {
+            this.textEditorElem.onkeydown = function(e) {
+                // maxlength is ignored when the input type is "number"
+                if (this.textEditorElem.value.length >= this.getAttribute("maxlength")) {
+                    return e.keyCode !== 0 && !util.isPrintable(e.keyCode);
+                }
+
+                return true;
+            }.bind(this);
+
             this.textEditorElem.oninput = function() {
                 this.content = this.textEditorElem.value;
                 if (this.oninputCallback) {

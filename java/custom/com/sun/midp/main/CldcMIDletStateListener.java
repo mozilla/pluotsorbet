@@ -41,7 +41,7 @@ import com.sun.midp.security.SecurityToken;
 /**
  * The class implements the MIDlet state listener for the CLDC VM.
  */
-class CldcMIDletStateListener implements MIDletStateListener {
+public class CldcMIDletStateListener {
     /** This class has a different security domain than the application. */
     private SecurityToken classSecurityToken;
 

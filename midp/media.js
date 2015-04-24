@@ -73,6 +73,7 @@ Media.extToFormat = new Map([
     ["ogg", "ogg"],
     ["mp4", "MPEG4"],
     ["webm", "WebM"],
+    ["amr", "amr"],
 ]);
 
 Media.contentTypeToFormat = new Map([
