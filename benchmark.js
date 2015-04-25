@@ -150,6 +150,8 @@ var Benchmark = (function() {
     jsStringsSize: byteFormatter,
     jsOtherSize: byteFormatter,
     otherSize: byteFormatter,
+    USS: byteFormatter,
+    peakRSS: byteFormatter,
   };
 
   var untrustedValues = [
@@ -190,6 +192,8 @@ var Benchmark = (function() {
         jsStringsSize: jsStringsSize.value,
         jsOtherSize: jsOtherSize.value,
         otherSize: otherSize.value,
+        USS: memoryReporter.residentUnique,
+        peakRSS: memoryReporter.residentPeak,
       };
     });
   }
@@ -211,6 +215,8 @@ var Benchmark = (function() {
         current.jsStringsSize = [];
         current.jsOtherSize   = [];
         current.otherSize     = [];
+        current.USS           = [];
+        current.peakRSS       = [];
       }
       storage.running = true;
       storage.numRounds = "numRounds" in settings ? settings.numRounds : defaultStorage.numRounds;
