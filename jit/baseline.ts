@@ -483,6 +483,7 @@ module J2ME {
         this.bodyEmitter.leave("}");
       } else {
         this.bodyEmitter.leaveAndEnter("}catch(e){");
+        this.bodyEmitter.writeLn("throw e;");
         this.bodyEmitter.leave("}");
       }
       if (needsWhile) {
