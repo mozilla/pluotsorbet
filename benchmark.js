@@ -132,6 +132,9 @@ var Benchmark = (function() {
 
   var valueFormatters = {
     startupTime: msFormatter,
+    vmStartupTime: msFormatter,
+    bgStartupTime: msFormatter,
+    fgStartupTime: msFormatter,
     totalSize: byteFormatter,
     domSize: byteFormatter,
     styleSize: byteFormatter,
@@ -182,6 +185,9 @@ var Benchmark = (function() {
       storage.round = 0;
       var current = storage.current = {};
       current.startupTime = [];
+      current.vmStartupTime = [];
+      current.bgStartupTime = [];
+      current.fgStartupTime = [];
       if (settings.recordMemory) {
         storage.recordMemory = true;
         current.totalSize     = [];
@@ -204,28 +210,32 @@ var Benchmark = (function() {
       saveStorage();
       this.runNextRound();
     },
-    startTimer: function() {
+    startTimer: function(which, now) {
       if (!storage.running) {
         console.log("startTimer called while benchmark not running");
         return;
       }
-      this.startTime = performance.now();
+      if (!this.startTime) {
+        this.startTime = {};
+      }
+      this.startTime[which] = now;
     },
-    stopTimer: function() {
+    stopTimer: function(which, now) {
       if (!storage.running) {
         console.log("stopTimer called while benchmark not running");
         return;
       }
-      if (this.startTime === null) {
+      if (this.startTime[which] === null) {
         console.log("stopTimer called without previous call to startTimer");
         return;
       }
-      var took = performance.now() - this.startTime;
-      this.startTime = null;
-      storage.current.startupTime.push(took);
-      storage.round++;
-      saveStorage();
-      this.runNextRound();
+      var took = now - this.startTime[which];
+      storage.current[which].push(took);
+      if (which === "startupTime") {
+        storage.round++;
+        saveStorage();
+        this.runNextRound();
+      }
     },
     sampleMemoryToStorage: function() {
       return sampleMemory().then(function(mem) {
@@ -296,7 +306,7 @@ var Benchmark = (function() {
           if (p < 0.05) {
             pMessage = currentMean < baselineMean ? "BETTER" : "WORSE";
           } else {
-            pMessage = "INSIGNIFICANT";
+            pMessage = "SAME";
           }
         } else {
           pMessage = "n/a";
@@ -330,7 +340,9 @@ var Benchmark = (function() {
 
   // Start right away instead of in init() so we can see any speedups in script loading.
   if (storage.running) {
-    startup.startTimer();
+    var now = performance.now();
+    startup.startTimer("startupTime", now);
+    startup.startTimer("vmStartupTime", now);
   }
 
   var numRoundsEl;
@@ -386,15 +398,43 @@ var Benchmark = (function() {
     CENTER: CENTER,
     RIGHT: RIGHT,
     startup: {
+      setStartTime: function () {
+        startup.startTime["startupTime"] = startup.startTime["vmStartupTime"] = performance.now();
+      },
       init: function() {
         if (!storage.running) {
           return;
         }
-        var implKey = "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V";
-        var originalFn = Native[implKey];
-        Native[implKey] = function() {
-          startup.stopTimer();
-          originalFn.apply(null, arguments);
+
+        var vmImplKey = "com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V";
+        var vmOriginalFn = Native[vmImplKey];
+        var vmCalled = false;
+        Native[vmImplKey] = function() {
+          if (!vmCalled) {
+            vmCalled = true;
+            var now = performance.now();
+            startup.stopTimer("vmStartupTime", now);
+            startup.startTimer("bgStartupTime", now);
+          }
+          vmOriginalFn.apply(null, arguments);
+        };
+
+        var bgImplKey = "com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;";
+        var bgOriginalFn = Native[bgImplKey];
+        Native[bgImplKey] = function() {
+          var now = performance.now();
+          startup.stopTimer("bgStartupTime", now);
+          startup.startTimer("fgStartupTime", now);
+          return bgOriginalFn.apply(null, arguments);
+        };
+
+        var fgImplKey = "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V";
+        var fgOriginalFn = Native[fgImplKey];
+        Native[fgImplKey] = function() {
+          var now = performance.now();
+          startup.stopTimer("fgStartupTime", now);
+          startup.stopTimer("startupTime", now);
+          fgOriginalFn.apply(null, arguments);
         };
       },
       run: startup.run.bind(startup),
