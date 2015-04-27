@@ -30,11 +30,11 @@ MIDP.getMD5Hasher = function(data) {
 };
 
 MIDP.bin2String = function(array) {
-  var result = "";
+  var result = new Array(array.length);
   for (var i = 0; i < array.length; i++) {
-    result += String.fromCharCode(array[i] & 0xff);
+    result[i] = String.fromCharCode(array[i] & 0xff);
   }
-  return result;
+  return result.join("");
 };
 
 Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(inBuf, inOff, inLen, state, num, count, data) {
