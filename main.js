@@ -6,21 +6,26 @@
 // The download dialog generates many style recalculations while attached to
 // the DOM, regardless of its display style, so instead of setting its display
 // style, we add/remove it to/from the DOM.
+var display = document.getElementById("display");
+
 var downloadDialog = document.getElementById('download-screen');
-document.getElementById('display').removeChild(downloadDialog);
+display.removeChild(downloadDialog);
 downloadDialog.style.display = 'block';
 function showDownloadScreen() {
-  document.getElementById('display').appendChild(downloadDialog);
+  display.appendChild(downloadDialog);
 }
 function hideDownloadScreen() {
-  document.getElementById('display').removeChild(downloadDialog);
+  display.removeChild(downloadDialog);
 }
 
+var splashScreen = document.getElementById('splash-screen');
+display.removeChild(splashScreen);
+splashScreen.style.display = 'block';
 function showSplashScreen() {
-  document.getElementById("splash-screen").style.display = "block";
+  display.appendChild(splashScreen);
 }
 function hideSplashScreen() {
-  document.getElementById("splash-screen").style.display = "none";
+  display.removeChild(splashScreen);
 }
 
 function showBackgroundScreen() {
