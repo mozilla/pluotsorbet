@@ -111,18 +111,18 @@ Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function() {
 Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(data, offset, length) {
     // console.log("Protocol.read0: " + this.socket.isClosed);
 
+    // There might be data left in the buffer when the socket is closed, so we
+    // should allow buffer reading even the socket has been closed.
+    if (this.socket.isClosed && this.data.length == 0) {
+        return -1;
+    }
+
     var copyData = (function() {
         var toRead = (length < this.data.byteLength) ? length : this.data.byteLength;
         data.set(this.data.subarray(0, toRead), offset);
         this.data = this.data.subarray(toRead);
         return toRead;
     }).bind(this);
-
-    // There might be data left in the buffer when the socket is closed, so we
-    // should allow buffer reading even the socket has been closed.
-    if (this.socket.isClosed && this.data.length == 0) {
-        return -1;
-    }
 
     if (this.data.byteLength > 0) {
         return copyData();
