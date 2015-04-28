@@ -20,7 +20,7 @@ public class SocketBench extends MIDlet {
     os.close();
 
     InputStream is = client.openInputStream();
-    byte[] data = new byte[4096];
+    byte[] data = new byte[1024];
     int len;
     MemorySampler.sampleMemory("Memory before");
     long start = JVM.monotonicTimeMillis();
