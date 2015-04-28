@@ -88,11 +88,7 @@ var Benchmark = (function() {
     for (var colIndex = 0; colIndex < numColumns; colIndex++) {
       var maxLength = 0;
       for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-        var strLen = rows[rowIndex][colIndex].toString().length;
-        if (rows[rowIndex].untrusted) {
-          strLen += 2;
-        }
-        maxLength = Math.max(strLen, maxLength);
+        maxLength = Math.max(rows[rowIndex][colIndex].toString().length, maxLength);
       }
       maxColumnLengths[colIndex] = maxLength;
     }
@@ -100,11 +96,7 @@ var Benchmark = (function() {
     for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
       out += "| ";
       for (var colIndex = 0; colIndex < numColumns; colIndex++) {
-        var str = rows[rowIndex][colIndex].toString();
-        if (rows[rowIndex].untrusted) {
-          str = "*" + str + "*";
-        }
-        out += pad(str, " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
+        out += pad(rows[rowIndex][colIndex].toString(), " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
       }
       out += "\n";
       if (rowIndex === 0) {
@@ -150,15 +142,7 @@ var Benchmark = (function() {
     jsStringsSize: byteFormatter,
     jsOtherSize: byteFormatter,
     otherSize: byteFormatter,
-    USS: byteFormatter,
-    peakRSS: byteFormatter,
   };
-
-  var untrustedValues = [
-    "totalSize", "domSize", "styleSize", "jsObjectsSize",
-    "jsStringsSize", "jsOtherSize", "otherSize", "USS",
-    "peakRSS",
-  ];
 
   function sampleMemory() {
     if (!NO_SECURITY) {
@@ -192,8 +176,6 @@ var Benchmark = (function() {
         jsStringsSize: jsStringsSize.value,
         jsOtherSize: jsOtherSize.value,
         otherSize: otherSize.value,
-        USS: memoryReporter.residentUnique,
-        peakRSS: memoryReporter.residentPeak,
       };
     });
   }
@@ -215,8 +197,6 @@ var Benchmark = (function() {
         current.jsStringsSize = [];
         current.jsOtherSize   = [];
         current.otherSize     = [];
-        current.USS           = [];
-        current.peakRSS       = [];
       }
       storage.running = true;
       storage.numRounds = "numRounds" in settings ? settings.numRounds : defaultStorage.numRounds;
@@ -313,7 +293,6 @@ var Benchmark = (function() {
         var formatter = valueFormatters[key];
 
         var row = [key];
-        row.untrusted = untrustedValues.indexOf(key) != -1;
         rows.push(row);
         var currentMean = mean(samples);
         var baselineMean = mean(baselineSamples);
