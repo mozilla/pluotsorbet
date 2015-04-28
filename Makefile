@@ -221,7 +221,7 @@ build_tools/soot-trunk.jar: build_tools/.soot_version
 	touch build_tools/soot-trunk.jar
 
 build_tools/closure.jar: build_tools/.closure_compiler_version
-	wget -P build_tools -N https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
+	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
