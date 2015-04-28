@@ -184,6 +184,18 @@ var Benchmark = (function() {
         console.log(e);
       }
 
+      var USS;
+      try {
+        USS = memoryReporter.residentUnique;
+      } catch (e) {
+      }
+
+      var peakRSS;
+      try {
+        peakRSS = memoryReporter.residentPeak;
+      } catch (e) {
+      }
+
       return {
         totalSize: totalSize.value,
         domSize: domSize.value,
@@ -192,8 +204,8 @@ var Benchmark = (function() {
         jsStringsSize: jsStringsSize.value,
         jsOtherSize: jsOtherSize.value,
         otherSize: otherSize.value,
-        USS: memoryReporter.residentUnique,
-        peakRSS: memoryReporter.residentPeak,
+        USS: USS,
+        peakRSS: peakRSS,
       };
     });
   }
