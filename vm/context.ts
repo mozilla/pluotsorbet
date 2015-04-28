@@ -496,6 +496,7 @@ module J2ME {
     }
 
     execute() {
+      threadExecutionStartTime = performance.now();
       this.setAsCurrentContext();
       do {
         VM.execute();

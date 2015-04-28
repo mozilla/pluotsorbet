@@ -25,6 +25,13 @@ function asyncImpl(returnKind, promise) {
   $.pause(asyncImplStringAsync);
 }
 
+function preemptingImpl(returnKind, returnValue) {
+  if (J2ME.tryPreempt()) {
+      asyncImpl(returnKind, Promise.resolve(returnValue));
+  }
+  return returnValue;
+}
+
 var Native = {};
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {

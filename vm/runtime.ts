@@ -2040,9 +2040,10 @@ module J2ME {
   }
 
   /**
-   * Last time we preempted a thread.
+   * Time when the current thread began execution in the context. Reset every time
+   * the thread is resumed.
    */
-  var lastPreemption = 0;
+  export var threadExecutionStartTime = 0;
 
   /**
    * Number of ms between preemptions, chosen arbitrarily.
@@ -2054,22 +2055,22 @@ module J2ME {
    */
   export var preemptionCount = 0;
 
-  /**
-   * TODO: We will almost always preempt the next time we call this if the application
-   * has been idle. Figure out a better heurisitc here, maybe measure the frequency at
-   * at which |checkPreemption| is invoked and ony preempt if the frequency is sustained
-   * for a longer period of time *and* the time since we last preempted is above the
-   * |preemptionInterval|.
-   */
   export function preempt() {
-    var now = performance.now();
-    var elapsed = now - lastPreemption;
-    if (elapsed > preemptionInterval) {
-      lastPreemption = now;
-      preemptionCount ++;
-      threadWriter && threadWriter.writeLn("Preemption timeout: " + elapsed.toFixed(2) + " ms, samples: " + PS + ", count: " + preemptionCount);
+    if (tryPreempt()) {
       $.yield("preemption");
     }
+  }
+
+  export function tryPreempt() {
+    var now = performance.now();
+    var elapsed = now - threadExecutionStartTime;
+    if (elapsed > preemptionInterval) {
+      threadExecutionStartTime = 0;
+      preemptionCount ++;
+      threadWriter && threadWriter.writeLn("Preemption timeout: " + elapsed.toFixed(2) + " ms, samples: " + PS + ", count: " + preemptionCount);
+      return true;
+    }
+    return false;
   }
 
   export class UnwindThrowLocation {

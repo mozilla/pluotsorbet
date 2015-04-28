@@ -623,14 +623,14 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
     DEBUG_FS && console.log("DefaultFileHandler.write: " + J2ME.fromJavaString(this.nativePath) + " " + off + "+" + len);
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.write: ignored file");
-        return len;
+        return preemptingImpl("I", len);
     }
 
     var fd = this.nativeDescriptor;
     fs.write(fd, b, off, len);
     // The return value is the "length of data really written," which is
     // always the same as the length requested in our implementation.
-    return len;
+    return preemptingImpl("I", len);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
