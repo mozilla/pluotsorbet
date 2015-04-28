@@ -1671,6 +1671,11 @@ module J2ME {
   export var compiledMethodCount = 0;
 
   /**
+   * Number of methods that have been compiled thus far.
+   */
+  export var notCompiledMethodCount = 0;
+
+  /**
    * Number of methods that have been loaded from the code cache thus far.
    */
   export var cachedMethodCount = 0;
@@ -1698,6 +1703,7 @@ module J2ME {
     if (methodInfo.codeAttribute.code.length > 2000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
       methodInfo.state = MethodState.NotCompiled;
+      notCompiledMethodCount ++;
       return;
     }
 

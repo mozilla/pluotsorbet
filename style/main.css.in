@@ -470,3 +470,7 @@ div.text-editor {
 #hidden-textarea-editor {
   visibility: hidden;
 }
+
+#counters {
+  padding: 2px;
+}
