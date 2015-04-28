@@ -3,6 +3,12 @@
 
 'use strict';
 
+var LocalMsgConnectionMessage = function(data, offset, length) {
+  this.data = data;
+  this.offset = offset;
+  this.length = length;
+}
+
 var LocalMsgConnection = function() {
     this.waitingForConnection = null;
     this.serverWaiting = [];
@@ -36,8 +42,8 @@ LocalMsgConnection.prototype.copyMessage = function(messageQueue, data) {
     return msg.length;
 }
 
-LocalMsgConnection.prototype.sendMessageToClient = function(message) {
-    this.clientMessages.push(message);
+LocalMsgConnection.prototype.sendMessageToClient = function(data, offset, length) {
+    this.clientMessages.push(new LocalMsgConnectionMessage(data, offset, length));
 
     if (this.clientWaiting.length > 0) {
         this.clientWaiting.shift()();
@@ -58,8 +64,8 @@ LocalMsgConnection.prototype.clientReceiveMessage = function(data) {
     }).bind(this));
 }
 
-LocalMsgConnection.prototype.sendMessageToServer = function(message) {
-    this.serverMessages.push(message);
+LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
+    this.serverMessages.push(new LocalMsgConnectionMessage(data, offset, length));
 
     if (this.serverWaiting.length > 0) {
         this.serverWaiting.shift()();
@@ -98,18 +104,14 @@ NokiaMessagingLocalMsgConnection.prototype.receiveSMS = function(sms) {
   encoder.put(DataType.ULONG, "message_id", sms.id);
   encoder.putEnd(DataType.STRUCT, "event");
 
-  var data = new TextEncoder().encode(encoder.getData());
-  this.sendMessageToClient({
-    data: data,
-    length: data.length,
-    offset: 0,
-  });
+  var replyData = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient(replyData, 0, replyData.length);
 }
 
-NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
   var encoder = new DataEncoder();
 
-  var decoder = new DataDecoder(message.data, message.offset, message.length);
+  var decoder = new DataDecoder(data, offset, length);
 
   decoder.getStart(DataType.STRUCT);
   var name = decoder.getValue(DataType.METHOD);
@@ -175,16 +177,12 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(messag
 
     default:
       console.error("(nokia.messaging) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       return;
   }
 
-  var data = new TextEncoder().encode(encoder.getData());
-  this.sendMessageToClient({
-    data: data,
-    length: data.length,
-    offset: 0,
-  });
+  var replyData = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient(replyData, 0, replyData.length);
 }
 
 var NokiaSASrvRegLocalMsgConnection = function() {
@@ -193,8 +191,8 @@ var NokiaSASrvRegLocalMsgConnection = function() {
 
 NokiaSASrvRegLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
-NokiaSASrvRegLocalMsgConnection.prototype.sendMessageToServer = function(message) {
-  var decoder = new DataDecoder(message.data, message.offset, message.length);
+NokiaSASrvRegLocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
+  var decoder = new DataDecoder(data, offset, length);
 
   decoder.getStart(DataType.STRUCT);
   var name = decoder.getValue(DataType.METHOD);
@@ -229,12 +227,8 @@ NokiaSASrvRegLocalMsgConnection.prototype.sendMessageToServer = function(message
       break;
   }
 
-  var data = new TextEncoder().encode(encoder.getData());
-  this.sendMessageToClient({
-      data: data,
-      length: data.length,
-      offset: 0,
-  });
+  var replyData = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient(replyData, 0, replyData.length);
 };
 
 var NokiaPhoneStatusLocalMsgConnection = function() {
@@ -301,12 +295,8 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendChangeNotify = function(replyBu
   encoder.putEnd(DataType.LIST, "subscriptions");
   encoder.putEnd(DataType.STRUCT, "event");
 
-  var data = new TextEncoder().encode(encoder.getData());
-  this.sendMessageToClient({
-    data: data,
-    length: data.length,
-    offset: 0,
-  });
+  var replyData = new TextEncoder().encode(encoder.getData());
+  this.sendMessageToClient(replyData, 0, replyData.length);
 }
 
 NokiaPhoneStatusLocalMsgConnection.prototype.addListener = function(type) {
@@ -322,8 +312,8 @@ NokiaPhoneStatusLocalMsgConnection.prototype.removeListener = function(type) {
   this.listeners[type] = false;
 }
 
-NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(message) {
-  var decoder = new DataDecoder(message.data, message.offset, message.length);
+NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
+  var decoder = new DataDecoder(data, offset, length);
 
   decoder.getStart(DataType.STRUCT);
   var name = decoder.getValue(DataType.METHOD);
@@ -340,12 +330,8 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(mess
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-        data: data,
-        length: data.length,
-        offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
       break;
 
     case "Query":
@@ -382,7 +368,7 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(mess
 
             default:
               console.error("(nokia.phone-status) Query " + decoder.getName() + " not implemented " +
-                            util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                            util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
               break;
           }
         } else if (queryKind === "Disable") {
@@ -396,19 +382,15 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(mess
         encoder.putEnd(DataType.LIST, "subscriptions");
         encoder.putEnd(DataType.STRUCT, "event");
 
-        var data = new TextEncoder().encode(encoder.getData());
-        this.sendMessageToClient({
-          data: data,
-          length: data.length,
-          offset: 0,
-        });
+        var replyData = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient(replyData, 0, replyData.length);
       }
 
       break;
 
     default:
       console.error("(nokia.phone-status) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       return;
   }
 };
@@ -451,12 +433,8 @@ NokiaContactsLocalMsgConnection.prototype.sendContact = function(trans_id, conta
     this.encodeContact(encoder, contact);
     encoder.putEnd(DataType.STRUCT, "event");
 
-    var data = new TextEncoder().encode(encoder.getData());
-    this.sendMessageToClient({
-        data: data,
-        length: data.length,
-        offset: 0,
-    });
+    var replyData = new TextEncoder().encode(encoder.getData());
+    this.sendMessageToClient(replyData, 0, replyData.length);
 };
 
 NokiaContactsLocalMsgConnection.prototype.getFirstOrNext = function(trans_id, method) {
@@ -480,19 +458,15 @@ NokiaContactsLocalMsgConnection.prototype.getFirstOrNext = function(trans_id, me
     }
     encoder.putEnd(DataType.STRUCT, "event");
 
-    var data = new TextEncoder().encode(encoder.getData());
-    this.sendMessageToClient({
-      data: data,
-      length: data.length,
-      offset: 0,
-    });
+    var replyData = new TextEncoder().encode(encoder.getData());
+    this.sendMessageToClient(replyData, 0, replyData.length);
   }).bind(this);
 
   contacts.getNext(gotContact);
 };
 
-NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message) {
-  var decoder = new DataDecoder(message.data, message.offset, message.length);
+NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
+  var decoder = new DataDecoder(data, offset, length);
 
   decoder.getStart(DataType.STRUCT);
   var name = decoder.getValue(DataType.METHOD);
@@ -509,12 +483,8 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-          data: data,
-          length: data.length,
-          offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
     break;
 
     case "NotifySubscribe":
@@ -527,7 +497,7 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
       var numEntries = decoder.getValue(DataType.ULONG);
       if (numEntries !== 1) {
         console.error("(nokia.contacts) event getFirst with numEntries != 1 not implemented " +
-                      util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                      util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       }
 
       this.getFirstOrNext(trans_id, "getFirst");
@@ -543,12 +513,12 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
       var includeStartEntry = decoder.getValue(DataType.BOOLEAN);
       if (includeStartEntry == 1) {
         console.error("(nokia.contacts) event getNext with includeStartEntry == true not implemented " +
-                      util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                      util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       }
       var numEntries = decoder.getValue(DataType.ULONG);
       if (numEntries !== 1) {
         console.error("(nokia.contacts) event getNext with numEntries != 1 not implemented " +
-                      util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                      util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       }
 
       this.getFirstOrNext(trans_id, "getNext");
@@ -556,7 +526,7 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(message
 
     default:
       console.error("(nokia.contacts) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       return;
   }
 }
@@ -567,8 +537,8 @@ var NokiaFileUILocalMsgConnection = function() {
 
 NokiaFileUILocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
-NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) {
-  var decoder = new DataDecoder(message.data, message.offset, message.length);
+NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
+  var decoder = new DataDecoder(data, offset, length);
 
   decoder.getStart(DataType.STRUCT);
   var name = decoder.getValue(DataType.METHOD);
@@ -585,12 +555,8 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-          data: data,
-          length: data.length,
-          offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
       break;
 
     case "FileSelect":
@@ -673,12 +639,8 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
         encoder.putEnd(DataType.ARRAY, "unknown_array"); // Name unknown
         encoder.putEnd(DataType.STRUCT, "event");
 
-        var data = new TextEncoder().encode(encoder.getData());
-        this.sendMessageToClient({
-          data: data,
-          length: data.length,
-          offset: 0,
-        });
+        var replyData = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient(replyData, 0, replyData.length);
       }).bind(this));
 
       promptTemplateNode.parentNode.appendChild(el);
@@ -686,7 +648,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(message) 
 
     default:
       console.error("(nokia.file-ui) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       return;
   }
 };
@@ -697,8 +659,8 @@ var NokiaImageProcessingLocalMsgConnection = function() {
 
 NokiaImageProcessingLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
-NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(message) {
-  var decoder = new DataDecoder(message.data, message.offset, message.length);
+NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
+  var decoder = new DataDecoder(data, offset, length);
 
   decoder.getStart(DataType.STRUCT);
   var name = decoder.getValue(DataType.METHOD);
@@ -715,12 +677,8 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-        data: data,
-        length: data.length,
-        offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
       break;
 
     case "Scale":
@@ -758,7 +716,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
 
       if (aspect != "FullImage" && aspect != "LockToPartialView") {
         console.error("(nokia.image-processing) event " + name + " with aspect != 'FullImage' or 'LockToPartialView' not implemented " +
-                      util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                      util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
         return;
       }
 
@@ -793,12 +751,8 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         encoder.put(DataType.WSTRING, "filename", "Private/nokiaimageprocessing/" + uniqueFileName); // Name unknown
         encoder.putEnd(DataType.STRUCT, "event");
 
-        var data = new TextEncoder().encode(encoder.getData());
-        this.sendMessageToClient({
-          data: data,
-          length: data.length,
-          offset: 0,
-        });
+        var replyData = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient(replyData, 0, replyData.length);
       }.bind(this);
 
       img.onload = (function() {
@@ -854,7 +808,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
 
     default:
       console.error("(nokia.image-processing) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       return;
   }
 };
@@ -865,9 +819,9 @@ var NokiaProductInfoLocalMsgConnection = function() {
 
 NokiaProductInfoLocalMsgConnection.prototype = Object.create(LocalMsgConnection.prototype);
 
-NokiaProductInfoLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+NokiaProductInfoLocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
   var encoder = new DataEncoder();
-  var decoder = new DataDecoder(message.data, message.offset, message.length);
+  var decoder = new DataDecoder(data, offset, length);
   decoder.getStart(DataType.STRUCT);
 
   var name = decoder.getValue(DataType.METHOD);
@@ -881,12 +835,8 @@ NokiaProductInfoLocalMsgConnection.prototype.sendMessageToServer = function(mess
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-        data: data,
-        length: data.length,
-        offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
       break;
     case "ReadProductInfo":
       encoder.putStart(DataType.STRUCT, "event");
@@ -899,16 +849,12 @@ NokiaProductInfoLocalMsgConnection.prototype.sendMessageToServer = function(mess
       encoder.put(DataType.STRING, "unkown_str_5", "");
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-        data: data,
-        length: data.length,
-        offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
       break;
     default:
       console.error("(nokia.status-info) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       return;
   }
 };
@@ -931,10 +877,10 @@ NokiaActiveStandbyLocalMsgConnection.prototype.recipient = function(message) {
   }
 }
 
-NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(message) {
+NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
   var encoder = new DataEncoder();
 
-  var decoder = new DataDecoder(message.data, message.offset, message.length);
+  var decoder = new DataDecoder(data, offset, length);
 
   decoder.getStart(DataType.STRUCT);
   var name = decoder.getValue(DataType.METHOD);
@@ -949,12 +895,8 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
       encoder.putEnd(DataType.STRUCT, "message");
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-        data: data,
-        length: data.length,
-        offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
     break;
 
     case "Register":
@@ -968,12 +910,8 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
       encoder.put(DataType.STRING, "result", "OK"); // Name unknown
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-        data: data,
-        length: data.length,
-        offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
 
       setZeroTimeout((function() {
         var encoder = new DataEncoder();
@@ -989,12 +927,8 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
         encoder.put(DataType.SHORT, "unknown_short_2", 0); // Name and value unknown
         encoder.putEnd(DataType.STRUCT, "event");
 
-        var data = new TextEncoder().encode(encoder.getData());
-        this.sendMessageToClient({
-          data: data,
-          length: data.length,
-          offset: 0,
-        });
+        var replyData = new TextEncoder().encode(encoder.getData());
+        this.sendMessageToClient(replyData, 0, replyData.length);
       }).bind(this));
     break;
 
@@ -1023,17 +957,13 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(me
       encoder.put(DataType.STRING, "result", "OK"); // Name unknown
       encoder.putEnd(DataType.STRUCT, "event");
 
-      var data = new TextEncoder().encode(encoder.getData());
-      this.sendMessageToClient({
-        data: data,
-        length: data.length,
-        offset: 0,
-      });
+      var replyData = new TextEncoder().encode(encoder.getData());
+      this.sendMessageToClient(replyData, 0, replyData.length);
       break;
 
     default:
       console.error("(nokia.active-standby) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(message.data.buffer, message.offset, message.length)));
+                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
       return;
   }
 }
@@ -1109,20 +1039,14 @@ Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
 };
 
 Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, offset, length) {
-    var message = {
-      data: data,
-      offset: offset,
-      length: length,
-    };
-
     if (this.server) {
-        this.connection.sendMessageToClient(message);
+        this.connection.sendMessageToClient(data, offset, length);
     } else {
         if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
             console.warn("sendData (" + util.decodeUtf8(new Int8Array(data.buffer, offset, length)) + ") to an unimplemented localmsg server (" + this.protocolName + ")");
         }
 
-        this.connection.sendMessageToServer(message);
+        this.connection.sendMessageToServer(data, offset, length);
     }
 };
 
