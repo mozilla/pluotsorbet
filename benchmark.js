@@ -88,7 +88,11 @@ var Benchmark = (function() {
     for (var colIndex = 0; colIndex < numColumns; colIndex++) {
       var maxLength = 0;
       for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-        maxLength = Math.max(rows[rowIndex][colIndex].toString().length, maxLength);
+        var strLen = rows[rowIndex][colIndex].toString().length;
+        if (rows[rowIndex].untrusted) {
+          strLen += 2;
+        }
+        maxLength = Math.max(strLen, maxLength);
       }
       maxColumnLengths[colIndex] = maxLength;
     }
@@ -96,7 +100,11 @@ var Benchmark = (function() {
     for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
       out += "| ";
       for (var colIndex = 0; colIndex < numColumns; colIndex++) {
-        out += pad(rows[rowIndex][colIndex].toString(), " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
+        var str = rows[rowIndex][colIndex].toString();
+        if (rows[rowIndex].untrusted) {
+          str = "*" + str + "*";
+        }
+        out += pad(str, " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
       }
       out += "\n";
       if (rowIndex === 0) {
@@ -143,6 +151,12 @@ var Benchmark = (function() {
     jsOtherSize: byteFormatter,
     otherSize: byteFormatter,
   };
+
+  var untrustedValues = [
+    "totalSize", "domSize", "styleSize", "jsObjectsSize",
+    "jsStringsSize", "jsOtherSize", "otherSize", "USS",
+    "peakRSS",
+  ];
 
   function sampleMemory() {
     if (!NO_SECURITY) {
@@ -293,6 +307,7 @@ var Benchmark = (function() {
         var formatter = valueFormatters[key];
 
         var row = [key];
+        row.untrusted = untrustedValues.indexOf(key) != -1;
         rows.push(row);
         var currentMean = mean(samples);
         var baselineMean = mean(baselineSamples);
