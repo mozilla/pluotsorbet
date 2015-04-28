@@ -1671,7 +1671,7 @@ module J2ME {
   export var compiledMethodCount = 0;
 
   /**
-   * Number of methods that have been compiled thus far.
+   * Number of methods that have not been compiled thus far.
    */
   export var notCompiledMethodCount = 0;
 
