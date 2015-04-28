@@ -33,6 +33,7 @@ ifeq ($(PACKAGE_TESTS),1)
 endif
 
 NAME ?= j2me.js
+MIDLET_NAME ?= midlet
 DESCRIPTION ?= j2me interpreter for firefox os
 ORIGIN ?= app://j2mejs.mozilla.org
 VERSION ?= $(shell date +%s)
@@ -153,6 +154,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D JSR_179=$(JSR_179) \
              -D CONFIG=$(CONFIG) \
              -D NAME="$(NAME)" \
+             -D MIDLET_NAME="$(MIDLET_NAME)" \
              -D DESCRIPTION="$(DESCRIPTION)" \
              -D ORIGIN=$(ORIGIN) \
              -D VERSION=$(VERSION) \

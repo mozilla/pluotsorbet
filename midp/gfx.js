@@ -88,8 +88,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
-        document.getElementById("background-screen").style.display = "none";
-        document.getElementById("splash-screen").style.display = "none";
+        hideBackgroundScreen();
+        hideSplashScreen();
         var d = NativeDisplays.get(displayId);
         NativeDisplays.foreground = displayId;
         MIDP.setFullScreen(d.fullScreen);

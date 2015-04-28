@@ -9,8 +9,8 @@ var fgMidletClass;
 function backgroundCheck() {
   var bgServer = MIDP.manifest["Nokia-MIDlet-bg-server"];
   if (!bgServer) {
-    document.getElementById("splash-screen").style.display = "block";
-    document.getElementById("background-screen").style.display = "none";
+    showSplashScreen();
+    hideBackgroundScreen();
     return;
   }
 
@@ -66,7 +66,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
       localmsgServerWait = resolve;
     });
   }).then(function() {
-    document.getElementById("splash-screen").style.display = "block";
-    document.getElementById("background-screen").style.display = "none";
+    showSplashScreen();
+    hideBackgroundScreen();
   }));
 };
