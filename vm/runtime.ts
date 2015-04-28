@@ -2056,12 +2056,12 @@ module J2ME {
   export var preemptionCount = 0;
 
   export function preempt() {
-    if (tryPreempt()) {
+    if (shouldPreempt()) {
       $.yield("preemption");
     }
   }
 
-  export function tryPreempt() {
+  export function shouldPreempt() {
     var now = performance.now();
     var elapsed = now - threadExecutionStartTime;
     if (elapsed > preemptionInterval) {

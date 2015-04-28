@@ -26,7 +26,7 @@ function asyncImpl(returnKind, promise) {
 }
 
 function preemptingImpl(returnKind, returnValue) {
-  if (J2ME.tryPreempt()) {
+  if (J2ME.shouldPreempt()) {
       asyncImpl(returnKind, Promise.resolve(returnValue));
   }
   return returnValue;
