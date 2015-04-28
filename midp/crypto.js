@@ -77,14 +77,15 @@ Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(data) {
 
 var hexEncodeArray = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', ];
 
+var bytesToHexStringResult = new Array();
 function bytesToHexString(array) {
-    var s = new Array(array.length * 2);
+    bytesToHexStringResult.length = array.length * 2;
     for (var i = 0; i < array.length; i++) {
       var code = array[i] & 0xFF;
-      s[i * 2] = hexEncodeArray[code >>> 4];
-      s[i * 2 + 1] = hexEncodeArray[code & 0x0F];
+      bytesToHexStringResult[i * 2] = hexEncodeArray[code >>> 4];
+      bytesToHexStringResult[i * 2 + 1] = hexEncodeArray[code & 0x0F];
     }
-    return s.join("");
+    return bytesToHexStringResult.join("");
 }
 
 function hexStringToBytes(hex) {
