@@ -662,16 +662,16 @@ module J2ME {
     private _queues: Context[][];
 
     constructor() {
-      this._top = MIN_PRIORITY;
+      this._top = MIN_PRIORITY + ISOLATE_MIN_PRIORITY;
       this._queues = [];
-      for (var i = MIN_PRIORITY; i <= MAX_PRIORITY * ISOLATE_MAX_PRIORITY; i++) {
+      for (var i = MIN_PRIORITY + ISOLATE_MIN_PRIORITY; i <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY; i++) {
         this._queues[i] = [];
       }
     }
 
     enqueue(ctx: Context) {
-      var priority = ctx.getPriority() + 10 * (ctx.getIsolatePriority() - 1);
-      release || assert(priority >= MIN_PRIORITY && priority <= MAX_PRIORITY * ISOLATE_MAX_PRIORITY,
+      var priority = ctx.getPriority() + ctx.getIsolatePriority();
+      release || assert(priority >= MIN_PRIORITY + ISOLATE_MIN_PRIORITY && priority <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY,
                         "Invalid priority: " + priority);
       this._queues[priority].push(ctx);
       this._top = Math.max(priority, this._top);
@@ -682,14 +682,14 @@ module J2ME {
         return null;
       }
       var ctx = this._queues[this._top].shift();
-      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY) {
+      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY + ISOLATE_MIN_PRIORITY) {
         this._top--;
       }
       return ctx;
     }
 
     isEmpty() {
-      return this._top === MIN_PRIORITY && this._queues[this._top].length === 0;
+      return this._top === MIN_PRIORITY + ISOLATE_MIN_PRIORITY && this._queues[this._top].length === 0;
     }
   }
 
