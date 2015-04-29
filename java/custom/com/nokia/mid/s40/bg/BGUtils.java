@@ -33,7 +33,7 @@ public class BGUtils {
       }
 
       AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, BGUtils.getFGMIDletNumber(),
-                              BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, -1, null, false);
+                              BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, 3, null, false);
     }
 
     private static native void addSystemProperties(String args);
@@ -47,8 +47,7 @@ public class BGUtils {
             BGUtils.addSystemProperties(args);
 
             AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, midletNumber,
-                                    BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1,
-                                    -1, null, false);
+                                    BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, 3, null, false);
         } catch (Exception e) {
             System.out.println("Unexpected exception: " + e);
             e.printStackTrace();

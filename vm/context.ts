@@ -367,7 +367,7 @@ module J2ME {
     }
     public static currentContextPrefix() {
       if ($) {
-        return Context.color($.id) + ":" + Context.color($.ctx.id);
+        return Context.color($.id) + "." + $.ctx.getIsolatePriority() + ":" + Context.color($.ctx.id) + "." + $.ctx.getPriority();
       }
       return "";
     }
@@ -384,6 +384,13 @@ module J2ME {
       initWriter = writers & WriterFlags.Init ? writer : null;
       threadWriter = writers & WriterFlags.Thread ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
+    }
+
+    getIsolatePriority() {
+      if (this.runtime && this.runtime.isolate) {
+        return this.runtime.isolate._priority;
+      }
+      return ISOLATE_NORM_PRIORITY;
     }
 
     getPriority() {

@@ -421,7 +421,7 @@ module J2ME {
     ctx: Context;
     allCtxs: Set<Context>;
 
-    isolate: com.sun.cldc.isolate.Isolate;
+    isolate: any;
     mainThread: java.lang.Thread;
 
     private static _nextRuntimeId: number = 0;
@@ -653,6 +653,10 @@ module J2ME {
   /** @const */ export var MIN_PRIORITY: number = 1;
   /** @const */ export var NORMAL_PRIORITY: number = 5;
 
+  /** @const */ export var ISOLATE_MIN_PRIORITY: number = 1;
+  /** @const */ export var ISOLATE_NORM_PRIORITY: number = 2;
+  /** @const */ export var ISOLATE_MAX_PRIORITY: number = 3;
+
   class PriorityQueue {
     private _top: number;
     private _queues: Context[][];
@@ -660,14 +664,14 @@ module J2ME {
     constructor() {
       this._top = MIN_PRIORITY;
       this._queues = [];
-      for (var i = MIN_PRIORITY; i <= (MAX_PRIORITY + 5); i++) {
+      for (var i = MIN_PRIORITY; i <= MAX_PRIORITY * ISOLATE_MAX_PRIORITY; i++) {
         this._queues[i] = [];
       }
     }
 
     enqueue(ctx: Context) {
-      var priority = ctx.getPriority() + ctx.runtime.id;
-      release || assert(priority >= MIN_PRIORITY && priority <= (MAX_PRIORITY + 5),
+      var priority = ctx.getPriority() + 10 * (ctx.getIsolatePriority() - 1);
+      release || assert(priority >= MIN_PRIORITY && priority <= MAX_PRIORITY * ISOLATE_MAX_PRIORITY,
                         "Invalid priority: " + priority);
       this._queues[priority].push(ctx);
       this._top = Math.max(priority, this._top);
