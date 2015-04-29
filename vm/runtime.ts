@@ -660,14 +660,14 @@ module J2ME {
     constructor() {
       this._top = MIN_PRIORITY;
       this._queues = [];
-      for (var i = MIN_PRIORITY; i <= MAX_PRIORITY; i++) {
+      for (var i = MIN_PRIORITY; i <= (MAX_PRIORITY + 5); i++) {
         this._queues[i] = [];
       }
     }
 
     enqueue(ctx: Context) {
-      var priority = ctx.getPriority();
-      release || assert(priority >= MIN_PRIORITY && priority <= MAX_PRIORITY,
+      var priority = ctx.getPriority() + ctx.runtime.id;
+      release || assert(priority >= MIN_PRIORITY && priority <= (MAX_PRIORITY + 5),
                         "Invalid priority: " + priority);
       this._queues[priority].push(ctx);
       this._top = Math.max(priority, this._top);
