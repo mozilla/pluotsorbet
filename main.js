@@ -15,7 +15,9 @@ function showDownloadScreen() {
   display.appendChild(downloadDialog);
 }
 function hideDownloadScreen() {
-  display.removeChild(downloadDialog);
+  if (downloadDialog.parentNode) {
+    downloadDialog.parentNode.removeChild(downloadDialog);
+  }
 }
 
 var splashScreen = document.getElementById('splash-screen');
@@ -25,7 +27,9 @@ function showSplashScreen() {
   display.appendChild(splashScreen);
 }
 function hideSplashScreen() {
-  display.removeChild(splashScreen);
+  if (splashScreen.parentNode) {
+    splashScreen.parentNode.removeChild(splashScreen);
+  }
 }
 
 function showBackgroundScreen() {
