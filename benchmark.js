@@ -184,19 +184,7 @@ var Benchmark = (function() {
         console.log(e);
       }
 
-      var USS;
-      try {
-        USS = memoryReporter.residentUnique;
-      } catch (e) {
-      }
-
-      var peakRSS;
-      try {
-        peakRSS = memoryReporter.residentPeak;
-      } catch (e) {
-      }
-
-      return {
+      var memValues = {
         totalSize: totalSize.value,
         domSize: domSize.value,
         styleSize: styleSize.value,
@@ -204,9 +192,21 @@ var Benchmark = (function() {
         jsStringsSize: jsStringsSize.value,
         jsOtherSize: jsOtherSize.value,
         otherSize: otherSize.value,
-        USS: USS,
-        peakRSS: peakRSS,
       };
+
+      // residentUnique is not available on all platforms.
+      try {
+        memValues.USS = memoryReporter.residentUnique;
+      } catch (e) {
+      }
+
+      // residentPeak is not available on all platforms.
+      try {
+        memValues.peakRSS = memoryReporter.residentPeak;
+      } catch (e) {
+      }
+
+      return memValues;
     });
   }
 
