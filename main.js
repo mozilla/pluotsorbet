@@ -277,7 +277,11 @@ if (typeof Benchmark !== "undefined") {
 
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
-   indexedDB.deleteDatabase("asyncStorage");
+   fs.deleteStore().then(function() {
+     console.log("Delete file system completed.");
+   }, function() {
+     console.log("Failed to delete file system.");
+   });
  };
  document.getElementById("exportstorage").onclick = function() {
    fs.exportStore(function(blob) {
