@@ -979,6 +979,15 @@ var fs = (function() {
     return store.import(blob, cb);
   }
 
+  function deleteStore() {
+    return new Promise(function(resolve, reject) {
+      store.db = null;
+      var request = indexedDB.deleteDatabase("asyncStorage");
+      request.onsuccess = resolve;
+      request.onerror = reject;
+    });
+  }
+
   return {
     normalize: normalizePath,
     dirname: dirname,
@@ -1006,6 +1015,7 @@ var fs = (function() {
     syncStore: syncStore,
     exportStore: exportStore,
     importStore: importStore,
+    deleteStore: deleteStore,
     createUniqueFile: createUniqueFile,
     getBlob: getBlob,
   };

@@ -277,7 +277,11 @@ if (typeof Benchmark !== "undefined") {
 
 window.onload = function() {
  document.getElementById("deleteDatabase").onclick = function() {
-   indexedDB.deleteDatabase("asyncStorage");
+   fs.deleteStore().then(function() {
+     console.log("Delete file system completed.");
+   }, function() {
+     console.log("Failed to delete file system.");
+   });
  };
  document.getElementById("exportstorage").onclick = function() {
    fs.exportStore(function(blob) {
@@ -323,9 +327,10 @@ window.onload = function() {
     el.textContent = numberWithCommas(J2ME.interpreterCount);
 
     var el = document.getElementById("compiledCount");
-    el.textContent = numberWithCommas(J2ME.compiledMethodCount) + " / " +
-                     numberWithCommas(J2ME.cachedMethodCount) + " / " +
-                     numberWithCommas(J2ME.aotMethodCount);
+    el.textContent = numberWithCommas(J2ME.compiledMethodCount) + "/" +
+                     numberWithCommas(J2ME.cachedMethodCount) + "/" +
+                     numberWithCommas(J2ME.aotMethodCount) + "/" +
+                     numberWithCommas(J2ME.notCompiledMethodCount);
 
     var el = document.getElementById("onStackReplacementCount");
     el.textContent = numberWithCommas(J2ME.onStackReplacementCount);
