@@ -88,7 +88,11 @@ var Benchmark = (function() {
     for (var colIndex = 0; colIndex < numColumns; colIndex++) {
       var maxLength = 0;
       for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-        maxLength = Math.max(rows[rowIndex][colIndex].toString().length, maxLength);
+        var strLen = rows[rowIndex][colIndex].toString().length;
+        if (rows[rowIndex].untrusted) {
+          strLen += 2;
+        }
+        maxLength = Math.max(strLen, maxLength);
       }
       maxColumnLengths[colIndex] = maxLength;
     }
@@ -96,7 +100,11 @@ var Benchmark = (function() {
     for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
       out += "| ";
       for (var colIndex = 0; colIndex < numColumns; colIndex++) {
-        out += pad(rows[rowIndex][colIndex].toString(), " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
+        var str = rows[rowIndex][colIndex].toString();
+        if (rows[rowIndex].untrusted) {
+          str = "*" + str + "*";
+        }
+        out += pad(str, " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
       }
       out += "\n";
       if (rowIndex === 0) {
@@ -142,7 +150,15 @@ var Benchmark = (function() {
     jsStringsSize: byteFormatter,
     jsOtherSize: byteFormatter,
     otherSize: byteFormatter,
+    USS: byteFormatter,
+    peakRSS: byteFormatter,
   };
+
+  var untrustedValues = [
+    "totalSize", "domSize", "styleSize", "jsObjectsSize",
+    "jsStringsSize", "jsOtherSize", "otherSize", "USS",
+    "peakRSS",
+  ];
 
   function sampleMemory() {
     if (!NO_SECURITY) {
@@ -168,7 +184,7 @@ var Benchmark = (function() {
         console.log(e);
       }
 
-      return {
+      var memValues = {
         totalSize: totalSize.value,
         domSize: domSize.value,
         styleSize: styleSize.value,
@@ -177,6 +193,20 @@ var Benchmark = (function() {
         jsOtherSize: jsOtherSize.value,
         otherSize: otherSize.value,
       };
+
+      // residentUnique is not available on all platforms.
+      try {
+        memValues.USS = memoryReporter.residentUnique;
+      } catch (e) {
+      }
+
+      // residentPeak is not available on all platforms.
+      try {
+        memValues.peakRSS = memoryReporter.residentPeak;
+      } catch (e) {
+      }
+
+      return memValues;
     });
   }
 
@@ -197,6 +227,8 @@ var Benchmark = (function() {
         current.jsStringsSize = [];
         current.jsOtherSize   = [];
         current.otherSize     = [];
+        current.USS           = [];
+        current.peakRSS       = [];
       }
       storage.running = true;
       storage.numRounds = "numRounds" in settings ? settings.numRounds : defaultStorage.numRounds;
@@ -293,6 +325,7 @@ var Benchmark = (function() {
         var formatter = valueFormatters[key];
 
         var row = [key];
+        row.untrusted = untrustedValues.indexOf(key) != -1;
         rows.push(row);
         var currentMean = mean(samples);
         var baselineMean = mean(baselineSamples);
