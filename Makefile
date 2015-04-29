@@ -176,7 +176,7 @@ SOOT_VERSION=25Mar2015
 OLD_SOOT_VERSION := $(shell [ -f build_tools/.soot_version ] && cat build_tools/.soot_version)
 $(shell [ "$(SOOT_VERSION)" != "$(OLD_SOOT_VERSION)" ] && echo $(SOOT_VERSION) > build_tools/.soot_version)
 
-CLOSURE_COMPILER_VERSION=j2me.js-v20150327
+CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
@@ -217,11 +217,12 @@ build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 
 build_tools/soot-trunk.jar: build_tools/.soot_version
 	rm -f build_tools/soot-trunk.jar
-	wget -P build_tools -N https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
+	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
 	touch build_tools/soot-trunk.jar
 
 build_tools/closure.jar: build_tools/.closure_compiler_version
-	wget -P build_tools -N https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
+	rm -f build_tools/closure.jar
+	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
