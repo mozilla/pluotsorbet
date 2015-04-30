@@ -421,7 +421,7 @@ module J2ME {
     ctx: Context;
     allCtxs: Set<Context>;
 
-    isolate: any;
+    isolate: com.sun.cldc.isolate.Isolate;
     priority: number = ISOLATE_NORM_PRIORITY;
     mainThread: java.lang.Thread;
 
