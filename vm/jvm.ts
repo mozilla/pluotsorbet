@@ -45,7 +45,7 @@ module J2ME {
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 
-    startIsolate(isolate: any) {
+    startIsolate(isolate: Isolate) {
       var ctx = this.createIsolateCtx();
       var runtime = ctx.runtime;
       isolate.runtime = runtime;
