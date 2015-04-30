@@ -45,13 +45,14 @@ module J2ME {
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 
-    startIsolate(isolate: Isolate) {
+    startIsolate(isolate: any) {
       var ctx = this.createIsolateCtx();
       var runtime = ctx.runtime;
       isolate.runtime = runtime;
       runtime.isolate = isolate;
 
       runtime.updateStatus(RuntimeStatus.Started);
+      runtime.priority = isolate._priority;
 
       var mainClass = J2ME.fromJavaString(isolate._mainClass).replace(/\./g, "/");
       var mainArgs = isolate._mainArgs;

@@ -422,6 +422,7 @@ module J2ME {
     allCtxs: Set<Context>;
 
     isolate: any;
+    priority: number = ISOLATE_NORM_PRIORITY;
     mainThread: java.lang.Thread;
 
     private static _nextRuntimeId: number = 0;
@@ -670,7 +671,7 @@ module J2ME {
     }
 
     enqueue(ctx: Context) {
-      var priority = ctx.getPriority() + ctx.getIsolatePriority();
+      var priority = ctx.getPriority() + ctx.runtime.priority;
       release || assert(priority >= MIN_PRIORITY + ISOLATE_MIN_PRIORITY && priority <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY,
                         "Invalid priority: " + priority);
       this._queues[priority].push(ctx);
