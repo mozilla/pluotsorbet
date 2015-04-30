@@ -37,7 +37,7 @@ module J2ME {
   /**
    * Toggle VM tracing here.
    */
-  export var writers = WriterFlags.None;
+  export var writers = WriterFlags.All;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -341,6 +341,7 @@ module J2ME {
     bailoutFrames: Frame [];
     lockTimeout: number;
     lockLevel: number;
+    nativeThread: Thread;
     thread: java.lang.Thread;
     writer: IndentingWriter;
     methodTimeline: any;
@@ -350,6 +351,7 @@ module J2ME {
       this.bailoutFrames = [];
       this.runtime = runtime;
       this.runtime.addContext(this);
+      this.nativeThread = new Thread(this);
       this.writer = new IndentingWriter(false, function (s) {
         console.log(s);
       });
@@ -425,13 +427,35 @@ module J2ME {
       release || assert (Frame.isMarker(marker));
     }
 
+    executeThread() {
+      try {
+        var returnValue = J2ME.interpret(this.nativeThread);
+        //if (U) {
+        //  // Prepend all frames up until the first marker to the bailout frames.
+        //  while (true) {
+        //    var frame = frames.pop();
+        //    if (Frame.isMarker(frame)) {
+        //      break;
+        //    }
+        //    this.bailoutFrames.unshift(frame);
+        //  }
+        //  return;
+        //}
+      } catch (e) {
+        //this.popMarkerFrame();
+        //throwHelper(e);
+      }
+      //this.popMarkerFrame();
+      return returnValue;
+    }
+
     executeFrame(frame: Frame) {
       var frames = this.frames;
       frames.push(Frame.Marker);
       this.pushFrame(frame);
 
       try {
-        var returnValue = VM.execute();
+        var returnValue = J2ME.interpret(this.nativeThread);
         if (U) {
           // Prepend all frames up until the first marker to the bailout frames.
           while (true) {

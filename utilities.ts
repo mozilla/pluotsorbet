@@ -361,6 +361,11 @@ module J2ME {
       return ((i + (i >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
     }
 
+    export function toHEX(i: number) {
+      var i = (i < 0 ? 0xFFFFFFFF + i + 1 : i);
+      return "0x" + ("00000000" + i.toString(16)).substr(-8);
+    }
+
     /**
      * Polyfill imul.
      */

@@ -46,7 +46,7 @@
 
   <!-- Run `make aot` to generate these.  Load them separately, because adding
      - classes.jar.js to main-all.js fails silently for unknown reasons. -->
-  <script type="text/javascript" src="bld/classes.jar.js" defer></script>
+  <!--<script type="text/javascript" src="bld/classes.jar.js" defer></script>-->
   <!--<script type="text/javascript" src="bld/program.jar.js" defer></script>-->
   <!--<script type="text/javascript" src="bld/tests.jar.js" defer></script>-->
 

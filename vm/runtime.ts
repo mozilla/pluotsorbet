@@ -49,7 +49,7 @@ module J2ME {
   /**
    * Turns on just-in-time compilation of methods.
    */
-  export var enableRuntimeCompilation = true;
+  export var enableRuntimeCompilation = false;
 
   /**
    * Turns on onStackReplacement
@@ -752,6 +752,8 @@ module J2ME {
       threadWriter && threadWriter.writeLn("yielding " + reason);
       runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
+      console.info("\nYielding\n");
+      console.info(new Error().stack)
     }
 
     pause(reason: string) {
@@ -759,6 +761,8 @@ module J2ME {
       threadWriter && threadWriter.writeLn("pausing " + reason);
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
+      console.info("\nPausing\n");
+      console.info(new Error().stack)
     }
 
     stop() {
@@ -1245,21 +1249,31 @@ module J2ME {
     return null;
   }
 
+  var frameView = new FrameView();
+
   function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
 
     // Adapter for the most common case.
     if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
       var method = function fastInterpreterFrameAdapter() {
-        var frame = Frame.create(methodInfo, []);
-        var j = 0;
-        if (!methodInfo.isStatic) {
-          frame.local[j++] = this;
-        }
-        var slots = methodInfo.argumentSlots;
-        for (var i = 0; i < slots; i++) {
-          frame.local[j++] = arguments[i];
-        }
-        return $.ctx.executeFrame(frame);
+
+        var thread = $.ctx.nativeThread;
+        frameView.set(thread.fp, thread.sp, 0);
+        frameView.methodInfo = methodInfo;
+        thread.sp = thread.fp + frameView.stackOffset;
+
+        frameView.setParameterO4(this, 0);
+        //var frame = Frame.create(methodInfo, []);
+        //var j = 0;
+        //if (!methodInfo.isStatic) {
+        //  frame.local[j++] = this;
+        //}
+        //var slots = methodInfo.argumentSlots;
+        //for (var i = 0; i < slots; i++) {
+        //  frame.local[j++] = arguments[i];
+        //}
+        //return $.ctx.executeFrame(frame);
+        return $.ctx.executeThread();
       };
       (<any>method).methodInfo = methodInfo;
       return method;

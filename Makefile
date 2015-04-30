@@ -234,11 +234,11 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
+bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 ifeq ($(RELEASE),1)
-	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
+	java -jar build_tools/closure.jar --formatting PRETTY_PRINT --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 endif
 

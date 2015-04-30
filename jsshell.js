@@ -114,8 +114,9 @@ try {
     "libs/encoding.js", "util.js", "libs/jarstore.js",
     "native.js", "string.js",
     "midp/midp.js", "midp/gestures.js",
-    "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js",
-    "bld/classes.jar.js");
+    "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js"
+    // "bld/classes.jar.js"
+  );
 
   // load("bld/classes.jar.js");
   // load("bld/program.jar.js");
@@ -142,7 +143,9 @@ try {
   var start = dateNow();
   var jvm = new JVM();
 
-  J2ME.writers = J2ME.WriterFlags.None;
+  J2ME.writers = J2ME.WriterFlags.All;
+  J2ME.enableRuntimeCompilation = false;
+
   start = dateNow();
   var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
   while (callbacks.length) {

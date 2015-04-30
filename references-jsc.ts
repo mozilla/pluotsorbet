@@ -13,6 +13,7 @@
 ///<reference path='vm/jvm.ts' />
 ///<reference path='bindings.ts' />
 ///<reference path='vm/runtime.ts' />
+///<reference path='int.ts' />
 ///<reference path='interpreter.ts' />
 ///<reference path='vm/context.ts' />
 
