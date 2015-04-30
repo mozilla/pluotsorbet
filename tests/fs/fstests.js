@@ -94,6 +94,14 @@ var getBranch = function(dir) {
   });
 };
 
+function createArray(length, val) {
+  var array = new Uint8Array(length);
+  for (var i = 0; i < length; i++) {
+    array[i] = val;
+  }
+  return array;
+}
+
 var fd;
 
 tests.push(function() {
@@ -624,26 +632,40 @@ tests.push(function() {
 
 tests.push(function() {
   // Test writing enough data to make the fs internal buffer increase (exponentially)
-  fs.write(fd, new Uint8Array(6065), 6);
+  fs.write(fd, createArray(6065, 77), 6);
 
   is(fs.getsize(fd), 6071, "file size is now 6071");
 
   var data = new Uint8Array(6071);
   fs.read(fd, 0, undefined, data, function() {
     is(new TextDecoder().decode(data).substring(0, 6), "mamarc", "read correct");
+    var dataCorrect = true;
+    for (var i = 6; i < data.byteLength; i++) {
+      if (data[i] != 77) {
+        dataCorrect = false;
+      }
+    }
+    ok(dataCorrect, "read correct");
     next();
   });
 });
 
 tests.push(function() {
   // Test writing enough data to make the fs internal buffer increase (linearly)
-  fs.write(fd, new Uint8Array(131073), 6);
+  fs.write(fd, createArray(131073, 42), 6);
 
   is(fs.getsize(fd), 131079, "file size is now 131079");
 
   var data = new Uint8Array(131079);
   fs.read(fd, 0, undefined, data, function() {
     is(new TextDecoder().decode(data).substring(0, 6), "mamarc", "read correct");
+    var dataCorrect = true;
+    for (var i = 6; i < data.byteLength; i++) {
+      if (data[i] != 42) {
+        dataCorrect = false;
+      }
+    }
+    ok(dataCorrect, "read correct");
     next();
   });
 });
@@ -947,14 +969,6 @@ tests.push(function() {
   ok(fd > 0, "/tmp/blobs opened");
   next();
 });
-
-function createArray(length, val) {
-  var array = new Uint8Array(length);
-  for (var i = 0; i < length; i++) {
-    array[i] = val;
-  }
-  return array;
-}
 
 tests.push(function() {
   // Appending write, result: 111
