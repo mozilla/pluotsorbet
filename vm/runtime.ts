@@ -422,6 +422,7 @@ module J2ME {
     allCtxs: Set<Context>;
 
     isolate: com.sun.cldc.isolate.Isolate;
+    priority: number = ISOLATE_NORM_PRIORITY;
     mainThread: java.lang.Thread;
 
     private static _nextRuntimeId: number = 0;
@@ -653,21 +654,25 @@ module J2ME {
   /** @const */ export var MIN_PRIORITY: number = 1;
   /** @const */ export var NORMAL_PRIORITY: number = 5;
 
+  /** @const */ export var ISOLATE_MIN_PRIORITY: number = 1;
+  /** @const */ export var ISOLATE_NORM_PRIORITY: number = 2;
+  /** @const */ export var ISOLATE_MAX_PRIORITY: number = 3;
+
   class PriorityQueue {
     private _top: number;
     private _queues: Context[][];
 
     constructor() {
-      this._top = MIN_PRIORITY;
+      this._top = MIN_PRIORITY + ISOLATE_MIN_PRIORITY;
       this._queues = [];
-      for (var i = MIN_PRIORITY; i <= MAX_PRIORITY; i++) {
+      for (var i = MIN_PRIORITY + ISOLATE_MIN_PRIORITY; i <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY; i++) {
         this._queues[i] = [];
       }
     }
 
     enqueue(ctx: Context) {
-      var priority = ctx.getPriority();
-      release || assert(priority >= MIN_PRIORITY && priority <= MAX_PRIORITY,
+      var priority = ctx.getPriority() + ctx.runtime.priority;
+      release || assert(priority >= MIN_PRIORITY + ISOLATE_MIN_PRIORITY && priority <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY,
                         "Invalid priority: " + priority);
       this._queues[priority].push(ctx);
       this._top = Math.max(priority, this._top);
@@ -678,14 +683,14 @@ module J2ME {
         return null;
       }
       var ctx = this._queues[this._top].shift();
-      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY) {
+      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY + ISOLATE_MIN_PRIORITY) {
         this._top--;
       }
       return ctx;
     }
 
     isEmpty() {
-      return this._top === MIN_PRIORITY && this._queues[this._top].length === 0;
+      return this._top === MIN_PRIORITY + ISOLATE_MIN_PRIORITY && this._queues[this._top].length === 0;
     }
   }
 
