@@ -2054,7 +2054,7 @@ module J2ME {
   /**
    * Number of ms between preemptions, chosen arbitrarily.
    */
-  var preemptionInterval = 100;
+  var preemptionInterval = 10;
 
   /**
    * Number of preemptions thus far.
