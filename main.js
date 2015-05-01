@@ -46,9 +46,9 @@ function showExitScreen() {
 }
 
 // If the document is hidden, then we've been started by an alarm and are in
-// the background, so we display the background screen.
+// the background, so we show the background screen.
 if (document.hidden) {
-  hideBackgroundScreen();
+  showBackgroundScreen();
 }
 
 // The real profile and release variable declaration in config.ts are folded away by closure. Until we
