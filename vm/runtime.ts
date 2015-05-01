@@ -1705,7 +1705,7 @@ module J2ME {
     }
 
     // Don't compile methods that are too large.
-    if (methodInfo.codeAttribute.code.length > 2000 && !config.forceRuntimeCompilation) {
+    if (methodInfo.codeAttribute.code.length > 4000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
       methodInfo.state = MethodState.NotCompiled;
       notCompiledMethodCount ++;
@@ -2046,36 +2046,37 @@ module J2ME {
   }
 
   /**
-   * Last time we preempted a thread.
+   * Time when the current thread began execution in the context. Reset every time
+   * the thread is resumed.
    */
-  var lastPreemption = 0;
+  export var threadExecutionStartTime = 0;
 
   /**
    * Number of ms between preemptions, chosen arbitrarily.
    */
-  var preemptionInterval = 100;
+  var preemptionInterval = 10;
 
   /**
    * Number of preemptions thus far.
    */
   export var preemptionCount = 0;
 
-  /**
-   * TODO: We will almost always preempt the next time we call this if the application
-   * has been idle. Figure out a better heurisitc here, maybe measure the frequency at
-   * at which |checkPreemption| is invoked and ony preempt if the frequency is sustained
-   * for a longer period of time *and* the time since we last preempted is above the
-   * |preemptionInterval|.
-   */
   export function preempt() {
-    var now = performance.now();
-    var elapsed = now - lastPreemption;
-    if (elapsed > preemptionInterval) {
-      lastPreemption = now;
-      preemptionCount ++;
-      threadWriter && threadWriter.writeLn("Preemption timeout: " + elapsed.toFixed(2) + " ms, samples: " + PS + ", count: " + preemptionCount);
+    if (shouldPreempt()) {
       $.yield("preemption");
     }
+  }
+
+  export function shouldPreempt() {
+    var now = performance.now();
+    var elapsed = now - threadExecutionStartTime;
+    if (elapsed > preemptionInterval) {
+      threadExecutionStartTime = 0;
+      preemptionCount ++;
+      threadWriter && threadWriter.writeLn("Preemption timeout: " + elapsed.toFixed(2) + " ms, samples: " + PS + ", count: " + preemptionCount);
+      return true;
+    }
+    return false;
   }
 
   export class UnwindThrowLocation {

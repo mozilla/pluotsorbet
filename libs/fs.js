@@ -506,7 +506,7 @@ var fs = (function() {
     return buffer.array.subarray(from, to);
   }
 
-  function write(fd, data, from) {
+  function write(fd, data, offset, length, from) {
     var file = openedFiles.get(fd);
 
     if (DEBUG_FS) { console.log("fs write " + file.path); }
@@ -521,13 +521,15 @@ var fs = (function() {
       from = buffer.contentSize;
     }
 
-    var newLength = (from + data.byteLength > buffer.contentSize) ? (from + data.byteLength) : (buffer.contentSize);
+    var newLength = (from + length > buffer.contentSize) ? (from + length) : (buffer.contentSize);
 
     buffer.setSize(newLength);
 
-    buffer.array.set(data, from);
+    for (var i = 0; i < length; i++) {
+      buffer.array[from + i] = data[offset + i];
+    }
 
-    file.position = from + data.byteLength;
+    file.position = from + length;
     file.mtime = Date.now();
     file.size = buffer.contentSize;
     file.dirty = true;
