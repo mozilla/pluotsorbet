@@ -1,5 +1,6 @@
 package com.nokia.mid.s40.bg;
 
+import com.sun.cldc.isolate.Isolate;
 import com.sun.midp.main.AmsUtil;
 import com.sun.midp.midletsuite.MIDletSuiteStorage;
 
@@ -33,7 +34,8 @@ public class BGUtils {
       }
 
       AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, BGUtils.getFGMIDletNumber(),
-                              BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, -1, null, false);
+                              BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, Isolate.MAX_PRIORITY,
+                              null, false);
     }
 
     private static native void addSystemProperties(String args);
@@ -47,8 +49,8 @@ public class BGUtils {
             BGUtils.addSystemProperties(args);
 
             AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, midletNumber,
-                                    BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1,
-                                    -1, null, false);
+                                    BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, Isolate.MAX_PRIORITY,
+                                    null, false);
         } catch (Exception e) {
             System.out.println("Unexpected exception: " + e);
             e.printStackTrace();
