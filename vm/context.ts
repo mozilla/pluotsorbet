@@ -367,7 +367,7 @@ module J2ME {
     }
     public static currentContextPrefix() {
       if ($) {
-        return Context.color($.id) + ":" + Context.color($.ctx.id);
+        return Context.color($.id) + "." + $.ctx.runtime.priority + ":" + Context.color($.ctx.id) + "." + $.ctx.getPriority();
       }
       return "";
     }
