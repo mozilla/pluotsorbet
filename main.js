@@ -3,22 +3,12 @@
 
 'use strict';
 
-// The download dialog generates many style recalculations while attached to
-// the DOM, regardless of its display style, so instead of setting its display
-// style, we add/remove it to/from the DOM.
 var display = document.getElementById("display");
 
-var downloadDialog = document.getElementById('download-screen');
-display.removeChild(downloadDialog);
-downloadDialog.style.display = 'block';
-function showDownloadScreen() {
-  display.appendChild(downloadDialog);
-}
-function hideDownloadScreen() {
-  if (downloadDialog.parentNode) {
-    downloadDialog.parentNode.removeChild(downloadDialog);
-  }
-}
+// The splash and download screens generate many style recalculations while
+// attached to the DOM, regardless of their display styles, because of their
+// animations.  So instead of setting their display styles, we add/remove them
+// to/from the DOM.
 
 var splashScreen = document.getElementById('splash-screen');
 display.removeChild(splashScreen);
@@ -29,6 +19,18 @@ function showSplashScreen() {
 function hideSplashScreen() {
   if (splashScreen.parentNode) {
     splashScreen.parentNode.removeChild(splashScreen);
+  }
+}
+
+var downloadDialog = document.getElementById('download-screen');
+display.removeChild(downloadDialog);
+downloadDialog.style.display = 'block';
+function showDownloadScreen() {
+  display.appendChild(downloadDialog);
+}
+function hideDownloadScreen() {
+  if (downloadDialog.parentNode) {
+    downloadDialog.parentNode.removeChild(downloadDialog);
   }
 }
 
