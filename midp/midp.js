@@ -144,7 +144,8 @@ var MIDP = (function() {
     var value;
     switch (J2ME.fromJavaString(key)) {
       case "com.sun.midp.publickeystore.WebPublicKeyStore":
-        if (config.jars.indexOf("tests/tests.jar") != -1) {
+        if (config.midletClassName == "RunTests" ||
+            config.midletClassName.startsWith("benchmark")) {
           value = "_test.ks";
         } else {
           value = "_main.ks";
