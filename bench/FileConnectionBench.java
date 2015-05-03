@@ -51,6 +51,14 @@ public class FileConnectionBench {
       System.out.println("InputStream.read time: " + (JVM.monotonicTimeMillis() - start));
       in.close();
 
+      start = JVM.monotonicTimeMillis();
+      for (int i = 0; i < 100; i++) {
+        InputStream in2 = file.openInputStream();
+        in2.read(arr, 0, 1024);
+        in2.close();
+      }
+      System.out.println("InputStream open and read time: " + (JVM.monotonicTimeMillis() - start));
+
       in = file.openInputStream();
       start = JVM.monotonicTimeMillis();
       for (int i = 0; i < 10000; i++) {

@@ -79,25 +79,19 @@ Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/
 
 Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] =
 function(filenameBase, name, ext) {
-    var ctx = $.ctx;
-
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase) + "/" + J2ME.fromJavaString(name) + "." + ext;
 
     function open() {
-        asyncImpl("I", new Promise(function(resolve, reject) {
-            fs.open(path, function(fd) {
-                if (fd == -1) {
-                    ctx.setAsCurrentContext();
-                    reject($.newIOException("openRecordStoreFile: open failed"));
-                } else {
-                    resolve(fd); // handle
-                }
-            });
-        }));
+        var fd = fs.open(path);
+        if (fd === -1) {
+            throw $.newIOException("openRecordStoreFile: open failed");
+        }
+
+        return fd;
     }
 
     if (fs.exists(path)) {
-        open();
+        return open();
     } else {
         // Per the reference impl, create the file if it doesn't exist.
         var dirname = fs.dirname(path);
@@ -109,7 +103,7 @@ function(filenameBase, name, ext) {
             throw $.newIOException("openRecordStoreFile: create failed");
         }
 
-        open();
+        return open();
     }
 };
 
@@ -120,17 +114,19 @@ Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(handle, 
 Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(handle, buf, offset, numBytes) {
     var from = fs.getpos(handle);
     var to = from + numBytes;
-    var readBytes = fs.read(handle, from, to);
 
-    if (readBytes.byteLength <= 0) {
-        throw $.newIOException("handle invalid or segment indices out of bounds");
-    }
+    var ctx = $.ctx;
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        fs.read(handle, from, to, buf.subarray(offset), function(numRead) {
+            if (numRead <= 0) {
+                ctx.setAsCurrentContext();
+                reject($.newIOException("handle invalid or segment indices out of bounds"));
+                return;
+            }
 
-    var subBuffer = buf.subarray(offset, offset + readBytes.byteLength);
-    for (var i = 0; i < readBytes.byteLength; i++) {
-        subBuffer[i] = readBytes[i];
-    }
-    return readBytes.byteLength;
+            resolve(numRead);
+        });
+    }));
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(handle, buf, offset, numBytes) {
@@ -505,20 +501,13 @@ MIDP.openFileHandler = function(fileHandler, mode) {
         throw $.newIOException("file is a directory");
     }
 
-    var ctx = $.ctx;
+    var fd = fs.open(pathname);
+    if (fd === -1) {
+        throw $.newIOException("Failed to open file handler for " + pathname);
+    }
 
-    asyncImpl("V", new Promise(function(resolve, reject) {
-        fs.open(pathname, function(fd) {
-            if (fd === -1) {
-              ctx.setAsCurrentContext();
-              reject($.newIOException("Failed to open file handler for " + pathname));
-              return;
-            }
-            fileHandler.nativeDescriptor = fd;
-            MIDP.markFileHandler(fileHandler, mode, true);
-            resolve();
-        });
-    }));
+    fileHandler.nativeDescriptor = fd;
+    MIDP.markFileHandler(fileHandler, mode, true);
 };
 
 MIDP.closeFileHandler = function(fileHandler, mode) {
@@ -588,10 +577,11 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
     }
 
     var curpos = fs.getpos(fd);
-    var data = fs.read(fd, curpos, curpos + len);
-    b.set(data, off);
-
-    return (data.byteLength > 0) ? data.byteLength : -1;
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        fs.read(fd, curpos, curpos + len, b.subarray(off), function(numRead) {
+            resolve((numRead > 0) ? numRead : -1);
+        });
+    }));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(n) {
@@ -750,27 +740,21 @@ Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(fileName, mode) {
     var path = "/" + J2ME.fromJavaString(fileName);
 
-    var ctx = $.ctx;
-
     function open() {
-        asyncImpl("I", new Promise(function(resolve, reject) {
-            fs.open(path, function(fd) {
-                if (fd == -1) {
-                    ctx.setAsCurrentContext();
-                    reject($.newIOException("RandomAccessStream::open(" + path + ") failed opening the file"));
-                } else {
-                    resolve(fd);
-                }
-            });
-        }));
+        var fd = fs.open(path);
+        if (fd === -1) {
+            throw $.newIOException("RandomAccessStream::open(" + path + ") failed opening the file");
+        }
+
+        return fd;
     }
 
     if (fs.exists(path)) {
-        open();
-    } else if (mode == 1) {
+        return open();
+    } else if (mode === 1) {
         throw $.newIOException("RandomAccessStream::open(" + path + ") file doesn't exist");
     } else if (fs.create(path, new Blob())) {
-        open();
+        return open();
     } else {
         throw $.newIOException("RandomAccessStream::open(" + path + ") failed creating the file");
     }
@@ -780,17 +764,11 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] =
 function(handle, buffer, offset, length) {
     var from = fs.getpos(handle);
     var to = from + length;
-    var readBytes = fs.read(handle, from, to);
-
-    if (readBytes.byteLength <= 0) {
-        return -1;
-    }
-
-    var subBuffer = buffer.subarray(offset, offset + readBytes.byteLength);
-    for (var i = 0; i < readBytes.byteLength; i++) {
-        subBuffer[i] = readBytes[i];
-    }
-    return readBytes.byteLength;
+    asyncImpl("I", new Promise(function(resolve, reject) {
+        fs.read(handle, from, to, buffer.subarray(offset), function(numRead) {
+            resolve((numRead > 0) ? numRead : -1);
+        });
+    }));
 };
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] =

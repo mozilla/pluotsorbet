@@ -439,33 +439,26 @@ var fs = (function() {
     return record ? record.data : null;
   }
 
-  function open(path, cb) {
+  function open(path) {
     path = normalizePath(path);
     if (DEBUG_FS) { console.log("fs open " + path); }
 
     var record = store.getItem(path);
     if (record == null || record.isDir) {
-      setZeroTimeout(function() { cb(-1) });
-    } else {
-      var reader = new FileReader();
-      reader.addEventListener("error", function() {
-        console.error("Failed to read blob data from: " + path);
-        setZeroTimeout(function() { cb(-1) });
-      });
-      reader.addEventListener("load", function() {
-        openedFiles.set(++lastId, {
-          dirty: false,
-          path: path,
-          buffer: new FileBuffer(new Int8Array(reader.result)),
-          mtime: record.mtime,
-          size: record.size,
-          position: 0,
-          record: record,
-        });
-        cb(lastId);
-      });
-      reader.readAsArrayBuffer(record.data);
+      return -1;
     }
+
+    openedFiles.set(++lastId, {
+      dirty: false,
+      path: path,
+      blobs: [ record.data ],
+      mtime: record.mtime,
+      size: record.size,
+      position: 0,
+      record: record,
+    });
+
+    return lastId;
   }
 
   function close(fd) {
@@ -481,55 +474,121 @@ var fs = (function() {
     }
   }
 
-  function read(fd, from, to) {
-    var file = openedFiles.get(fd);
-    if (!file) {
-      return null;
-    }
-    if (DEBUG_FS) { console.log("fs read " + file.path); }
+  function findBlob(blobs, from, fromBlob) {
+    while (from != 0 && fromBlob < blobs.length) {
+      if (from < blobs[fromBlob].size) {
+        break;
+      }
 
-    var buffer = file.buffer;
+      from -= blobs[fromBlob].size;
+      fromBlob++;
+    }
+
+    return {
+      pos: from,
+      blobIndex: fromBlob,
+    };
+  }
+
+  function read(fd, from, to, resultArray, cb) {
+    var file = openedFiles.get(fd);
 
     if (typeof from === "undefined") {
       from = file.position;
     }
 
-    if (!to || to > buffer.contentSize) {
-      to = buffer.contentSize;
+    if (!to || to > file.size) {
+      to = file.size;
     }
 
-    if (from > buffer.contentSize) {
-      from = buffer.contentSize;
+    if (from > file.size) {
+      from = file.size;
     }
 
-    file.position += to - from;
-    return buffer.array.subarray(from, to);
+    var toRead = to - from;
+    var toReadRemaining = toRead;
+
+    if (toRead === 0) {
+      setZeroTimeout(cb.bind(null, 0));
+      return;
+    }
+
+    file.position += toRead;
+
+    var blobs = file.blobs;
+
+    function readBlob(blob, offset) {
+      var reader = new FileReader();
+
+      reader.addEventListener("loadend", function() {
+        var array = new Int8Array(reader.result);
+
+        resultArray.set(array, offset);
+
+        toReadRemaining -= array.byteLength;
+        if (toReadRemaining === 0) {
+          cb(toRead);
+        }
+      });
+
+      reader.readAsArrayBuffer(blob);
+    }
+
+    var start = findBlob(blobs, from, 0);
+    var i = start.blobIndex;
+    var offset = 0;
+    while (offset < toRead) {
+      var sliceStart = (i !== start.blobIndex) ? 0 : start.pos;
+
+      var sliceEnd = (offset + blobs[i].size <= toRead) ? blobs[i].size : toRead - offset + sliceStart;
+
+      readBlob(blobs[i].slice(sliceStart, sliceEnd), offset);
+
+      offset += sliceEnd - sliceStart;
+      i++;
+    }
   }
 
   function write(fd, data, from) {
     var file = openedFiles.get(fd);
 
-    if (DEBUG_FS) { console.log("fs write " + file.path); }
-
     if (typeof from == "undefined") {
       from = file.position;
     }
 
-    var buffer = file.buffer;
-
-    if (from > buffer.contentSize) {
-      from = buffer.contentSize;
+    if (from > file.size) {
+      from = file.size;
     }
 
-    var newLength = (from + data.byteLength > buffer.contentSize) ? (from + data.byteLength) : (buffer.contentSize);
+    var blobs = file.blobs;
 
-    buffer.setSize(newLength);
+    // Fast path for appending writes.
+    if (from === file.size) {
+      blobs.push(new Blob([ data ]));
+    } else {
+      var start = findBlob(blobs, from, 0);
+      var end = findBlob(blobs, start.pos + data.byteLength, start.blobIndex);
 
-    buffer.array.set(data, from);
+      if (end.blobIndex < blobs.length) {
+        if (start.pos > 0) {
+          blobs.splice(start.blobIndex, end.blobIndex - start.blobIndex + 1, blobs[start.blobIndex].slice(0, start.pos), new Blob([data]), blobs[end.blobIndex].slice(end.pos));
+        } else {
+          blobs.splice(start.blobIndex, end.blobIndex - start.blobIndex + 1, new Blob([data]), blobs[end.blobIndex].slice(end.pos));
+        }
+      } else if (start.blobIndex < blobs.length) {
+        if (start.pos > 0) {
+          blobs.splice(start.blobIndex, blobs.length - start.blobIndex + 1, blobs[start.blobIndex].slice(0, start.pos), new Blob([data]));
+        } else {
+          blobs.splice(start.blobIndex, blobs.length - start.blobIndex + 1, new Blob([data]))
+        }
+      }
+    }
 
     file.position = from + data.byteLength;
+    if (file.position > file.size) {
+      file.size = from + data.byteLength;
+    }
     file.mtime = Date.now();
-    file.size = buffer.contentSize;
     file.dirty = true;
   }
 
@@ -548,7 +607,7 @@ var fs = (function() {
       return -1;
     }
 
-    return file.buffer.contentSize;
+    return file.size;
   }
 
   function flush(fd) {
@@ -561,7 +620,7 @@ var fs = (function() {
       return;
     }
 
-    openedFile.record.data = new Blob([openedFile.buffer.getContent()]);
+    openedFile.record.data = new Blob(openedFile.blobs);
     openedFile.record.mtime = openedFile.mtime;
     openedFile.record.size = openedFile.size;
     store.setItem(openedFile.path, openedFile.record);
@@ -574,7 +633,7 @@ var fs = (function() {
       if (!entry[1].dirty && entry[1].path === openedFile.path) {
         entry[1].mtime = openedFile.mtime;
         entry[1].size = openedFile.size;
-        entry[1].buffer = new FileBuffer(new Int8Array(openedFile.buffer.getContent()));
+        entry[1].blobs = [ openedFile.record.data ];
       }
     }
   }
@@ -649,13 +708,13 @@ var fs = (function() {
       return false;
     }
 
-    if (size >= record.size) {
+    if (size && size >= record.size) {
       return true;
     }
 
-    record.data = record.data.slice(0, size || 0, record.data.type);
+    record.data = record.data.slice(0, size || 0);
     record.mtime = Date.now();
-    record.size = size || 0;
+    record.size = record.data.size;
     store.setItem(path, record);
     return true;
   }
@@ -665,12 +724,21 @@ var fs = (function() {
 
     if (DEBUG_FS) { console.log("fs ftruncate " + file.path); }
 
-    if (size != file.buffer.contentSize) {
-      file.buffer.setSize(size);
-      file.dirty = true;
-      file.mtime = Date.now();
-      file.size = size;
+    if (size >= file.size) {
+      return;
     }
+
+    var end = findBlob(file.blobs, size, 0);
+    if (end.pos > 0) {
+      file.blobs[end.blobIndex] = file.blobs[end.blobIndex].slice(0, end.pos);
+      file.blobs = file.blobs.slice(0, end.blobIndex + 1);
+    } else {
+      file.blobs = file.blobs.slice(0, end.blobIndex);
+    }
+
+    file.dirty = true;
+    file.mtime = Date.now();
+    file.size = size;
   }
 
   function remove(path) {
