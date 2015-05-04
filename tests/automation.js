@@ -176,7 +176,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 26 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -544,6 +544,33 @@ casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     .waitForPopup("test.html", function() {
         test.assertEquals(this.popups.length, 1);
         test.assertTextDoesntExist("FAIL");
+    });
+
+    // The following test tests that a MIDlet can be started, paused and then started again.
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/pause.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("startApp1", function() {
+            casper.waitForText("pauseApp", function() {
+                casper.waitForText("startApp2", function() {
+                    test.assert(true, "MIDlet started, paused and then started again");
+                });
+
+                // Start the app again
+                this.evaluate(function() {
+                    setTimeout(function() {
+                        visibilityChange(false);
+                    }, 0);
+                });
+            });
+
+            // Pause the app
+            this.evaluate(function() {
+                setTimeout(function() {
+                    visibilityChange(true);
+                }, 0);
+            });
+        });
     });
 
     casper

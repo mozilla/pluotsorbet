@@ -732,12 +732,32 @@ var MIDP = (function() {
     }
   }
 
+  function sendActivateMIDletEvent(midletClassName) {
+    if (undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: ACTIVATE_MIDLET_EVENT,
+        stringParam1: J2ME.newString(midletClassName),
+      }, foregroundIsolateId);
+    }
+  }
+
+  function sendPauseMIDletEvent(midletClassName) {
+    if (undefined != foregroundIsolateId) {
+      sendNativeEvent({
+        type: PAUSE_MIDLET_EVENT,
+        stringParam1: J2ME.newString(midletClassName),
+      }, foregroundIsolateId);
+    }
+  }
+
   var KEY_EVENT = 1;
   var PEN_EVENT = 2;
   var PRESSED = 1;
   var RELEASED = 2;
   var DRAGGED = 3;
   var COMMAND_EVENT = 3;
+  var ACTIVATE_MIDLET_EVENT = 12;
+  var PAUSE_MIDLET_EVENT = 13;
   var EVENT_QUEUE_SHUTDOWN = 31;
   var ROTATION_EVENT = 43;
   var MMAPI_EVENT = 45;
@@ -1209,6 +1229,8 @@ var MIDP = (function() {
     sendVirtualKeyboardEvent: sendVirtualKeyboardEvent,
     sendEndOfMediaEvent: sendEndOfMediaEvent,
     sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
+    sendActivateMIDletEvent: sendActivateMIDletEvent,
+    sendPauseMIDletEvent: sendPauseMIDletEvent,
     keyPress: keyPress,
     keyRelease: keyRelease,
     displayId: displayId,

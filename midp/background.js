@@ -19,6 +19,18 @@ function backgroundCheck() {
   fgMidletClass = MIDP.manifest["MIDlet-" + fgMidletNumber].split(",")[2];
 
   DumbPipe.close(DumbPipe.open("backgroundCheck", {}));
+
+  document.addEventListener("visibilitychange", function() {
+    visibilityChange(document.hidden);
+  });
+}
+
+function visibilityChange(hidden) {
+  if (hidden) {
+    MIDP.sendPauseMIDletEvent(fgMidletClass);
+  } else {
+    MIDP.sendActivateMIDletEvent(fgMidletClass);
+  }
 }
 
 Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function() {
