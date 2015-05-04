@@ -37,6 +37,7 @@ import com.sun.midp.log.*;
 import com.sun.midp.publickeystore.WebPublicKeyStore;
 import com.sun.midp.rms.RmsEnvironment;
 import com.sun.midp.rms.RecordStoreRegistry;
+import com.sun.midp.midletsuite.SuiteContainerAdapter;
 
 /**
  * The class presents abstract MIDlet suite loader with routines to prepare
@@ -194,24 +195,19 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
         midletStateHandler =
             MIDletStateHandler.getMidletStateHandler();
 
-        MIDletStateListener midletStateListener =
-            new CldcMIDletStateListener(internalSecurityToken,
-                                        displayContainer,
-                                        midletControllerEventProducer);
-
         midletStateHandler.initMIDletStateHandler(
             internalSecurityToken,
-            midletStateListener,
-            new CldcMIDletLoader(internalSecurityToken),
-            new CldcPlatformRequest(internalSecurityToken));
+            new CldcMIDletStateListener(internalSecurityToken,
+                                        displayContainer,
+                                        midletControllerEventProducer));
 
         midletEventListener = new MIDletEventListener(
             internalSecurityToken,
             midletStateHandler,
             eventQueue);
         
-        MidletSuiteContainer msc = 
-                new MidletSuiteContainer(MIDletSuiteStorage.getMIDletSuiteStorage(internalSecurityToken));
+        SuiteContainerAdapter msc =
+                new SuiteContainerAdapter(MIDletSuiteStorage.getMIDletSuiteStorage(internalSecurityToken));
         RmsEnvironment.init(internalSecurityToken, msc);
     }
 
@@ -327,11 +323,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
 
             if (midletSuite == null) {
                 reportError(Constants.MIDLET_SUITE_NOT_FOUND);
-                return;
-            }
-
-            if (!midletSuite.isEnabled()) {
-                reportError(Constants.MIDLET_SUITE_DISABLED);
                 return;
             }
 

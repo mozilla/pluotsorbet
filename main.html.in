@@ -195,12 +195,14 @@
     </div>
     <div id="settings">
       <section>
-        <div>BytecodeCount: <span id="bytecodeCount"></span></div>
-        <div>InterpreterCount: <span id="interpreterCount"></span></div>
-        <div>CompiledCount: <span id="compiledCount"></span></div>
-        <div>OnStackReplacementCount: <span id="onStackReplacementCount"></span></div>
-        <div>UnwindCount: <span id="unwindCount"></span></div>
-        <div>PreemptionCount: <span id="preemptionCount"></span></div>
+        <table id="counters">
+          <tr><td>Bytecode:</td><td><span id="bytecodeCount"></span></td></tr>
+          <tr><td>Compiled:</td><td><span id="compiledCount"></span></td></tr>
+          <tr><td>Interpreter:</td><td><span id="interpreterCount"></span></td></tr>
+          <tr><td>OSR:</td><td><span id="onStackReplacementCount"></span></td></tr>
+          <tr><td>Unwind:</td><td><span id="unwindCount"></span></td></tr>
+          <tr><td>Preemption:</td><td><span id="preemptionCount"></span></td></tr>
+        </table>
       </section>
       <section>
         <select id="loglevel">
@@ -219,8 +221,8 @@
         <label><input type="checkbox" id="perfWriter">Perf</label>
       </section>
       <section>
-        <button id="deleteDatabase">Delete Database</button>
-        <button id="exportstorage">Export storage</button>
+        <button id="deleteDatabase">Delete File System</button>
+        <button id="exportstorage">Export File System</button>
         <div>Import storage:</div>
         <input type="file" id="importstoragefile">
         <input type="text" id="importstorageurl" placeholder="URL to FS backup">

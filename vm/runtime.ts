@@ -422,6 +422,7 @@ module J2ME {
     allCtxs: Set<Context>;
 
     isolate: com.sun.cldc.isolate.Isolate;
+    priority: number = ISOLATE_NORM_PRIORITY;
     mainThread: java.lang.Thread;
 
     private static _nextRuntimeId: number = 0;
@@ -653,21 +654,25 @@ module J2ME {
   /** @const */ export var MIN_PRIORITY: number = 1;
   /** @const */ export var NORMAL_PRIORITY: number = 5;
 
+  /** @const */ export var ISOLATE_MIN_PRIORITY: number = 1;
+  /** @const */ export var ISOLATE_NORM_PRIORITY: number = 2;
+  /** @const */ export var ISOLATE_MAX_PRIORITY: number = 3;
+
   class PriorityQueue {
     private _top: number;
     private _queues: Context[][];
 
     constructor() {
-      this._top = MIN_PRIORITY;
+      this._top = MIN_PRIORITY + ISOLATE_MIN_PRIORITY;
       this._queues = [];
-      for (var i = MIN_PRIORITY; i <= MAX_PRIORITY; i++) {
+      for (var i = MIN_PRIORITY + ISOLATE_MIN_PRIORITY; i <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY; i++) {
         this._queues[i] = [];
       }
     }
 
     enqueue(ctx: Context) {
-      var priority = ctx.getPriority();
-      release || assert(priority >= MIN_PRIORITY && priority <= MAX_PRIORITY,
+      var priority = ctx.getPriority() + ctx.runtime.priority;
+      release || assert(priority >= MIN_PRIORITY + ISOLATE_MIN_PRIORITY && priority <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY,
                         "Invalid priority: " + priority);
       this._queues[priority].push(ctx);
       this._top = Math.max(priority, this._top);
@@ -678,14 +683,14 @@ module J2ME {
         return null;
       }
       var ctx = this._queues[this._top].shift();
-      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY) {
+      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY + ISOLATE_MIN_PRIORITY) {
         this._top--;
       }
       return ctx;
     }
 
     isEmpty() {
-      return this._top === MIN_PRIORITY && this._queues[this._top].length === 0;
+      return this._top === MIN_PRIORITY + ISOLATE_MIN_PRIORITY && this._queues[this._top].length === 0;
     }
   }
 
@@ -1321,47 +1326,44 @@ module J2ME {
    */
   function linkKlassFields(klass: Klass) {
     var classInfo = klass.classInfo;
-    var fields = classInfo.getFields();
-    var classBindings = BindingsMap.get(klass.classInfo.utf8Name);
+    var classBindings = BindingsMap.get(classInfo.utf8Name);
     if (classBindings && classBindings.fields) {
-      for (var i = 0; i < fields.length; i++) {
-        var field = fields[i];
-        // TODO Startup Performance: This iterates over all the fields then looks for symbols
-        // that need to be linked. We should instead scan the symbol list and then look for
-        // matching fields in the class. Doing this will avoid creating the key below that is
-        // only used to lookup symbols.
-        var key = ByteStream.readString(field.utf8Name) + "." + ByteStream.readString(field.utf8Signature);
-        var symbols = field.isStatic ? classBindings.fields.staticSymbols :
-                                       classBindings.fields.instanceSymbols;
-        if (symbols && symbols[key]) {
-          release || assert(!field.isStatic, "Static fields are not supported yet.");
-          var symbolName = symbols[key];
-          var object = field.isStatic ? klass : klass.prototype;
-          release || assert (!object.hasOwnProperty(symbolName), "Should not overwrite existing properties.");
-          var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
-          var setter;
-          if (release) {
-            setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
-          } else {
-            setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
-          }
-          Object.defineProperty(object, symbolName, {
-            get: getter,
-            set: setter,
-            configurable: true,
-            enumerable: false
-          });
-          delete symbols[key];
+      release || assert(!classBindings.fields.staticSymbols, "Static fields are not supported yet");
+
+      var instanceSymbols = classBindings.fields.instanceSymbols;
+
+      for (var fieldName in instanceSymbols) {
+        var fieldSignature = instanceSymbols[fieldName];
+
+        var field = classInfo.getFieldByName(toUTF8(fieldName), toUTF8(fieldSignature), false);
+
+        release || assert(!field.isStatic, "Static field was defined as instance in BindingsMap");
+        var object = field.isStatic ? klass : klass.prototype;
+        release || assert (!object.hasOwnProperty(fieldName), "Should not overwrite existing properties.");
+        var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
+        var setter;
+        if (release) {
+          setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
+        } else {
+          setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
         }
+        Object.defineProperty(object, fieldName, {
+          get: getter,
+          set: setter,
+          configurable: true,
+          enumerable: false
+        });
+        delete instanceSymbols[fieldName];
       }
+
       if (!release) {
         if (classBindings.fields.staticSymbols) {
-          var staticSymbols = Object.keys(classBindings.fields.staticSymbols);
-          assert(staticSymbols.length === 0, "Unlinked symbols: " + staticSymbols.join(", "));
+          var staticSymbolNames = Object.keys(classBindings.fields.staticSymbols);
+          assert(staticSymbolNames.length === 0, "Unlinked symbols: " + staticSymbolNames.join(", "));
         }
         if (classBindings.fields.instanceSymbols) {
-          var instanceSymbols = Object.keys(classBindings.fields.instanceSymbols);
-          assert(instanceSymbols.length === 0, "Unlinked symbols: " + instanceSymbols.join(", "));
+          var instanceSymbolNames = Object.keys(classBindings.fields.instanceSymbols);
+          assert(instanceSymbolNames.length === 0, "Unlinked symbols: " + instanceSymbolNames.join(", "));
         }
       }
     }
@@ -1570,9 +1572,7 @@ module J2ME {
       return forwarder;
     }
     runtimeCounter && runtimeCounter.count("makeInterfaceMethodForwarder");
-    return interfaceMethodForwarders[index] = function () {
-      return this["v" + index].apply(this, arguments);
-    };
+    return interfaceMethodForwarders[index] = new Function("return this.v" + index + ".apply(this, arguments);");
   }
 
   // Cache virtual trampolines.
@@ -1676,6 +1676,11 @@ module J2ME {
   export var compiledMethodCount = 0;
 
   /**
+   * Number of methods that have not been compiled thus far.
+   */
+  export var notCompiledMethodCount = 0;
+
+  /**
    * Number of methods that have been loaded from the code cache thus far.
    */
   export var cachedMethodCount = 0;
@@ -1700,9 +1705,10 @@ module J2ME {
     }
 
     // Don't compile methods that are too large.
-    if (methodInfo.codeAttribute.code.length > 2000 && !config.forceRuntimeCompilation) {
+    if (methodInfo.codeAttribute.code.length > 3000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
       methodInfo.state = MethodState.NotCompiled;
+      notCompiledMethodCount ++;
       return;
     }
 

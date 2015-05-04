@@ -56,9 +56,6 @@ import java.util.Vector;
  * <p>
  */
 public class AmsUtil {
-    /** Cached reference to the MIDletExecuteEventProducer. */
-    private static MIDletExecuteEventProducer midletExecuteEventProducer;
-
     /** Cached reference to the MIDletControllerEventProducer. */
     private static MIDletControllerEventProducer midletControllerEventProducer;
 
@@ -90,20 +87,6 @@ public class AmsUtil {
     }
 
     /**
-     * Initializes AmsUtil class. shall only be called from
-     * AppIsolateMIDletSuiteLoader's main() in
-     * non-AMS isolates.
-     * No need in security checks since it is package private method.
-     *
-     * @param theMIDletExecuteEventProducer event producer
-     *        to be used by this class to send events
-     */
-    static void initClassInAppIsolate(
-            MIDletExecuteEventProducer theMIDletExecuteEventProducer) {
-        midletExecuteEventProducer = theMIDletExecuteEventProducer;
-    }
-
-    /**
      * Starts a MIDlet in a new Isolate.
      *
      * @param midletSuiteStorage reference to a MIDletStorage object
@@ -132,7 +115,7 @@ public class AmsUtil {
      * @return false to signal that the MIDlet suite does not have to exit
      * before the MIDlet is run
      */
-    static boolean executeWithArgs(MIDletSuiteStorage midletSuiteStorage,
+    public static boolean executeWithArgs(MIDletSuiteStorage midletSuiteStorage,
             int externalAppId, int id, String midlet,
             String displayName, String arg0, String arg1, String arg2,
             int memoryReserved, int memoryTotal, int priority,
@@ -145,21 +128,6 @@ public class AmsUtil {
 
         if (midlet == null) {
             throw new IllegalArgumentException("MIDlet class cannot be null");
-        }
-
-        if (!MIDletSuiteUtils.isAmsIsolate()) {
-            /*
-             * This is not the AMS isolate so send the request to the
-             * AMS isolate.
-             */
-            midletExecuteEventProducer.sendMIDletExecuteEvent(
-                externalAppId, id,
-                midlet, displayName,
-                arg0, arg1, arg2,
-                memoryReserved, memoryTotal, priority,
-                profileName, isDebugMode
-            );
-            return false;
         }
 
         // Don't start the MIDlet if it is already running.
@@ -248,7 +216,7 @@ public class AmsUtil {
         String[] args = {Integer.toString(id), midlet, displayName, arg0,
                          arg1, arg2, Integer.toString(externalAppId),
                          isDebugMode ? "1" : "0"};
-        String[] classpath = midletSuiteStorage.getMidletSuiteClassPath(id);
+        String[] classpath = new String[] { "" };
 
         if (classpath[0] == null) {
             /*
@@ -332,60 +300,6 @@ public class AmsUtil {
         }
 
         return isolate;
-    }
-
-    /*
-     * Check whether MIDlet-Heap-Size attribute is defined for the
-     * MIDlet. It specifies maximum heap memory available for the MIDlet.
-     *
-     * The value is in bytes and must be a positive integer. The
-     * only abbreviation in the value definition supported is K that
-     * stands for kilobytes.
-     *
-     * If the amount declared exceeds the maximum heap limit allowed
-     * for a single MIDlet, the attribute is ignored and the default
-     * heap limit is used.
-     *
-     * Heap size is a total heap memory available for the isolate
-     * where the MIDlet is launched. The size includes memory
-     * occupied by the implementation for internal system purposes.
-     * Thus the real heap size available for the MIDlet may be less.
-     *
-     * @param suiteId ID of an installed suite
-     * @param midletName class name of MIDlet to invoke
-     *
-     * @return heap size limit if it's explicitly defined for the MIDlet,
-     *         or -1 if it's not defined or invalid
-     */
-    static private int getMidletHeapSize(int suiteId, String midletName) {
-        int heapSize = -1;
-
-        if (Constants.EXTENDED_MIDLET_ATTRIBUTES_ENABLED) {
-            String heapSizeProp = MIDletSuiteUtils.getSuiteProperty(
-                suiteId, midletName, MIDletSuite.HEAP_SIZE_PROP);
-
-            if (heapSizeProp != null) {
-                boolean sizeInKilos = false;
-
-                int propLen = heapSizeProp.length();
-                if (propLen > 0) {
-                    char lastChar = heapSizeProp.charAt(propLen - 1);
-                    if ((lastChar == 'K') || (lastChar == 'k')) {
-                        heapSizeProp = heapSizeProp.substring(0, propLen - 1);
-                        sizeInKilos = true;
-                    }
-                }
-
-                try {
-                    heapSize = Integer.parseInt(heapSizeProp);
-                    heapSize = sizeInKilos ? heapSize * 1024 : heapSize;
-                } catch (NumberFormatException e) {
-                    // ignore the attribute if the value is not valid
-                }
-            }
-        }
-
-        return heapSize;
     }
 
     /**

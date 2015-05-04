@@ -88,7 +88,11 @@ var Benchmark = (function() {
     for (var colIndex = 0; colIndex < numColumns; colIndex++) {
       var maxLength = 0;
       for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-        maxLength = Math.max(rows[rowIndex][colIndex].toString().length, maxLength);
+        var strLen = rows[rowIndex][colIndex].toString().length;
+        if (rows[rowIndex].untrusted) {
+          strLen += 2;
+        }
+        maxLength = Math.max(strLen, maxLength);
       }
       maxColumnLengths[colIndex] = maxLength;
     }
@@ -96,7 +100,11 @@ var Benchmark = (function() {
     for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
       out += "| ";
       for (var colIndex = 0; colIndex < numColumns; colIndex++) {
-        out += pad(rows[rowIndex][colIndex].toString(), " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
+        var str = rows[rowIndex][colIndex].toString();
+        if (rows[rowIndex].untrusted) {
+          str = "*" + str + "*";
+        }
+        out += pad(str, " ", maxColumnLengths[colIndex], rowIndex === 0 ? CENTER : alignment[colIndex]) + " | ";
       }
       out += "\n";
       if (rowIndex === 0) {
@@ -132,6 +140,9 @@ var Benchmark = (function() {
 
   var valueFormatters = {
     startupTime: msFormatter,
+    vmStartupTime: msFormatter,
+    bgStartupTime: msFormatter,
+    fgStartupTime: msFormatter,
     totalSize: byteFormatter,
     domSize: byteFormatter,
     styleSize: byteFormatter,
@@ -139,7 +150,15 @@ var Benchmark = (function() {
     jsStringsSize: byteFormatter,
     jsOtherSize: byteFormatter,
     otherSize: byteFormatter,
+    USS: byteFormatter,
+    peakRSS: byteFormatter,
   };
+
+  var untrustedValues = [
+    "totalSize", "domSize", "styleSize", "jsObjectsSize",
+    "jsStringsSize", "jsOtherSize", "otherSize", "USS",
+    "peakRSS",
+  ];
 
   function sampleMemory() {
     if (!NO_SECURITY) {
@@ -165,7 +184,7 @@ var Benchmark = (function() {
         console.log(e);
       }
 
-      return {
+      var memValues = {
         totalSize: totalSize.value,
         domSize: domSize.value,
         styleSize: styleSize.value,
@@ -174,6 +193,20 @@ var Benchmark = (function() {
         jsOtherSize: jsOtherSize.value,
         otherSize: otherSize.value,
       };
+
+      // residentUnique is not available on all platforms.
+      try {
+        memValues.USS = memoryReporter.residentUnique;
+      } catch (e) {
+      }
+
+      // residentPeak is not available on all platforms.
+      try {
+        memValues.peakRSS = memoryReporter.residentPeak;
+      } catch (e) {
+      }
+
+      return memValues;
     });
   }
 
@@ -182,6 +215,9 @@ var Benchmark = (function() {
       storage.round = 0;
       var current = storage.current = {};
       current.startupTime = [];
+      current.vmStartupTime = [];
+      current.bgStartupTime = [];
+      current.fgStartupTime = [];
       if (settings.recordMemory) {
         storage.recordMemory = true;
         current.totalSize     = [];
@@ -191,6 +227,8 @@ var Benchmark = (function() {
         current.jsStringsSize = [];
         current.jsOtherSize   = [];
         current.otherSize     = [];
+        current.USS           = [];
+        current.peakRSS       = [];
       }
       storage.running = true;
       storage.numRounds = "numRounds" in settings ? settings.numRounds : defaultStorage.numRounds;
@@ -204,28 +242,32 @@ var Benchmark = (function() {
       saveStorage();
       this.runNextRound();
     },
-    startTimer: function() {
+    startTimer: function(which, now) {
       if (!storage.running) {
         console.log("startTimer called while benchmark not running");
         return;
       }
-      this.startTime = performance.now();
+      if (!this.startTime) {
+        this.startTime = {};
+      }
+      this.startTime[which] = now;
     },
-    stopTimer: function() {
+    stopTimer: function(which, now) {
       if (!storage.running) {
         console.log("stopTimer called while benchmark not running");
         return;
       }
-      if (this.startTime === null) {
+      if (this.startTime[which] === null) {
         console.log("stopTimer called without previous call to startTimer");
         return;
       }
-      var took = performance.now() - this.startTime;
-      this.startTime = null;
-      storage.current.startupTime.push(took);
-      storage.round++;
-      saveStorage();
-      this.runNextRound();
+      var took = now - this.startTime[which];
+      storage.current[which].push(took);
+      if (which === "startupTime") {
+        storage.round++;
+        saveStorage();
+        this.runNextRound();
+      }
     },
     sampleMemoryToStorage: function() {
       return sampleMemory().then(function(mem) {
@@ -283,6 +325,7 @@ var Benchmark = (function() {
         var formatter = valueFormatters[key];
 
         var row = [key];
+        row.untrusted = untrustedValues.indexOf(key) != -1;
         rows.push(row);
         var currentMean = mean(samples);
         var baselineMean = mean(baselineSamples);
@@ -296,7 +339,7 @@ var Benchmark = (function() {
           if (p < 0.05) {
             pMessage = currentMean < baselineMean ? "BETTER" : "WORSE";
           } else {
-            pMessage = "INSIGNIFICANT";
+            pMessage = "SAME";
           }
         } else {
           pMessage = "n/a";
@@ -330,7 +373,9 @@ var Benchmark = (function() {
 
   // Start right away instead of in init() so we can see any speedups in script loading.
   if (storage.running) {
-    startup.startTimer();
+    var now = performance.now();
+    startup.startTimer("startupTime", now);
+    startup.startTimer("vmStartupTime", now);
   }
 
   var numRoundsEl;
@@ -386,15 +431,43 @@ var Benchmark = (function() {
     CENTER: CENTER,
     RIGHT: RIGHT,
     startup: {
+      setStartTime: function () {
+        startup.startTime["startupTime"] = startup.startTime["vmStartupTime"] = performance.now();
+      },
       init: function() {
         if (!storage.running) {
           return;
         }
-        var implKey = "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V";
-        var originalFn = Native[implKey];
-        Native[implKey] = function() {
-          startup.stopTimer();
-          originalFn.apply(null, arguments);
+
+        var vmImplKey = "com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V";
+        var vmOriginalFn = Native[vmImplKey];
+        var vmCalled = false;
+        Native[vmImplKey] = function() {
+          if (!vmCalled) {
+            vmCalled = true;
+            var now = performance.now();
+            startup.stopTimer("vmStartupTime", now);
+            startup.startTimer("bgStartupTime", now);
+          }
+          vmOriginalFn.apply(null, arguments);
+        };
+
+        var bgImplKey = "com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;";
+        var bgOriginalFn = Native[bgImplKey];
+        Native[bgImplKey] = function() {
+          var now = performance.now();
+          startup.stopTimer("bgStartupTime", now);
+          startup.startTimer("fgStartupTime", now);
+          return bgOriginalFn.apply(null, arguments);
+        };
+
+        var fgImplKey = "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V";
+        var fgOriginalFn = Native[fgImplKey];
+        Native[fgImplKey] = function() {
+          var now = performance.now();
+          startup.stopTimer("fgStartupTime", now);
+          startup.stopTimer("startupTime", now);
+          fgOriginalFn.apply(null, arguments);
         };
       },
       run: startup.run.bind(startup),

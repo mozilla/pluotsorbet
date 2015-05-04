@@ -598,7 +598,11 @@ var fs = (function() {
   // filesystem implementation requires the `finalize` method to save cached
   // file data if user doesn't flush or close the file explicitly. To avoid
   // losing data, we flush files periodically.
-  setInterval(flushAll, 5000);
+  // We start to flush periodically after startup has been completed (25 seconds
+  // is a good estimate).
+  setTimeout(function() {
+    setInterval(flushAll, 5000);
+  }, 20000);
 
   // Flush files when app goes into background.
   window.addEventListener("pagehide", flushAll);
@@ -907,6 +911,15 @@ var fs = (function() {
     return store.import(blob, cb);
   }
 
+  function deleteStore() {
+    return new Promise(function(resolve, reject) {
+      store.db = null;
+      var request = indexedDB.deleteDatabase("asyncStorage");
+      request.onsuccess = resolve;
+      request.onerror = reject;
+    });
+  }
+
   return {
     normalize: normalizePath,
     dirname: dirname,
@@ -934,6 +947,7 @@ var fs = (function() {
     syncStore: syncStore,
     exportStore: exportStore,
     importStore: importStore,
+    deleteStore: deleteStore,
     createUniqueFile: createUniqueFile,
     getBlob: getBlob,
   };

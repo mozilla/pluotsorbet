@@ -235,21 +235,21 @@ If you build with `PROFILE=2` the timeline will be saved to a text file instead 
 
 ### Startup Benchmark
 
-The startup benchmark measures from when the benchmark.js file loads to the call of `DisplayDevice.gainedForeground0`. Included in a benchmark build are helpers to build baseline scores so that subsequent runs of the benchmark can be compared. A t-test is used in the comparison to see if the changes were significant.
+The startup benchmark measures from when the benchmark.js file loads to the call of `DisplayDevice.gainedForeground0`. It also measures memory usage after startup. Included in a benchmark build are helpers to build baseline scores so that subsequent runs of the benchmark can be compared. A t-test is used in the comparison to see if the changes were significant.
 
 To use:
 
 *It is recommended that a dedicated Firefox profile is used with the about:config preference of `security.turn_off_all_security_so_that_viruses_can_take_over_this_computer` set to true so garbage collection and cycle collection can be run in between test rounds. To do this on a Firefox OS device, see [B2G/QA/Tips And Tricks](https://wiki.mozilla.org/B2G/QA/Tips_And_Tricks#For_changing_the_preference:).*
 
-1. Checkout the version you want to be the baseline(usually mozilla/master).
-1. Build a benchmark build `RELEASE=1 BENCHMARK=1 make` *"RELEASE=1" is not required, but is recommended to avoid debug code from changing execution behavior.*
-1. Open the midlet you want to test with `&logLevel=log` appended to the url and click `Build Benchmark Baseline`
+1. Check out the version you want to be the baseline (usually mozilla/master).
+1. Build a benchmark build with `RELEASE=1 BENCHMARK=1 make`. *`RELEASE=1` is not required, but it is recommended to avoid debug code from changing execution behavior.*
+1. Open the midlet you want to test with `&logLevel=log` appended to the url and click `Build Benchmark Baseline`.
 1. When finished, the message `FINISHED BUILDING BASELINE` will show up in the log.
-1. Apply/checkout your changes to the code
-1. Rebuild `RELEASE=1 BENCHMARK=1 make`
-1. Refresh the midlet
-1. Click `Run Startup Benchmark`
-1. Once done, the benchmark will dump results to the log. If it says "FASTER" or "SLOWER" the t-test has determined the results were significant. If it says "INSIGNIFICANT RESULT" the changes were likely not enough to be differentiated from the noise of the test. 
+1. Apply/check out your changes to the code.
+1. Rebuild `RELEASE=1 BENCHMARK=1 make`.
+1. Refresh the midlet.
+1. Click `Run Startup Benchmark`.
+1. Once done, the benchmark will dump results to the log. If it says "BETTER" or "WORSE" the t-test has determined the results were significant. If it says "SAME" the changes were likely not enough to be differentiated from the noise of the test.
 
 ## Filesystem
 

@@ -29,12 +29,13 @@ MIDP.getMD5Hasher = function(data) {
     return hasher;
 };
 
+var bin2StringResult = new Array();
 MIDP.bin2String = function(array) {
-  var result = "";
+  bin2StringResult.length = array.length;
   for (var i = 0; i < array.length; i++) {
-    result += String.fromCharCode(array[i] & 0xff);
+    bin2StringResult[i] = String.fromCharCode(array[i] & 0xff);
   }
-  return result;
+  return bin2StringResult.join("");
 };
 
 Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(inBuf, inOff, inLen, state, num, count, data) {
@@ -77,14 +78,15 @@ Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(data) {
 
 var hexEncodeArray = [ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', ];
 
+var bytesToHexStringResult = new Array();
 function bytesToHexString(array) {
-    var s = '';
+    bytesToHexStringResult.length = array.length * 2;
     for (var i = 0; i < array.length; i++) {
       var code = array[i] & 0xFF;
-      s += hexEncodeArray[code >>> 4];
-      s += hexEncodeArray[code & 0x0F];
+      bytesToHexStringResult[i * 2] = hexEncodeArray[code >>> 4];
+      bytesToHexStringResult[i * 2 + 1] = hexEncodeArray[code & 0x0F];
     }
-    return s;
+    return bytesToHexStringResult.join("");
 }
 
 function hexStringToBytes(hex) {

@@ -37,7 +37,7 @@ import com.sun.midp.midlet.MIDletStateHandler;
  * it is being used to decouple - so should contain no references to rms 
  * classes or interfaces.
  */
-public abstract class SuiteContainerAdapter {
+public class SuiteContainerAdapter implements com.sun.midp.rms.SuiteContainer {
     MIDletSuiteStorage suiteStorage;
 
     public SuiteContainerAdapter(MIDletSuiteStorage storage) {
