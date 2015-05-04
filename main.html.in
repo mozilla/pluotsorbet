@@ -137,9 +137,6 @@
       </div>
 
       <div id="exit-screen" class="screen">
-        <div class="splash-progress-container">
-          <progress></progress>
-        </div>
       </div>
 
       <div id="background-screen">
