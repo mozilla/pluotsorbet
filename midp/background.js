@@ -6,11 +6,55 @@
 var fgMidletNumber;
 var fgMidletClass;
 
+var display = document.getElementById("display");
+
+// The splash and download screens generate many style recalculations while
+// attached to the DOM, regardless of their display styles, because of their
+// animations.  So instead of setting their display styles, we add/remove them
+// to/from the DOM.
+
+var splashScreen = document.getElementById('splash-screen');
+display.removeChild(splashScreen);
+splashScreen.style.display = 'block';
+function showSplashScreen() {
+  display.appendChild(splashScreen);
+}
+function hideSplashScreen() {
+  if (splashScreen.parentNode) {
+    splashScreen.parentNode.removeChild(splashScreen);
+  }
+}
+
+var downloadDialog = document.getElementById('download-screen');
+display.removeChild(downloadDialog);
+downloadDialog.style.display = 'block';
+function showDownloadScreen() {
+  display.appendChild(downloadDialog);
+}
+function hideDownloadScreen() {
+  if (downloadDialog.parentNode) {
+    downloadDialog.parentNode.removeChild(downloadDialog);
+  }
+}
+
+function showBackgroundScreen() {
+  document.getElementById("background-screen").style.display = "block";
+}
+function hideBackgroundScreen() {
+  document.getElementById("background-screen").style.display = "none";
+}
+
+// The exit screen is hidden by default, and we only ever show it,
+// so we don't need a hideExitScreen function.
+function showExitScreen() {
+  document.getElementById("exit-screen").style.display = "block";
+}
+
 function backgroundCheck() {
   var bgServer = MIDP.manifest["Nokia-MIDlet-bg-server"];
   if (!bgServer) {
-    document.getElementById("splash-screen").style.display = "block";
-    document.getElementById("background-screen").style.display = "none";
+    showSplashScreen();
+    hideBackgroundScreen();
     return;
   }
 
@@ -57,6 +101,9 @@ Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
       }
     }, false);
   }).then(function() {
+    showSplashScreen();
+    hideBackgroundScreen();
+
     return new Promise(function(resolve, reject) {
       if (localmsgServerCreated) {
         resolve();
@@ -65,8 +112,11 @@ Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
 
       localmsgServerWait = resolve;
     });
-  }).then(function() {
-    document.getElementById("splash-screen").style.display = "block";
-    document.getElementById("background-screen").style.display = "none";
   }));
 };
+
+// If the document is hidden, then we've been started by an alarm and are in
+// the background, so we show the background screen.
+if (document.hidden) {
+  showBackgroundScreen();
+}

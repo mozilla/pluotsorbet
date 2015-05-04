@@ -238,11 +238,11 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 .lcdui-alert menu,
-.download-progress-dialog menu {
+.download-failure-dialog menu {
   text-align: center;
 }
 
-.splash-screen {
+.screen {
   display: none;
   z-index: 102;
   background: #2d2d2d;
@@ -251,7 +251,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   text-align: center;
 }
 
-.autosize .splash-screen {
+.autosize .screen {
   position: absolute;
   top: 0;
   left: 0;
@@ -259,7 +259,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   bottom: 0;
 }
 
-.splash-screen > .title {
+.screen > .title {
   margin-bottom: 0;
 }
 
@@ -270,6 +270,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 #background-screen {
+  display: none;
   z-index: 102;
   position: absolute;
   top: 0;
@@ -288,9 +289,15 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 }
 
 .autosize #background-screen {
-  display: block;
   width: 100%;
   height: 100%;
+}
+
+.download-progress-container {
+  position: absolute;
+  width: 90%;
+  left: 5%;
+  top: calc(50% - 0.2rem);
 }
 
 /**
@@ -308,7 +315,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 .debug-mode form[role="dialog"][data-type="confirm"].lcdui-alert,
 .debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt,
 .debug-mode form[role="dialog"][data-type="confirm"].nokia-fileui-prompt,
-.debug-mode form[role="dialog"][data-type="confirm"].download-progress-dialog {
+.debug-mode form[role="dialog"][data-type="confirm"].download-failure-dialog {
   position: absolute;
   top: 0px;
   right: 0px;
@@ -324,7 +331,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
 /* Hide the unnecessary scroll bar in the SMS verification dialog. */
 .debug-mode form[role="dialog"][data-type="confirm"].sms-listener-prompt section,
 .debug-mode form[role="dialog"][data-type="confirm"].nokia-fileui-prompt section,
-.debug-mode form[role="dialog"][data-type="confirm"].download-progress-dialog section {
+.debug-mode form[role="dialog"][data-type="confirm"].download-failure-dialog section {
   overflow: hidden;
 }
 /* Trim down fonts to fix on our 240x320 debug-mode canvas. */
@@ -334,7 +341,7 @@ form[role="dialog"][data-type="confirm"].lcdui-alert section {
   line-height: 1.2;
 }
 
-.debug-mode .splash-screen {
+.debug-mode .screen {
   position: absolute;
   width: 100%;
   height: 100%;
