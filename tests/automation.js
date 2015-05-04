@@ -558,13 +558,17 @@ casper.test.begin("unit tests", 26 + gfxTests.length, function(test) {
 
                 // Start the app again
                 this.evaluate(function() {
-                    visibilityChange(false);
+                    setTimeout(function() {
+                        visibilityChange(false);
+                    }, 0);
                 });
             });
 
             // Pause the app
             this.evaluate(function() {
-                visibilityChange(true);
+                setTimeout(function() {
+                    visibilityChange(true);
+                }, 0);
             });
         });
     });
