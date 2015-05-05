@@ -470,6 +470,10 @@ module J2ME {
       return <TAGS>this.peekU1();
     }
 
+    public peekTag(i: number): TAGS {
+      return this.buffer[this.entries[i]];
+    }
+
     /**
      * This causes the Utf8 string to be redecoded each time so don't use it often.
      */
@@ -579,6 +583,7 @@ module J2ME {
   export class FieldInfo extends ByteStream {
     public classInfo: ClassInfo;
     public kind: Kind;
+    public name: string;
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
     public mangledName: string = null;
@@ -592,6 +597,7 @@ module J2ME {
       this.accessFlags = this.readU2();
       this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
       this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
+      this.name = fromUTF8(this.utf8Name) + " " + fromUTF8(this.utf8Signature);
       this.kind = getSignatureKind(this.utf8Signature);
       this.scanFieldInfoAttributes();
       sealObjects && Object.seal(this);
@@ -761,8 +767,9 @@ module J2ME {
     public returnKind: Kind;
     public signatureKinds: Kind [];
 
+
     public argumentSlots: number;
-    public consumeArgumentSlots: number;
+    public signatureSlots: number;
     public hasTwoSlotArguments: boolean;
 
     vTableIndex: number;
@@ -801,10 +808,10 @@ module J2ME {
       var signatureKinds = this.signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0).slice();
       this.returnKind = signatureKinds[0];
       this.hasTwoSlotArguments = signatureHasTwoSlotArguments(signatureKinds);
-      this.argumentSlots = signatureArgumentSlotCount(signatureKinds);
-      this.consumeArgumentSlots = this.argumentSlots;
+      this.signatureSlots = signatureArgumentSlotCount(signatureKinds);
+      this.argumentSlots = this.signatureSlots;
       if (!this.isStatic) {
-        this.consumeArgumentSlots ++;
+        this.argumentSlots ++;
       }
       sealObjects && Object.seal(this);
     }

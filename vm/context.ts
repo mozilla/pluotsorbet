@@ -428,7 +428,7 @@ module J2ME {
     }
 
     executeThread() {
-      try {
+      // try {
         var returnValue = J2ME.interpret(this.nativeThread);
         //if (U) {
         //  // Prepend all frames up until the first marker to the bailout frames.
@@ -441,38 +441,40 @@ module J2ME {
         //  }
         //  return;
         //}
-      } catch (e) {
-        //this.popMarkerFrame();
-        //throwHelper(e);
-      }
+      //} catch (e) {
+      //  //this.popMarkerFrame();
+      //  //throwHelper(e);
+      //}
       //this.popMarkerFrame();
       return returnValue;
     }
 
-    executeFrame(frame: Frame) {
-      var frames = this.frames;
-      frames.push(Frame.Marker);
-      this.pushFrame(frame);
+    executeMethod(methodInfo: MethodInfo) {
+      traceWriter.writeLn("executeMethod " + methodInfo.implKey);
+      jsGlobal.getBacktrace && traceWriter.writeLn(jsGlobal.getBacktrace());
+      return getLinkedMethod(methodInfo)();
+      // this.nativeThread.pushFrame(methodInfo);
+      // var returnValue = J2ME.interpret(this.nativeThread);
 
-      try {
-        var returnValue = J2ME.interpret(this.nativeThread);
-        if (U) {
-          // Prepend all frames up until the first marker to the bailout frames.
-          while (true) {
-            var frame = frames.pop();
-            if (Frame.isMarker(frame)) {
-              break;
-            }
-            this.bailoutFrames.unshift(frame);
-          }
-          return;
-        }
-      } catch (e) {
-        this.popMarkerFrame();
-        throwHelper(e);
-      }
-      this.popMarkerFrame();
-      return returnValue;
+      //try {
+      //  var returnValue = J2ME.interpret(this.nativeThread);
+      //  if (U) {
+      //    // Prepend all frames up until the first marker to the bailout frames.
+      //    while (true) {
+      //      var frame = frames.pop();
+      //      if (Frame.isMarker(frame)) {
+      //        break;
+      //      }
+      //      this.bailoutFrames.unshift(frame);
+      //    }
+      //    return;
+      //  }
+      //} catch (e) {
+      //  this.popMarkerFrame();
+      //  throwHelper(e);
+      //}
+      //this.popMarkerFrame();
+      // return returnValue;
     }
 
     createException(className: string, message?: string) {

@@ -1068,7 +1068,7 @@ module J2ME {
                 !calleeTargetMethodInfo.isNative &&
                 calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
-              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
+              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.argumentSlots, calleeFrame.local);
               ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
@@ -1176,7 +1176,7 @@ module J2ME {
             // Call method directly in the interpreter if we can.
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
-              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
+              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.argumentSlots, calleeFrame.local);
               ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;

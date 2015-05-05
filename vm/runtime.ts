@@ -1251,67 +1251,6 @@ module J2ME {
 
   var frameView = new FrameView();
 
-  function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
-
-    // Adapter for the most common case.
-    if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
-      var method = function fastInterpreterFrameAdapter() {
-
-        var thread = $.ctx.nativeThread;
-        frameView.set(thread.fp, thread.sp, 0);
-        frameView.methodInfo = methodInfo;
-        thread.sp = thread.fp + frameView.stackOffset;
-
-        frameView.setParameterO4(this, 0);
-        //var frame = Frame.create(methodInfo, []);
-        //var j = 0;
-        //if (!methodInfo.isStatic) {
-        //  frame.local[j++] = this;
-        //}
-        //var slots = methodInfo.argumentSlots;
-        //for (var i = 0; i < slots; i++) {
-        //  frame.local[j++] = arguments[i];
-        //}
-        //return $.ctx.executeFrame(frame);
-        return $.ctx.executeThread();
-      };
-      (<any>method).methodInfo = methodInfo;
-      return method;
-    }
-
-    var method = function interpreterFrameAdapter() {
-      var frame = Frame.create(methodInfo, []);
-      var j = 0;
-      if (!methodInfo.isStatic) {
-        frame.local[j++] = this;
-      }
-      var signatureKinds = methodInfo.signatureKinds;
-      release || assert (arguments.length === signatureKinds.length - 1,
-        "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor.");
-      for (var i = 1; i < signatureKinds.length; i++) {
-        frame.local[j++] = arguments[i - 1];
-        if (isTwoSlot(signatureKinds[i])) {
-          frame.local[j++] = null;
-        }
-      }
-      if (methodInfo.isSynchronized) {
-        if (!frame.lockObject) {
-          frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getClassObject()
-            : frame.local[0];
-        }
-        $.ctx.monitorEnter(frame.lockObject);
-        if (U === VMState.Pausing) {
-          $.ctx.pushFrame(frame);
-          return;
-        }
-      }
-      return $.ctx.executeFrame(frame);
-    };
-    (<any>method).methodInfo = methodInfo;
-    return method;
-  }
-
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
     var fn = jsGlobal[methodInfo.mangledClassAndMethodName];
     if (fn) {
@@ -1438,7 +1377,8 @@ module J2ME {
   }
 
   function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
-    return function() {
+    var wrapper = function() {
+      jsGlobal.getBacktrace && traceWriter.writeLn(jsGlobal.getBacktrace());
       var args = Array.prototype.slice.apply(arguments);
       traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
       var s = performance.now();
@@ -1446,12 +1386,15 @@ module J2ME {
       traceWriter.outdent();
       return value;
     };
+    (<any>wrapper).methodInfo = methodInfo;
+    return wrapper;
   }
 
   export function getLinkedMethod(methodInfo: MethodInfo) {
     if (methodInfo.fn) {
       return methodInfo.fn;
     }
+    linkKlass(methodInfo.classInfo);
     linkKlassMethod(methodInfo.classInfo.klass, methodInfo);
     assert (methodInfo.fn);
     return methodInfo.fn;

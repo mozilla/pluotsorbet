@@ -1,4 +1,6 @@
 module J2ME {
+
+  import assert = Debug.assert;
   import Bytecodes = Bytecode.Bytecodes;
   var heapSize = 1024 * 1024;
   var buffer = new ArrayBuffer(heapSize * 4);
@@ -45,10 +47,10 @@ module J2ME {
    */
 
   enum FrameLayout {
-    CalleeMethodInfoFramePointerOffset      = -1,
-    CallerFramePointerFramePointerOffset    = -2,
-    CallerReturnAddressFramePointerOffset   = -3,
-    CallerSaveSize                          = 3
+    CalleeMethodInfoOffset      = -1,
+    CallerFPOffset              = -2,
+    CallerRAOffset              = -3,
+    CallerSaveSize              =  3
   }
 
   export class FrameView {
@@ -63,6 +65,28 @@ module J2ME {
       this.fp = fp;
       this.sp = sp;
       this.pc = pc;
+
+      if (!release) {
+        var callee = o4[this.fp + FrameLayout.CalleeMethodInfoOffset];
+        assert(
+          callee === null ||
+          callee instanceof MethodInfo,
+          "Callee @" + (this.fp + FrameLayout.CalleeMethodInfoOffset) + " is not a MethodInfo, " + callee
+        );
+      }
+    }
+
+    setParameter(kind: Kind, i: number, v: any) {
+      switch (kind) {
+        case Kind.Reference:
+          o4[this.fp + this.argumentFramePointerOffset + i] = v;
+          break;
+        case Kind.Int:
+          i4[this.fp + this.argumentFramePointerOffset + i] = v;
+          break;
+        default:
+          Debug.assert(false);
+      }
     }
 
     setParameterO4(v: Object, i: number) {
@@ -71,19 +95,36 @@ module J2ME {
     }
 
     get methodInfo(): MethodInfo {
-      return o4[this.fp + FrameLayout.CalleeMethodInfoFramePointerOffset];
+      return o4[this.fp + FrameLayout.CalleeMethodInfoOffset];
     }
 
     set methodInfo(methodInfo: MethodInfo) {
-      o4[this.fp + FrameLayout.CalleeMethodInfoFramePointerOffset] = methodInfo;
+      o4[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo;
     }
 
     get argumentFramePointerOffset() {
-      return -(3 + this.methodInfo.consumeArgumentSlots);
+      var argumentSlots = this.methodInfo ? this.methodInfo.argumentSlots : 0;
+      return -(3 + argumentSlots);
     }
 
     get stackOffset() {
-      return this.methodInfo.codeAttribute.max_locals - this.methodInfo.consumeArgumentSlots;
+      return this.methodInfo.codeAttribute.max_locals - this.methodInfo.argumentSlots;
+    }
+
+    traceStack(writer: IndentingWriter) {
+      var fp = this.fp;
+      var sp = this.sp;
+      var pc = this.pc;
+      while (this.fp > FrameLayout.CallerSaveSize) {
+        writer.writeLn((this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
+        this.set(i4[this.fp + FrameLayout.CallerFPOffset],
+                 this.fp + this.argumentFramePointerOffset,
+                 i4[this.fp + FrameLayout.CallerRAOffset]);
+
+      }
+      this.fp = fp;
+      this.sp = sp;
+      this.pc = pc;
     }
 
     trace(writer: IndentingWriter, fieldInfo: FieldInfo) {
@@ -96,30 +137,40 @@ module J2ME {
           return "+" + v;
         }
       }
+      function toName(o) {
+        if (o instanceof MethodInfo) {
+          return o.implKey;
+        }
+        return o ? ("[" + fromUTF8(o.klass.classInfo.utf8Name) + "]") : "null";
+      }
       var details = " ";
       if (fieldInfo) {
         details += "FieldInfo: " + fromUTF8(fieldInfo.utf8Name);
       }
       writer.writeLn("Frame: " + this.methodInfo.implKey + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc + ", BC: " + Bytecodes[this.methodInfo.codeAttribute.code[this.pc]] + details);
-      for (var i = this.fp + this.argumentFramePointerOffset; i < this.sp; i++) {
+      for (var i = Math.max(0, this.fp + this.argumentFramePointerOffset - 10); i < this.sp; i++) {
         var prefix = "    ";
         if (i >= this.fp + this.stackOffset) {
           prefix = "S" + (i - (this.fp + this.stackOffset)) + ": ";
-        } else if (i === this.fp + FrameLayout.CalleeMethodInfoFramePointerOffset) {
+        } else if (i === this.fp + FrameLayout.CalleeMethodInfoOffset) {
           prefix = "MI: ";
-        } else if (i === this.fp + FrameLayout.CallerFramePointerFramePointerOffset) {
-          prefix = "CP: ";
-        } else if (i === this.fp + FrameLayout.CallerReturnAddressFramePointerOffset) {
+        } else if (i === this.fp + FrameLayout.CallerFPOffset) {
+          prefix = "CF: ";
+        } else if (i === this.fp + FrameLayout.CallerRAOffset) {
           prefix = "RA: ";
         } else if (i >= this.fp) {
           prefix = "L" + (i - this.fp) + ": ";
-        } else {
+        } else if (i >= this.fp + this.argumentFramePointerOffset) {
           prefix = "P" + (i - (this.fp + this.argumentFramePointerOffset)) + ": ";
         }
-        writer.writeLn(prefix + " " + toNumber(i - this.fp) + " " + toHEX(i) + ": " + String(i4[i]).padLeft(' ', 8) + " " + o4[i]);
+        writer.writeLn(" " + prefix + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i)  + ": " +
+          String(i4[i]).padLeft(' ', 10) + " " +
+          toName(o4[i]));
       }
     }
   }
+
+  var frameView = new FrameView();
 
   export class Thread {
 
@@ -153,18 +204,92 @@ module J2ME {
      */
     ctx: Context;
 
+    view: FrameView;
+
     constructor(ctx: Context) {
       this.tp = malloc(1024 * 1024);
-      this.bp = this.tp + 64;
-      this.fp = this.bp;
-      this.sp = -1;
-      this.pc = 0;
+      this.bp = this.tp;
+      this.fp = -1;
+      this.sp = this.bp;
+      this.pc = -1;
+      //this.pushFrame(null);
+      this.view = new FrameView();
       this.ctx = ctx;
+    }
+
+    set(fp: number, sp: number, pc: number) {
+      this.fp = fp;
+      this.sp = sp;
+      this.pc = pc;
+    }
+
+    getCurrentFrameView(): FrameView {
+      this.view.set(this.fp, this.sp, this.pc);
+      return this.view;
+    }
+
+    pushFrame(methodInfo: MethodInfo) {
+      if (methodInfo) {
+        // Reserve space for arguments slots.
+        this.sp += methodInfo.argumentSlots;
+      }
+      i4[this.sp++] = this.pc;    // Caller RA
+      i4[this.sp++] = this.fp;    // Caller FP
+      o4[this.sp++] = methodInfo; // Callee
+      this.fp = this.sp;
+      this.sp = this.fp + (methodInfo ? (methodInfo.codeAttribute.max_locals - methodInfo.argumentSlots) : 0);
+      this.pc = 0;
+    }
+
+    pushMarkerFrame() {
+      this.pushFrame(null);
+    }
+
+    popMarkerFrame() {
+      var fp = this.fp;
+      var pc = i4[fp + FrameLayout.CallerRAOffset];
+      var sp = fp;
+      var fp = i4[fp + FrameLayout.CallerFPOffset];
+      this.fp = fp;
+      this.sp = sp;
+      this.pc = pc;
     }
   }
 
-  var frameView = new FrameView();
+  export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
+    var method = function fastInterpreterFrameAdapter() {
+      var thread = $.ctx.nativeThread;
+      traceWriter.writeLn(">> ENTER");
+      thread.pushFrame(null);
+      thread.pushFrame(methodInfo);
+      var view = thread.getCurrentFrameView();
+      var kinds = methodInfo.signatureKinds;
+      var index = 0;
+      if (!methodInfo.isStatic) {
+        view.setParameter(Kind.Reference, index++, this);
+      }
+      for (var i = 1; i < kinds.length; i++) {
+        view.setParameter(kinds[i], index++, arguments[i - 1]);
+      }
+      return $.ctx.executeThread();
+    };
+    (<any>method).methodInfo = methodInfo;
+    return method;
+  }
 
+  function resolveClass(index: number, classInfo: ClassInfo): ClassInfo {
+    var classInfo = classInfo.constantPool.resolveClass(index);
+    linkKlass(classInfo);
+    return classInfo;
+  }
+
+  function classInitAndUnwindCheck(classInfo: ClassInfo, pc: number) {
+    classInitCheck(classInfo);
+    if (U) {
+      $.ctx.current().pc = pc;
+      return;
+    }
+  }
 
   export function interpret(thread: Thread) {
     frameView.set(thread.fp, thread.sp, thread.pc);
@@ -178,14 +303,16 @@ module J2ME {
     var sp = thread.sp;
     var pc = thread.pc;
 
-    var argumentSlotCount = mi.consumeArgumentSlots;
-    var argumentFramePointerOffset = frameView.argumentFramePointerOffset;
-
+    var tag: TAGS;
     var type, size;
-    var value, index, array, object, constant, targetPC;
-    var ia = 0, ib = 0;
+    var value, index, array, object, result, constant, targetPC;
 
-    var fieldInfo;
+
+    var ia = 0, ib = 0; // Integer Operands
+    var fa = 0, fb = 0; // Float / Double Operands
+
+    var classInfo: ClassInfo;
+    var fieldInfo: FieldInfo;
 
     /** @inline */
     function i2l() {
@@ -196,7 +323,17 @@ module J2ME {
 
     /** @inline */
     function popI4() {
-      return i4[-- sp];
+      return i4[--sp];
+    }
+
+    /** @inline */
+    function popF4() {
+      return f4[--sp];
+    }
+
+    /** @inline */
+    function popF8() {
+      return --sp, f4[--sp];
     }
 
     /** @inline */
@@ -205,47 +342,69 @@ module J2ME {
     }
 
     /** @inline */
-    function popO4() {
-      return o4[-- sp];
+    function pushF4(v: number) {
+      return f4[sp++];
     }
 
     /** @inline */
-    function pushO4(v: Object) {
+    function pushF8(v: number) {
+      f4[sp++], sp++;
+    }
+
+    /** @inline */
+    function popO4() {
+      return o4[--sp];
+    }
+
+    /** @inline */
+    function pushO4(v: Object | java.lang.Object) {
       o4[sp++] = v;
     }
 
     /** @inline */
     function localFramePointerOffset(i: number) {
-      return i < argumentSlotCount ? argumentFramePointerOffset + i : i - argumentSlotCount;
+      return i < mi.argumentSlots ? -(3 + mi.argumentSlots) + i : i - mi.argumentSlots;
     }
 
     /** @inline */
     function getLocalO4(i: number) {
-      traceWriter.writeLn("Get Local: " + i + ", from: " + toHEX(fp + localFramePointerOffset(i)));
+      // traceWriter.writeLn("Get Local: " + i + ", from: " + toHEX(fp + localFramePointerOffset(i)));
       return o4[fp + localFramePointerOffset(i)];
     }
 
     /** @inline */
     function setLocalO4(v: Object, i: number) {
-      traceWriter.writeLn("Set Local: " + i + ", from: " + toHEX(fp + localFramePointerOffset(i)));
+      // traceWriter.writeLn("Set Local: " + i + ", from: " + toHEX(fp + localFramePointerOffset(i)));
       o4[fp + localFramePointerOffset(i)] = v;
     }
 
     /** @inline */
     function getLocalI4(i: number) {
-      traceWriter.writeLn("Get Local: " + i + ", from: " + toHEX(fp + localFramePointerOffset(i)));
+      // traceWriter.writeLn("Get Local: " + i + ", from: " + toHEX(fp + localFramePointerOffset(i)));
       return i4[fp + localFramePointerOffset(i)];
     }
 
     /** @inline */
     function setLocalI4(v: number, i: number) {
-      traceWriter.writeLn("Set Local: " + i + ", from: " + toHEX(fp + localFramePointerOffset(i)));
+      // traceWriter.writeLn("Set Local: " + i + ", from: " + toHEX(fp + localFramePointerOffset(i)));
       i4[fp + localFramePointerOffset(i)] = v;
     }
 
     /** @inline */
     function readI2() {
       return (code[pc++] << 8 | code[pc++]) << 16 >> 16;
+    }
+    
+    function saveThreadState() {
+      thread.fp = fp;
+      thread.sp = sp;
+      thread.pc = pc;
+    }
+
+    function loadThreadState() {
+      fp = thread.fp;
+      sp = thread.sp;
+      pc = thread.pc;
     }
 
     /** @inline */
@@ -262,11 +421,30 @@ module J2ME {
         case Kind.Reference:
           return o4[--sp];
         case Kind.Long:
+          sp--;
+        case Kind.Int:
+        case Kind.Char:
+        case Kind.Short:
+        case Kind.Boolean:
+          return i4[--sp];
         case Kind.Double:
           sp--;
+        case Kind.Float:
+          return f4[--sp];
         default:
-          return i4[--sp];
+          Debug.assert(false, "Cannot Pop Kind: " + Kind[kind]);
       }
+    }
+
+    var values = new Array(8);
+
+    function popKinds(kinds: Kind [], offset: number) {
+      values.length = kinds.length - offset;
+      var j = 0;
+      for (var i = offset; i < kinds.length; i++) {
+        values[j++] = popKind(kinds[i]);
+      }
+      return values;
     }
 
     /** @inline */
@@ -283,6 +461,11 @@ module J2ME {
     }
 
     while (true) {
+
+      assert(code === mi.codeAttribute.code, "Bad Code.");
+      assert(ci === mi.classInfo, "Bad Class Info.");
+      assert(cp === ci.constantPool, "Bad Constant Pool.");
+
       fieldInfo = null;
       var opPC = pc;
       var op = code[pc++];
@@ -291,6 +474,8 @@ module J2ME {
       //var prefix = "FP: " + fp + ", SP: " + sp + ", PC: " + (pc - 1) + ", OP: " + Bytecodes[op];
       //prefix = prefix.padRight(' ', 64);
       //traceWriter.writeLn(prefix + ": STACK: [" + stack.join(", ") + "]");
+
+      traceWriter.writeLn(mi.implKey + ": " + opPC + ": " + Bytecodes[op]);
 
       switch (op) {
         case Bytecodes.NOP:
@@ -323,20 +508,36 @@ module J2ME {
         case Bytecodes.BIPUSH:
           pushI4(code[pc++] << 24 >> 24);
           break;
-        //        case Bytecodes.SIPUSH:
-        //          stack.push(frame.read16Signed());
-        //          break;
+        case Bytecodes.SIPUSH:
+          pushI4(readI2());
+          break;
         case Bytecodes.LDC:
         case Bytecodes.LDC_W:
           index = (op === Bytecodes.LDC) ? code[pc++] : readI2();
-          constant = ci.constantPool.resolve(index, TAGS.CONSTANT_Any, false);
-          pushI4(constant); // REDUX
+          tag = ci.constantPool.peekTag(index);
+          constant = ci.constantPool.resolve(index, tag, false);
+          if (tag === TAGS.CONSTANT_Integer) {
+            pushI4(constant);
+          } else if (tag === TAGS.CONSTANT_Float) {
+            pushF4(constant);
+          } else if (tag === TAGS.CONSTANT_String) {
+            pushO4(constant);
+          } else {
+            assert(false, TAGS[tag]);
+          }
           break;
-        //        case Bytecodes.LDC2_W:
-        //          index = frame.read16();
-        //          constant = ci.constantPool.resolve(index, TAGS.CONSTANT_Any, false);
-        //          stack.push2(constant);
-        //          break;
+        case Bytecodes.LDC2_W:
+          index = (op === Bytecodes.LDC) ? code[pc++] : readI2();
+          tag = ci.constantPool.peekTag(index);
+          constant = ci.constantPool.resolve(index, tag, false);
+          if (tag === TAGS.CONSTANT_Long) {
+            pushI4(constant);
+          } else if (tag === TAGS.CONSTANT_Double) {
+            pushF8(constant);
+          } else {
+            assert(false);
+          }
+          break;
         //        case Bytecodes.ILOAD:
         //          stack.push(frame.local[frame.read8()]);
         //          break;
@@ -599,11 +800,11 @@ module J2ME {
         //          a = stack.pop();
         //          stack.push(Math.fround(a / b));
         //          break;
-        //        case Bytecodes.DDIV:
-        //          b = stack.pop2();
-        //          a = stack.pop2();
-        //          stack.push2(a / b);
-        //          break;
+        case Bytecodes.DDIV:
+          fb = popF8();
+          fa = popF8();
+          pushF8(fa / fb);
+          break;
         //        case Bytecodes.IREM:
         //          b = stack.pop();
         //          a = stack.pop();
@@ -821,33 +1022,33 @@ module J2ME {
             pc = targetPC;
           }
           break;
-        //        case Bytecodes.IF_ACMPEQ:
-        //          pc = frame.readTargetPC();
-        //          if (stack.pop() === stack.pop()) {
-        //            frame.pc = pc;
-        //          }
-        //          break;
-        //        case Bytecodes.IF_ACMPNE:
-        //          pc = frame.readTargetPC();
-        //          if (stack.pop() !== stack.pop()) {
-        //            frame.pc = pc;
-        //          }
-        //          break;
-        //        case Bytecodes.IFNULL:
-        //          pc = frame.readTargetPC();
-        //          if (!stack.pop()) {
-        //            frame.pc = pc;
-        //          }
-        //          break;
-        //        case Bytecodes.IFNONNULL:
-        //          pc = frame.readTargetPC();
-        //          if (stack.pop()) {
-        //            frame.pc = pc;
-        //          }
-        //          break;
-        //        case Bytecodes.GOTO:
-        //          frame.pc = frame.readTargetPC();
-        //          break;
+        case Bytecodes.IF_ACMPEQ:
+          targetPC = readTargetPC();
+          if (popO4() === popO4()) {
+            pc = targetPC;
+          }
+          break;
+        case Bytecodes.IF_ACMPNE:
+          targetPC = readTargetPC();
+          if (popO4() !== popO4()) {
+            pc = targetPC;
+          }
+          break;
+        case Bytecodes.IFNULL:
+          targetPC = readTargetPC();
+          if (!popO4()) {
+            pc = targetPC;
+          }
+          break;
+        case Bytecodes.IFNONNULL:
+          targetPC = readTargetPC();
+          if (popO4()) {
+            pc = targetPC;
+          }
+          break;
+        case Bytecodes.GOTO:
+          pc = readTargetPC();
+          break;
         //        case Bytecodes.GOTO_W:
         //          frame.pc = frame.read32Signed() - 1;
         //          break;
@@ -974,16 +1175,15 @@ module J2ME {
         //          object = stack.pop();
         //          fieldInfo.set(object, value);
         //          break;
-        //        case Bytecodes.GETSTATIC:
-        //          index = frame.read16();
-        //          fieldInfo = mi.classInfo.constantPool.resolveField(index, true);
-        //          classInitAndUnwindCheck(fieldInfo.classInfo, frame.pc - 3);
-        //          if (U) {
-        //            return;
-        //          }
-        //          value = fieldInfo.getStatic();
-        //          stack.pushKind(fieldInfo.kind, value);
-        //          break;
+        case Bytecodes.GETSTATIC:
+          index = readI2();
+          fieldInfo = cp.resolveField(index, true);
+          //classInitAndUnwindCheck(fieldInfo.classInfo, frame.pc - 3);
+          //if (U) {
+          //  return;
+          //}
+          pushKind(fieldInfo.kind, fieldInfo.getStatic());
+          break;
         case Bytecodes.PUTSTATIC:
           index = readI2();
           fieldInfo = cp.resolveField(index, true);
@@ -1002,15 +1202,18 @@ module J2ME {
         //          }
         //          fieldInfo.setStatic(stack.popKind(fieldInfo.kind));
         //          break;
-        //        case Bytecodes.NEW:
-        //          index = frame.read16();
-        //          classInfo = resolveClass(index, mi.classInfo);
-        //          classInitAndUnwindCheck(classInfo, frame.pc - 3);
-        //          if (U) {
-        //            return;
-        //          }
-        //          stack.push(newObject(classInfo.klass));
-        //          break;
+        case Bytecodes.NEW:
+          index = readI2();
+          traceWriter.writeLn(mi.implKey + " " + index);
+          classInfo = resolveClass(index, ci);
+          saveThreadState();
+          classInitAndUnwindCheck(classInfo, pc - 3);
+          if (U) {
+            return;
+          }
+          loadThreadState();
+          pushO4(newObject(classInfo.klass));
+          break;
         //        case Bytecodes.CHECKCAST:
         //          index = frame.read16();
         //          classInfo = resolveClass(index, mi.classInfo);
@@ -1035,17 +1238,17 @@ module J2ME {
         //          }
         //          throw object;
         //          break;
-        //        case Bytecodes.MONITORENTER:
-        //          object = stack.pop();
-        //          ctx.monitorEnter(object);
-        //          if (U === VMState.Pausing || U === VMState.Stopping) {
-        //            return;
-        //          }
-        //          break;
-        //        case Bytecodes.MONITOREXIT:
-        //          object = stack.pop();
-        //          ctx.monitorExit(object);
-        //          break;
+        case Bytecodes.MONITORENTER:
+          object = popO4();
+          thread.ctx.monitorEnter(object);
+          if (U === VMState.Pausing || U === VMState.Stopping) {
+            return;
+          }
+          break;
+        case Bytecodes.MONITOREXIT:
+          object = popO4();
+          thread.ctx.monitorExit(object);
+          break;
         //        case Bytecodes.WIDE:
         //          frame.wide();
         //          break;
@@ -1286,13 +1489,24 @@ module J2ME {
           type = code[pc++];
           size = popI4();
           o4[sp++] = newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size);
+          traceWriter && traceWriter.writeLn("XXX: " + o4[sp - 1]);
           break;
         case Bytecodes.RETURN:
-          // ctx.popFrame();
-          if (sp === fp) {
+          pc = i4[fp + FrameLayout.CallerRAOffset];
+          sp = fp + -(3 + mi.argumentSlots);
+          fp = i4[fp + FrameLayout.CallerFPOffset];
+          mi = o4[fp + FrameLayout.CalleeMethodInfoOffset];
+          traceWriter.outdent();
+          if (mi === null) {
+            saveThreadState();
+            thread.popMarkerFrame();
+            traceWriter.writeLn("<< EXIT");
             return;
           }
-          return;
+          ci = mi.classInfo;
+          cp = ci.constantPool;
+          code = mi.codeAttribute.code;
+          continue;
         case Bytecodes.INVOKEVIRTUAL:
         case Bytecodes.INVOKESPECIAL:
         case Bytecodes.INVOKESTATIC:
@@ -1309,11 +1523,14 @@ module J2ME {
 
           traceWriter.writeLn("Calling: " + calleeMethodInfo.implKey);
 
-          var callee;
-          var result;
-          var object = null;
+          if (calleeMethodInfo.implKey === "java/lang/Object.notifyAll.()V") {
+            // debugger;
+          }
+
+          var callee = null;
+          object = null;
           if (!isStatic) {
-            object = o4[sp - calleeMethodInfo.argumentSlots - 1];
+            object = o4[sp - calleeMethodInfo.argumentSlots];
           }
           switch (op) {
             case Bytecodes.INVOKESPECIAL:
@@ -1322,22 +1539,26 @@ module J2ME {
               callee = getLinkedMethod(calleeMethodInfo);
               break;
             case Bytecodes.INVOKEVIRTUAL:
+              calleeTargetMethodInfo = object.klass.classInfo.vTable[calleeMethodInfo.vTableIndex];
             case Bytecodes.INVOKEINTERFACE:
               var name = op === Bytecodes.INVOKEVIRTUAL ? calleeMethodInfo.virtualName : calleeMethodInfo.mangledName;
               callee = object[name];
-              calleeTargetMethodInfo = callee.methodInfo;
               break;
             default:
               traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
+              assert(false, "Not Implemented: " + Bytecodes[op]);
           }
 
-          if (calleeTargetMethodInfo.isNative) {
-            // Pop Arguments
-            result = callee.call(object);
+          // Call Native or Compiled Method.
+          if (calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled) {
+            var args = popKinds(calleeTargetMethodInfo.signatureKinds, 1);
+            saveThreadState();
+            result = callee.apply(object, args);
+            loadThreadState();
             if (calleeMethodInfo.returnKind !== Kind.Void) {
               pushKind(calleeMethodInfo.returnKind, result);
             }
-            break;
+            continue;
           }
 
           mi = calleeTargetMethodInfo;
@@ -1348,23 +1569,21 @@ module J2ME {
           pushI4(fp); // Save Caller Frame Pointer
           pushO4(mi); // Save Callee Method Info
 
+          opPC = pc = 0;
           fp = sp;
-          sp = fp + mi.codeAttribute.max_locals - mi.consumeArgumentSlots;
+          sp = fp + mi.codeAttribute.max_locals - mi.argumentSlots;
+          code = mi.codeAttribute.code;
 
-          //if (isStatic) {
-          //  classInitAndUnwindCheck(calleeMethodInfo.classInfo, lastPC);
-          //  if (U) {
-          //    return;
-          //  }
-          //}
-          break;
+          traceWriter.indent();
+          continue;
         default:
-          traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
+          traceWriter.writeLn("Not Implemented: " + Bytecodes[op] + ", PC: " + opPC + ", CODE: " + code.length);
+          assert(false, "Not Implemented: " + Bytecodes[op]);
           break;
       }
 
       frameView.set(fp, sp, opPC);
-      traceWriter.writeLn();
+      // frameView.traceStack(traceWriter);
       frameView.trace(traceWriter, fieldInfo);
     }
   }
