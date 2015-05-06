@@ -37,11 +37,24 @@ module J2ME {
         array[n] = args[n] ? J2ME.newString(args[n]) : null;
 
       // The <init> frames go at the end of the array so they are executed first to initialize the thread and isolate.
-      ctx.start([
-        Frame.create(isolateClassInfo.getMethodByNameString("start", "()V"), [ isolate ]),
-        Frame.create(isolateClassInfo.getMethodByNameString("<init>", "(Ljava/lang/String;[Ljava/lang/String;)V"),
-                                       [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ])
-      ]);
+      //ctx.start([
+      //  Frame.create(isolateClassInfo.getMethodByNameString("start", "()V"), [ isolate ]),
+      //  Frame.create(isolateClassInfo.getMethodByNameString("<init>", "(Ljava/lang/String;[Ljava/lang/String;)V"),
+      //                                 [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ])
+      //]);
+      //
+
+      traceWriter.writeLn("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+
+      ctx.nativeThread.pushFrame(null);
+      ctx.nativeThread.pushFrame(isolateClassInfo.getMethodByNameString("start", "()V"));
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
+
+      ctx.nativeThread.pushFrame(isolateClassInfo.getMethodByNameString("<init>", "(Ljava/lang/String;[Ljava/lang/String;)V"));
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 1, J2ME.newString(className.replace(/\./g, "/")));
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 2, array);
+      ctx.nativeThread.run();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 
@@ -69,18 +82,19 @@ module J2ME {
         args[n] = mainArgs[n];
       }
 
-      var frames = [Frame.create(entryPoint, [ args ])];
-
-      var clinit = classInfo.staticInitializer;
-      if (clinit) {
-        frames.push(Frame.create(clinit, []));
-      }
-
-      frames.push(Frame.create(CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V"),
-                               [ runtime.mainThread, J2ME.newString("main") ]));
-
-      ctx.start(frames);
-      release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
+      Debug.assert(false, "REDUX");
+      //var frames = [Frame.create(entryPoint, [ args ])];
+      //
+      //var clinit = classInfo.staticInitializer;
+      //if (clinit) {
+      //  frames.push(Frame.create(clinit, []));
+      //}
+      //
+      //frames.push(Frame.create(CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V"),
+      //                         [ runtime.mainThread, J2ME.newString("main") ]));
+      //
+      //ctx.start(frames);
+      //release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 
   }

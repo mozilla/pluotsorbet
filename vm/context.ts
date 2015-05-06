@@ -407,47 +407,25 @@ module J2ME {
       return frames[frames.length - 1];
     }
 
-    popFrame(): Frame {
-      var frame = this.frames.pop();
-      if (profile) {
-        this.leaveMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
-      }
-      return frame;
-    }
+    //popFrame(): Frame {
+    //  var frame = this.frames.pop();
+    //  if (profile) {
+    //    this.leaveMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
+    //  }
+    //  return frame;
+    //}
+    //
+    //pushFrame(frame: Frame) {
+    //  if (profile) {
+    //    this.enterMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
+    //  }
+    //  this.frames.push(frame);
+    //}
 
-    pushFrame(frame: Frame) {
-      if (profile) {
-        this.enterMethodTimeline(frame.methodInfo.implKey, MethodType.Interpreted);
-      }
-      this.frames.push(frame);
-    }
-
-    private popMarkerFrame() {
-      var marker = this.frames.pop();
-      release || assert (Frame.isMarker(marker));
-    }
-
-    executeThread() {
-      // try {
-        var returnValue = J2ME.interpret(this.nativeThread);
-        //if (U) {
-        //  // Prepend all frames up until the first marker to the bailout frames.
-        //  while (true) {
-        //    var frame = frames.pop();
-        //    if (Frame.isMarker(frame)) {
-        //      break;
-        //    }
-        //    this.bailoutFrames.unshift(frame);
-        //  }
-        //  return;
-        //}
-      //} catch (e) {
-      //  //this.popMarkerFrame();
-      //  //throwHelper(e);
-      //}
-      //this.popMarkerFrame();
-      return returnValue;
-    }
+    //private popMarkerFrame() {
+    //  var marker = this.frames.pop();
+    //  release || assert (Frame.isMarker(marker));
+    //}
 
     executeMethod(methodInfo: MethodInfo) {
       traceWriter.writeLn("executeMethod " + methodInfo.implKey);
@@ -513,13 +491,13 @@ module J2ME {
       Context.setWriters(Context.writer);
     }
 
-    start(frames: Frame[]) {
-      this.frames.push(Frame.Start);
-      for (var i = 0; i < frames.length; i++) {
-        this.pushFrame(frames[i]);
-      }
-      this.resume();
-    }
+    //start(frames: Frame[]) {
+    //  this.frames.push(Frame.Start);
+    //  for (var i = 0; i < frames.length; i++) {
+    //    this.pushFrame(frames[i]);
+    //  }
+    //  this.resume();
+    //}
 
     execute() {
       this.setAsCurrentContext();
