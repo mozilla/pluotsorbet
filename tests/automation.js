@@ -152,6 +152,7 @@ var gfxTests = [
   { name: "gfx/DrawRegionTransRot90AnchorVCenterHCenter", maxDifferentLinux: 164, maxDifferentMac: 164 },
   { name: "gfx/DrawRegionTransRot90AnchorVCenterLeft", maxDifferentLinux: 164, maxDifferentMac: 164 },
   { name: "gfx/DrawRegionTransRot90AnchorVCenterRight", maxDifferentLinux: 164, maxDifferentMac: 164 },
+  { name: "gfx/MultipleImageGraphicsTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
 ];
 
 /**
