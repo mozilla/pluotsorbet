@@ -523,16 +523,13 @@ public class Graphics {
      */
     public static final int DOTTED = 1;
 
-    private native void initScreen0(int displayId, int width, int height);
-    private native void initImage0(Image img, int width, int height);
-
-    private native void init();
+    private native void initScreen0(int displayId);
+    private native void initImage0(Image img);
 
     /**
      * Create a Graphics object
      */
     Graphics() {
-      init();
     }
 
     /**
@@ -1379,7 +1376,7 @@ public class Graphics {
         }
 
         Graphics g = new Graphics();
-        g.initImage0(img, img.getWidth(), img.getHeight());
+        g.initImage0(img);
 
         // construct and return a new ImageGraphics
         // object that uses the Image img as the 
@@ -1413,7 +1410,7 @@ public class Graphics {
         if (h > height) { h = height; }
 
         Graphics g = new Graphics();
-        g.initImage0(img, w, h);
+        g.initImage0(img);
         return g;
     }
 
@@ -1429,7 +1426,7 @@ public class Graphics {
      */
     static Graphics getScreenGraphics(int displayId, int width, int height) {
         Graphics g = new Graphics();
-        g.initScreen0(displayId, width, height);
+        g.initScreen0(displayId);
         return g;
     }
 
