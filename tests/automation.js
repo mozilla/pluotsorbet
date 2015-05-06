@@ -296,7 +296,7 @@ casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/background1.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Hello World from foreground MIDlet", function() {
-            test.pass();
+            test.pass("First background test");
         });
     });
 
@@ -304,7 +304,7 @@ casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet2&jad=tests/midlets/background/background2.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Hello World from foreground MIDlet", function() {
-            test.pass();
+            test.pass("Second background test");
         });
     });
 
