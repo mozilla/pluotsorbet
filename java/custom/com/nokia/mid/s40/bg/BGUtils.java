@@ -15,10 +15,5 @@ public class BGUtils {
                                 null, false);
     }
 
-    private static native void addSystemProperties(String args);
-
-    public static boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args) {
-        BGUtils.addSystemProperties(args);
-        return true;
-    }
+    public static native boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args);
 }

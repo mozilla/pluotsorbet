@@ -75,11 +75,13 @@ Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
 
 MIDP.additionalProperties = {};
 
-Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"] = function(args) {
+Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] = function(midletSuiteVendor, midletName, midletNumber, startupNoteText, args) {
   J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
     var elems = arg.split("=");
     MIDP.additionalProperties[elems[0]] = elems[1];
   });
+
+  return 1;
 };
 
 Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V"] = function(midletClassName) {
