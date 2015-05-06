@@ -613,7 +613,7 @@ var MIDP = (function() {
   function exit(code) {
     $.stop();
     DumbPipe.open("exit", null, function(message) {});
-    document.getElementById("exit-screen").style.display = "block";
+    showExitScreen();
   }
 
   var pendingMIDletUpdate = null;
@@ -626,15 +626,7 @@ var MIDP = (function() {
     }
 
     // Perform updating.
-    var dialogTemplateNode = document.getElementById('download-progress-dialog');
-    var dialog = dialogTemplateNode.cloneNode(true);
-    dialog.style.display = 'block';
-    dialog.classList.add('visible');
-    dialogTemplateNode.parentNode.appendChild(dialog);
-
-    performDownload(pendingMIDletUpdate, dialog, function(data) {
-      dialog.parentElement.removeChild(dialog);
-
+    performDownload(pendingMIDletUpdate, function(data) {
       Promise.all([
         JARStore.installJAR("midlet.jar", data.jarData, data.jadData),
         CompiledMethodCache.clear(),

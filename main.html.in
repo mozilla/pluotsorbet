@@ -122,17 +122,21 @@
         <button id="fire">fire</button>
       </div>
 
-      <div class="splash-screen" id="splash-screen">
-        <h1 class="title">Loading</h1>
+      <div id="download-screen" class="screen">
+        <h1 class="title">Downloading @MIDLET_NAME@…</h1>
+        <div class="download-progress-container">
+          <progress class="pack-activity" value="0" max="100"></progress>
+        </div>
+      </div>
+
+      <div id="splash-screen" class="screen">
+        <h1 class="title">Starting @MIDLET_NAME@…</h1>
         <div class="splash-progress-container">
           <progress></progress>
         </div>
       </div>
 
-      <div class="splash-screen" id="exit-screen">
-        <div class="splash-progress-container">
-          <progress></progress>
-        </div>
+      <div id="exit-screen" class="screen">
       </div>
 
       <div id="background-screen">
@@ -182,14 +186,14 @@
       </form>
 
       <form role="dialog" data-type="confirm"
-            class="download-progress-dialog"
-            id="download-progress-dialog" style="display: none">
+            class="download-failure-dialog"
+            id="download-failure-dialog" style="display: none">
         <section>
-          <h1 class="download-dialog-text"></h1>
-          <progress class="pack-activity" value="0" max="100"></progress>
+          <h1 class="download-dialog-text">Download failure</h1>
+          <p>The download of @MIDLET_NAME@ failed.  Press <i>Retry</i> to try again.</p>
         </section>
         <menu>
-          <button class="recommend" style="display: none">Retry</button>
+          <button class="recommend">Retry</button>
         </menu>
       </form>
     </div>
