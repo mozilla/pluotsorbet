@@ -82,7 +82,11 @@ Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"]
   });
 };
 
-Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
+Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V"] = function(midletClassName) {
+  if (J2ME.fromJavaString(midletClassName) !== fgMidletClass) {
+    return;
+  }
+
   asyncImpl("V", new Promise(function(resolve, reject) {
     // If the page is visible, just start the FG MIDlet
     if (!document.hidden) {
