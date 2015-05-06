@@ -89,13 +89,14 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
     return;
   }
 
-  asyncImpl("V", new Promise(function(resolve, reject) {
-    // If the page is visible, just start the FG MIDlet
-    if (!document.hidden) {
-      resolve();
-      return;
-    }
+  // If the page is visible, just start the FG MIDlet
+  if (!document.hidden) {
+    showSplashScreen();
+    hideBackgroundScreen();
+    return;
+  }
 
+  asyncImpl("V", new Promise(function(resolve, reject) {
     // Otherwise, wait until the page becomes visible, then start the FG MIDlet
     document.addEventListener("visibilitychange", function onVisible() {
       if (!document.hidden) {
