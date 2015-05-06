@@ -4,16 +4,6 @@ import com.sun.cldc.isolate.Isolate;
 import com.sun.midp.main.AmsUtil;
 import com.sun.midp.midletsuite.MIDletSuiteStorage;
 
-class WaitUserInteractionThread extends Thread {
-    public WaitUserInteractionThread() {
-        setPriority(Thread.MAX_PRIORITY);
-    }
-    public void run() {
-        BGUtils.waitUserInteraction();
-        BGUtils.startMIDlet();
-    }
-}
-
 public class BGUtils {
     private static boolean launchMIDletCalled = false;
 
@@ -25,7 +15,8 @@ public class BGUtils {
        launchIEMIDlet hasn't been called (we want launchIEMIDlet
        to launch the MIDlet if possible) */
     public static void setBGMIDletResident(boolean param) {
-      new WaitUserInteractionThread().start();
+        BGUtils.waitUserInteraction();
+        BGUtils.startMIDlet();
     }
 
     static void startMIDlet() {

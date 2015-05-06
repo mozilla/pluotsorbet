@@ -60,11 +60,6 @@ function processJAD(data) {
       var key = entry.substring(0, keyEnd);
       var val = entry.substring(keyEnd + 1).trim();
       MIDP.manifest[key] = val;
-
-      if (key == "MIDlet-Name") {
-        var title = document.getElementById("splash-screen").querySelector(".title");
-        title.textContent = "Loading " + val;
-      }
     }
   });
 }
@@ -73,17 +68,16 @@ if (config.jad) {
   loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
 }
 
-function performDownload(url, dialog, callback) {
-  var dialogText = dialog.querySelector('h1.download-dialog-text');
-  dialogText.textContent = "Downloading " + MIDlet.name + "…";
-
-  var progressBar = dialog.querySelector('progress.pack-activity');
+function performDownload(url, callback) {
+  showDownloadScreen();
+  var progressBar = downloadDialog.querySelector('progress.pack-activity');
 
   var sender = DumbPipe.open("JARDownloader", url, function(message) {
     switch (message.type) {
       case "done":
         DumbPipe.close(sender);
-
+        hideDownloadScreen();
+        progressBar.value = 0;
         callback(message.data);
 
         break;
@@ -94,25 +88,18 @@ function performDownload(url, dialog, callback) {
 
       case "fail":
         DumbPipe.close(sender);
-
+        hideDownloadScreen();
         progressBar.value = 0;
-        progressBar.style.display = "none";
 
-        var dialogText = dialog.querySelector('h1.download-dialog-text');
-        dialogText.textContent = "Download failure";
+        var failureDialog = document.getElementById('download-failure-dialog');
+        failureDialog.style.display = '';
 
-        var btnRetry = dialog.querySelector('button.recommend');
-        btnRetry.style.display = '';
-
+        var btnRetry = failureDialog.querySelector('button.recommend');
         btnRetry.addEventListener('click', function onclick(e) {
           e.preventDefault();
           btnRetry.removeEventListener('click', onclick);
-
-          btnRetry.style.display = "none";
-
-          progressBar.style.display = '';
-
-          performDownload(url, dialog, callback);
+          failureDialog.style.display = 'none';
+          performDownload(url, callback);
         });
 
         break;
@@ -124,20 +111,21 @@ if (config.downloadJAD) {
   loadingMIDletPromises.push(new Promise(function(resolve, reject) {
     JARStore.loadJAR("midlet.jar").then(function(loaded) {
       if (loaded) {
+        if (!document.hidden) {
+          // Show the splash screen as soon as possible.
+          showSplashScreen();
+        }
         processJAD(JARStore.getJAD());
         resolve();
         return;
       }
 
-      var progressTemplateNode = document.getElementById('download-progress-dialog');
-      var dialog = progressTemplateNode.cloneNode(true);
-      dialog.style.display = 'block';
-      dialog.classList.add('visible');
-      progressTemplateNode.parentNode.appendChild(dialog);
-
-      performDownload(config.downloadJAD, dialog, function(data) {
-        dialog.parentElement.removeChild(dialog);
-
+      performDownload(config.downloadJAD, function(data) {
+        if (!document.hidden) {
+          // Show the splash screen as soon as possible after showing
+          // the download screen while downloading the JAD/JAR files.
+          showSplashScreen();
+        }
         JARStore.installJAR("midlet.jar", data.jarData, data.jadData).then(function() {
           processJAD(data.jadData);
           resolve();

@@ -5,6 +5,12 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+    var screenContextInfo = new ContextInfo(MIDP.context2D);
+    MIDP.context2D.canvas.addEventListener("canvasresize", function() {
+        screenContextInfo.currentlyAppliedGraphicsInfo = null;
+        MIDP.context2D.save();
+    });
+
     var tempContext = document.createElement("canvas").getContext("2d");
     tempContext.canvas.width = 0;
     tempContext.canvas.height = 0;
@@ -88,8 +94,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
-        document.getElementById("background-screen").style.display = "none";
-        document.getElementById("splash-screen").style.display = "none";
+        hideBackgroundScreen();
+        hideSplashScreen();
         var d = NativeDisplays.get(displayId);
         NativeDisplays.foreground = displayId;
         MIDP.setFullScreen(d.fullScreen);
@@ -141,10 +147,6 @@ var currentlyFocusedTextEditor;
 
     function swapRB(pixel) {
         return (pixel & 0xff00ff00) | ((pixel >> 16) & 0xff) | ((pixel & 0xff) << 16);
-    }
-
-    function swapRBAndSetAlpha(pixel) {
-        return swapRB(pixel) | 0xff000000;
     }
 
     function ABGRToARGB(abgrData, argbData, width, height, offset, scanlength) {
@@ -228,20 +230,19 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    function initImageData(imageData, width, height) {
+    function initImageData(imageData, width, height, isMutable) {
         var canvas = document.createElement("canvas");
-        imageData.context = canvas.getContext("2d");
-        setImageDataDimensions(imageData, width, height);
-        return imageData.context;
-    }
-
-    function setImageDataDimensions(imageData, width, height) {
-        var canvas = imageData.context.canvas;
         canvas.width = width;
         canvas.height = height;
 
+        imageData.contextInfo = new ContextInfo(canvas.getContext("2d"));
+
         imageData.width = width;
         imageData.height = height;
+
+        imageData.isMutable = isMutable;
+
+        return imageData.contextInfo.context;
     }
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] =
@@ -252,7 +253,7 @@ var currentlyFocusedTextEditor;
             var img = new Image();
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
-                var context = initImageData(imageData, img.naturalWidth, img.naturalHeight);
+                var context = initImageData(imageData, img.naturalWidth, img.naturalHeight, 0);
                 context.drawImage(img, 0, 0);
 
                 URL.revokeObjectURL(img.src);
@@ -268,41 +269,41 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
     function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
-        var context = initImageData(dataDest, width, height);
-        if (!renderRegion(context, dataSource.context.canvas, x, y, width, height, transform, 0, 0, TOP|LEFT)) {
-            throw $.newIllegalArgumentException();
-        }
-        dataDest.isMutable = isMutable;
+        var context = initImageData(dataDest, width, height, isMutable);
+        renderRegion(context, dataSource.contextInfo.context.canvas, x, y, width, height, transform, 0, 0, TOP|LEFT);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
-        var srcCanvas = source.context.canvas;
-        var context = initImageData(dest, srcCanvas.width, srcCanvas.height);
+        var srcCanvas = source.contextInfo.context.canvas;
+        var context = initImageData(dest, srcCanvas.width, srcCanvas.height, 0);
         context.drawImage(srcCanvas, 0, 0);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] =
     function(imageData, width, height) {
-        var context = initImageData(imageData, width, height);
+        var context = initImageData(imageData, width, height, 1);
         context.fillStyle = "rgb(255,255,255)"; // white
         context.fillRect(0, 0, width, height);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
     function(imageData, rgbData, width, height, processAlpha) {
-        var context = initImageData(imageData, width, height);
+        var context = initImageData(imageData, width, height, 0);
         var ctxImageData = context.createImageData(width, height);
         var abgrData = new Int32Array(ctxImageData.data.buffer);
 
-        var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
-        converterFunc(rgbData, abgrData, width, height, 0, width);
+        if (1 === processAlpha) {
+            ARGBToABGR(rgbData, abgrData, width, height, 0, width);
+        } else {
+            ARGBTo1BGR(rgbData, abgrData, width, height, 0, width);
+        }
 
         context.putImageData(ctxImageData, 0, 0);
     };
 
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {
-        var abgrData = new Int32Array(this.context.getImageData(x, y, width, height).data.buffer);
+        var abgrData = new Int32Array(this.contextInfo.context.getImageData(x, y, width, height).data.buffer);
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     };
 
@@ -316,8 +317,12 @@ var currentlyFocusedTextEditor;
         var height = image.height;
         var imageData = image.imageData;
 
-        var ctx = imageData.context;
-        setImageDataDimensions(imageData, width, height);
+        // NOTE: This function will only ever be called by the variants
+        // of `DirectUtils.createImage`. We don't have to worry about
+        // the dimensions or the context info because this `Image` and
+        // this `ImageData` were just created; nothing can be out of
+        // sync yet.
+        var ctx = imageData.contextInfo.context;
 
         var ctxImageData = ctx.createImageData(width, height);
         var pixels = new Int32Array(ctxImageData.data.buffer);
@@ -372,13 +377,10 @@ var currentlyFocusedTextEditor;
         this.baseline = size | 0;
         this.height = (size * 1.3) | 0;
 
-        // Note:
-        // When a css string, such as ` 10 pt Arial, Helvetica`, is set to
-        // MIDP.context2D.font, it will be formatted to `10 pt Arial,Helvetica`
-        // with some spaces removed.
-        // We need this css string to have the same format as that of the
-        // MIDP.context2D.font to do comparison in withFont() function.
-        this.css = style + size + "px " + face;
+        this.context = document.createElement("canvas").getContext("2d");
+        this.context.canvas.width = 0;
+        this.context.canvas.height = 0;
+        this.context.font = style + size + "px " + face;
         this.size = size;
         this.style = style;
         this.face = face;
@@ -387,11 +389,10 @@ var currentlyFocusedTextEditor;
     function calcStringWidth(font, str) {
         var emojiLen = 0;
 
-        withFont(font, MIDP.context2D);
-        var len = measureWidth(MIDP.context2D, str.replace(emoji.regEx, function() {
+        var len = font.context.measureText(str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
-        }));
+        })).width | 0;
 
         return len + emojiLen;
     }
@@ -416,8 +417,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        withFont(this, MIDP.context2D);
-        return measureWidth(MIDP.context2D, String.fromCharCode(char));
+        return this.context.measureText(String.fromCharCode(char)).width | 0;
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -436,28 +436,9 @@ var currentlyFocusedTextEditor;
     var BOTTOM = 32;
     var BASELINE = 64;
 
-    function measureWidth(c, str) {
-        return c.measureText(str).width | 0;
-    }
-
-    function withFont(font, c) {
-        if (c.font != font.css) {
-          c.font = font.css;
-        }
-    }
-
-    // withTextAnchor() can be hot. This variable lets it return two values
-    // without creating a new array every time.
-    var withTextAnchorRet = [0, 0];
-
-    function withTextAnchor(g, c, anchor, x, y, str) {
-        withFont(g.currentFont, c);
-
-        c.textAlign = "left";
-        c.textBaseline = "top";
-
+    function withTextAnchor(c, font, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = measureWidth(c, str);
+            var w = calcStringWidth(font, str);
 
             if (anchor & RIGHT) {
                 x -= w;
@@ -472,28 +453,11 @@ var currentlyFocusedTextEditor;
             c.textBaseline = "alphabetic";
         } else if (anchor & VCENTER) {
             throw $.newIllegalArgumentException("VCENTER not allowed with text");
+        } else {
+            c.textBaseline = "top";
         }
 
-        withTextAnchorRet[0] = x;
-        withTextAnchorRet[1] = y;
-    }
-
-    function withPixel(g, c) {
-        c.fillStyle = c.strokeStyle = util.abgrIntToCSS(g.pixel);
-    }
-
-    /**
-     * Like withPixel, but ignores alpha channel, setting the alpha value to 1.
-     * Useful when you suspect that the caller is specifying the alpha channel
-     * incorrectly, although we should actually figure out why that's happening.
-     */
-    function withOpaquePixel(g, c) {
-        var pixel = g.pixel;
-        var b = (pixel >> 16) & 0xff;
-        var g = (pixel >> 8) & 0xff;
-        var r = pixel & 0xff;
-        var style = util.rgbaToCSS(r, g, b, 1);
-        c.fillStyle = c.strokeStyle = style;
+        return x;
     }
 
     /**
@@ -546,23 +510,19 @@ var currentlyFocusedTextEditor;
     }
 
     Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
-        return color;
+        return color & 0x00FFFFFF;
     };
 
-    function getPixel(rgb, gray, isGray) {
-        return swapRB(rgb) | 0xff000000;
-    }
-
     Native["javax/microedition/lcdui/Graphics.resetGC.()V"] = function() {
-        resetGC(this);
+        this.info.resetGC();
     };
 
     Native["javax/microedition/lcdui/Graphics.reset.(IIII)V"] = function(x1, y1, x2, y2) {
-        reset(this, x1, y1, x2, y2);
+        this.info.reset(x1, y1, x2, y2);
     };
 
     Native["javax/microedition/lcdui/Graphics.reset.()V"] = function() {
-        reset(this, 0, 0, this.maxWidth, this.maxHeight);
+        this.info.reset(0, 0, this.info.contextInfo.context.canvas.width, this.info.contextInfo.context.canvas.height);
     };
 
     Native["javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V"] = function(x_src, y_src, width, height, x_dest, y_dest, anchor) {
@@ -573,27 +533,27 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.setDimensions.(II)V"] = function(w, h) {
-        setDimensions(this, w, h);
+        this.info.resetNonGC(0, 0, w, h);
     };
 
     Native["javax/microedition/lcdui/Graphics.translate.(II)V"] = function(x, y) {
-        translate(this, x, y);
+        this.info.translate(x, y);
     };
 
     Native["javax/microedition/lcdui/Graphics.getTranslateX.()I"] = function() {
-        return this.transX;
+        return this.info.transX;
     };
 
     Native["javax/microedition/lcdui/Graphics.getTranslateY.()I"] = function() {
-        return this.transY;
+        return this.info.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
-        return this.maxWidth;
+        return this.info.contextInfo.context.canvas.width;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function() {
-        return this.maxHeight;
+        return this.info.contextInfo.context.canvas.height;
     };
 
     Native["javax/microedition/lcdui/Graphics.getCreator.()Ljava/lang/Object;"] = function() {
@@ -607,23 +567,23 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getColor.()I"] = function() {
-        return this.rgbColor;
+        return (this.info.red << 16) | (this.info.green << 8) | this.info.blue;
     };
 
     Native["javax/microedition/lcdui/Graphics.getRedComponent.()I"] = function() {
-        return (this.rgbColor >> 16) & 0xff;
+        return this.info.red;
     };
 
     Native["javax/microedition/lcdui/Graphics.getGreenComponent.()I"] = function() {
-        return (this.rgbColor >> 8) & 0xff;
+        return this.info.green;
     };
 
     Native["javax/microedition/lcdui/Graphics.getBlueComponent.()I"] = function() {
-        return this.rgbColor & 0xff;
+        return this.info.blue;
     };
 
     Native["javax/microedition/lcdui/Graphics.getGrayScale.()I"] = function() {
-        return this.gray;
+        return (this.info.red*76 + this.info.green*150 + this.info.blue*29) >>> 8;
     };
 
     Native["javax/microedition/lcdui/Graphics.setColor.(III)V"] = function(red, green, blue) {
@@ -633,20 +593,22 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("Value out of range");
         }
 
-        this.rgbColor = (red << 16) | (green << 8) | blue;
-        this.gray = grayVal(red, green, blue);
-        this.pixel = getPixel(this.rgbColor, this.gray, false);
+        this.info.setPixel(0xFF, red, green, blue);
     };
 
-    Native["javax/microedition/lcdui/Graphics.setColor.(I)V"] = function(RGB) {
-        if (this.pixel == -1 || (RGB & 0x00ffffff) != this.rgbColor) {
-            var red   = (RGB >> 16) & 0xff;
-            var green = (RGB >> 8)  & 0xff;
-            var blue  = (RGB)  & 0xff;
+    Native["javax/microedition/lcdui/Graphics.setColor.(I)V"] = function(rgb) {
+        var red = (rgb >>> 16) & 0xFF;
+        var green = (rgb >>> 8) & 0xFF;
+        var blue = rgb & 0xFF;
 
-            this.rgbColor = RGB & 0x00ffffff;
-            this.gray = grayVal(red, green, blue);
-            this.pixel = getPixel(this.rgbColor, this.gray, false);
+        // NOTE: One would probably expect that `Graphics.setColor`
+        // would always set the alpha value to 0xFF but that is not
+        // the case if the current RGB value is the same as
+        // value being set. This is the behavior
+        // of the reference implementation so we are copying
+        // that behavior.
+        if (red != this.info.red || green != this.info.green || blue != this.info.blue) {
+            this.info.setPixel(0xFF, red, green, blue);
         }
     };
 
@@ -655,120 +617,110 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("Gray value out of range");
         }
 
-        if (this.pixel == -1 || this.gray != value) {
-            this.rgbColor = (value << 16) | (value << 8) | value;
-            this.gray = value;
-            this.pixel = getPixel(this.rgbColor, this.gray, true);
+        // NOTE: One would probably expect that `Graphics.setGrayScale`
+        // would always set the alpha value to 0xFF but that is not
+        // the case if the red, green, and blue color values are
+        // the same as the values being set. This is the behavior
+        // of the reference implementation so we are copying
+        // that behavior.
+        if (value != this.info.red || value != this.info.green || value != this.info.blue) {
+            this.info.setPixel(0xFF, value, value, value);
         }
     };
 
     Native["javax/microedition/lcdui/Graphics.getFont.()Ljavax/microedition/lcdui/Font;"] = function() {
-        return this.currentFont;
+        return this.info.currentFont;
     };
 
     Native["javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(font) {
-        this.currentFont = font ? font : getDefaultFont();
+        this.info.setFont(font);
     };
 
     var SOLID = 0;
     var DOTTED = 1;
     Native["javax/microedition/lcdui/Graphics.setStrokeStyle.(I)V"] = function(style) {
-        if ((style != SOLID) && (style != DOTTED)) {
-            throw $.newIllegalArgumentException("Gray value out of range");
+        if ((style !== SOLID) && (style !== DOTTED)) {
+            throw $.newIllegalArgumentException("Invalid stroke style");
         }
 
-        this.style = style;
+        // We don't actually implement DOTTED style so this is a no-op
     };
 
     Native["javax/microedition/lcdui/Graphics.getStrokeStyle.()I"] = function() {
-        return this.style;
+        return SOLID;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipX.()I"] = function() {
-        return this.clipX1;
+        return this.info.clipX1 - this.info.transX;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipY.()I"] = function() {
-        return this.clipY1;
+        return this.info.clipY1 - this.info.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipWidth.()I"] = function() {
-        return this.clipX2 - this.clipX1;
+        return this.info.clipX2 - this.info.clipX1;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipHeight.()I"] = function() {
-        return this.clipY2 - this.clipY1;
+        return this.info.clipY2 - this.info.clipY1;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClip.([I)V"] = function(region) {
-        region[0] = this.clipX1;
-        region[1] = this.clipY1;
-        region[2] = this.clipX2;
-        region[3] = this.clipY2;
+        region[0] = this.info.clipX1 - this.info.transX;
+        region[1] = this.info.clipY1 - this.info.transY;
+        region[2] = this.info.clipX2 - this.info.transX;
+        region[3] = this.info.clipY2 - this.info.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.clipRect.(IIII)V"] = function(x, y, width, height) {
-        clipRect(this, x, y, width, height);
-    };
-
-    Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
-        return color;
+        this.info.setClip(x, y, width, height, this.info.clipX1, this.info.clipY1, this.info.clipX2, this.info.clipY2);
     };
 
     // DirectGraphics constants
     var TYPE_USHORT_4444_ARGB = 4444;
     var TYPE_USHORT_565_RGB = 565;
 
-    Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(rgba) {
-        var g = this.graphics;
-        var red = (rgba >> 16) & 0xff;
-        var green = (rgba >> 8) & 0xff;
-        var blue = rgba & 0xff;
-        g.pixel = swapRB(rgba);
-        g.rgbColor = rgba & 0x00ffffff;
-        // Conversion matches Graphics#grayVal(int, int, int).
-        g.gray = grayVal(red, green, blue);
+    Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(argb) {
+        var alpha = (argb >>> 24);
+        var red = (argb >>> 16) & 0xFF;
+        var green = (argb >>> 8) & 0xFF;
+        var blue = argb & 0xFF;
+        this.graphics.info.setPixel(alpha, red, green, blue);
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function() {
-        var g = this.graphics;
-        return (g.pixel >> 24) & 0xff;
+        return this.graphics.info.alpha;
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V"] =
     function(pixels, offset, scanlength, x, y, width, height, format) {
-        if (pixels == null) {
+        if (pixels === null) {
             throw $.newNullPointerException("Pixels array is null");
         }
 
         var converterFunc = null;
-        if (format == TYPE_USHORT_4444_ARGB) {
+        if (format === TYPE_USHORT_4444_ARGB) {
             converterFunc = ABGRToARGB4444;
-        } else if (format == TYPE_USHORT_565_RGB) {
+        } else if (format === TYPE_USHORT_565_RGB) {
             converterFunc = ABGRToRGB565;
         } else {
             throw $.newIllegalArgumentException("Format unsupported");
         }
 
-        var graphics = this.graphics;
-        var image = graphics.img;
-        if (!image) {
-            throw $.newIllegalArgumentException("getPixels with no image not yet supported");
-        }
-        var imageData = image.imageData;
-
-        var abgrData = new Int32Array(imageData.context.getImageData(x, y, width, height).data.buffer);
+        var context = this.graphics.info.contextInfo.context;
+        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] =
     function(pixels, transparency, offset, scanlength, x, y, width, height, manipulation, format) {
-        if (pixels == null) {
+        if (pixels === null) {
             throw $.newNullPointerException("Pixels array is null");
         }
 
         var converterFunc = null;
-        if (format == TYPE_USHORT_4444_ARGB && transparency && !manipulation) {
+        if (format === TYPE_USHORT_4444_ARGB && transparency && !manipulation) {
             converterFunc = ARGB4444ToABGR;
         } else {
             throw $.newIllegalArgumentException("Format unsupported");
@@ -785,7 +737,7 @@ var currentlyFocusedTextEditor;
 
         tempContext.putImageData(imageData, 0, 0);
 
-        var c = graphics.context2D;
+        var c = graphics.info.getGraphicsContext();
 
         c.drawImage(tempContext.canvas, x, y);
         tempContext.canvas.width = 0;
@@ -793,177 +745,182 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(image, x, y, anchor) {
-        return renderRegion(this.context2D, image.imageData.context.canvas, 0, 0, image.width, image.height, TRANS_NONE, x, y, anchor);
+        renderRegion(this.info.getGraphicsContext(), image.imageData.contextInfo.context.canvas, 0, 0, image.width, image.height, TRANS_NONE, x, y, anchor);
+        return 1;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] = function(src, x_src, y_src, width, height, transform, x_dest, y_dest, anchor) {
-        if (!src) {
+        if (null === src) {
             throw $.newNullPointerException("src image is null");
         }
 
-        if (!renderRegion(this.context2D, src.imageData.context.canvas, x_src, y_src, width, height,
-                          transform, x_dest, y_dest, anchor)) {
-            throw $.newIllegalArgumentException();
-        }
+        renderRegion(this.info.getGraphicsContext(), src.imageData.contextInfo.context.canvas, x_src, y_src, width, height,
+                          transform, x_dest, y_dest, anchor);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawImage.(Ljavax/microedition/lcdui/Image;III)V"] = function(image, x, y, anchor) {
-        if (image == null) {
+        if (image === null) {
             throw $.newNullPointerException("image is null");
         }
 
-        if (!renderRegion(this.context2D, image.imageData.context.canvas, 0, 0, image.imageData.width, image.imageData.height, TRANS_NONE, x, y, anchor)) {
-            throw $.newIllegalArgumentException();
-        }
+        renderRegion(this.info.getGraphicsContext(), image.imageData.contextInfo.context.canvas, 0, 0, image.imageData.width, image.imageData.height, TRANS_NONE, x, y, anchor);
     };
 
-    function setClip(g, x, y, width, height) {
-        var newX1 = Math.max(0, x) & 0x7fff;
-        var newX2 = Math.min(g.maxWidth, x + width) & 0x7fff;
-        var newY1 = Math.max(0, y) & 0x7fff;
-        var newY2 = Math.min(g.maxHeight, y + height) & 0x7fff;
+    function GraphicsInfo(contextInfo) {
+        this.contextInfo = contextInfo;
+
+        // non-GC info
+        this.transX = 0;
+        this.transY = 0;
+        this.clipX1 = 0;
+        this.clipY1 = 0;
+        this.clipX2 = contextInfo.context.canvas.width;
+        this.clipY2 = contextInfo.context.canvas.height;
+
+        // GC info
+        this.currentFont = getDefaultFont();
+        this.alpha = 0xFF;
+        this.red = 0x00;
+        this.green = 0x00;
+        this.blue = 0x00;
+    }
+
+    GraphicsInfo.prototype.setFont = function(font) {
+        if (null === font) {
+            font = getDefaultFont();
+        }
+
+        if (this.currentFont !== font) {
+            this.currentFont = font;
+            if (this.contextInfo.currentlyAppliedGraphicsInfo === this) {
+                this.contextInfo.currentlyAppliedGraphicsInfo = null;
+            }
+        }
+    }
+
+    GraphicsInfo.prototype.setPixel = function(alpha, red, green, blue) {
+        if (this.alpha !== alpha || this.red !== red || this.green !== green || this.blue !== blue) {
+            this.alpha = alpha;
+            this.red = red;
+            this.green = green;
+            this.blue = blue;
+
+            if (this.contextInfo.currentlyAppliedGraphicsInfo === this) {
+                this.contextInfo.currentlyAppliedGraphicsInfo = null;
+            }
+        }
+    }
+
+    GraphicsInfo.prototype.resetGC = function() {
+        this.setFont(null);
+        this.setPixel(0xFF, 0x00, 0x00, 0x00);
+    }
+
+    GraphicsInfo.prototype.reset = function(x1, y1, x2, y2) {
+        this.resetGC();
+        this.resetNonGC(x1, y1, x2, y2);
+    }
+
+    GraphicsInfo.prototype.resetNonGC = function(x1, y1, x2, y2) {
+        this.translate(-this.transX, -this.transY);
+        this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, this.contextInfo.context.canvas.width, this.contextInfo.context.canvas.height);
+    }
+
+    GraphicsInfo.prototype.translate = function(x, y) {
+        x = x | 0;
+        y = y | 0;
+        if (x !== 0 || y !== 0) {
+            this.transX += x;
+            this.transY += y;
+
+            if (this.contextInfo.currentlyAppliedGraphicsInfo === this) {
+                this.contextInfo.currentlyAppliedGraphicsInfo = null;
+            }
+        }
+    }
+
+    GraphicsInfo.prototype.setClip = function(x, y, width, height, minX, minY, maxX, maxY) {
+        var newX1 = x + this.transX;
+        var newY1 = y + this.transY;
+        var newX2 = newX1 + width;
+        var newY2 = newY1 + height;
+
+        newX1 = Math.max(minX, newX1) & 0x7fff;
+        newY1 = Math.max(minY, newY1) & 0x7fff;
+        newX2 = Math.min(maxX, newX2) & 0x7fff;
+        newY2 = Math.min(maxY, newY2) & 0x7fff;
 
         if (width <= 0 || height <= 0 || newX2 <= newX1 || newY2 <= newY1) {
             newX1 = newY1 = newX2 = newY2 = 0;
         }
 
-        if (newX1 == g.clipX1 && newX2 == g.clipX2 && newY1 == g.clipY1 && newY2 == g.clipY2) {
+        if (this.clipX1 === newX1 && this.clipY1 === newY1 && this.clipX2 === newX2 && this.clipY2 === newY2) {
             return;
         }
 
-        // If we're expanding the clip rect, we need to restore the pre-clipped context
-        if (newX1 < g.clipX1 || newX2 > g.clipX2 || newY1 < g.clipY1 || newY2 > g.clipY2) {
-            g.context2D.restore();
-            g.context2D.translate(g.transX, g.transY);
-            g.context2D.save();
+        if (this.contextInfo.currentlyAppliedGraphicsInfo === this) {
+            this.contextInfo.currentlyAppliedGraphicsInfo = null;
         }
 
-        g.clipped = newX1 > 0 ||
-                    newY1 > 0 ||
-                    newX2 < g.maxWidth ||
-                    newY2 < g.maxHeight;
+        this.clipX1 = newX1;
+        this.clipY1 = newY1;
+        this.clipX2 = newX2;
+        this.clipY2 = newY2;
+    }
 
-        g.clipX1 = newX1;
-        g.clipX2 = newX2;
-        g.clipY1 = newY1;
-        g.clipY2 = newY2;
-
-        if (g.clipped) {
-            g.context2D.beginPath();
-            g.context2D.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
-            g.context2D.clip();
+    GraphicsInfo.prototype.getGraphicsContext = function() {
+        if (this.contextInfo.currentlyAppliedGraphicsInfo !== this) {
+            this.contextInfo.applyGraphics(this);
         }
+
+        return this.contextInfo.context;
     }
 
-    function grayVal(red, green, blue) {
-        /* CCIR Rec 601 luma (nonlinear rgb to nonlinear "gray") */
-        return (red*76 + green*150 + blue*29) >> 8;
+    function ContextInfo(ctx) {
+        this.currentlyAppliedGraphicsInfo = null;
+        this.context = ctx;
+        ctx.save();
     }
 
-    Native["javax/microedition/lcdui/Graphics.init.()V"] = function() {
-        this.maxWidth = 0;
-        this.maxHeight = 0;
-        this.transX = 0;
-        this.transY = 0;
-        this.creator = null;
-        this.rgbColor = 0;
-        this.gray = 0;
-        this.pixel = 0;
-        this.clipX1 = 0;
-        this.clipX2 = 0;
-        this.clipY1 = 0;
-        this.clipY2 = 0;
-        this.currentFont = getDefaultFont();
-        this.displayId = -1;
-        this.img = null;
-        this.style = SOLID;
-        this.clipped = false;
+    ContextInfo.prototype.applyGraphics = function(graphicsInfo) {
+        this.context.restore();
+        this.context.save();
+
+        this.context.textAlign = "left";
+
+        this.context.fillStyle = this.context.strokeStyle = util.rgbaToCSS(graphicsInfo.red, graphicsInfo.green, graphicsInfo.blue, graphicsInfo.alpha / 255);
+        this.context.font = graphicsInfo.currentFont.context.font;
+
+        this.context.beginPath();
+        this.context.rect(graphicsInfo.clipX1, graphicsInfo.clipY1, graphicsInfo.clipX2 - graphicsInfo.clipX1, graphicsInfo.clipY2 - graphicsInfo.clipY1);
+        this.context.clip();
+        this.context.translate(graphicsInfo.transX, graphicsInfo.transY);
+
+        this.currentlyAppliedGraphicsInfo = graphicsInfo;
     };
 
-    Native["javax/microedition/lcdui/Graphics.initScreen0.(III)V"] = function(displayId, w, h) {
-        this.context2D = MIDP.context2D;
+    Native["javax/microedition/lcdui/Graphics.initScreen0.(I)V"] = function(displayId) {
         this.displayId = displayId;
-        setDimensions(this, w, h);
-        resetGC(this);
+        this.info = new GraphicsInfo(screenContextInfo);
+        this.creator = null;
     };
 
-    Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;II)V"] = function(img, w, h) {
-        this.context2D = img.imageData.context;
-        this.context2D.save();
-        this.img = img;
-        setDimensions(this, w, h);
-        resetGC(this);
+    Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;)V"] = function(img) {
+        this.displayId = -1;
+        this.info = new GraphicsInfo(img.imageData.contextInfo);
+        this.creator = null;
     };
 
     function isScreenGraphics(g) {
-        return g.displayId != -1;
-    }
-
-    function resetGC(g) {
-        g.currentFont = getDefaultFont();
-        g.style       = SOLID;
-        g.rgbColor    = g.gray = 0;
-        g.pixel       = getPixel(g.rgbColor, g.gray, true);
-    }
-
-    function reset(g, x1, y1, x2, y2) {
-        resetGC(g);
-        translate(g, -g.transX, -g.transY);
-        setClip(g, x1, y1, x2 - x1, y2 - y1);
-    }
-
-    function translate(g, x, y) {
-        g.transX += x;
-        g.transY += y;
-        g.context2D.translate(x, y);
-    }
-
-    function setDimensions(g, w, h) {
-      g.maxWidth = w & 0x7fff;
-      g.maxHeight = h & 0x7fff;
-      translate(g, -g.transX, -g.transY);
-      setClip(g, 0, 0, g.maxWidth, g.maxHeight);
-    }
-
-    function clipRect(g, x, y, width, height) {
-        var newX1 = Math.max(0, x) & 0x7fff;
-        var newX2 = Math.min(g.maxWidth, x + width) & 0x7fff;
-        var newY1 = Math.max(0, y) & 0x7fff;
-        var newY2 = Math.min(g.maxHeight, y + height) & 0x7fff;
-
-        g.clipX1 = Math.max(g.clipX1, newX1) & 0x7fff;
-        g.clipY1 = Math.max(g.clipY1, newY1) & 0x7fff;
-        g.clipX2 = Math.min(g.clipX2, newX2) & 0x7fff;
-        g.clipY2 = Math.min(g.clipY2, newY2) & 0x7fff;
-
-        if (width <= 0 || height <= 0 || g.clipX2 <= g.clipX1 || g.clipY2 <= g.clipY1) {
-            g.clipX1 = g.clipY1 = g.clipX2 = g.clipY2 = 0;
-        }
-
-        g.clipped = g.clipX1 > 0 ||
-                    g.clipY1 > 0 ||
-                    g.clipX2 < g.maxWidth ||
-                    g.clipY2 < g.maxHeight;
-
-        if (g.clipped) {
-            g.context2D.beginPath();
-            g.context2D.rect(g.clipX1, g.clipY1, g.clipX2 - g.clipX1, g.clipY2 - g.clipY1);
-            g.context2D.clip();
-        }
+        return g.displayId !== -1;
     }
 
     Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
-        setClip(this, x, y, w, h);
+        this.info.setClip(x, y, w, h, 0, 0, this.info.contextInfo.context.canvas.width, this.info.contextInfo.context.canvas.height);
     };
 
-    function drawString(g, str, x, y, anchor, isOpaque) {
-        var c = g.context2D;
-
-        if (isOpaque) {
-            withOpaquePixel(g, c);
-        } else {
-            withPixel(g, c);
-        }
+    function drawString(g, str, x, y, anchor) {
+        var c = g.info.getGraphicsContext();
 
         var finalText;
         if (!emoji.regEx.test(str)) {
@@ -971,7 +928,7 @@ var currentlyFocusedTextEditor;
             finalText = str;
         } else {
             // Emojis are present. Handle all the text up to the last emoji.
-            var font = g.currentFont;
+            var font = g.info.currentFont;
             var match;
             var lastIndex = 0;
             emoji.regEx.lastIndex = 0;
@@ -980,14 +937,12 @@ var currentlyFocusedTextEditor;
                 var match0 = match[0];
                 lastIndex = match.index + match0.length;
 
-                withTextAnchor(g, c, anchor, x, y, text);
-                var textX = withTextAnchorRet[0]
-                var textY = withTextAnchorRet[1];
+                var textX = withTextAnchor(c, g.info.currentFont, anchor, x, text);
 
-                c.fillText(text, textX, textY);
+                c.fillText(text, textX, y);
 
                 // Calculate the string width.
-                x += measureWidth(c, text);
+                x += c.measureText(text).width | 0;
 
                 var emojiData = emoji.getData(match0, font.size);
                 c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, font.size, font.size);
@@ -999,45 +954,36 @@ var currentlyFocusedTextEditor;
         // Now handle all the text after the final emoji. If there were no
         // emojis present, this is the entire string.
         if (finalText) {
-            withTextAnchor(g, c, anchor, x, y, finalText);
-            var textX = withTextAnchorRet[0];
-            var textY = withTextAnchorRet[1];
-
-            c.fillText(finalText, textX, textY);
+            var textX = withTextAnchor(c, g.info.currentFont, anchor, x, finalText);
+            c.fillText(finalText, textX, y);
         }
     }
 
     Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
-        drawString(this, J2ME.fromJavaString(str), x, y, anchor, true);
+        drawString(this, J2ME.fromJavaString(str), x, y, anchor);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V"] = 
     function(str, offset, len, x, y, anchor) {
-        drawString(this, J2ME.fromJavaString(str).substr(offset, len), x, y, anchor, false);
+        drawString(this, J2ME.fromJavaString(str).substr(offset, len), x, y, anchor);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(data, offset, len, x, y, anchor) {
-        drawString(this, util.fromJavaChars(data, offset, len), x, y, anchor, false);
+        drawString(this, util.fromJavaChars(data, offset, len), x, y, anchor);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(jChr, x, y, anchor) {
         var chr = String.fromCharCode(jChr);
 
-        var c = this.context2D;
+        var c = this.info.getGraphicsContext();
 
-        withTextAnchor(this, c, anchor, x, y, chr);
-        x = withTextAnchorRet[0];
-        y = withTextAnchorRet[1];
-
-        withPixel(this, c);
+        x = withTextAnchor(c, this.info.currentFont, anchor, x, chr);
 
         c.fillText(chr, x, y);
     };
 
     Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(x1, y1, x2, y2, x3, y3) {
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = this.info.getGraphicsContext();
 
         var dx1 = (x2 - x1) || 1;
         var dy1 = (y2 - y1) || 1;
@@ -1057,9 +1003,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = this.info.getGraphicsContext();
 
         w = w || 1;
         h = h || 1;
@@ -1072,9 +1016,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = this.info.getGraphicsContext();
 
         w = w || 1;
         h = h || 1;
@@ -1089,9 +1031,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = this.info.getGraphicsContext();
 
         w = w || 1;
         h = h || 1;
@@ -1104,9 +1044,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = this.info.getGraphicsContext();
 
         w = w || 1;
         h = h || 1;
@@ -1121,9 +1059,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = this.info.getGraphicsContext();
 
         var endRad = -startAngle * 0.0175;
         var startRad = endRad - arcAngle * 0.0175;
@@ -1137,9 +1073,7 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var c = this.context2D;
-
-        withPixel(this, c);
+        var c = this.info.getGraphicsContext();
 
         var endRad = -startAngle * 0.0175;
         var startRad = endRad - arcAngle * 0.0175;
@@ -1180,14 +1114,14 @@ var currentlyFocusedTextEditor;
 
         // Make `absX` and `absY` the top-left coordinates where we will
         // place the image in absolute coordinates
-        if (0 != (anchor & HCENTER)) {
+        if (0 !== (anchor & HCENTER)) {
             absX -= ((w >>> 1) | 0);
-        } else if (0 != (anchor & RIGHT)) {
+        } else if (0 !== (anchor & RIGHT)) {
             absX -= w;
         }
-        if (0 != (anchor & VCENTER)) {
+        if (0 !== (anchor & VCENTER)) {
             absY -= ((h >>> 1) | 0);
-        } else if (0 != (anchor & BOTTOM)) {
+        } else if (0 !== (anchor & BOTTOM)) {
             absY -= h;
         }
 
@@ -1265,27 +1199,32 @@ var currentlyFocusedTextEditor;
                 dstContext.rotate(Math.PI / 2);
                 break;
         }
-
-        return 1;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
-        var c = this.context2D;
+        var c = this.info.getGraphicsContext();
 
-        withPixel(this, c);
-
-        var dx = (x2 - x1);
-        var dy = (y2 - y1);
-        if (dx === 0) {
-            x1 += .5;
+        // If we're drawing a completely vertical line that is
+        // 1 pixel thick, we should draw it at half-pixel offsets.
+        // Otherwise, half of the line's thickness lies to the left
+        // of the pixel and half to the right.
+        if (x1 === x2) {
+            x1 += 0.5;
+            x2 += 0.5;
         }
-        if (dy === 0) {
-            y1 += .5;
+
+        // If we're drawing a completely horizontal line that is
+        // 1 pixel thick, we should draw it at half-pixel offsets.
+        // Otherwise, half of the line's thickness lies above
+        // the pixel and half below.
+        if (y1 === y2) {
+            y1 += 0.5;
+            y2 += 0.5;
         }
 
         c.beginPath();
         c.moveTo(x1, y1);
-        c.lineTo(x1 + dx, y1 + dy);
+        c.lineTo(x2, y2);
         c.stroke();
         c.closePath();
     };
@@ -1297,12 +1236,15 @@ var currentlyFocusedTextEditor;
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
-        var converterFunc = processAlpha ? ARGBToABGR : ARGBTo1BGR;
-        converterFunc(rgbData, abgrData, width, height, offset, scanlength);
+        if (1 === processAlpha) {
+            ARGBToABGR(rgbData, abgrData, width, height, offset, scanlength);
+        } else {
+            ARGBTo1BGR(rgbData, abgrData, width, height, offset, scanlength);
+        }
 
         tempContext.putImageData(imageData, 0, 0);
 
-        var c = this.context2D;
+        var c = this.info.getGraphicsContext();
 
         c.drawImage(tempContext.canvas, x, y);
         tempContext.canvas.width = 0;
@@ -1323,7 +1265,7 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/TextEditor.init.(Ljava/lang/String;IIII)V"] =
     function(text, maxSize, constraints, width, height) {
-        if (constraints != 0) {
+        if (constraints !== 0) {
             console.warn("TextEditor.constraints not implemented");
         }
 
@@ -1425,10 +1367,10 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(shouldFocus) {
         var promise;
-        if (shouldFocus && (currentlyFocusedTextEditor != this.textEditor)) {
+        if (shouldFocus && (currentlyFocusedTextEditor !== this.textEditor)) {
             promise = this.textEditor.focus();
             currentlyFocusedTextEditor = this.textEditor;
-        } else if (!shouldFocus && (currentlyFocusedTextEditor == this.textEditor)) {
+        } else if (!shouldFocus && (currentlyFocusedTextEditor === this.textEditor)) {
             promise = this.textEditor.blur();
             currentlyFocusedTextEditor = null;
         } else {
@@ -1438,7 +1380,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.hasFocus.()Z"] = function() {
-        return (this.textEditor == currentlyFocusedTextEditor) ? 1 : 0;
+        return (this.textEditor === currentlyFocusedTextEditor) ? 1 : 0;
     };
 
     Native["com/nokia/mid/ui/TextEditor.setCaret.(I)V"] = function(index) {
@@ -1613,11 +1555,11 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I"] =
     function(ownerId, label, layout, interactive, maxValue, initialValue) {
-        if (label != null) {
+        if (label !== null) {
             console.error("Expected null label");
         }
 
-        if (layout != PLAIN) {
+        if (layout !== PLAIN) {
             console.error("Expected PLAIN layout");
         }
 
@@ -1625,11 +1567,11 @@ var currentlyFocusedTextEditor;
             console.error("Expected not interactive gauge");
         }
 
-        if (maxValue != INDEFINITE) {
+        if (maxValue !== INDEFINITE) {
             console.error("Expected INDEFINITE maxValue");
         }
 
-        if (initialValue != CONTINUOUS_RUNNING) {
+        if (initialValue !== CONTINUOUS_RUNNING) {
             console.error("Expected CONTINUOUS_RUNNING initialValue")
         }
 
@@ -1696,7 +1638,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/NativeMenu.updateCommands.([Ljavax/microedition/lcdui/Command;I[Ljavax/microedition/lcdui/Command;I)V"] =
     function(itemCommands, numItemCommands, commands, numCommands) {
-        if (numItemCommands != 0) {
+        if (numItemCommands !== 0) {
             console.error("NativeMenu.updateCommands: item commands not yet supported");
         }
 
@@ -1731,10 +1673,10 @@ var currentlyFocusedTextEditor;
                 button.textContent = J2ME.fromJavaString(command.shortLabel);
 
                 var commandType = command.commandType;
-                if (numCommands == 1 || commandType == OK) {
+                if (numCommands === 1 || commandType === OK) {
                     button.classList.add('recommend');
                     button.classList.remove('cancel');
-                } else if (commandType == CANCEL || commandType == BACK || commandType == STOP) {
+                } else if (commandType === CANCEL || commandType === BACK || commandType === STOP) {
                     button.classList.add('cancel');
                     button.classList.remove('recommend');
                 }
@@ -1754,12 +1696,12 @@ var currentlyFocusedTextEditor;
             validCommands.forEach(function(command) {
                 var commandType = command.commandType;
                 // Skip the OK command which will shown in the header.
-                if (commandType == OK) {
+                if (commandType === OK) {
                     okCommand = command;
                     return;
                 }
                 // Skip the BACK command which will shown in the footer.
-                if (commandType == BACK) {
+                if (commandType === BACK) {
                     backCommand = command;
                     return;
                 }

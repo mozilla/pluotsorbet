@@ -11,12 +11,9 @@ public class DirectUtils {
     }
 
     public static Image createImage(int width, int height, int argb) {
-        // There's room for optimization here, we're creating an image
-        // filling it with a blank rect (because Image::createImage(int width, int height)
-        // calls ImageDataFactory::createOffScreenImageData(int width, int height), that
-        // in turn calls ImageDataFactory::createMutableImageData(ImageData data, int width, int height)).
-        // In the setPixels native we're ditching the canvas created in createMutableImageData and
-        // we're creating a new canvas.
+        // Image::createImage(int width, int height)
+        // in turn calls
+        // ImageDataFactory::createMutableImageData(ImageData data, int width, int height)
         Image image = Image.createImage(width, height);
         setPixels(image, argb);
         return image;
