@@ -996,6 +996,8 @@ MIDP.LocalMsgConnections["nokia.sa.service-registry"] = NokiaSASrvRegLocalMsgCon
 MIDP.LocalMsgConnections["nokia.active-standby"] = NokiaActiveStandbyLocalMsgConnection;
 MIDP.LocalMsgConnections["nokia.product-info"] = NokiaProductInfoLocalMsgConnection;
 
+var localmsgServerWait = null;
+
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(jName) {
     var name = J2ME.fromJavaString(jName);
 
@@ -1006,18 +1008,25 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
             // It seems that one server only serves on client at a time, let's
             // store an object instead of the constructor.
             this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
-            localmsgServerCreated = true;
             if (localmsgServerWait) {
               localmsgServerWait();
             }
         } else {
-            // Actually, there should always be a server, but we need this check
-            // for apps that use the Nokia built-in servers (because we haven't
-            // implemented them yet).
             if (!MIDP.LocalMsgConnections[this.protocolName]) {
-                console.error("localmsg server (" + this.protocolName + ") unimplemented");
-                // Return without resolving the promise, we want the thread that is connecting
-                // to this unimplemented server to stop indefinitely.
+                if (this.protocolName.startsWith("nokia")) {
+                    console.error("localmsg server (" + this.protocolName + ") unimplemented");
+                    // Return without resolving the promise, we want the thread that is connecting
+                    // to this unimplemented server to stop indefinitely.
+                    return;
+                }
+
+                localmsgServerWait = function() {
+                    localmsgServerWait = null;
+                    this.connection = MIDP.LocalMsgConnections[this.protocolName];
+                    this.connection.notifyConnection();
+                    resolve();
+                }.bind(this);
+
                 return;
             }
 

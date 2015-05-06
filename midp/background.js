@@ -82,9 +82,6 @@ Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"]
   });
 };
 
-var localmsgServerCreated = false;
-var localmsgServerWait = null;
-
 Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
   asyncImpl("V", new Promise(function(resolve, reject) {
     // If the page is visible, just start the FG MIDlet
@@ -103,15 +100,6 @@ Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
   }).then(function() {
     showSplashScreen();
     hideBackgroundScreen();
-
-    return new Promise(function(resolve, reject) {
-      if (localmsgServerCreated) {
-        resolve();
-        return;
-      }
-
-      localmsgServerWait = resolve;
-    });
   }));
 };
 
