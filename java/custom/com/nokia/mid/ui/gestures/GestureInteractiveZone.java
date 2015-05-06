@@ -13,17 +13,29 @@ public class GestureInteractiveZone {
     public static final int GESTURE_RECOGNITION_END = 0x8000;
     public static final int GESTURE_ALL = 0xC0FF;
 
-    native void init(int gestures);
+    int gestures;
+    int x;
+    int y;
+    int endX;
+    int endY;
+    boolean rectSet = false;
 
     public GestureInteractiveZone(int gestures) throws IllegalArgumentException {
-        init(gestures);
+        this.gestures = gestures;
     }
 
     public GestureInteractiveZone(int gestures, int timeInterval) throws IllegalArgumentException {
         throw new RuntimeException("GestureInteractiveZone(II) not implemented (" + gestures + ", " + timeInterval + ")");
     }
 
-    native public void setRectangle(int x, int y, int width, int height) throws IllegalArgumentException;
+    public void setRectangle(int x, int y, int width, int height) throws IllegalArgumentException {
+        this.x = x;
+        this.y = y;
+        this.endX = x + width;
+        this.endY = y + height;
+        this.rectSet = true;
+    }
+
     native public void setLongPressTimeInterval(int timeInterval) throws IllegalArgumentException;
     native public int getGestures();
     native public void setGestures(int gestures);
@@ -33,6 +45,14 @@ public class GestureInteractiveZone {
     native public int getHeight();
     native public int getLongPressTimeInterval();
     native public static boolean isSupported(int gestureEventIdentity);
-    native public boolean contains(int x, int y);
-    native public boolean supports(int type);
+
+    public boolean contains(int x, int y) {
+        return !rectSet ||
+               (x >= this.x && x <= this.endX &&
+                y >= this.y && y <= this.endY);
+    }
+
+    public boolean supports(int type) {
+        return (type & gestures) == type;
+    }
 }
