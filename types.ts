@@ -1,6 +1,6 @@
 module J2ME {
   import assert = Debug.assert;
-
+  import Bytecodes = Bytecode.Bytecodes;
 
   var writer = new IndentingWriter();
 
@@ -35,6 +35,22 @@ module J2ME {
     Kind.Long
   ];
 
+  export function returnKind(op: Bytecodes): Kind {
+    switch (op) {
+      case Bytecodes.LRETURN:
+        return Kind.Long;
+      case Bytecodes.DRETURN:
+        return Kind.Double;
+      case Bytecodes.IRETURN:
+        return Kind.Int;
+      case Bytecodes.FRETURN:
+        return Kind.Float;
+      case Bytecodes.ARETURN:
+        return Kind.Reference;
+      case Bytecodes.RETURN:
+        return Kind.Void;
+    }
+  }
   export function stackKind(kind: Kind): Kind {
     switch (kind) {
       case Kind.Boolean: return Kind.Int;

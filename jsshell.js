@@ -110,7 +110,7 @@ try {
   if (profileTimeline) {
     load("bld/shumway.js");
   }
-  load("libs/relooper.js", "bld/j2me.js","libs/zipfile.js", "blackBox.js",
+  load("libs/relooper.js", "libs/native.js", "bld/j2me.js","libs/zipfile.js", "blackBox.js",
     "libs/encoding.js", "util.js", "libs/jarstore.js",
     "native.js", "string.js",
     "midp/midp.js", "midp/gestures.js",
@@ -143,7 +143,7 @@ try {
   var start = dateNow();
   var jvm = new JVM();
 
-  J2ME.writers = J2ME.WriterFlags.All;
+  J2ME.writers = J2ME.WriterFlags.None;
   J2ME.enableRuntimeCompilation = false;
 
   start = dateNow();

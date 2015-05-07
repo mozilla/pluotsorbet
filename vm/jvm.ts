@@ -44,8 +44,6 @@ module J2ME {
       //]);
       //
 
-      traceWriter.writeLn("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-
       ctx.nativeThread.pushFrame(null);
       ctx.nativeThread.pushFrame(isolateClassInfo.getMethodByNameString("start", "()V"));
       ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
@@ -54,7 +52,7 @@ module J2ME {
       ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
       ctx.nativeThread.frame.setParameter(Kind.Reference, 1, J2ME.newString(className.replace(/\./g, "/")));
       ctx.nativeThread.frame.setParameter(Kind.Reference, 2, array);
-      ctx.nativeThread.run();
+      ctx.execute();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 
@@ -81,6 +79,11 @@ module J2ME {
       for (var n = 0; n < mainArgs.length; ++n) {
         args[n] = mainArgs[n];
       }
+
+      ctx.nativeThread.pushFrame(null);
+      ctx.nativeThread.pushFrame(entryPoint);
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, args);
+      ctx.execute();
 
       Debug.assert(false, "REDUX");
       //var frames = [Frame.create(entryPoint, [ args ])];

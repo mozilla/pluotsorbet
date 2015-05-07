@@ -1360,10 +1360,11 @@ module J2ME {
           if (methodInfo.isNative) {
             // A fake frame that just returns is pushed so when the ctx resumes from the unwind
             // the frame will be popped triggering a leaveMethodTimeline.
-            var fauxFrame = Frame.create(null, []);
-            fauxFrame.methodInfo = methodInfo;
-            fauxFrame.code = code;
-            ctx.bailoutFrames.unshift(fauxFrame);
+            //REDUX
+            //var fauxFrame = Frame.create(null, []);
+            //fauxFrame.methodInfo = methodInfo;
+            //fauxFrame.code = code;
+            //ctx.bailoutFrames.unshift(fauxFrame);
           }
         } else {
           ctx.leaveMethodTimeline(key, methodType);
@@ -1378,7 +1379,7 @@ module J2ME {
 
   function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
     var wrapper = function() {
-      jsGlobal.getBacktrace && traceWriter.writeLn(jsGlobal.getBacktrace());
+      // jsGlobal.getBacktrace && traceWriter.writeLn(jsGlobal.getBacktrace());
       var args = Array.prototype.slice.apply(arguments);
       traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
       var s = performance.now();
@@ -2126,7 +2127,8 @@ var B7 = J2ME.throwUnwind7;
 /**
  * OSR Frame.
  */
-var O: J2ME.Frame = null;
+// REDUX
+var O = null;
 
 /**
  * Runtime exports for compiled code.

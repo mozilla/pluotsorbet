@@ -234,7 +234,11 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
+
+libs/native.js: vm/native/Makefile vm/native/native.cpp
+	make -C vm/native/
+
+bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) libs/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 ifeq ($(RELEASE),1)

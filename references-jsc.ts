@@ -14,7 +14,6 @@
 ///<reference path='bindings.ts' />
 ///<reference path='int.ts' />
 ///<reference path='vm/runtime.ts' />
-///<reference path='interpreter.ts' />
 ///<reference path='vm/context.ts' />
 
 // JIT
