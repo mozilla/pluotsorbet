@@ -60,6 +60,7 @@ class MIDletTunnelImpl implements MIDletTunnel {
     public void callStartApp(MIDlet m) 
         throws MIDletStateChangeException {
         BGUtils.maybeWaitUserInteraction(m.getClass().getName());
+        System.out.println("Starting: " + m.getClass().getName());
         m.startApp();
     }
 
