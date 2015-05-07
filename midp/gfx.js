@@ -124,7 +124,7 @@ var currentlyFocusedTextEditor;
         if (ctxs.length > 0) {
             var ctx = ctxs.pop();
             window.requestAnimationFrame(gotNewFrame);
-            ctx.execute();
+            J2ME.Scheduler.enqueue(ctx, true);
         } else {
             hasNewFrame = true;
         }
@@ -403,7 +403,10 @@ var currentlyFocusedTextEditor;
             var classInfo = CLASSES.loadAndLinkClass("javax/microedition/lcdui/Font");
             defaultFont = new classInfo.klass();
             var methodInfo = classInfo.getMethodByNameString("<init>", "(III)V", false);
+            J2ME.preemptionLockLevel++;
             J2ME.getLinkedMethod(methodInfo).call(defaultFont, 0, 0, 0);
+            release || J2ME.Debug.assert(!U, "Unexpected unwind during createException.");
+            J2ME.preemptionLockLevel--;
         }
         return defaultFont;
     }
