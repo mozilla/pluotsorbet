@@ -168,14 +168,14 @@ button {
 #gamepad #down { left: 75px; bottom: 0px; }
 #gamepad #left { left: 25px; bottom: 20px; }
 #gamepad #right { left: 125px; bottom: 20px; }
-#gamepad #fire { left: 250px; bottom: 20px; }
+#gamepad #fire { left: 175px; bottom: 20px; }
 
-.gamepad body > #gamepad {
+.gamepad #display > #gamepad {
   display: block;
   z-index: 102;
 }
 
-.gamepad body > #gamepad button {
+.gamepad #display > #gamepad button {
   display: block;
 }
 
