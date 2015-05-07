@@ -203,10 +203,6 @@ var MIDP = (function() {
     return bytes;
   };
 
-  if (config.gamepad && !/no|0/.test(config.gamepad)) {
-    document.documentElement.classList.add('gamepad');
-  }
-
   var verticalChrome;
   var horizontalChrome;
   var physicalScreenWidth;
