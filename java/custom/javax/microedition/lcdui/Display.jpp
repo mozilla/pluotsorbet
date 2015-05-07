@@ -2096,6 +2096,9 @@ public class Display {
      * @return <code>true</code>, if sound was played.
      */
     boolean playAlertSound(AlertType t) {
+        // We've removed the code to play tones when
+        // alerts are shown because they are annoying
+        // and out of place in our interface.
         return false;
     }
 
