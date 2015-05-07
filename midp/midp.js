@@ -125,6 +125,7 @@ var MIDP = (function() {
   };
 
   // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
+  var loadingMIDletPromisesResolved = false;
   Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
     // See DisplayContainer::createDisplayId, called by the LCDUIEnvironment constructor,
     // called by CldcMIDletSuiteLoader::createSuiteEnvironment.
@@ -132,6 +133,12 @@ var MIDP = (function() {
     // the same isolate that calls vmBeginStartUp. So this is a good place to calculate
     // the display ID.
     displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
+
+    if (loadingMIDletPromisesResolved) {
+      return;
+    }
+
+    loadingMIDletPromisesResolved = true;
 
     asyncImpl("V", Promise.all(loadingMIDletPromises));
   };
