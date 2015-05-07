@@ -35,18 +35,47 @@ var MIDP = (function() {
       sendNativeEvent(e, isolateId);
     }
 
+    function isFGDisplay(d) {
+      return isValid && displayId === d;
+    }
+
+    function isFullscreen() {
+      return isValid && FullscreenInfo.isFullscreen(displayId);
+    }
+
     return {
       reset: reset,
       set: set,
       sendNativeEventToForeground: sendNativeEventToForeground,
+      isFullscreen: isFullscreen,
+      isFGDisplay: isFGDisplay,
     }
   })();
 
-  var isFullScreen = true;
-  function setFullScreen(isFS) {
-    isFullScreen = isFS;
-    updateCanvas();
-  };
+  var FullscreenInfo = (function() {
+    var map = new Map();
+
+    function set(id, isFullscreen) {
+      var oldVal = map.get(id);
+      if (oldVal === isFullscreen) {
+        return;
+      }
+
+      map.set(id, isFullscreen);
+      if (FG.isFGDisplay(id)) {
+        updateCanvas();
+      }
+    }
+
+    function isFullscreen(id) {
+      return map.get(id) || 0;
+    }
+
+    return {
+      set: set,
+      isFullscreen: isFullscreen,
+    }
+  })();
 
   function updatePhysicalScreenSize() {
     if (!config.autosize || /no|0/.test(config.autosize)) {
@@ -58,9 +87,10 @@ var MIDP = (function() {
   function updateCanvas() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
+    var isFullscreen = FG.isFullscreen();
     sidebar.style.display = header.style.display =
-        isFullScreen ? "none" : "block";
-    var headerHeight = isFullScreen ? 0 : header.offsetHeight;
+        isFullscreen ? "none" : "block";
+    var headerHeight = isFullscreen ? 0 : header.offsetHeight;
     var newHeight = physicalScreenHeight - headerHeight;
     var newWidth = physicalScreenWidth;
 
@@ -92,6 +122,10 @@ var MIDP = (function() {
   };
 
   var manifest = {};
+
+  Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
+    FullscreenInfo.set(displayId, mode);
+  };
 
   Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(severity, channelID, message) {
     console.info(J2ME.fromJavaString(message));
@@ -1213,7 +1247,6 @@ var MIDP = (function() {
 
   return {
     isVKVisible: isVKVisible,
-    setFullScreen: setFullScreen,
     manifest: manifest,
     sendCommandEvent: sendCommandEvent,
     sendVirtualKeyboardEvent: sendVirtualKeyboardEvent,

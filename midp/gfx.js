@@ -15,25 +15,6 @@ var currentlyFocusedTextEditor;
     tempContext.canvas.width = 0;
     tempContext.canvas.height = 0;
 
-    var NativeDisplay = function() {
-        this.fullScreen = 1;
-    };
-
-    var NativeDisplays = {
-        get: function(id) {
-            var d = this._map.get(id);
-            if (!d) {
-                d = new NativeDisplay();
-                this._map.set(id, d);
-            }
-            return d;
-        },
-
-        _map: new Map(),
-
-        foreground: -1
-    };
-
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = J2ME.newIntArray( 1);
         ids[0] = 1;
@@ -85,20 +66,9 @@ var currentlyFocusedTextEditor;
         console.warn("DisplayDevice.displayStateChanged0.(II)V not implemented (" + hardwareId + ", " + state + ")");
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
-        var d = NativeDisplays.get(displayId);
-        d.fullScreen = mode;
-        if (NativeDisplays.foreground === displayId) {
-            MIDP.setFullScreen(mode);
-        }
-    };
-
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
         hideBackgroundScreen();
         hideSplashScreen();
-        var d = NativeDisplays.get(displayId);
-        NativeDisplays.foreground = displayId;
-        MIDP.setFullScreen(d.fullScreen);
 
         asyncImpl("V", emoji.loadData());
 
