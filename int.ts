@@ -790,24 +790,23 @@ module J2ME {
           //          checkArrayStore(array, value);
           //          array[index] = value;
           //          break;
-          //        case Bytecodes.POP:
-          //          stack.pop();
-          //          break;
-          //        case Bytecodes.POP2:
-          //          stack.pop2();
-          //          break;
+          case Bytecodes.POP:
+            --sp;
+            break;
+          case Bytecodes.POP2:
+            sp -= 2;
+            break;
           case Bytecodes.DUP:
             ref[sp] = ref[sp - 1];
             i32[sp] = i32[sp - 1];
             sp++;
             break;
-          //        case Bytecodes.DUP_X1:
-          //          a = stack.pop();
-          //          b = stack.pop();
-          //          stack.push(a);
-          //          stack.push(b);
-          //          stack.push(a);
-          //          break;
+          case Bytecodes.DUP_X1:
+            i32[sp    ] = i32[sp - 1];  ref[sp    ] = ref[sp - 1];
+            i32[sp - 1] = i32[sp - 2];  ref[sp - 1] = ref[sp - 2];
+            i32[sp - 2] = i32[sp];      ref[sp - 2] = ref[sp];
+            sp++;
+            break;
           //        case Bytecodes.DUP_X2:
           //          a = stack.pop();
           //          b = stack.pop();
@@ -892,9 +891,9 @@ module J2ME {
           case Bytecodes.IMUL:
             i32[sp - 2] = Math.imul(i32[sp - 2], i32[sp - 1]) | 0; sp--;
             break;
-          //        case Bytecodes.LMUL:
-          //          stack.push2(stack.pop2().multiply(stack.pop2()));
-          //          break;
+          case Bytecodes.LMUL:
+            ASM._lMul((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
+            break;
           //        case Bytecodes.FMUL:
           //          stack.push(Math.fround(stack.pop() * stack.pop()));
           //          break;
@@ -907,12 +906,12 @@ module J2ME {
           //          checkDivideByZero(b);
           //          stack.push((a === Constants.INT_MIN && b === -1) ? a : ((a / b) | 0));
           //          break;
-          //        case Bytecodes.LDIV:
-          //          b = stack.pop2();
-          //          a = stack.pop2();
-          //          checkDivideByZeroLong(b);
-          //          stack.push2(a.div(b));
-          //          break;
+          case Bytecodes.LDIV:
+            if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
+              throwArithmeticException();
+            }
+            ASM._lDiv((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
+            break;
           //        case Bytecodes.FDIV:
           //          b = stack.pop();
           //          a = stack.pop();
@@ -929,12 +928,12 @@ module J2ME {
           //          checkDivideByZero(b);
           //          stack.push(a % b);
           //          break;
-          //        case Bytecodes.LREM:
-          //          b = stack.pop2();
-          //          a = stack.pop2();
-          //          checkDivideByZeroLong(b);
-          //          stack.push2(a.modulo(b));
-          //          break;
+          case Bytecodes.LREM:
+            if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
+              throwArithmeticException();
+            }
+            ASM._lRem((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
+            break;
           //        case Bytecodes.FREM:
           //          b = stack.pop();
           //          a = stack.pop();
@@ -962,31 +961,25 @@ module J2ME {
             ia = i32[--sp];
             i32[sp++] = ia << ib;
             break;
-          //        case Bytecodes.LSHL:
-          //          b = stack.pop();
-          //          a = stack.pop2();
-          //          stack.push2(a.shiftLeft(b));
-          //          break;
+          case Bytecodes.LSHL:
+            ASM._lShl(sp - 3 >> 2, sp - 3 >> 2, i32[sp - 1]); sp -= 1;
+            break;
           case Bytecodes.ISHR:
             ib = i32[--sp];
             ia = i32[--sp];
             i32[sp++] = ia >> ib;
             break;
-          //        case Bytecodes.LSHR:
-          //          b = stack.pop();
-          //          a = stack.pop2();
-          //          stack.push2(a.shiftRight(b));
-          //          break;
+          case Bytecodes.LSHR:
+            ASM._lShr(sp - 3 >> 2, sp - 3 >> 2, i32[sp - 1]); sp -= 1;
+            break;
           case Bytecodes.IUSHR:
             ib = i32[--sp];
             ia = i32[--sp];
             i32[sp++] = ia >>> ib;
             break;
-          //        case Bytecodes.LUSHR:
-          //          b = stack.pop();
-          //          a = stack.pop2();
-          //          stack.push2(a.shiftRightUnsigned(b));
-          //          break;
+          case Bytecodes.LUSHR:
+            ASM._lUshr(sp - 3 >> 2, sp - 3 >> 2, i32[sp - 1]); sp -= 1;
+            break;
           case Bytecodes.IAND:
             i32[sp - 2] &= i32[--sp];
             break;
@@ -1191,9 +1184,9 @@ module J2ME {
           //        case Bytecodes.I2D:
           //          stack.push2(stack.pop());
           //          break;
-          //        case Bytecodes.L2I:
-          //          stack.push(stack.pop2().toInt());
-          //          break;
+          case Bytecodes.L2I:
+            sp--;
+            break;
           //        case Bytecodes.L2F:
           //          stack.push(Math.fround(stack.pop2().toNumber()));
           //          break;

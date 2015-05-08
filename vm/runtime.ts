@@ -7,11 +7,6 @@ var $: J2ME.Runtime; // The currently-executing runtime.
 
 var tempReturn0 = 0;
 
-function returnLong(l: number, h: number) {
-  tempReturn0 = h;
-  return l;
-}
-
 interface Math {
   fround(value: number): number;
 }
@@ -47,6 +42,12 @@ declare var throwPause;
 declare var throwYield;
 
 module J2ME {
+
+  export function returnLong(l: number, h: number) {
+    tempReturn0 = h;
+    return l;
+  }
+
   declare var Native, config;
   declare var VM;
   declare var CompiledMethodCache;
