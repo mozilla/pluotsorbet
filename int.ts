@@ -2,24 +2,16 @@ module J2ME {
 
   declare var ASM;
 
-
   import assert = Debug.assert;
   import Bytecodes = Bytecode.Bytecodes;
-  var heapSize = 1024 * 1024;
-  var buffer = new ArrayBuffer(heapSize * 4);
   import toHEX = IntegerUtilities.toHEX;
-  var i4: Int32Array = new Int32Array(buffer);
-  var u4: Uint32Array = new Uint32Array(buffer);
-  var f4: Float32Array = new Float32Array(buffer);
-  var o4 = ArrayUtilities.makeDenseArray(heapSize, null);
 
-  var sbrk: number = 0;
+  var buffer = ASM.buffer;
 
-  function malloc(size: number) {
-    var address = sbrk;
-    sbrk += size;
-    return address;
-  }
+  var i32: Int32Array = ASM.HEAP32;
+  var u32: Uint32Array = ASM.HEAPU32;
+  var f32: Float32Array = ASM.HEAPF32;
+  var ref = ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
 
   function toName(o) {
     if (o instanceof MethodInfo) {
@@ -33,6 +25,18 @@ module J2ME {
     }
     return o ? ("[" + fromUTF8(o.klass.classInfo.utf8Name) + "]") : "null";
   }
+
+  /**
+   * The number of opcodes executed thus far.
+   */
+  export var bytecodeCount = 0;
+
+  /**
+   * The number of times the interpreter method was called thus far.
+   */
+  export var interpreterCount = 0;
+
+  export var onStackReplacementCount = 0;
 
   /*
    *             +--------------------------------+
@@ -83,7 +87,7 @@ module J2ME {
       this.pc = pc;
 
       if (!release) {
-        var callee = o4[this.fp + FrameLayout.CalleeMethodInfoOffset];
+        var callee = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
         assert(
           callee === null ||
           callee instanceof MethodInfo,
@@ -95,10 +99,10 @@ module J2ME {
     setParameter(kind: Kind, i: number, v: any) {
       switch (kind) {
         case Kind.Reference:
-          o4[this.fp + this.parameterOffset + i] = v;
+          ref[this.fp + this.parameterOffset + i] = v;
           break;
         case Kind.Int:
-          i4[this.fp + this.parameterOffset + i] = v;
+          i32[this.fp + this.parameterOffset + i] = v;
           break;
         default:
           Debug.assert(false);
@@ -107,15 +111,15 @@ module J2ME {
 
     setParameterO4(v: Object, i: number) {
       // traceWriter.writeLn("Set Parameter: " + i + ", from: " + toHEX(fp + this.parameterOffset + i));
-      o4[this.fp + this.parameterOffset + i] = v;
+      ref[this.fp + this.parameterOffset + i] = v;
     }
 
     get methodInfo(): MethodInfo {
-      return o4[this.fp + FrameLayout.CalleeMethodInfoOffset];
+      return ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
     }
 
     set methodInfo(methodInfo: MethodInfo) {
-      o4[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo;
+      ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo;
     }
 
     get parameterOffset() {
@@ -132,9 +136,9 @@ module J2ME {
       var pc = this.pc;
       while (this.fp > FrameLayout.CallerSaveSize) {
         writer.writeLn((this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
-        this.set(i4[this.fp + FrameLayout.CallerFPOffset],
+        this.set(i32[this.fp + FrameLayout.CallerFPOffset],
                  this.fp + this.parameterOffset,
-                 i4[this.fp + FrameLayout.CallerRAOffset]);
+                 i32[this.fp + FrameLayout.CallerRAOffset]);
 
       }
       this.fp = fp;
@@ -171,9 +175,9 @@ module J2ME {
         } else if (i >= this.fp + this.parameterOffset) {
           prefix = "L" + (i - (this.fp + this.parameterOffset)) + ": ";
         }
-        writer.writeLn(" " + prefix + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i)  + ": " +
-          String(i4[i]).padLeft(' ', 10) + " " +
-          toName(o4[i]));
+        writer.writeLn(" " + prefix + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2)  + ": " +
+          String(i32[i]).padLeft(' ', 10) + " " +
+          toName(ref[i]));
       }
     }
   }
@@ -213,7 +217,7 @@ module J2ME {
     view: FrameView;
 
     constructor(ctx: Context) {
-      this.tp = malloc(1024 * 128);
+      this.tp = ASM._malloc(1024 * 128);
       this.bp = this.tp;
       this.fp = this.bp;
       this.sp = this.fp;
@@ -236,26 +240,25 @@ module J2ME {
     pushFrame(methodInfo: MethodInfo) {
       var fp = this.fp;
       if (methodInfo) {
-        // this.fp = this.sp - methodInfo.argumentSlots + methodInfo.codeAttribute.max_locals;
         this.fp = this.sp + methodInfo.codeAttribute.max_locals;
       } else {
         this.fp = this.sp;
       }
       this.sp = this.fp;
-      i4[this.sp++] = this.pc;    // Caller RA
-      i4[this.sp++] = fp;         // Caller FP
-      o4[this.sp++] = methodInfo; // Callee
+      i32[this.sp++] = this.pc;    // Caller RA
+      i32[this.sp++] = fp;         // Caller FP
+      ref[this.sp++] = methodInfo; // Callee
       this.pc = 0;
     }
 
     popFrame(methodInfo: MethodInfo): MethodInfo {
-      var mi = o4[this.fp + FrameLayout.CalleeMethodInfoOffset];
+      var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
       release || assert(mi === methodInfo);
-      this.pc = i4[this.fp + FrameLayout.CallerRAOffset];
+      this.pc = i32[this.fp + FrameLayout.CallerRAOffset];
       var maxLocals = mi ? mi.codeAttribute.max_locals : 0;
       this.sp = this.fp - maxLocals;
-      this.fp = i4[this.fp + FrameLayout.CallerFPOffset];
-      return o4[this.fp + FrameLayout.CalleeMethodInfoOffset]
+      this.fp = i32[this.fp + FrameLayout.CallerFPOffset];
+      return ref[this.fp + FrameLayout.CalleeMethodInfoOffset]
     }
 
     run() {
@@ -266,7 +269,7 @@ module J2ME {
       traceWriter && traceWriter.writeLn("tryCatch: " + toName(e));
       var pc = -1;
       var classInfo;
-      var mi = o4[this.fp + FrameLayout.CalleeMethodInfoOffset];
+      var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
       while (mi) {
         traceWriter && traceWriter.writeLn(mi.implKey);
         for (var i = 0; i < mi.exception_table_length; i++) {
@@ -287,7 +290,7 @@ module J2ME {
         if (pc >= 0) {
           this.pc = pc;
           this.sp = this.fp + FrameLayout.CallerSaveSize;
-          o4[this.sp++] = e;
+          ref[this.sp++] = e;
           return;
         }
         mi = this.popFrame(mi);
@@ -328,11 +331,11 @@ module J2ME {
     return classInfo;
   }
 
-  var bcCount = 0;
   export function interpret(thread: Thread) {
     var frame = thread.frame;
 
     var mi = frame.methodInfo;
+    var maxLocals = mi.codeAttribute.max_locals;
     var ci = mi.classInfo;
     var cp = ci.constantPool;
 
@@ -354,138 +357,132 @@ module J2ME {
     var fieldInfo: FieldInfo;
 
     /** @inline */
-    function i2l() {
-      i4[sp] = i4[sp - 1] < 0 ? -1 : 0;
-      sp++;
+    function popI32() {
+      return i32[--sp];
     }
 
     /** @inline */
-    function popI4() {
-      return i4[--sp];
+    function popF32() {
+      return f32[--sp];
     }
 
     /** @inline */
-    function popF4() {
-      return f4[--sp];
+    function popF64() {
+      return --sp, f32[--sp];
     }
 
     /** @inline */
-    function popF8() {
-      return --sp, f4[--sp];
+    function pushI32(v: number) {
+      i32[sp++] = v;
     }
 
     /** @inline */
-    function pushI4(v: number) {
-      i4[sp++] = v;
+    function pushI64(h: number, l: number) {
+      i32[sp++] = h;
+      i32[sp++] = l;
     }
 
     /** @inline */
-    function pushI8(h: number, l: number) {
-      i4[sp++] = h;
-      i4[sp++] = l;
+    function pushF32(v: number) {
+      return f32[sp++];
     }
 
     /** @inline */
-    function pushF4(v: number) {
-      return f4[sp++];
+    function loadW32(i: number) {
+      i32[sp++] = i32[fp + localFramePointerOffset(i)];
     }
 
     /** @inline */
-    function loadW4(i: number) {
-      i4[sp++] = i4[fp + localFramePointerOffset(i)];
-    }
-
-    /** @inline */
-    function loadW8(i: number) {
+    function loadW64(i: number) {
       var offset = localFramePointerOffset(i);
-      i4[sp++] = i4[fp + offset];
-      i4[sp++] = i4[fp + offset + 1];
+      i32[sp++] = i32[fp + offset];
+      i32[sp++] = i32[fp + offset + 1];
     }
 
     /** @inline */
-    function storeW4(i: number) {
-      i4[fp + localFramePointerOffset(i)] = i4[--sp];
+    function storeW32(i: number) {
+      i32[fp + localFramePointerOffset(i)] = i32[--sp];
     }
 
     /** @inline */
-    function storeW8(i: number) {
+    function storeW64(i: number) {
       var offset = localFramePointerOffset(i);
-      i4[fp + offset + 1] = i4[--sp];
-      i4[fp + offset] = i4[--sp];
+      i32[fp + offset + 1] = i32[--sp];
+      i32[fp + offset] = i32[--sp];
     }
 
     /** @inline */
-    function pushF8(v: number) {
-      f4[sp++], sp++;
+    function pushF64(v: number) {
+      f32[sp++], sp++;
     }
 
     /** @inline */
-    function popO4() {
-      return o4[--sp];
+    function popRef() {
+      return ref[--sp];
     }
 
     /** @inline */
-    function pushO4(v: Object | java.lang.Object) {
-      o4[sp++] = v;
+    function pushRef(v: Object | java.lang.Object) {
+      ref[sp++] = v;
     }
 
     /** @inline */
-    function peekO4() {
-      return o4[sp - 1];
+    function peekRef() {
+      return ref[sp - 1];
     }
 
     /** @inline */
     function localFramePointerOffset(i: number) {
-      return -mi.codeAttribute.max_locals + i;
+      return -maxLocals + i;
     }
 
     /** @inline */
-    function getLocalO4(i: number) {
-      return o4[fp + localFramePointerOffset(i)];
+    function getLocalRef(i: number) {
+      return ref[fp + localFramePointerOffset(i)];
     }
 
     /** @inline */
-    function setLocalO4(v: Object, i: number) {
-      o4[fp + localFramePointerOffset(i)] = v;
+    function setLocalRef(v: Object, i: number) {
+      ref[fp + localFramePointerOffset(i)] = v;
     }
 
     /** @inline */
-    function getLocalI4(i: number) {
-      return i4[fp + localFramePointerOffset(i)];
+    function getLocalI32(i: number) {
+      return i32[fp + localFramePointerOffset(i)];
     }
 
     /** @inline */
-    function getLocalF4(i: number) {
-      return f4[fp + localFramePointerOffset(i)];
+    function getLocalF32(i: number) {
+      return f32[fp + localFramePointerOffset(i)];
     }
 
     /** @inline */
-    function setLocalI4(v: number, i: number) {
-      i4[fp + localFramePointerOffset(i)] = v;
+    function setLocalI32(v: number, i: number) {
+      i32[fp + localFramePointerOffset(i)] = v;
     }
 
     /** @inline */
-    function setLocalF4(v: number, i: number) {
-      f4[fp + localFramePointerOffset(i)] = v;
+    function setLocalF32(v: number, i: number) {
+      f32[fp + localFramePointerOffset(i)] = v;
     }
 
     /** @inline */
-    function readI2() {
+    function readI16() {
       return (code[pc++] << 8 | code[pc++]) << 16 >> 16;
     }
 
     /** @inline */
-    function readI1() {
+    function readI8() {
       return code[pc++] << 24 >> 24;
     }
 
     /** @inline */
-    function readU2() {
+    function readU16() {
       return code[pc++] << 8 | code[pc++];
     }
 
     /** @inline */
-    function readU1() {
+    function readU8() {
       return code[pc++];
     }
     
@@ -519,18 +516,18 @@ module J2ME {
     function popKind(kind: Kind) {
       switch(kind) {
         case Kind.Reference:
-          return o4[--sp];
+          return ref[--sp];
         case Kind.Int:
         case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
-          return i4[--sp];
+          return i32[--sp];
         case Kind.Float:
-          return f4[--sp];
+          return f32[--sp];
         case Kind.Long:
         case Kind.Double:
           sp--;
-          return f4[--sp]; // REDUX:
+          return f32[--sp]; // REDUX:
         case Kind.Void:
           return;
         default:
@@ -566,20 +563,20 @@ module J2ME {
     function pushKind(kind: Kind, v: any) {
       switch (kind) {
         case Kind.Reference:
-          o4[sp++] = v;
+          ref[sp++] = v;
           return;
         case Kind.Int:
         case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
-          i4[sp++] = v;
+          i32[sp++] = v;
           break;
         case Kind.Float:
-          f4[sp++] = v;
+          f32[sp++] = v;
           break;
         case Kind.Long:
         case Kind.Double:
-          f4[sp++] = v;
+          f32[sp++] = v;
           sp++;
           break;
         case Kind.Void:
@@ -612,14 +609,14 @@ module J2ME {
       var opPC = pc;
       var op = code[pc++];
 
-      // traceWriter.writeLn(bcCount++ + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
+      // traceWriter.writeLn(bytecodeCount++ + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
 
       try {
         switch (op) {
           case Bytecodes.NOP:
             break;
           case Bytecodes.ACONST_NULL:
-            o4[sp++] = null;
+            ref[sp++] = null;
             break;
           case Bytecodes.ICONST_M1:
           case Bytecodes.ICONST_0:
@@ -628,12 +625,12 @@ module J2ME {
           case Bytecodes.ICONST_3:
           case Bytecodes.ICONST_4:
           case Bytecodes.ICONST_5:
-            pushI4(op - Bytecodes.ICONST_0);
+            pushI32(op - Bytecodes.ICONST_0);
             break;
           case Bytecodes.FCONST_0:
           case Bytecodes.FCONST_1:
           case Bytecodes.FCONST_2:
-            pushI4(op - Bytecodes.FCONST_0);
+            pushI32(op - Bytecodes.FCONST_0);
             break;
           //        case Bytecodes.DCONST_0:
           //        case Bytecodes.DCONST_1:
@@ -641,95 +638,105 @@ module J2ME {
           //          break;
           case Bytecodes.LCONST_0:
           case Bytecodes.LCONST_1:
-            pushI8(0, op - Bytecodes.LCONST_0);
+            pushI64(0, op - Bytecodes.LCONST_0);
             break;
           case Bytecodes.BIPUSH:
-            pushI4(code[pc++] << 24 >> 24);
+            pushI32(code[pc++] << 24 >> 24);
             break;
           case Bytecodes.SIPUSH:
-            pushI4(readI2());
+            pushI32(readI16());
             break;
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
-            index = (op === Bytecodes.LDC) ? code[pc++] : readI2();
+            index = (op === Bytecodes.LDC) ? code[pc++] : readI16();
             tag = ci.constantPool.peekTag(index);
             constant = ci.constantPool.resolve(index, tag, false);
             if (tag === TAGS.CONSTANT_Integer) {
-              pushI4(constant);
+              pushI32(constant);
             } else if (tag === TAGS.CONSTANT_Float) {
-              pushF4(constant);
+              pushF32(constant);
             } else if (tag === TAGS.CONSTANT_String) {
-              pushO4(constant);
+              pushRef(constant);
             } else {
               assert(false, TAGS[tag]);
             }
             break;
           case Bytecodes.LDC2_W:
-            index = (op === Bytecodes.LDC) ? code[pc++] : readI2();
+            index = (op === Bytecodes.LDC) ? code[pc++] : readI16();
             tag = ci.constantPool.peekTag(index);
             constant = ci.constantPool.resolve(index, tag, false);
             if (tag === TAGS.CONSTANT_Long) {
-              pushI4(constant);
+              pushI32(constant);
             } else if (tag === TAGS.CONSTANT_Double) {
-              pushF8(constant);
+              pushF64(constant);
             } else {
               assert(false);
             }
             break;
           case Bytecodes.ILOAD:
           case Bytecodes.FLOAD:
-            loadW4(code[pc++]);
+            loadW32(code[pc++]);
             break;
           case Bytecodes.ALOAD:
-            pushO4(getLocalO4(code[pc++]));
+            pushRef(getLocalRef(code[pc++]));
             break;
-          //        case Bytecodes.ALOAD_ILOAD:
-          //          stack.push(frame.local[frame.read8()]);
-          //          frame.pc ++;
-          //          stack.push(frame.local[frame.read8()]);
-          //          break;
           case Bytecodes.LLOAD:
           case Bytecodes.DLOAD:
-            loadW8(code[pc++]);
+            loadW64(code[pc++]);
             break;
           case Bytecodes.ILOAD_0:
           case Bytecodes.ILOAD_1:
           case Bytecodes.ILOAD_2:
           case Bytecodes.ILOAD_3:
-            loadW4(op - Bytecodes.ILOAD_0);
+            loadW32(op - Bytecodes.ILOAD_0);
             break;
           case Bytecodes.FLOAD_0:
           case Bytecodes.FLOAD_1:
           case Bytecodes.FLOAD_2:
           case Bytecodes.FLOAD_3:
-            loadW4(op - Bytecodes.FLOAD_0);
+            loadW32(op - Bytecodes.FLOAD_0);
             break;
           case Bytecodes.ALOAD_0:
           case Bytecodes.ALOAD_1:
           case Bytecodes.ALOAD_2:
           case Bytecodes.ALOAD_3:
-            pushO4(getLocalO4(op - Bytecodes.ALOAD_0));
+            pushRef(getLocalRef(op - Bytecodes.ALOAD_0));
             break;
           case Bytecodes.LLOAD_0:
           case Bytecodes.LLOAD_1:
           case Bytecodes.LLOAD_2:
           case Bytecodes.LLOAD_3:
-            loadW8(op - Bytecodes.LLOAD_0);
+            loadW64(op - Bytecodes.LLOAD_0);
             break;
           case Bytecodes.DLOAD_0:
           case Bytecodes.DLOAD_1:
           case Bytecodes.DLOAD_2:
           case Bytecodes.DLOAD_3:
-            loadW8(op - Bytecodes.DLOAD_0);
+            loadW64(op - Bytecodes.DLOAD_0);
             break;
           case Bytecodes.IALOAD:
-          case Bytecodes.BALOAD:
-          case Bytecodes.CALOAD:
-          case Bytecodes.SALOAD:
-            index = popI4();
-            array = popO4();
+            index = popI32();
+            array = popRef();
             checkArrayBounds(array, index);
-            pushI4(array[index]);
+            pushI32(array[index]);
+            break;
+          case Bytecodes.BALOAD:
+            index = popI32();
+            array = popRef();
+            checkArrayBounds(array, index);
+            pushI32(array[index]);
+            break;
+          case Bytecodes.CALOAD:
+            index = popI32();
+            array = popRef();
+            checkArrayBounds(array, index);
+            pushI32(array[index]);
+            break;
+          case Bytecodes.SALOAD:
+            index = popI32();
+            array = popRef();
+            checkArrayBounds(array, index);
+            pushI32(array[index]);
             break;
           //        case Bytecodes.FALOAD:
           //        case Bytecodes.AALOAD:
@@ -743,57 +750,81 @@ module J2ME {
           //          break;
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
-            storeW4(code[pc++]);
+            storeW32(code[pc++]);
             break;
           case Bytecodes.ASTORE:
-            setLocalO4(popO4(), code[pc++]);
+            setLocalRef(popRef(), code[pc++]);
             break;
           case Bytecodes.LSTORE:
           case Bytecodes.DSTORE:
-            storeW8(code[pc++]);
+            storeW64(code[pc++]);
             break;
           case Bytecodes.ISTORE_0:
           case Bytecodes.ISTORE_1:
           case Bytecodes.ISTORE_2:
           case Bytecodes.ISTORE_3:
-            storeW4(op - Bytecodes.ISTORE_0);
+            storeW32(op - Bytecodes.ISTORE_0);
             break;
           case Bytecodes.FSTORE_0:
           case Bytecodes.FSTORE_1:
           case Bytecodes.FSTORE_2:
           case Bytecodes.FSTORE_3:
-            storeW4(op - Bytecodes.FSTORE_0);
+            storeW32(op - Bytecodes.FSTORE_0);
             break;
           case Bytecodes.ASTORE_0:
           case Bytecodes.ASTORE_1:
           case Bytecodes.ASTORE_2:
           case Bytecodes.ASTORE_3:
-            setLocalO4(popO4(), op - Bytecodes.ASTORE_0);
+            setLocalRef(popRef(), op - Bytecodes.ASTORE_0);
             break;
           case Bytecodes.LSTORE_0:
           case Bytecodes.DSTORE_0:
-            storeW8(0);
+            storeW64(0);
             break;
           case Bytecodes.LSTORE_1:
           case Bytecodes.DSTORE_1:
-            storeW8(1);
+            storeW64(1);
             break;
           case Bytecodes.LSTORE_2:
           case Bytecodes.DSTORE_2:
-            storeW8(2);
+            storeW64(2);
             break;
           case Bytecodes.LSTORE_3:
           case Bytecodes.DSTORE_3:
-            storeW8(3);
+            storeW64(3);
             break;
           case Bytecodes.IASTORE:
+            value = popI32();
+            index = popI32();
+            array = popRef();
+            checkArrayBounds(array, index);
+            array[index] = value;
+            break;
           case Bytecodes.FASTORE:
+            value = popI32();
+            index = popI32();
+            array = popRef();
+            checkArrayBounds(array, index);
+            array[index] = value;
+            break;
           case Bytecodes.BASTORE:
+            value = popI32();
+            index = popI32();
+            array = popRef();
+            checkArrayBounds(array, index);
+            array[index] = value;
+            break;
           case Bytecodes.CASTORE:
+            value = popI32();
+            index = popI32();
+            array = popRef();
+            checkArrayBounds(array, index);
+            array[index] = value;
+            break;
           case Bytecodes.SASTORE:
-            value = popI4();
-            index = popI4();
-            array = popO4();
+            value = popI32();
+            index = popI32();
+            array = popRef();
             checkArrayBounds(array, index);
             array[index] = value;
             break;
@@ -820,8 +851,8 @@ module J2ME {
           //          stack.pop2();
           //          break;
           case Bytecodes.DUP:
-            o4[sp] = o4[sp - 1];
-            i4[sp] = i4[sp - 1];
+            ref[sp] = ref[sp - 1];
+            i32[sp] = i32[sp - 1];
             sp++;
             break;
           //        case Bytecodes.DUP_X1:
@@ -878,8 +909,8 @@ module J2ME {
           //          break;
           case Bytecodes.IINC:
             index = code[pc++];
-            value = readI1();
-            i4[fp + localFramePointerOffset(index)] += value | 0;
+            value = readI8();
+            i32[fp + localFramePointerOffset(index)] += value | 0;
             break;
           //        case Bytecodes.IINC_GOTO:
           //          index = frame.read8();
@@ -889,7 +920,7 @@ module J2ME {
           //          frame.pc = frame.readTargetPC();
           //          break;
           case Bytecodes.IADD:
-            pushI4((popI4() + popI4()) | 0);
+            pushI32((popI32() + popI32()) | 0);
             break;
           case Bytecodes.LADD:
             ASM._lAdd((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
@@ -901,7 +932,7 @@ module J2ME {
           //          stack.push2(stack.pop2() + stack.pop2());
           //          break;
           case Bytecodes.ISUB:
-            pushI4((-popI4() + popI4()) | 0);
+            pushI32((-popI32() + popI32()) | 0);
             break;
           case Bytecodes.LSUB:
             ASM._lSub((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
@@ -913,7 +944,7 @@ module J2ME {
           //          stack.push2(-stack.pop2() + stack.pop2());
           //          break;
           case Bytecodes.IMUL:
-            pushI4(Math.imul(popI4(), popI4()) | 0);
+            pushI32(Math.imul(popI32(), popI32()) | 0);
             break;
           //        case Bytecodes.LMUL:
           //          stack.push2(stack.pop2().multiply(stack.pop2()));
@@ -942,9 +973,9 @@ module J2ME {
           //          stack.push(Math.fround(a / b));
           //          break;
           case Bytecodes.DDIV:
-            fb = popF8();
-            fa = popF8();
-            pushF8(fa / fb);
+            fb = popF64();
+            fa = popF64();
+            pushF64(fa / fb);
             break;
           //        case Bytecodes.IREM:
           //          b = stack.pop();
@@ -969,7 +1000,7 @@ module J2ME {
           //          stack.push2(a % b);
           //          break;
           case Bytecodes.INEG:
-            i4[sp - 1] = -i4[sp - 1] | 0;
+            i32[sp - 1] = -i32[sp - 1] | 0;
             break;
           //        case Bytecodes.LNEG:
           //          stack.push2(stack.pop2().negate());
@@ -981,9 +1012,9 @@ module J2ME {
           //          stack.push2(-stack.pop2());
           //          break;
           case Bytecodes.ISHL:
-            ib = popI4();
-            ia = popI4();
-            pushI4(ia << ib);
+            ib = popI32();
+            ia = popI32();
+            pushI32(ia << ib);
             break;
           //        case Bytecodes.LSHL:
           //          b = stack.pop();
@@ -991,9 +1022,9 @@ module J2ME {
           //          stack.push2(a.shiftLeft(b));
           //          break;
           case Bytecodes.ISHR:
-            ib = popI4();
-            ia = popI4();
-            pushI4(ia >> ib);
+            ib = popI32();
+            ia = popI32();
+            pushI32(ia >> ib);
             break;
           //        case Bytecodes.LSHR:
           //          b = stack.pop();
@@ -1001,9 +1032,9 @@ module J2ME {
           //          stack.push2(a.shiftRight(b));
           //          break;
           case Bytecodes.IUSHR:
-            ib = popI4();
-            ia = popI4();
-            pushI4(ia >>> ib);
+            ib = popI32();
+            ia = popI32();
+            pushI32(ia >>> ib);
             break;
           //        case Bytecodes.LUSHR:
           //          b = stack.pop();
@@ -1011,19 +1042,19 @@ module J2ME {
           //          stack.push2(a.shiftRightUnsigned(b));
           //          break;
           case Bytecodes.IAND:
-            i4[sp - 2] &= popI4();
+            i32[sp - 2] &= popI32();
             break;
           //        case Bytecodes.LAND:
           //          stack.push2(stack.pop2().and(stack.pop2()));
           //          break;
           case Bytecodes.IOR:
-            i4[sp - 2] |= popI4();
+            i32[sp - 2] |= popI32();
             break;
           //        case Bytecodes.LOR:
           //          stack.push2(stack.pop2().or(stack.pop2()));
           //          break;
           case Bytecodes.IXOR:
-            i4[sp - 2] ^= popI4();
+            i32[sp - 2] ^= popI32();
             break;
           //        case Bytecodes.LXOR:
           //          stack.push2(stack.pop2().xor(stack.pop2()));
@@ -1093,97 +1124,97 @@ module J2ME {
           //          break;
           case Bytecodes.IFEQ:
             targetPC = readTargetPC();
-            if (popI4() === 0) {
+            if (popI32() === 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNE:
             targetPC = readTargetPC();
-            if (popI4() !== 0) {
+            if (popI32() !== 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFLT:
             targetPC = readTargetPC();
-            if (popI4() < 0) {
+            if (popI32() < 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFGE:
             targetPC = readTargetPC();
-            if (popI4() >= 0) {
+            if (popI32() >= 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFGT:
             targetPC = readTargetPC();
-            if (popI4() > 0) {
+            if (popI32() > 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFLE:
             targetPC = readTargetPC();
-            if (popI4() <= 0) {
+            if (popI32() <= 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPEQ:
             targetPC = readTargetPC();
-            if (popI4() === popI4()) {
+            if (popI32() === popI32()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPNE:
             targetPC = readTargetPC();
-            if (popI4() !== popI4()) {
+            if (popI32() !== popI32()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPLT:
             targetPC = readTargetPC();
-            if (popI4() > popI4()) {
+            if (popI32() > popI32()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPGE:
             targetPC = readTargetPC();
-            if (popI4() <= popI4()) {
+            if (popI32() <= popI32()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPGT:
             targetPC = readTargetPC();
-            if (popI4() < popI4()) {
+            if (popI32() < popI32()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPLE:
             targetPC = readTargetPC();
-            if (popI4() >= popI4()) {
+            if (popI32() >= popI32()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ACMPEQ:
             targetPC = readTargetPC();
-            if (popO4() === popO4()) {
+            if (popRef() === popRef()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ACMPNE:
             targetPC = readTargetPC();
-            if (popO4() !== popO4()) {
+            if (popRef() !== popRef()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNULL:
             targetPC = readTargetPC();
-            if (!popO4()) {
+            if (!popRef()) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNONNULL:
             targetPC = readTargetPC();
-            if (popO4()) {
+            if (popRef()) {
               pc = targetPC;
             }
             break;
@@ -1207,7 +1238,7 @@ module J2ME {
           //          frame.pc = frame.local[frame.read8()];
           //          break;
           case Bytecodes.I2L:
-            i2l();
+            i32[sp] = i32[sp - 1] < 0 ? -1 : 0; sp++;
             break;
           //        case Bytecodes.I2F:
           //          break;
@@ -1242,13 +1273,13 @@ module J2ME {
           //          stack.push(Math.fround(stack.pop2()));
           //          break;
           case Bytecodes.I2B:
-            i4[sp - 1] = (i4[sp - 1] << 24) >> 24;
+            i32[sp - 1] = (i32[sp - 1] << 24) >> 24;
             break;
           case Bytecodes.I2C:
-            i4[sp - 1] &= 0xffff;
+            i32[sp - 1] &= 0xffff;
             break;
           case Bytecodes.I2S:
-            i4[sp - 1] = (i4[sp - 1] << 16) >> 16;;
+            i32[sp - 1] = (i32[sp - 1] << 16) >> 16;;
             break;
           //        case Bytecodes.TABLESWITCH:
           //          frame.pc = frame.tableSwitch();
@@ -1262,11 +1293,11 @@ module J2ME {
           //          stack.push(newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size));
           //          break;
           case Bytecodes.ANEWARRAY:
-            index = readU2();
+            index = readU16();
             classInfo = resolveClass(index, ci);
             classInitAndUnwindCheck(classInfo, opPC);
-            size = popI4();
-            pushO4(newArray(classInfo.klass, size));
+            size = popI32();
+            pushRef(newArray(classInfo.klass, size));
             break;
           //        case Bytecodes.MULTIANEWARRAY:
           //          index = frame.read16();
@@ -1278,8 +1309,8 @@ module J2ME {
           //          stack.push(J2ME.newMultiArray(classInfo.klass, lengths.reverse()));
           //          break;
           case Bytecodes.ARRAYLENGTH:
-            array = popO4();
-            pushI4(array.length);
+            array = popRef();
+            pushI32(array.length);
             break;
           //        case Bytecodes.ARRAYLENGTH_IF_ICMPGE:
           //          array = stack.pop();
@@ -1291,9 +1322,9 @@ module J2ME {
           //          }
           //          break;
           case Bytecodes.GETFIELD:
-            index = readI2();
+            index = readI16();
             fieldInfo = cp.resolveField(index, false);
-            object = popO4();
+            object = popRef();
             pushKind(fieldInfo.kind, fieldInfo.get(object));
             // frame.patch(3, Bytecodes.GETFIELD, Bytecodes.RESOLVED_GETFIELD);
             break;
@@ -1303,10 +1334,10 @@ module J2ME {
           //          stack.pushKind(fieldInfo.kind, fieldInfo.get(object));
           //          break;
           case Bytecodes.PUTFIELD:
-            index = readI2();
+            index = readI16();
             fieldInfo = cp.resolveField(index, false);
             value = popKind(fieldInfo.kind);
-            object = popO4();
+            object = popRef();
             fieldInfo.set(object, value);
             // frame.patch(3, Bytecodes.PUTFIELD, Bytecodes.RESOLVED_PUTFIELD);
             break;
@@ -1317,7 +1348,7 @@ module J2ME {
           //          fieldInfo.set(object, value);
           //          break;
           case Bytecodes.GETSTATIC:
-            index = readI2();
+            index = readI16();
             fieldInfo = cp.resolveField(index, true);
             classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
             //if (U) {
@@ -1326,7 +1357,7 @@ module J2ME {
             pushKind(fieldInfo.kind, fieldInfo.getStatic());
             break;
           case Bytecodes.PUTSTATIC:
-            index = readI2();
+            index = readI16();
             fieldInfo = cp.resolveField(index, true);
             classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
             //if (U) {
@@ -1335,7 +1366,7 @@ module J2ME {
             fieldInfo.setStatic(popKind(fieldInfo.kind));
             break;
           case Bytecodes.NEW:
-            index = readI2();
+            index = readI16();
             traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
             classInfo = resolveClass(index, ci);
             saveThreadState();
@@ -1344,12 +1375,12 @@ module J2ME {
               return;
             }
             loadThreadState();
-            pushO4(newObject(classInfo.klass));
+            pushRef(newObject(classInfo.klass));
             break;
           case Bytecodes.CHECKCAST:
-            index = readI2();
+            index = readI16();
             classInfo = resolveClass(index, mi.classInfo);
-            object = peekO4();
+            object = peekRef();
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException (
                 object.klass.classInfo.getClassNameSlow() + " is not assignable to " +
@@ -1358,28 +1389,28 @@ module J2ME {
             }
             break;
           case Bytecodes.INSTANCEOF:
-            index = readI2();
+            index = readI16();
             classInfo = resolveClass(index, ci);
-            object = popO4();
+            object = popRef();
             result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
-            pushI4(result ? 1 : 0);
+            pushI32(result ? 1 : 0);
             break;
           case Bytecodes.ATHROW:
-            object = popO4();
+            object = popRef();
             if (!object) {
               throw $.newNullPointerException();
             }
             throw object;
             break;
           case Bytecodes.MONITORENTER:
-            object = popO4();
+            object = popRef();
             thread.ctx.monitorEnter(object);
             if (U === VMState.Pausing || U === VMState.Stopping) {
               return;
             }
             break;
           case Bytecodes.MONITOREXIT:
-            object = popO4();
+            object = popRef();
             thread.ctx.monitorExit(object);
             break;
           //        case Bytecodes.WIDE:
@@ -1620,8 +1651,8 @@ module J2ME {
 
           case Bytecodes.NEWARRAY:
             type = code[pc++];
-            size = popI4();
-            o4[sp++] = newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size);
+            size = popI32();
+            ref[sp++] = newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size);
             break;
           case Bytecodes.LRETURN:
           case Bytecodes.DRETURN:
@@ -1631,15 +1662,16 @@ module J2ME {
           case Bytecodes.RETURN:
             kind = returnKind(op);
             returnValue = popKind(kind);
-            pc = i4[fp + FrameLayout.CallerRAOffset];
+            pc = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - mi.codeAttribute.max_locals;
-            fp = i4[fp + FrameLayout.CallerFPOffset];
-            mi = o4[fp + FrameLayout.CalleeMethodInfoOffset];
+            fp = i32[fp + FrameLayout.CallerFPOffset];
+            mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
             if (mi === null) {
               saveThreadState();
               thread.popFrame(null);
               return;
             }
+            maxLocals = mi.codeAttribute.max_locals;
             traceWriter && traceWriter.outdent();
             traceWriter && traceWriter.writeLn("<< Interpreter Return");
             ci = mi.classInfo;
@@ -1651,7 +1683,7 @@ module J2ME {
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
-            index = readI2();
+            index = readI16();
             if (op === Bytecodes.INVOKEINTERFACE) {
               pc += 2; // Args Number & Zero
             }
@@ -1664,7 +1696,7 @@ module J2ME {
             var callee = null;
             object = null;
             if (!isStatic) {
-              object = o4[sp - calleeMethodInfo.argumentSlots];
+              object = ref[sp - calleeMethodInfo.argumentSlots];
             }
             switch (op) {
               case Bytecodes.INVOKESPECIAL:
@@ -1701,6 +1733,7 @@ module J2ME {
 
             traceWriter && traceWriter.writeLn(">> Interpreter Invoke: " + calleeMethodInfo.implKey);
             mi = calleeTargetMethodInfo;
+            maxLocals = mi.codeAttribute.max_locals;
             ci = mi.classInfo;
             cp = ci.constantPool;
 
@@ -1708,9 +1741,9 @@ module J2ME {
             sp += mi.codeAttribute.max_locals - mi.argumentSlots;
 
             // Caller saved values.
-            pushI4(pc);
-            pushI4(fp);
-            pushO4(mi);
+            pushI32(pc);
+            pushI32(fp);
+            pushRef(mi);
             fp = sp - FrameLayout.CallerSaveSize;
 
             opPC = pc = 0;
@@ -1735,6 +1768,7 @@ module J2ME {
         loadThreadState();
 
         mi = thread.frame.methodInfo;
+        maxLocals = mi.codeAttribute.max_locals;
         ci = mi.classInfo;
         cp = ci.constantPool;
         code = mi.codeAttribute.code;

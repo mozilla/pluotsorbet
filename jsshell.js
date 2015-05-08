@@ -143,7 +143,7 @@ try {
   var start = dateNow();
   var jvm = new JVM();
 
-  J2ME.writers = J2ME.WriterFlags.None;
+  J2ME.writers = J2ME.WriterFlags.All;
   J2ME.enableRuntimeCompilation = false;
 
   start = dateNow();

@@ -88,16 +88,6 @@ module J2ME {
     }
   }
 
-  /**
-   * The number of opcodes executed thus far.
-   */
-  export var bytecodeCount = 0;
-
-  /**
-   * The number of times the interpreter method was called thus far.
-   */
-  export var interpreterCount = 0;
-
   export var onStackReplacementCount = 0;
 
   /**
