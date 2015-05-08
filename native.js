@@ -278,7 +278,8 @@ Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Lja
 };
 
 Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function() {
-    return Long.fromNumber(performance.now());
+    var long = Long.fromNumber(performance.now());
+    return returnLong(long.low_, long.high_);
 };
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {

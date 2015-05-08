@@ -490,8 +490,8 @@ Native["java/lang/StringBuffer.append.(I)Ljava/lang/StringBuffer;"] = function(n
   return stringBufferAppend.call(this, n + "");
 };
 
-Native["java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;"] = function(n) {
-  return stringBufferAppend.call(this, n + "");
+Native["java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;"] = function(l, h) {
+  return stringBufferAppend.call(this, Long.fromBits(l, h).toString());
 };
 
 // StringBuffer.append(float) left in Java (see String.valueOf(float) above).

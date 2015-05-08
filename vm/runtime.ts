@@ -5,6 +5,13 @@
 
 var $: J2ME.Runtime; // The currently-executing runtime.
 
+var tempReturn0 = 0;
+
+function returnLong(l: number, h: number) {
+  tempReturn0 = h;
+  return l;
+}
+
 interface Math {
   fround(value: number): number;
 }

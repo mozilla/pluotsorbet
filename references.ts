@@ -10,7 +10,6 @@
 ///<reference path='jit/blockMap.ts' />
 ///<reference path='types.ts' />
 ///<reference path='vm/classRegistry.ts' />
-///<reference path='vm/jvm.ts' />
 ///<reference path='bindings.ts' />
 ///<reference path='int.ts' />
 ///<reference path='vm/runtime.ts' />

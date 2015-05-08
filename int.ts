@@ -350,7 +350,6 @@ module J2ME {
     var type, size;
     var value, index, array, object, result, constant, targetPC, returnValue, kind;
 
-
     var ia = 0, ib = 0; // Integer Operands
     var fa = 0, fb = 0; // Float / Double Operands
 
@@ -360,12 +359,6 @@ module J2ME {
     /** @inline */
     function popF64() {
       return --sp, f32[--sp];
-    }
-
-    /** @inline */
-    function pushI64(h: number, l: number) {
-      i32[sp++] = h;
-      i32[sp++] = l;
     }
 
     /** @inline */
@@ -406,18 +399,8 @@ module J2ME {
     }
 
     /** @inline */
-    function readI8() {
-      return code[pc++] << 24 >> 24;
-    }
-
-    /** @inline */
     function readU16() {
       return code[pc++] << 8 | code[pc++];
-    }
-
-    /** @inline */
-    function readU8() {
-      return code[pc++];
     }
 
     function saveThreadState() {
@@ -460,6 +443,10 @@ module J2ME {
         case Kind.Float:
           return f32[--sp];
         case Kind.Long:
+          var l = i32[--sp];
+          var h = i32[--sp];
+          tempReturn0 = h;
+          return l;
         case Kind.Double:
           sp--;
           return f32[--sp]; // REDUX:
@@ -477,10 +464,11 @@ module J2ME {
       var args = [];
       for (var i = signatureKinds.length - 1; i > 0; i--) {
         var kind = signatureKinds[i];
+        var value = popKind(kind);
         if (isTwoSlot(kind)) {
-          args.unshift(undefined);
+          args.unshift(tempReturn0);
         }
-        args.unshift(popKind(kind));
+        args.unshift(value);
       }
       return args;
     }
@@ -495,23 +483,26 @@ module J2ME {
     }
 
     /** @inline */
-    function pushKind(kind: Kind, v: any) {
+    function pushKind(kind: Kind, l: any, h: any) {
       switch (kind) {
         case Kind.Reference:
-          ref[sp++] = v;
+          ref[sp++] = l;
           return;
         case Kind.Int:
         case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
-          i32[sp++] = v;
+          i32[sp++] = l;
           break;
         case Kind.Float:
-          f32[sp++] = v;
+          f32[sp++] = l;
           break;
         case Kind.Long:
+          i32[sp++] = l;
+          i32[sp++] = h;
+          break;
         case Kind.Double:
-          f32[sp++] = v;
+          f32[sp++] = l;
           sp++;
           break;
         case Kind.Void:
@@ -545,7 +536,7 @@ module J2ME {
       var opPC = pc;
       var op = code[pc++];
 
-      traceWriter.writeLn(bytecodeCount++ + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
+      // traceWriter.writeLn(bytecodeCount++ + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
 
       try {
         switch (op) {
@@ -574,7 +565,8 @@ module J2ME {
           //          break;
           case Bytecodes.LCONST_0:
           case Bytecodes.LCONST_1:
-            pushI64(0, op - Bytecodes.LCONST_0);
+            i32[sp++] = op - Bytecodes.LCONST_0;
+            i32[sp++] = 0;
             break;
           case Bytecodes.BIPUSH:
             i32[sp++] = code[pc++] << 24 >> 24;
@@ -653,25 +645,33 @@ module J2ME {
           case Bytecodes.IALOAD:
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             i32[sp++] = array[index];
             break;
           case Bytecodes.BALOAD:
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             i32[sp++] = array[index];
             break;
           case Bytecodes.CALOAD:
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             i32[sp++] = array[index];
             break;
           case Bytecodes.SALOAD:
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             i32[sp++] = array[index];
             break;
           //        case Bytecodes.FALOAD:
@@ -733,35 +733,45 @@ module J2ME {
             value = i32[--sp];
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             array[index] = value;
             break;
           case Bytecodes.FASTORE:
             value = i32[--sp];
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             array[index] = value;
             break;
           case Bytecodes.BASTORE:
             value = i32[--sp];
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             array[index] = value;
             break;
           case Bytecodes.CASTORE:
             value = i32[--sp];
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             array[index] = value;
             break;
           case Bytecodes.SASTORE:
             value = i32[--sp];
             index = i32[--sp];
             array = ref[--sp];
-            checkArrayBounds(array, index);
+            if ((index >>> 0) >= (array.length >>> 0)) {
+              throw $.newArrayIndexOutOfBoundsException(String(index));
+            }
             array[index] = value;
             break;
           //        case Bytecodes.LASTORE:
@@ -845,7 +855,7 @@ module J2ME {
           //          break;
           case Bytecodes.IINC:
             index = code[pc++];
-            value = readI8();
+            value = code[pc++] << 24 >> 24;
             i32[lp + index] += value | 0;
             break;
           //        case Bytecodes.IINC_GOTO:
@@ -1059,103 +1069,103 @@ module J2ME {
           //          }
           //          break;
           case Bytecodes.IFEQ:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] === 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNE:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] !== 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFLT:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] < 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFGE:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] >= 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFGT:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] > 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFLE:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] <= 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPEQ:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] === i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPNE:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] !== i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPLT:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] > i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPGE:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] <= i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPGT:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] < i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPLE:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (i32[--sp] >= i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ACMPEQ:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (ref[--sp] === ref[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ACMPNE:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (ref[--sp] !== ref[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNULL:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (!ref[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNONNULL:
-            targetPC = readTargetPC();
+            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             if (ref[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.GOTO:
-            pc = readTargetPC();
+            pc = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
             break;
           //        case Bytecodes.GOTO_W:
           //          frame.pc = frame.read32Signed() - 1;
@@ -1261,8 +1271,7 @@ module J2ME {
             index = readI16();
             fieldInfo = cp.resolveField(index, false);
             object = ref[--sp];
-            pushKind(fieldInfo.kind, fieldInfo.get(object));
-            // frame.patch(3, Bytecodes.GETFIELD, Bytecodes.RESOLVED_GETFIELD);
+            pushKind(fieldInfo.kind, fieldInfo.get(object), 0);
             break;
           //        case Bytecodes.RESOLVED_GETFIELD:
           //          fieldInfo = <FieldInfo><any>rp[frame.read16()];
@@ -1290,7 +1299,7 @@ module J2ME {
             //if (U) {
             //  return;
             //}
-            pushKind(fieldInfo.kind, fieldInfo.getStatic());
+            pushKind(fieldInfo.kind, fieldInfo.getStatic(), 0);
             break;
           case Bytecodes.PUTSTATIC:
             index = readI16();
@@ -1614,7 +1623,7 @@ module J2ME {
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
-            pushKind(kind, returnValue);
+            pushKind(kind, returnValue, tempReturn0);
             break;
           case Bytecodes.INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
@@ -1662,8 +1671,8 @@ module J2ME {
               result = callee.apply(object, args);
               loadThreadState();
               if (calleeMethodInfo.returnKind !== Kind.Void) {
-                traceWriter && traceWriter.writeLn(">> Return Value: " + result);
-                pushKind(calleeMethodInfo.returnKind, result);
+                traceWriter && traceWriter.writeLn(">> Return Value: " + tempReturn0 + " " + result);
+                pushKind(calleeMethodInfo.returnKind, result, tempReturn0);
               }
               continue;
             }
