@@ -342,6 +342,7 @@ module J2ME {
     var code = mi ? mi.codeAttribute.code : null;
 
     var fp = thread.fp;
+    var lp = fp - maxLocals;
     var sp = thread.sp;
     var pc = thread.pc;
 
@@ -372,11 +373,6 @@ module J2ME {
     }
 
     /** @inline */
-    function pushI32(v: number) {
-      i32[sp++] = v;
-    }
-
-    /** @inline */
     function pushI64(h: number, l: number) {
       i32[sp++] = h;
       i32[sp++] = l;
@@ -389,26 +385,24 @@ module J2ME {
 
     /** @inline */
     function loadW32(i: number) {
-      i32[sp++] = i32[fp + localFramePointerOffset(i)];
+      i32[sp++] = i32[lp + i];
     }
 
     /** @inline */
     function loadW64(i: number) {
-      var offset = localFramePointerOffset(i);
-      i32[sp++] = i32[fp + offset];
-      i32[sp++] = i32[fp + offset + 1];
+      i32[sp++] = i32[lp + i];
+      i32[sp++] = i32[lp + i + 1];
     }
 
     /** @inline */
     function storeW32(i: number) {
-      i32[fp + localFramePointerOffset(i)] = i32[--sp];
+      i32[lp + i] = i32[--sp];
     }
 
     /** @inline */
     function storeW64(i: number) {
-      var offset = localFramePointerOffset(i);
-      i32[fp + offset + 1] = i32[--sp];
-      i32[fp + offset] = i32[--sp];
+      i32[lp + 1] = i32[--sp];
+      i32[lp] = i32[--sp];
     }
 
     /** @inline */
@@ -432,38 +426,33 @@ module J2ME {
     }
 
     /** @inline */
-    function localFramePointerOffset(i: number) {
-      return -maxLocals + i;
-    }
-
-    /** @inline */
     function getLocalRef(i: number) {
-      return ref[fp + localFramePointerOffset(i)];
+      return ref[lp + i];
     }
 
     /** @inline */
     function setLocalRef(v: Object, i: number) {
-      ref[fp + localFramePointerOffset(i)] = v;
+      ref[lp + i] = v;
     }
 
     /** @inline */
     function getLocalI32(i: number) {
-      return i32[fp + localFramePointerOffset(i)];
+      return i32[lp + i];
     }
 
     /** @inline */
     function getLocalF32(i: number) {
-      return f32[fp + localFramePointerOffset(i)];
+      return f32[lp + i];
     }
 
     /** @inline */
     function setLocalI32(v: number, i: number) {
-      i32[fp + localFramePointerOffset(i)] = v;
+      i32[lp + i] = v;
     }
 
     /** @inline */
     function setLocalF32(v: number, i: number) {
-      f32[fp + localFramePointerOffset(i)] = v;
+      f32[lp + i] = v;
     }
 
     /** @inline */
@@ -485,7 +474,7 @@ module J2ME {
     function readU8() {
       return code[pc++];
     }
-    
+
     function saveThreadState() {
       thread.fp = fp;
       thread.sp = sp;
@@ -500,6 +489,7 @@ module J2ME {
 
     function loadThreadState() {
       fp = thread.fp;
+      lp = fp - maxLocals;
       sp = thread.sp;
       pc = thread.pc;
     }
@@ -604,6 +594,7 @@ module J2ME {
       release || assert(code === mi.codeAttribute.code, "Bad Code.");
       release || assert(ci === mi.classInfo, "Bad Class Info.");
       release || assert(cp === ci.constantPool, "Bad Constant Pool.");
+      release || assert(lp === fp - mi.codeAttribute.max_locals, "Bad lp.");
 
       fieldInfo = null;
       var opPC = pc;
@@ -625,12 +616,12 @@ module J2ME {
           case Bytecodes.ICONST_3:
           case Bytecodes.ICONST_4:
           case Bytecodes.ICONST_5:
-            pushI32(op - Bytecodes.ICONST_0);
+            i32[sp++] = op - Bytecodes.ICONST_0;
             break;
           case Bytecodes.FCONST_0:
           case Bytecodes.FCONST_1:
           case Bytecodes.FCONST_2:
-            pushI32(op - Bytecodes.FCONST_0);
+            i32[sp++] = op - Bytecodes.FCONST_0;
             break;
           //        case Bytecodes.DCONST_0:
           //        case Bytecodes.DCONST_1:
@@ -641,10 +632,10 @@ module J2ME {
             pushI64(0, op - Bytecodes.LCONST_0);
             break;
           case Bytecodes.BIPUSH:
-            pushI32(code[pc++] << 24 >> 24);
+            i32[sp++] = code[pc++] << 24 >> 24;
             break;
           case Bytecodes.SIPUSH:
-            pushI32(readI16());
+            i32[sp++] = readI16();
             break;
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
@@ -652,7 +643,7 @@ module J2ME {
             tag = ci.constantPool.peekTag(index);
             constant = ci.constantPool.resolve(index, tag, false);
             if (tag === TAGS.CONSTANT_Integer) {
-              pushI32(constant);
+              i32[sp++] = constant;
             } else if (tag === TAGS.CONSTANT_Float) {
               pushF32(constant);
             } else if (tag === TAGS.CONSTANT_String) {
@@ -666,7 +657,7 @@ module J2ME {
             tag = ci.constantPool.peekTag(index);
             constant = ci.constantPool.resolve(index, tag, false);
             if (tag === TAGS.CONSTANT_Long) {
-              pushI32(constant);
+              i32[sp++] = constant;
             } else if (tag === TAGS.CONSTANT_Double) {
               pushF64(constant);
             } else {
@@ -718,25 +709,25 @@ module J2ME {
             index = popI32();
             array = popRef();
             checkArrayBounds(array, index);
-            pushI32(array[index]);
+            i32[sp++] = array[index];
             break;
           case Bytecodes.BALOAD:
             index = popI32();
             array = popRef();
             checkArrayBounds(array, index);
-            pushI32(array[index]);
+            i32[sp++] = array[index];
             break;
           case Bytecodes.CALOAD:
             index = popI32();
             array = popRef();
             checkArrayBounds(array, index);
-            pushI32(array[index]);
+            i32[sp++] = array[index];
             break;
           case Bytecodes.SALOAD:
             index = popI32();
             array = popRef();
             checkArrayBounds(array, index);
-            pushI32(array[index]);
+            i32[sp++] = array[index];
             break;
           //        case Bytecodes.FALOAD:
           //        case Bytecodes.AALOAD:
@@ -910,7 +901,7 @@ module J2ME {
           case Bytecodes.IINC:
             index = code[pc++];
             value = readI8();
-            i32[fp + localFramePointerOffset(index)] += value | 0;
+            i32[lp + index] += value | 0;
             break;
           //        case Bytecodes.IINC_GOTO:
           //          index = frame.read8();
@@ -920,7 +911,7 @@ module J2ME {
           //          frame.pc = frame.readTargetPC();
           //          break;
           case Bytecodes.IADD:
-            pushI32((popI32() + popI32()) | 0);
+            i32[sp - 2] = (i32[sp - 2] + i32[sp - 1]) | 0; sp--;
             break;
           case Bytecodes.LADD:
             ASM._lAdd((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
@@ -932,7 +923,7 @@ module J2ME {
           //          stack.push2(stack.pop2() + stack.pop2());
           //          break;
           case Bytecodes.ISUB:
-            pushI32((-popI32() + popI32()) | 0);
+            i32[sp - 2] = (i32[sp - 2] - i32[sp - 1]) | 0; sp--;
             break;
           case Bytecodes.LSUB:
             ASM._lSub((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
@@ -944,7 +935,7 @@ module J2ME {
           //          stack.push2(-stack.pop2() + stack.pop2());
           //          break;
           case Bytecodes.IMUL:
-            pushI32(Math.imul(popI32(), popI32()) | 0);
+            i32[sp - 2] = Math.imul(i32[sp - 2], i32[sp - 1]) | 0; sp--;
             break;
           //        case Bytecodes.LMUL:
           //          stack.push2(stack.pop2().multiply(stack.pop2()));
@@ -1014,7 +1005,7 @@ module J2ME {
           case Bytecodes.ISHL:
             ib = popI32();
             ia = popI32();
-            pushI32(ia << ib);
+            i32[sp++] = ia << ib;
             break;
           //        case Bytecodes.LSHL:
           //          b = stack.pop();
@@ -1024,7 +1015,7 @@ module J2ME {
           case Bytecodes.ISHR:
             ib = popI32();
             ia = popI32();
-            pushI32(ia >> ib);
+            i32[sp++] = ia >> ib;
             break;
           //        case Bytecodes.LSHR:
           //          b = stack.pop();
@@ -1034,7 +1025,7 @@ module J2ME {
           case Bytecodes.IUSHR:
             ib = popI32();
             ia = popI32();
-            pushI32(ia >>> ib);
+            i32[sp++] = ia >>> ib;
             break;
           //        case Bytecodes.LUSHR:
           //          b = stack.pop();
@@ -1310,7 +1301,7 @@ module J2ME {
           //          break;
           case Bytecodes.ARRAYLENGTH:
             array = popRef();
-            pushI32(array.length);
+            i32[sp++] = array.length;
             break;
           //        case Bytecodes.ARRAYLENGTH_IF_ICMPGE:
           //          array = stack.pop();
@@ -1393,7 +1384,7 @@ module J2ME {
             classInfo = resolveClass(index, ci);
             object = popRef();
             result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
-            pushI32(result ? 1 : 0);
+            i32[sp++] = result ? 1 : 0;
             break;
           case Bytecodes.ATHROW:
             object = popRef();
@@ -1672,6 +1663,7 @@ module J2ME {
               return;
             }
             maxLocals = mi.codeAttribute.max_locals;
+            lp = fp - maxLocals;
             traceWriter && traceWriter.outdent();
             traceWriter && traceWriter.writeLn("<< Interpreter Return");
             ci = mi.classInfo;
@@ -1738,13 +1730,14 @@ module J2ME {
             cp = ci.constantPool;
 
             // Reserve space for non-parameter locals.
-            sp += mi.codeAttribute.max_locals - mi.argumentSlots;
+            sp += maxLocals - mi.argumentSlots;
 
             // Caller saved values.
-            pushI32(pc);
-            pushI32(fp);
-            pushRef(mi);
+            i32[sp++] = pc;
+            i32[sp++] = fp;
+            ref[sp++] = mi;
             fp = sp - FrameLayout.CallerSaveSize;
+            lp = fp - maxLocals;
 
             opPC = pc = 0;
             code = mi.codeAttribute.code;
@@ -1769,6 +1762,7 @@ module J2ME {
 
         mi = thread.frame.methodInfo;
         maxLocals = mi.codeAttribute.max_locals;
+        lp = fp - maxLocals;
         ci = mi.classInfo;
         cp = ci.constantPool;
         code = mi.codeAttribute.code;
