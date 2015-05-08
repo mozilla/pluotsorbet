@@ -358,16 +358,6 @@ module J2ME {
     var fieldInfo: FieldInfo;
 
     /** @inline */
-    function popI32() {
-      return i32[--sp];
-    }
-
-    /** @inline */
-    function popF32() {
-      return f32[--sp];
-    }
-
-    /** @inline */
     function popF64() {
       return --sp, f32[--sp];
     }
@@ -384,19 +374,9 @@ module J2ME {
     }
 
     /** @inline */
-    function loadW32(i: number) {
-      i32[sp++] = i32[lp + i];
-    }
-
-    /** @inline */
     function loadW64(i: number) {
       i32[sp++] = i32[lp + i];
       i32[sp++] = i32[lp + i + 1];
-    }
-
-    /** @inline */
-    function storeW32(i: number) {
-      i32[lp + i] = i32[--sp];
     }
 
     /** @inline */
@@ -411,43 +391,8 @@ module J2ME {
     }
 
     /** @inline */
-    function popRef() {
-      return ref[--sp];
-    }
-
-    /** @inline */
-    function pushRef(v: Object | java.lang.Object) {
-      ref[sp++] = v;
-    }
-
-    /** @inline */
-    function peekRef() {
-      return ref[sp - 1];
-    }
-
-    /** @inline */
-    function getLocalRef(i: number) {
-      return ref[lp + i];
-    }
-
-    /** @inline */
-    function setLocalRef(v: Object, i: number) {
-      ref[lp + i] = v;
-    }
-
-    /** @inline */
-    function getLocalI32(i: number) {
-      return i32[lp + i];
-    }
-
-    /** @inline */
     function getLocalF32(i: number) {
       return f32[lp + i];
-    }
-
-    /** @inline */
-    function setLocalI32(v: number, i: number) {
-      i32[lp + i] = v;
     }
 
     /** @inline */
@@ -600,7 +545,7 @@ module J2ME {
       var opPC = pc;
       var op = code[pc++];
 
-      // traceWriter.writeLn(bytecodeCount++ + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
+      traceWriter.writeLn(bytecodeCount++ + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
 
       try {
         switch (op) {
@@ -647,7 +592,7 @@ module J2ME {
             } else if (tag === TAGS.CONSTANT_Float) {
               pushF32(constant);
             } else if (tag === TAGS.CONSTANT_String) {
-              pushRef(constant);
+              ref[sp++] = constant;
             } else {
               assert(false, TAGS[tag]);
             }
@@ -666,10 +611,10 @@ module J2ME {
             break;
           case Bytecodes.ILOAD:
           case Bytecodes.FLOAD:
-            loadW32(code[pc++]);
+            i32[sp++] = i32[lp + code[pc++]];
             break;
           case Bytecodes.ALOAD:
-            pushRef(getLocalRef(code[pc++]));
+            ref[sp++] = ref[lp + code[pc++]];
             break;
           case Bytecodes.LLOAD:
           case Bytecodes.DLOAD:
@@ -679,19 +624,19 @@ module J2ME {
           case Bytecodes.ILOAD_1:
           case Bytecodes.ILOAD_2:
           case Bytecodes.ILOAD_3:
-            loadW32(op - Bytecodes.ILOAD_0);
+            i32[sp++] = i32[lp + op - Bytecodes.ILOAD_0];
             break;
           case Bytecodes.FLOAD_0:
           case Bytecodes.FLOAD_1:
           case Bytecodes.FLOAD_2:
           case Bytecodes.FLOAD_3:
-            loadW32(op - Bytecodes.FLOAD_0);
+            i32[sp++] = i32[lp + op - Bytecodes.FLOAD_0];
             break;
           case Bytecodes.ALOAD_0:
           case Bytecodes.ALOAD_1:
           case Bytecodes.ALOAD_2:
           case Bytecodes.ALOAD_3:
-            pushRef(getLocalRef(op - Bytecodes.ALOAD_0));
+            ref[sp++] = ref[lp + op - Bytecodes.ALOAD_0];
             break;
           case Bytecodes.LLOAD_0:
           case Bytecodes.LLOAD_1:
@@ -706,26 +651,26 @@ module J2ME {
             loadW64(op - Bytecodes.DLOAD_0);
             break;
           case Bytecodes.IALOAD:
-            index = popI32();
-            array = popRef();
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             i32[sp++] = array[index];
             break;
           case Bytecodes.BALOAD:
-            index = popI32();
-            array = popRef();
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             i32[sp++] = array[index];
             break;
           case Bytecodes.CALOAD:
-            index = popI32();
-            array = popRef();
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             i32[sp++] = array[index];
             break;
           case Bytecodes.SALOAD:
-            index = popI32();
-            array = popRef();
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             i32[sp++] = array[index];
             break;
@@ -741,10 +686,10 @@ module J2ME {
           //          break;
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
-            storeW32(code[pc++]);
+            i32[lp + code[pc++]] = i32[--sp];
             break;
           case Bytecodes.ASTORE:
-            setLocalRef(popRef(), code[pc++]);
+            ref[lp + code[pc++]] = ref[--sp];
             break;
           case Bytecodes.LSTORE:
           case Bytecodes.DSTORE:
@@ -754,19 +699,19 @@ module J2ME {
           case Bytecodes.ISTORE_1:
           case Bytecodes.ISTORE_2:
           case Bytecodes.ISTORE_3:
-            storeW32(op - Bytecodes.ISTORE_0);
+            i32[lp + op - Bytecodes.ISTORE_0] = i32[--sp];
             break;
           case Bytecodes.FSTORE_0:
           case Bytecodes.FSTORE_1:
           case Bytecodes.FSTORE_2:
           case Bytecodes.FSTORE_3:
-            storeW32(op - Bytecodes.FSTORE_0);
+            i32[lp + op - Bytecodes.FSTORE_0] = i32[--sp];
             break;
           case Bytecodes.ASTORE_0:
           case Bytecodes.ASTORE_1:
           case Bytecodes.ASTORE_2:
           case Bytecodes.ASTORE_3:
-            setLocalRef(popRef(), op - Bytecodes.ASTORE_0);
+            ref[lp + op - Bytecodes.ASTORE_0] = ref[--sp];
             break;
           case Bytecodes.LSTORE_0:
           case Bytecodes.DSTORE_0:
@@ -785,37 +730,37 @@ module J2ME {
             storeW64(3);
             break;
           case Bytecodes.IASTORE:
-            value = popI32();
-            index = popI32();
-            array = popRef();
+            value = i32[--sp];
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             array[index] = value;
             break;
           case Bytecodes.FASTORE:
-            value = popI32();
-            index = popI32();
-            array = popRef();
+            value = i32[--sp];
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             array[index] = value;
             break;
           case Bytecodes.BASTORE:
-            value = popI32();
-            index = popI32();
-            array = popRef();
+            value = i32[--sp];
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             array[index] = value;
             break;
           case Bytecodes.CASTORE:
-            value = popI32();
-            index = popI32();
-            array = popRef();
+            value = i32[--sp];
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             array[index] = value;
             break;
           case Bytecodes.SASTORE:
-            value = popI32();
-            index = popI32();
-            array = popRef();
+            value = i32[--sp];
+            index = i32[--sp];
+            array = ref[--sp];
             checkArrayBounds(array, index);
             array[index] = value;
             break;
@@ -1003,8 +948,8 @@ module J2ME {
           //          stack.push2(-stack.pop2());
           //          break;
           case Bytecodes.ISHL:
-            ib = popI32();
-            ia = popI32();
+            ib = i32[--sp];
+            ia = i32[--sp];
             i32[sp++] = ia << ib;
             break;
           //        case Bytecodes.LSHL:
@@ -1013,8 +958,8 @@ module J2ME {
           //          stack.push2(a.shiftLeft(b));
           //          break;
           case Bytecodes.ISHR:
-            ib = popI32();
-            ia = popI32();
+            ib = i32[--sp];
+            ia = i32[--sp];
             i32[sp++] = ia >> ib;
             break;
           //        case Bytecodes.LSHR:
@@ -1023,8 +968,8 @@ module J2ME {
           //          stack.push2(a.shiftRight(b));
           //          break;
           case Bytecodes.IUSHR:
-            ib = popI32();
-            ia = popI32();
+            ib = i32[--sp];
+            ia = i32[--sp];
             i32[sp++] = ia >>> ib;
             break;
           //        case Bytecodes.LUSHR:
@@ -1033,19 +978,19 @@ module J2ME {
           //          stack.push2(a.shiftRightUnsigned(b));
           //          break;
           case Bytecodes.IAND:
-            i32[sp - 2] &= popI32();
+            i32[sp - 2] &= i32[--sp];
             break;
           //        case Bytecodes.LAND:
           //          stack.push2(stack.pop2().and(stack.pop2()));
           //          break;
           case Bytecodes.IOR:
-            i32[sp - 2] |= popI32();
+            i32[sp - 2] |= i32[--sp];
             break;
           //        case Bytecodes.LOR:
           //          stack.push2(stack.pop2().or(stack.pop2()));
           //          break;
           case Bytecodes.IXOR:
-            i32[sp - 2] ^= popI32();
+            i32[sp - 2] ^= i32[--sp];
             break;
           //        case Bytecodes.LXOR:
           //          stack.push2(stack.pop2().xor(stack.pop2()));
@@ -1115,97 +1060,97 @@ module J2ME {
           //          break;
           case Bytecodes.IFEQ:
             targetPC = readTargetPC();
-            if (popI32() === 0) {
+            if (i32[--sp] === 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNE:
             targetPC = readTargetPC();
-            if (popI32() !== 0) {
+            if (i32[--sp] !== 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFLT:
             targetPC = readTargetPC();
-            if (popI32() < 0) {
+            if (i32[--sp] < 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFGE:
             targetPC = readTargetPC();
-            if (popI32() >= 0) {
+            if (i32[--sp] >= 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFGT:
             targetPC = readTargetPC();
-            if (popI32() > 0) {
+            if (i32[--sp] > 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFLE:
             targetPC = readTargetPC();
-            if (popI32() <= 0) {
+            if (i32[--sp] <= 0) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPEQ:
             targetPC = readTargetPC();
-            if (popI32() === popI32()) {
+            if (i32[--sp] === i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPNE:
             targetPC = readTargetPC();
-            if (popI32() !== popI32()) {
+            if (i32[--sp] !== i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPLT:
             targetPC = readTargetPC();
-            if (popI32() > popI32()) {
+            if (i32[--sp] > i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPGE:
             targetPC = readTargetPC();
-            if (popI32() <= popI32()) {
+            if (i32[--sp] <= i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPGT:
             targetPC = readTargetPC();
-            if (popI32() < popI32()) {
+            if (i32[--sp] < i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ICMPLE:
             targetPC = readTargetPC();
-            if (popI32() >= popI32()) {
+            if (i32[--sp] >= i32[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ACMPEQ:
             targetPC = readTargetPC();
-            if (popRef() === popRef()) {
+            if (ref[--sp] === ref[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IF_ACMPNE:
             targetPC = readTargetPC();
-            if (popRef() !== popRef()) {
+            if (ref[--sp] !== ref[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNULL:
             targetPC = readTargetPC();
-            if (!popRef()) {
+            if (!ref[--sp]) {
               pc = targetPC;
             }
             break;
           case Bytecodes.IFNONNULL:
             targetPC = readTargetPC();
-            if (popRef()) {
+            if (ref[--sp]) {
               pc = targetPC;
             }
             break;
@@ -1287,8 +1232,8 @@ module J2ME {
             index = readU16();
             classInfo = resolveClass(index, ci);
             classInitAndUnwindCheck(classInfo, opPC);
-            size = popI32();
-            pushRef(newArray(classInfo.klass, size));
+            size = i32[--sp];
+            ref[sp++] = newArray(classInfo.klass, size);
             break;
           //        case Bytecodes.MULTIANEWARRAY:
           //          index = frame.read16();
@@ -1300,7 +1245,7 @@ module J2ME {
           //          stack.push(J2ME.newMultiArray(classInfo.klass, lengths.reverse()));
           //          break;
           case Bytecodes.ARRAYLENGTH:
-            array = popRef();
+            array = ref[--sp];
             i32[sp++] = array.length;
             break;
           //        case Bytecodes.ARRAYLENGTH_IF_ICMPGE:
@@ -1315,7 +1260,7 @@ module J2ME {
           case Bytecodes.GETFIELD:
             index = readI16();
             fieldInfo = cp.resolveField(index, false);
-            object = popRef();
+            object = ref[--sp];
             pushKind(fieldInfo.kind, fieldInfo.get(object));
             // frame.patch(3, Bytecodes.GETFIELD, Bytecodes.RESOLVED_GETFIELD);
             break;
@@ -1328,7 +1273,7 @@ module J2ME {
             index = readI16();
             fieldInfo = cp.resolveField(index, false);
             value = popKind(fieldInfo.kind);
-            object = popRef();
+            object = ref[--sp];
             fieldInfo.set(object, value);
             // frame.patch(3, Bytecodes.PUTFIELD, Bytecodes.RESOLVED_PUTFIELD);
             break;
@@ -1366,12 +1311,12 @@ module J2ME {
               return;
             }
             loadThreadState();
-            pushRef(newObject(classInfo.klass));
+            ref[sp++] = newObject(classInfo.klass);
             break;
           case Bytecodes.CHECKCAST:
             index = readI16();
             classInfo = resolveClass(index, mi.classInfo);
-            object = peekRef();
+            object = ref[sp - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
               throw $.newClassCastException (
                 object.klass.classInfo.getClassNameSlow() + " is not assignable to " +
@@ -1382,26 +1327,26 @@ module J2ME {
           case Bytecodes.INSTANCEOF:
             index = readI16();
             classInfo = resolveClass(index, ci);
-            object = popRef();
+            object = ref[--sp];
             result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
             i32[sp++] = result ? 1 : 0;
             break;
           case Bytecodes.ATHROW:
-            object = popRef();
+            object = ref[--sp];
             if (!object) {
               throw $.newNullPointerException();
             }
             throw object;
             break;
           case Bytecodes.MONITORENTER:
-            object = popRef();
+            object = ref[--sp];
             thread.ctx.monitorEnter(object);
             if (U === VMState.Pausing || U === VMState.Stopping) {
               return;
             }
             break;
           case Bytecodes.MONITOREXIT:
-            object = popRef();
+            object = ref[--sp];
             thread.ctx.monitorExit(object);
             break;
           //        case Bytecodes.WIDE:
@@ -1642,7 +1587,7 @@ module J2ME {
 
           case Bytecodes.NEWARRAY:
             type = code[pc++];
-            size = popI32();
+            size = i32[--sp];
             ref[sp++] = newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size);
             break;
           case Bytecodes.LRETURN:
