@@ -900,12 +900,14 @@ module J2ME {
           //        case Bytecodes.DMUL:
           //          stack.push2(stack.pop2() * stack.pop2());
           //          break;
-          //        case Bytecodes.IDIV:
-          //          b = stack.pop();
-          //          a = stack.pop();
-          //          checkDivideByZero(b);
-          //          stack.push((a === Constants.INT_MIN && b === -1) ? a : ((a / b) | 0));
-          //          break;
+          case Bytecodes.IDIV:
+            if (i32[sp - 1] === 0) {
+              throwArithmeticException();
+            }
+            ia = i32[sp - 2];
+            ib = i32[sp - 1];
+            i32[sp - 2] = (ia === Constants.INT_MIN && ib === -1) ? ia : ((ia / ib) | 0); sp--;
+            break;
           case Bytecodes.LDIV:
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
               throwArithmeticException();
@@ -922,12 +924,12 @@ module J2ME {
             fa = popF64();
             pushF64(fa / fb);
             continue;
-          //        case Bytecodes.IREM:
-          //          b = stack.pop();
-          //          a = stack.pop();
-          //          checkDivideByZero(b);
-          //          stack.push(a % b);
-          //          break;
+          case Bytecodes.IREM:
+            if (i32[sp - 1] === 0) {
+              throwArithmeticException();
+            }
+            i32[sp - 2] = (i32[sp - 1] % i32[sp - 2]) | 0; sp--;
+            break;
           case Bytecodes.LREM:
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
               throwArithmeticException();
@@ -1351,242 +1353,6 @@ module J2ME {
             object = ref[--sp];
             thread.ctx.monitorExit(object);
             continue;
-          //        case Bytecodes.WIDE:
-          //          frame.wide();
-          //          break;
-          //        case Bytecodes.RESOLVED_INVOKEVIRTUAL:
-          //          index = frame.read16();
-          //          var calleeMethodInfo = <MethodInfo><any>rp[index];
-          //          var object = frame.peekInvokeObject(calleeMethodInfo);
-          //
-          //          calleeMethod = object[calleeMethodInfo.virtualName];
-          //          var calleeTargetMethodInfo: MethodInfo = calleeMethod.methodInfo;
-          //
-          //          if (calleeTargetMethodInfo &&
-          //              !calleeTargetMethodInfo.isSynchronized &&
-          //              !calleeTargetMethodInfo.isNative &&
-          //              calleeTargetMethodInfo.state !== MethodState.Compiled) {
-          //            var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
-          //            ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
-          //            ctx.pushFrame(calleeFrame);
-          //            frame = calleeFrame;
-          //            mi = frame.methodInfo;
-          //            mi.stats.interpreterCallCount ++;
-          //            ci = mi.classInfo;
-          //            rp = ci.constantPool.resolved;
-          //            stack = frame.stack;
-          //            lastPC = -1;
-          //            continue;
-          //          }
-          //
-          //          // Call directy.
-          //          var returnValue;
-          //          var argumentSlots = calleeMethodInfo.argumentSlots;
-          //          switch (argumentSlots) {
-          //            case 0:
-          //              returnValue = calleeMethod.call(object);
-          //              break;
-          //            case 1:
-          //              a = stack.pop();
-          //              returnValue = calleeMethod.call(object, a);
-          //              break;
-          //            case 2:
-          //              b = stack.pop();
-          //              a = stack.pop();
-          //              returnValue = calleeMethod.call(object, a, b);
-          //              break;
-          //            case 3:
-          //              c = stack.pop();
-          //              b = stack.pop();
-          //              a = stack.pop();
-          //              returnValue = calleeMethod.call(object, a, b, c);
-          //              break;
-          //            default:
-          //              Debug.assertUnreachable("Unexpected number of arguments");
-          //              break;
-          //          }
-          //          stack.pop();
-          //          if (!release) {
-          //            checkReturnValue(calleeMethodInfo, returnValue);
-          //          }
-          //          if (U) {
-          //            return;
-          //          }
-          //          if (calleeMethodInfo.returnKind !== Kind.Void) {
-          //            if (isTwoSlot(calleeMethodInfo.returnKind)) {
-          //              stack.push2(returnValue);
-          //            } else {
-          //              stack.push(returnValue);
-          //            }
-          //          }
-          //          break;
-          //        case Bytecodes.INVOKEVIRTUAL:
-          //        case Bytecodes.INVOKESPECIAL:
-          //        case Bytecodes.INVOKESTATIC:
-          //        case Bytecodes.INVOKEINTERFACE:
-          //          index = frame.read16();
-          //          if (op === Bytecodes.INVOKEINTERFACE) {
-          //            frame.read16(); // Args Number & Zero
-          //          }
-          //          var isStatic = (op === Bytecodes.INVOKESTATIC);
-          //
-          //          // Resolve method and do the class init check if necessary.
-          //          var calleeMethodInfo = mi.classInfo.constantPool.resolveMethod(index, isStatic);
-          //
-          //          // Fast path for some of the most common interpreter call targets.
-          //          if (calleeMethodInfo.classInfo.getClassNameSlow() === "java/lang/Object" &&
-          //              calleeMethodInfo.name === "<init>") {
-          //            stack.pop();
-          //            continue;
-          //          }
-          //
-          //          if (isStatic) {
-          //            classInitAndUnwindCheck(calleeMethodInfo.classInfo, lastPC);
-          //            if (U) {
-          //              return;
-          //            }
-          //          }
-          //
-          //          // Figure out the target method.
-          //          var calleeTargetMethodInfo: MethodInfo = calleeMethodInfo;
-          //          object = null;
-          //          var calleeMethod: any;
-          //          if (!isStatic) {
-          //            object = frame.peekInvokeObject(calleeMethodInfo);
-          //            switch (op) {
-          //              case Bytecodes.INVOKEVIRTUAL:
-          //                if (!calleeTargetMethodInfo.hasTwoSlotArguments &&
-          //                    calleeTargetMethodInfo.argumentSlots < 4) {
-          //                  frame.patch(3, Bytecodes.INVOKEVIRTUAL, Bytecodes.RESOLVED_INVOKEVIRTUAL);
-          //                }
-          //              case Bytecodes.INVOKEINTERFACE:
-          //                var name = op === Bytecodes.INVOKEVIRTUAL ? calleeMethodInfo.virtualName : calleeMethodInfo.mangledName;
-          //                calleeMethod = object[name];
-          //                calleeTargetMethodInfo = calleeMethod.methodInfo;
-          //                break;
-          //              case Bytecodes.INVOKESPECIAL:
-          //                checkNull(object);
-          //                calleeMethod = getLinkedMethod(calleeMethodInfo);
-          //                break;
-          //            }
-          //          } else {
-          //            calleeMethod = getLinkedMethod(calleeMethodInfo);
-          //          }
-          //          // Call method directly in the interpreter if we can.
-          //          if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
-          //            var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
-          //            ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
-          //            ctx.pushFrame(calleeFrame);
-          //            frame = calleeFrame;
-          //            mi = frame.methodInfo;
-          //            mi.stats.interpreterCallCount ++;
-          //            ci = mi.classInfo;
-          //            rp = ci.constantPool.resolved;
-          //            stack = frame.stack;
-          //            lastPC = -1;
-          //            if (calleeTargetMethodInfo.isSynchronized) {
-          //              if (!calleeFrame.lockObject) {
-          //                frame.lockObject = calleeTargetMethodInfo.isStatic
-          //                  ? calleeTargetMethodInfo.classInfo.getClassObject()
-          //                  : frame.local[0];
-          //              }
-          //              ctx.monitorEnter(calleeFrame.lockObject);
-          //              if (U === VMState.Pausing || U === VMState.Stopping) {
-          //                return;
-          //              }
-          //            }
-          //            continue;
-          //          }
-          //
-          //          // Call directy.
-          //          var returnValue;
-          //          var argumentSlots = calleeMethodInfo.hasTwoSlotArguments ? -1 : calleeMethodInfo.argumentSlots;
-          //          switch (argumentSlots) {
-          //            case 0:
-          //              returnValue = calleeMethod.call(object);
-          //              break;
-          //            case 1:
-          //              a = stack.pop();
-          //              returnValue = calleeMethod.call(object, a);
-          //              break;
-          //            case 2:
-          //              b = stack.pop();
-          //              a = stack.pop();
-          //              returnValue = calleeMethod.call(object, a, b);
-          //              break;
-          //            case 3:
-          //              c = stack.pop();
-          //              b = stack.pop();
-          //              a = stack.pop();
-          //              returnValue = calleeMethod.call(object, a, b, c);
-          //              break;
-          //            default:
-          //              if (calleeMethodInfo.hasTwoSlotArguments) {
-          //                frame.popArgumentsInto(calleeMethodInfo, argArray);
-          //              } else {
-          //                popManyInto(stack, calleeMethodInfo.argumentSlots, argArray);
-          //              }
-          //              var returnValue = calleeMethod.apply(object, argArray);
-          //          }
-          //
-          //          if (!isStatic) {
-          //            stack.pop();
-          //          }
-          //
-          //          if (!release) {
-          //            checkReturnValue(calleeMethodInfo, returnValue);
-          //          }
-          //
-          //          if (U) {
-          //            return;
-          //          }
-          //
-          //          if (calleeMethodInfo.returnKind !== Kind.Void) {
-          //            if (isTwoSlot(calleeMethodInfo.returnKind)) {
-          //              stack.push2(returnValue);
-          //            } else {
-          //              stack.push(returnValue);
-          //            }
-          //          }
-          //          break;
-          //
-          //        case Bytecodes.LRETURN:
-          //        case Bytecodes.DRETURN:
-          //          returnValue = stack.pop();
-          //        case Bytecodes.IRETURN:
-          //        case Bytecodes.FRETURN:
-          //        case Bytecodes.ARETURN:
-          //          returnValue = stack.pop();
-          //        case Bytecodes.RETURN:
-          //          var callee = ctx.popFrame();
-          //          if (callee.lockObject) {
-          //            ctx.monitorExit(callee.lockObject);
-          //          }
-          //          callee.free();
-          //          frame = ctx.current();
-          //          if (Frame.isMarker(frame)) { // Marker or Start Frame
-          //            if (op === Bytecodes.RETURN) {
-          //              return undefined;
-          //            }
-          //            return returnValue;
-          //          }
-          //          mi = frame.methodInfo;
-          //          ci = mi.classInfo;
-          //          rp = ci.constantPool.resolved;
-          //          stack = frame.stack;
-          //          lastPC = -1;
-          //          if (op === Bytecodes.RETURN) {
-          //            // Nop.
-          //          } else if (op === Bytecodes.LRETURN || op === Bytecodes.DRETURN) {
-          //            stack.push2(returnValue);
-          //          } else {
-          //            stack.push(returnValue);
-          //          }
-          //          break;
-          //        default:
-          //          var opName = Bytecodes[op];
-          //          throw new Error("Opcode " + opName + " [" + op + "] not supported.");
-
           case Bytecodes.NEWARRAY:
             type = code[pc++];
             size = i32[--sp];
@@ -1622,14 +1388,14 @@ module J2ME {
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
-            index = readI16();
+            index = code[pc++] << 8 | code[pc++];
             if (op === Bytecodes.INVOKEINTERFACE) {
               pc += 2; // Args Number & Zero
             }
             var isStatic = (op === Bytecodes.INVOKESTATIC);
 
             // Resolve method and do the class init check if necessary.
-            var calleeMethodInfo = cp.resolveMethod(index, isStatic);
+            var calleeMethodInfo = cp.resolved[index] || cp.resolveMethod(index, isStatic);
             var calleeTargetMethodInfo = calleeMethodInfo;
 
             var callee = null;
@@ -1641,7 +1407,7 @@ module J2ME {
               case Bytecodes.INVOKESPECIAL:
                 checkNull(object);
               case Bytecodes.INVOKESTATIC:
-                callee = getLinkedMethod(calleeMethodInfo);
+                callee = calleeMethodInfo.fn || getLinkedMethod(calleeMethodInfo);
                 break;
               case Bytecodes.INVOKEVIRTUAL:
                 calleeTargetMethodInfo = object.klass.classInfo.vTable[calleeMethodInfo.vTableIndex];
@@ -1715,7 +1481,7 @@ module J2ME {
         code = mi.codeAttribute.code;
         continue;
       }
-      // frame.set(fp, sp, opPC);
+       //frame.set(fp, sp, opPC);
       // frameView.traceStack(traceWriter);
       // frame.trace(traceWriter, fieldInfo);
     }
