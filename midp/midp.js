@@ -40,7 +40,7 @@ var MIDP = (function() {
     }
 
     function isFullscreen() {
-      return isValid && FullscreenInfo.isFullscreen(displayId);
+      return !isValid || FullscreenInfo.isFullscreen(displayId);
     }
 
     return {
@@ -68,7 +68,7 @@ var MIDP = (function() {
     }
 
     function isFullscreen(id) {
-      return map.get(id) || 0;
+      return (0 !== map.get(id));
     }
 
     return {
