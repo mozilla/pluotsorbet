@@ -364,50 +364,13 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, array, object, result, constant, targetPC, returnValue, kind;
+    var value, index, array, object, result, constant, offset, targetPC, returnValue, kind;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
     var fa = 0, fb = 0; // Float / Double Operands
 
     var classInfo: ClassInfo;
     var fieldInfo: FieldInfo;
-
-    /** @inline */
-    function popF64() {
-      return --sp, f32[--sp];
-    }
-
-    /** @inline */
-    function pushF32(v: number) {
-      return f32[sp++];
-    }
-
-    /** @inline */
-    function loadW64(i: number) {
-      i32[sp++] = i32[lp + i];
-      i32[sp++] = i32[lp + i + 1];
-    }
-
-    /** @inline */
-    function storeW64(i: number) {
-      i32[lp + 1] = i32[--sp];
-      i32[lp] = i32[--sp];
-    }
-
-    /** @inline */
-    function pushF64(v: number) {
-      f32[sp++], sp++;
-    }
-
-    /** @inline */
-    function getLocalF32(i: number) {
-      return f32[lp + i];
-    }
-
-    /** @inline */
-    function setLocalF32(v: number, i: number) {
-      f32[lp + i] = v;
-    }
 
     /** @inline */
     function readI16() {
@@ -600,7 +563,7 @@ module J2ME {
       var opPC = pc;
       var op = code[pc++];
 
-      bytecodeCount++;
+      release || bytecodeCount++;
       if (traceWriter) {
         traceWriter.writeLn("BEFORE: " + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
         frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
@@ -654,7 +617,7 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Integer) {
               i32[sp++] = constant;
             } else if (tag === TAGS.CONSTANT_Float) {
-              pushF32(constant);
+              f32[sp++] = constant;
             } else if (tag === TAGS.CONSTANT_String) {
               ref[sp++] = constant;
             } else {
@@ -668,7 +631,7 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Long) {
               i32[sp++] = constant;
             } else if (tag === TAGS.CONSTANT_Double) {
-              pushF64(constant);
+              f32[sp++], sp++;
             } else {
               assert(false);
             }
@@ -682,7 +645,9 @@ module J2ME {
             continue;
           case Bytecodes.LLOAD:
           case Bytecodes.DLOAD:
-            loadW64(code[pc++]);
+            offset = lp + code[pc++];
+            i32[sp++] = i32[offset];
+            i32[sp++] = i32[offset + 1];
             continue;
           case Bytecodes.ILOAD_0:
           case Bytecodes.ILOAD_1:
@@ -706,13 +671,17 @@ module J2ME {
           case Bytecodes.LLOAD_1:
           case Bytecodes.LLOAD_2:
           case Bytecodes.LLOAD_3:
-            loadW64(op - Bytecodes.LLOAD_0);
+            offset = lp + op - Bytecodes.LLOAD_0;
+            i32[sp++] = i32[offset];
+            i32[sp++] = i32[offset + 1];
             continue;
           case Bytecodes.DLOAD_0:
           case Bytecodes.DLOAD_1:
           case Bytecodes.DLOAD_2:
           case Bytecodes.DLOAD_3:
-            loadW64(op - Bytecodes.DLOAD_0);
+            offset = lp + op - Bytecodes.DLOAD_0;
+            i32[sp++] = i32[offset];
+            i32[sp++] = i32[offset + 1];
             continue;
           case Bytecodes.IALOAD:
             index = i32[--sp];
@@ -786,7 +755,9 @@ module J2ME {
             continue;
           case Bytecodes.LSTORE:
           case Bytecodes.DSTORE:
-            storeW64(code[pc++]);
+            offset = lp + code[pc++];
+            i32[offset + 1] = i32[--sp];
+            i32[offset]     = i32[--sp];
             continue;
           case Bytecodes.ISTORE_0:
           case Bytecodes.ISTORE_1:
@@ -807,20 +778,20 @@ module J2ME {
             ref[lp + op - Bytecodes.ASTORE_0] = ref[--sp];
             continue;
           case Bytecodes.LSTORE_0:
-          case Bytecodes.DSTORE_0:
-            storeW64(0);
-            continue;
           case Bytecodes.LSTORE_1:
-          case Bytecodes.DSTORE_1:
-            storeW64(1);
-            continue;
           case Bytecodes.LSTORE_2:
-          case Bytecodes.DSTORE_2:
-            storeW64(2);
-            continue;
           case Bytecodes.LSTORE_3:
+            offset = lp + op - Bytecodes.LSTORE_0;
+            i32[offset + 1] = i32[--sp];
+            i32[offset]     = i32[--sp];
+            continue;
+          case Bytecodes.DSTORE_0:
+          case Bytecodes.DSTORE_1:
+          case Bytecodes.DSTORE_2:
           case Bytecodes.DSTORE_3:
-            storeW64(3);
+            offset = lp + op - Bytecodes.DSTORE_0;
+            i32[offset + 1] = i32[--sp];
+            i32[offset]     = i32[--sp];
             continue;
           case Bytecodes.IASTORE:
             value = i32[--sp];
@@ -914,10 +885,14 @@ module J2ME {
             sp -= 2;
             continue;
           case Bytecodes.DUP:
-            ref[sp] = ref[sp - 1];
-            i32[sp] = i32[sp - 1];
+            i32[sp] = i32[sp - 1];      ref[sp] = ref[sp - 1];
             sp++;
             continue;
+          case Bytecodes.DUP2:
+            i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2];
+            i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1];
+            sp += 2;
+            break;
           case Bytecodes.DUP_X1:
             i32[sp    ] = i32[sp - 1];  ref[sp    ] = ref[sp - 1];
             i32[sp - 1] = i32[sp - 2];  ref[sp - 1] = ref[sp - 2];
@@ -930,14 +905,6 @@ module J2ME {
           //          c = stack.pop();
           //          stack.push(a);
           //          stack.push(c);
-          //          stack.push(b);
-          //          stack.push(a);
-          //          break;
-          //        case Bytecodes.DUP2:
-          //          a = stack.pop();
-          //          b = stack.pop();
-          //          stack.push(b);
-          //          stack.push(a);
           //          stack.push(b);
           //          stack.push(a);
           //          break;
@@ -1037,15 +1004,15 @@ module J2ME {
             f32[sp++] = Math.fround(fa / fb);
             break;
           case Bytecodes.DDIV:
-            fb = popF64();
-            fa = popF64();
-            pushF64(fa / fb);
+            fb = --sp, f32[--sp];
+            fa = --sp, f32[--sp];
+            f32[sp++], sp++;
             continue;
           case Bytecodes.IREM:
             if (i32[sp - 1] === 0) {
               throwArithmeticException();
             }
-            i32[sp - 2] = (i32[sp - 1] % i32[sp - 2]) | 0; sp--;
+            i32[sp - 2] = (i32[sp - 2] % i32[sp - 1]) | 0; sp--;
             break;
           case Bytecodes.LREM:
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
@@ -1308,12 +1275,37 @@ module J2ME {
           case Bytecodes.I2S:
             i32[sp - 1] = (i32[sp - 1] << 16) >> 16;;
             continue;
-          //        case Bytecodes.TABLESWITCH:
-          //          frame.pc = frame.tableSwitch();
-          //          break;
-          //        case Bytecodes.LOOKUPSWITCH:
-          //          frame.pc = frame.lookupSwitch();
-          //          break;
+          case Bytecodes.TABLESWITCH:
+            pc = (pc + 3) & ~0x03; // Consume Padding
+            offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+            ia = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+            ib = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+            value = i32[--sp];
+            if (value >= ia && value <= ib) {
+              pc += (value - ia) << 2;
+              offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+            }
+            pc = opPC + offset;
+            break;
+          case Bytecodes.LOOKUPSWITCH:
+            pc = (pc + 3) & ~0x03; // Consume Padding
+                offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+            var npairs = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+            value = i32[--sp];
+            lookup:
+            for (var i = 0; i < npairs; i++) {
+              var key  = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+              if (key === value) {
+                offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+              } else {
+                pc += 4;
+              }
+              if (key >= value) {
+                break lookup;
+              }
+            }
+            pc = opPC + offset;
+            break;
           //        case Bytecodes.NEWARRAY:
           //          type = frame.read8();
           //          size = stack.pop();
@@ -1557,4 +1549,6 @@ module J2ME {
       }
     }
   }
+
+  // print(disassemble(interpret));
 }
