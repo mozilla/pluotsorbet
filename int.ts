@@ -198,6 +198,8 @@ module J2ME {
     }
   }
 
+  export var interpreterCounter = new Metrics.Counter(true);
+
   export class Thread {
 
     /**
@@ -372,16 +374,6 @@ module J2ME {
     var classInfo: ClassInfo;
     var fieldInfo: FieldInfo;
 
-    /** @inline */
-    function readI16() {
-      return (code[pc++] << 8 | code[pc++]) << 16 >> 16;
-    }
-
-    /** @inline */
-    function readU16() {
-      return code[pc++] << 8 | code[pc++];
-    }
-
     function saveThreadState() {
       thread.fp = fp;
       thread.sp = sp;
@@ -399,14 +391,6 @@ module J2ME {
       lp = fp - maxLocals;
       sp = thread.sp;
       pc = thread.pc;
-    }
-
-    /** @inline */
-    function readTargetPC() {
-      var offset = (code[pc] << 8 | code[pc + 1]) << 16 >> 16;
-      var target = pc - 1 + offset;
-      pc += 2;
-      return target;
     }
 
     /** @inline */
@@ -562,11 +546,12 @@ module J2ME {
       fieldInfo = null;
       var opPC = pc;
       var op = code[pc++];
+      // interpreterCounter.count(Bytecodes[op]);
 
       release || bytecodeCount++;
       if (traceWriter) {
         traceWriter.writeLn("BEFORE: " + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
-        frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
+        // frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
       }
 
       try {
@@ -607,11 +592,11 @@ module J2ME {
             i32[sp++] = code[pc++] << 24 >> 24;
             continue;
           case Bytecodes.SIPUSH:
-            i32[sp++] = readI16();
+            i32[sp++] = (code[pc++] << 8 | code[pc++]) << 16 >> 16;
             continue;
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
-            index = (op === Bytecodes.LDC) ? code[pc++] : readI16();
+            index = (op === Bytecodes.LDC) ? code[pc++] : code[pc++] << 8 | code[pc++];
             tag = ci.constantPool.peekTag(index);
             constant = ci.constantPool.resolve(index, tag, false);
             if (tag === TAGS.CONSTANT_Integer) {
@@ -625,7 +610,7 @@ module J2ME {
             }
             continue;
           case Bytecodes.LDC2_W:
-            index = (op === Bytecodes.LDC) ? code[pc++] : readI16();
+            index = (op === Bytecodes.LDC) ? code[pc++] : code[pc++] << 8 | code[pc++];
             tag = ci.constantPool.peekTag(index);
             constant = ci.constantPool.resolve(index, tag, false);
             if (tag === TAGS.CONSTANT_Long) {
@@ -662,6 +647,8 @@ module J2ME {
             i32[sp++] = i32[lp + op - Bytecodes.FLOAD_0];
             continue;
           case Bytecodes.ALOAD_0:
+            ref[sp++] = ref[lp];
+            continue;
           case Bytecodes.ALOAD_1:
           case Bytecodes.ALOAD_2:
           case Bytecodes.ALOAD_3:
@@ -687,7 +674,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             i32[sp++] = array[index];
             continue;
@@ -695,7 +682,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             i32[sp++] = array[index];
             continue;
@@ -703,7 +690,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             i32[sp++] = array[index];
             continue;
@@ -711,7 +698,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             i32[sp++] = array[index];
             continue;
@@ -719,7 +706,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             f32[sp++] = array[index];
             continue;
@@ -727,7 +714,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             ref[sp++] = array[index];
             continue;
@@ -741,7 +728,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             bufferView.setFloat64(sp << 2, array[index]);
             sp += 2;
@@ -798,7 +785,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             array[index] = value;
             continue;
@@ -807,7 +794,8 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
+              throwArrayIndexOutOfBoundsException
             }
             array[index] = value;
             continue;
@@ -816,7 +804,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             array[index] = value;
             continue;
@@ -825,7 +813,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             array[index] = value;
             continue;
@@ -834,7 +822,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             array[index] = value;
             continue;
@@ -844,7 +832,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             array.value[index << 2    ] = ll;
             array.value[index << 2 + 1] = lh;
@@ -853,7 +841,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             i32[sp++] = array.value[index << 2    ];
             i32[sp++] = array.value[index << 2 + 1];
@@ -864,7 +852,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             array[index] = value;
             continue;
@@ -873,7 +861,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throw $.newArrayIndexOutOfBoundsException(String(index));
+              throwArrayIndexOutOfBoundsException(index);
             }
             checkArrayStore(array, value);
             array[index] = value;
@@ -939,7 +927,7 @@ module J2ME {
           case Bytecodes.IINC:
             index = code[pc++];
             value = code[pc++] << 24 >> 24;
-            i32[lp + index] += value | 0;
+            i32[lp + index] = i32[lp + index] + value | 0;
             continue;
           //        case Bytecodes.IINC_GOTO:
           //          index = frame.read8();
@@ -1312,14 +1300,14 @@ module J2ME {
           //          stack.push(newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size));
           //          break;
           case Bytecodes.ANEWARRAY:
-            index = readU16();
+            index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
             classInitAndUnwindCheck(classInfo, opPC);
             size = i32[--sp];
             ref[sp++] = newArray(classInfo.klass, size);
             continue;
           case Bytecodes.MULTIANEWARRAY:
-            index = readU16();
+            index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
             var dimensions = code[pc++];
             var lengths = new Array(dimensions);
@@ -1334,8 +1322,8 @@ module J2ME {
             continue;
           case Bytecodes.GETFIELD:
           case Bytecodes.GETSTATIC:
-            index = readI16();
-            fieldInfo = cp.resolveField(index, false);
+            index = code[pc++] << 8 | code[pc++];
+            fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
             if (op === Bytecodes.GETSTATIC) {
               classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
               //if (U) {
@@ -1349,8 +1337,8 @@ module J2ME {
             break;
           case Bytecodes.PUTFIELD:
           case Bytecodes.PUTSTATIC:
-            index = readI16();
-            fieldInfo = cp.resolveField(index, false);
+            index = code[pc++] << 8 | code[pc++];
+            fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
             if (op === Bytecodes.PUTSTATIC) {
               classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
               //if (U) {
@@ -1364,7 +1352,7 @@ module J2ME {
             }
             break;
           case Bytecodes.NEW:
-            index = readI16();
+            index = code[pc++] << 8 | code[pc++];
             traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
             classInfo = resolveClass(index, ci);
             saveThreadState();
@@ -1376,7 +1364,7 @@ module J2ME {
             ref[sp++] = newObject(classInfo.klass);
             continue;
           case Bytecodes.CHECKCAST:
-            index = readI16();
+            index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, mi.classInfo);
             object = ref[sp - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
@@ -1387,7 +1375,7 @@ module J2ME {
             }
             continue;
           case Bytecodes.INSTANCEOF:
-            index = readI16();
+            index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
             object = ref[--sp];
             result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
@@ -1544,8 +1532,8 @@ module J2ME {
       }
 
       if (traceWriter) {
-        traceWriter.writeLn("AFTER: ");
-        frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
+        // traceWriter.writeLn("AFTER: ");
+        // frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
       }
     }
   }

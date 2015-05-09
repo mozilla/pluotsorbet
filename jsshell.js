@@ -1,6 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
-
 'use strict';
 
 // Define objects and functions that j2me.js expects
@@ -31,7 +28,57 @@ function check() {
 
 }
 
-if (scriptArgs.length !== 1) {
+function parseArguments(options, tokens) {
+  var leftover = [];
+  for (var i = 0; i < tokens.length; i++) {
+    var tokenParts = tokens[i].split("=");
+    var name = null;
+    var value = tokenParts[1];
+    if (tokenParts[0].indexOf("--") === 0) {
+      name = tokenParts[0].substring(2);
+    } else if (tokenParts[0].indexOf("-") === 0) {
+      var shortName = tokenParts[0].substring(1);
+      name = shortName;
+      for (var longName in options) {
+        if (options[longName].short === shortName) {
+          name = longName;
+          break;
+        }
+      }
+    }
+    if (tokens[i][0] === "-") {
+      if (options[name]) {
+        switch (options[name].type) {
+          case "number":
+            options[name].value = Number(value);
+            break;
+          case "string":
+            options[name].value = value;
+            break;
+        }
+      } else {
+        print("Illegal option: " + name);
+        quit();
+      }
+    } else {
+      leftover.push(tokens[i]);
+    }
+  }
+  print(JSON.stringify(options, null, 2));
+  return leftover;
+}
+
+var options = {
+  "writers": {
+    short: "w",
+    value: "",
+    type: "string"
+  }
+};
+
+var files = parseArguments(options, scriptArgs);
+
+if (files.length !== 1) {
   print("error: One main class name must be specified.");
   print("usage: jsshell <main class name>");
   quit(1);
@@ -143,19 +190,27 @@ try {
   var start = dateNow();
   var jvm = new JVM();
 
-  J2ME.writers = J2ME.WriterFlags.All;
+  var writers = J2ME.WriterFlags.None;
+  if (options.writers.value.indexOf("t") >= 0) {
+    writers |= J2ME.WriterFlags.Trace;
+  }
+  J2ME.writers = writers;
+
   J2ME.enableRuntimeCompilation = false;
 
   start = dateNow();
-  var runtime = jvm.startIsolate0(scriptArgs[0], config.args);
+  var runtime = jvm.startIsolate0(files[0], config.args);
   while (callbacks.length) {
     (callbacks.shift())();
   }
   print("Time: " + (dateNow() - start).toFixed(4) + " ms");
+  print("Bytecodes: " + J2ME.bytecodeCount);
+  J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter(false, function (x) {
+    print(x);
+  }));
   if (profileTimeline) {
     J2ME.timeline.createSnapshot().trace(new J2ME.IndentingWriter());
   }
-  // J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter());
 } catch (x) {
   print(x);
   print(x.stack);
