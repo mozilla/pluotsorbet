@@ -1,7 +1,6 @@
 declare var ASM;
 
 var buffer = ASM.buffer;
-var bufferView: DataView = new DataView(buffer);
 
 var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
@@ -403,6 +402,7 @@ module J2ME {
         case Kind.Reference:
           return ref[--sp];
         case Kind.Int:
+        case Kind.Byte:
         case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
@@ -410,8 +410,8 @@ module J2ME {
         case Kind.Float:
           return f32[--sp];
         case Kind.Long:
-          var l = i32[--sp];
           var h = i32[--sp];
+          var l = i32[--sp];
           tempReturn0 = h;
           return l;
         case Kind.Double:
@@ -440,15 +440,6 @@ module J2ME {
       return args;
     }
 
-    function popKinds(kinds: Kind [], offset: number) {
-      values.length = kinds.length - offset;
-      var j = 0;
-      for (var i = offset; i < kinds.length; i++) {
-        values[j++] = popKind(kinds[i]);
-      }
-      return values;
-    }
-
     /** @inline */
     function pushKind(kind: Kind, l: any, h: any) {
       switch (kind) {
@@ -456,6 +447,7 @@ module J2ME {
           ref[sp++] = l;
           return;
         case Kind.Int:
+        case Kind.Byte:
         case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
@@ -475,7 +467,7 @@ module J2ME {
         case Kind.Void:
           break;
         default:
-          Debug.assert(false, "Cannot Pop Kind: " + Kind[kind]);
+          Debug.assert(false, "Cannot Push Kind: " + Kind[kind]);
       }
     }
 
@@ -485,6 +477,7 @@ module J2ME {
           ref[sp++] = ref[address >> 2];
           return;
         case Kind.Int:
+        case Kind.Byte:
         case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
@@ -508,6 +501,7 @@ module J2ME {
           ref[address >> 2] = ref[--sp];
           return;
         case Kind.Int:
+        case Kind.Byte:
         case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
@@ -577,7 +571,7 @@ module J2ME {
           case Bytecodes.FCONST_0:
           case Bytecodes.FCONST_1:
           case Bytecodes.FCONST_2:
-            i32[sp++] = op - Bytecodes.FCONST_0;
+            f32[sp++] = op - Bytecodes.FCONST_0;
             continue;
           case Bytecodes.DCONST_0:
             i32[sp++] = 0;
@@ -722,20 +716,15 @@ module J2ME {
             }
             ref[sp++] = array[index];
             continue;
-          //        case Bytecodes.DALOAD:
-          //          index = stack.pop();
-          //          array = stack.pop();
-          //          checkArrayBounds(array, index);
-          //          stack.push2(array[index]);
-          //          break;
           case Bytecodes.DALOAD:
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
               throwArrayIndexOutOfBoundsException(index);
             }
-            bufferView.setFloat64(sp << 2, array[index]);
-            sp += 2;
+            aliasedF64[0] = array[index];
+            i32[sp++] = aliasedI32[0];
+            i32[sp++] = aliasedI32[1];
             continue;
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
@@ -838,8 +827,8 @@ module J2ME {
             if ((index >>> 0) >= (array.length >>> 0)) {
               throwArrayIndexOutOfBoundsException(index);
             }
-            array.value[index << 2    ] = ll;
-            array.value[index << 2 + 1] = lh;
+            array.value[index * 2    ] = ll;
+            array.value[index * 2 + 1] = lh;
             continue;
           case Bytecodes.LALOAD:
             index = i32[--sp];
@@ -847,12 +836,13 @@ module J2ME {
             if ((index >>> 0) >= (array.length >>> 0)) {
               throwArrayIndexOutOfBoundsException(index);
             }
-            i32[sp++] = array.value[index << 2    ];
-            i32[sp++] = array.value[index << 2 + 1];
+            i32[sp++] = array.value[index * 2    ];
+            i32[sp++] = array.value[index * 2 + 1];
             continue;
           case Bytecodes.DASTORE:
-            sp -= 2;
-            value = bufferView.getFloat64(sp << 2);
+            aliasedI32[1] = i32[--sp];
+            aliasedI32[0] = i32[--sp];
+            value = aliasedF64[0];
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
@@ -877,7 +867,7 @@ module J2ME {
             sp -= 2;
             continue;
           case Bytecodes.DUP:
-            i32[sp] = i32[sp - 1];      ref[sp] = ref[sp - 1];
+            i32[sp] = i32[sp - 1];          ref[sp] = ref[sp - 1];
             sp++;
             continue;
           case Bytecodes.DUP2:
@@ -886,9 +876,16 @@ module J2ME {
             sp += 2;
             break;
           case Bytecodes.DUP_X1:
-            i32[sp    ] = i32[sp - 1];  ref[sp    ] = ref[sp - 1];
-            i32[sp - 1] = i32[sp - 2];  ref[sp - 1] = ref[sp - 2];
-            i32[sp - 2] = i32[sp];      ref[sp - 2] = ref[sp];
+            i32[sp    ] = i32[sp - 1];      ref[sp    ] = ref[sp - 1];
+            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
+            i32[sp - 2] = i32[sp];          ref[sp - 2] = ref[sp];
+            sp++;
+            continue;
+          case Bytecodes.DUP_X2:
+            i32[sp    ] = i32[sp - 1];      ref[sp    ] = ref[sp - 1];
+            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
+            i32[sp - 2] = i32[sp - 3];      ref[sp - 2] = ref[sp - 3];
+            i32[sp - 3] = i32[sp];          ref[sp - 3] = ref[sp];
             sp++;
             continue;
           //        case Bytecodes.DUP_X2:
@@ -1133,8 +1130,12 @@ module J2ME {
             continue;
           case Bytecodes.DCMPL:
           case Bytecodes.DCMPG:
-            fb = bufferView.getFloat64(sp - 2 << 2);
-            fa = bufferView.getFloat64(sp - 4 << 2);
+            aliasedI32[0] = i32[sp - 2];
+            aliasedI32[1] = i32[sp - 1];
+            fb = aliasedF64[0];
+            aliasedI32[0] = i32[sp - 4];
+            aliasedI32[1] = i32[sp - 3];
+            fa = aliasedF64[0];
             sp -= 4;
             if (isNaN(fa) || isNaN(fb)) {
               i32[sp++] = op === Bytecodes.DCMPL ? -1 : 1;
