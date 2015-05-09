@@ -429,17 +429,18 @@ Native["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
 
 Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
     this.stackTrace = [];
-    $.ctx.frames.forEach(function(frame) {
-        if (!frame.methodInfo)
-            return;
-        var methodInfo = frame.methodInfo;
-        var methodName = methodInfo.name;
-        if (!methodName)
-            return;
-        var classInfo = methodInfo.classInfo;
-        var className = classInfo.getClassNameSlow();
-        this.stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
-    }.bind(this));
+    J2ME.traceWriter && J2ME.traceWriter.writeLn("REDUX");
+    //$.ctx.frames.forEach(function(frame) {
+    //    if (!frame.methodInfo)
+    //        return;
+    //    var methodInfo = frame.methodInfo;
+    //    var methodName = methodInfo.name;
+    //    if (!methodName)
+    //        return;
+    //    var classInfo = methodInfo.classInfo;
+    //    var className = classInfo.getClassNameSlow();
+    //    this.stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
+    //}.bind(this));
 };
 
 Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() {

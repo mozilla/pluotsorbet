@@ -212,14 +212,9 @@ module J2ME {
     long: null
   };
 
-  function Int64Array(size: number) {
-    var array = Array(size);
-    for (var i = 0; i < size; i++) {
-      array[i] = Long.ZERO;
-    }
-    // We can't put the klass on the prototype.
-    (<any>array).klass = Klasses.long;
-    return array;
+  function Int64Array(length: number) {
+    this.value = new Int32Array(length * 2);
+    this.length = length;
   }
 
   var arrays = {
@@ -857,6 +852,9 @@ module J2ME {
   }
 
   export class RuntimeKlass {
+
+    _address: number;
+
     templateKlass: Klass;
 
     /**
@@ -871,6 +869,7 @@ module J2ME {
     // isRuntimeKlass: boolean;
 
     constructor(templateKlass: Klass) {
+      this._address = ASM._gcMalloc(templateKlass.classInfo.sizeOfStaticFields);
       this.templateKlass = templateKlass;
     }
   }
@@ -899,26 +898,27 @@ module J2ME {
       $.setClassInitialized(runtimeKlass);
       return;
     }
-    var fields = runtimeKlass.templateKlass.classInfo.getFields();
-    for (var i = 0; i < fields.length; i++) {
-      var field = fields[i];
-      if (field.isStatic) {
-        var kind = getSignatureKind(field.utf8Signature);
-        var defaultValue;
-        switch (kind) {
-          case Kind.Reference:
-            defaultValue = null;
-            break;
-          case Kind.Long:
-            defaultValue = Long.ZERO;
-            break;
-          default:
-            defaultValue = 0;
-            break;
-        }
-        field.set(<java.lang.Object><any>runtimeKlass, defaultValue);
-      }
-    }
+    //REDUX: No need.
+    //var fields = runtimeKlass.templateKlass.classInfo.getFields();
+    //for (var i = 0; i < fields.length; i++) {
+    //  var field = fields[i];
+    //  if (field.isStatic) {
+    //    var kind = getSignatureKind(field.utf8Signature);
+    //    var defaultValue;
+    //    switch (kind) {
+    //      case Kind.Reference:
+    //        defaultValue = null;
+    //        break;
+    //      case Kind.Long:
+    //        defaultValue = Long.ZERO;
+    //        break;
+    //      default:
+    //        defaultValue = 0;
+    //        break;
+    //    }
+    //    field.set(<java.lang.Object><any>runtimeKlass, defaultValue);
+    //  }
+    //}
   }
 
   /**
@@ -1296,10 +1296,22 @@ module J2ME {
         release || assert(!field.isStatic, "Static field was defined as instance in BindingsMap");
         var object = field.isStatic ? klass : klass.prototype;
         release || assert (!object.hasOwnProperty(fieldName), "Should not overwrite existing properties.");
-        var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
+        var getter;
         var setter;
-        if (release) {
-          setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
+        if (true || release) {
+          switch (field.kind) {
+            case Kind.Reference:
+              setter = new Function("value", "ref[this._address + " + field.byteOffset + " >> 2] = value;");
+              getter = new Function("return ref[this._address + " + field.byteOffset + " >> 2];");
+              break;
+            case Kind.Int:
+              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
+              getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
+              break;
+            default:
+              Debug.assert(false, Kind[field.kind]);
+              break;
+          }
         } else {
           setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
         }
@@ -1405,7 +1417,7 @@ module J2ME {
     }
     linkKlass(methodInfo.classInfo);
     linkKlassMethod(methodInfo.classInfo.klass, methodInfo);
-    assert (methodInfo.fn);
+    release || assert (methodInfo.fn);
     return methodInfo.fn;
   }
 

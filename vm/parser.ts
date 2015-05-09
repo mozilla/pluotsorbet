@@ -584,6 +584,7 @@ module J2ME {
     public classInfo: ClassInfo;
     public kind: Kind;
     public name: string;
+    public byteOffset: number = 0;
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
     public mangledName: string = null;
@@ -607,21 +608,31 @@ module J2ME {
       return !!(this.accessFlags & ACCESS_FLAGS.ACC_STATIC);
     }
 
-    public get(object: java.lang.Object) {
-      return object[this.mangledName];
-    }
-
+    //public get(object: java.lang.Object) {
+    //  return object[this.mangledName];
+    //}
+    //
     public set(object: java.lang.Object, value: any) {
-      object[this.mangledName] = value
+      switch (this.kind) {
+        case Kind.Int:
+          i32[object._address + this.byteOffset >> 2] = value;
+          break;
+        case Kind.Reference:
+          ref[object._address + this.byteOffset >> 2] = value;
+          break;
+        default:
+          Debug.assert(false, Kind[this.kind]);
+      }
+      // object[this.mangledName] = value
     }
-
-    public getStatic() {
-      return this.get(this.classInfo.getStaticObject($.ctx));
-    }
-
-    public setStatic(value: any) {
-      return this.set(this.classInfo.getStaticObject($.ctx), value);
-    }
+    //
+    //public getStatic() {
+    //  return this.get(this.classInfo.getStaticObject($.ctx));
+    //}
+    //
+    //public setStatic(value: any) {
+    //  return this.set(this.classInfo.getStaticObject($.ctx), value);
+    //}
 
     private scanFieldInfoAttributes() {
       var s = this;
@@ -980,6 +991,8 @@ module J2ME {
 
     accessFlags: number = 0;
     vTable: MethodInfo [] = null;
+    // This is not really a table per se, but rather a map.
+    iTable: { [name: string]: MethodInfo; } = Object.create(null);
 
     // Custom hash map to make vTable name lookups quicker. It maps utf8 method names to indices in
     // the vTable. A zero value indicate no method by that name exists, while a value > 0 indicates
@@ -989,6 +1002,9 @@ module J2ME {
     private vTableMap: Uint16Array = null;
 
     fTable: FieldInfo [] = null;
+
+    sizeOfFields: number = 0;
+    sizeOfStaticFields: number = 0;
 
     klass: Klass = null;
     private resolvedFlags: ResolvedFlags = ResolvedFlags.None;
@@ -1119,6 +1135,7 @@ module J2ME {
     public complete() {
       if (!this.isInterface) {
         this.buildVTable();
+        this.buildITable();
         this.buildFTable();
       }
       loadWriter && this.trace(loadWriter);
@@ -1176,7 +1193,27 @@ module J2ME {
       }
     }
 
+    private buildITable() {
+      var vTable = this.vTable;
+      var iTable = this.iTable;
+      for (var i = 0; i < vTable.length; i++) {
+        var methodInfo = vTable[i];
+        if (methodInfo.implementsInterface) {
+          release || assert(methodInfo.mangledName);
+          release || assert(!iTable[methodInfo.mangledName]);
+          iTable[methodInfo.mangledName] = methodInfo;
+        }
+      }
+    }
+
     private buildFTable() {
+      if (this.superClass === null) {
+        this.sizeOfFields = 0;
+        this.sizeOfStaticFields = 0;
+      } else {
+        this.sizeOfFields = this.superClass.sizeOfFields;
+        this.sizeOfStaticFields = this.superClass.sizeOfStaticFields;
+      }
       var superClassFTable = this.superClass ? this.superClass.fTable : null;
       var fTable = this.fTable = superClassFTable ? superClassFTable.slice() : [];
       var fields = this.fields;
@@ -1189,8 +1226,12 @@ module J2ME {
           fieldInfo.fTableIndex = fTable.length;
           fTable.push(fieldInfo); // Append
           fieldInfo.mangledName = "f" + fieldInfo.fTableIndex;
+          fieldInfo.byteOffset = this.sizeOfFields;
+          this.sizeOfFields += kindSize(fieldInfo.kind);
         } else {
           fieldInfo.mangledName = "s" + i;
+          fieldInfo.byteOffset = this.sizeOfStaticFields;
+          this.sizeOfStaticFields += kindSize(fieldInfo.kind);
         }
       }
     }

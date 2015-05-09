@@ -80,6 +80,13 @@ module J2ME {
     }
   }
 
+  export function kindSize(kind: Kind): number {
+    if (isTwoSlot(kind)) {
+      return 8;
+    }
+    return 4;
+  }
+
   export function kindCharacter(kind: Kind): string {
     switch (kind) {
       case Kind.Boolean:
