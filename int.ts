@@ -1511,15 +1511,15 @@ module J2ME {
           case Bytecodes.FRETURN:
           case Bytecodes.ARETURN:
           case Bytecodes.RETURN:
-            kind = returnKind(op);
-            returnValue = popKind(kind);
+            var lastSP = sp;
             pc = i32[fp + FrameLayout.CallerRAOffset];
-            sp = fp - mi.codeAttribute.max_locals;
+            sp = fp - maxLocals;
             fp = i32[fp + FrameLayout.CallerFPOffset];
             mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
             if (mi === null) {
               saveThreadState();
               thread.popFrame(null);
+              // REDUX: What do we do about the return value here?
               return;
             }
             maxLocals = mi.codeAttribute.max_locals;
@@ -1529,7 +1529,21 @@ module J2ME {
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
-            pushKind(kind, returnValue, tempReturn0);
+
+            // Push return value.
+            switch (op) {
+              case Bytecodes.LRETURN:
+              case Bytecodes.DRETURN:
+                i32[sp++] = i32[lastSP - 2]; // Low Bits
+                // Fallthrough ...
+              case Bytecodes.IRETURN:
+              case Bytecodes.FRETURN:
+                i32[sp++] = i32[lastSP - 1];
+                continue;
+              case Bytecodes.ARETURN:
+                ref[sp++] = ref[lastSP - 1];
+                continue;
+            }
             continue;
           case Bytecodes.INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
