@@ -1837,12 +1837,14 @@ module J2ME {
     return new klass();
   }
 
-  export function newString(str: string): java.lang.String {
-    if (str === null || str === undefined) {
+  export function newString(jsString: string): java.lang.String {
+    if (jsString === null || jsString === undefined) {
       return null;
     }
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
-    object.str = str;
+    object.value = util.stringToCharArray(jsString);
+    object.offset = 0;
+    object.count = object.value.length;
     return object;
   }
 
@@ -1929,7 +1931,7 @@ module J2ME {
     if (!value) {
       return null;
     }
-    return value.str;
+    return util.fromJavaChars(value.value, value.offset, value.count);
   }
 
   export function checkDivideByZero(value: number) {

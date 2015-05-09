@@ -18,8 +18,20 @@ module J2ME {
     if (o instanceof MethodInfo) {
       return o.implKey;
     }
+    function getArrayInfo(o) {
+      var s = [];
+      var x = [];
+      for (var i = 0; i < Math.min(o.length, 20); i++) {
+        s.push(o[i]);
+        x.push(String.fromCharCode(o[i]));
+      }
+      return fromUTF8(o.klass.classInfo.utf8Name) + ", length: " + o.length + " [" + s.join(", ") + " ...] " + " " + x.join("");
+    }
     function getObjectInfo(o) {
-      return fromUTF8(o.klass.classInfo.utf8Name) + " " + (o._address ? toHEX(o._address) : "");
+      if (o.length !== undefined) {
+        return getArrayInfo(o);
+      }
+      return fromUTF8(o.klass.classInfo.utf8Name) + (o._address ? " " + toHEX(o._address) : "");
     }
     if (o && o.klass === Klasses.java.lang.Class) {
       return "[" + getObjectInfo(o) + "] " + o.runtimeKlass.templateKlass.classInfo.getClassNameSlow();
@@ -163,7 +175,7 @@ module J2ME {
 
       var details = " ";
       if (fieldInfo) {
-        details += "FieldInfo: " + fromUTF8(fieldInfo.utf8Name) + ", kind: " + Kind[fieldInfo.kind];
+        details += "FieldInfo: " + fromUTF8(fieldInfo.utf8Name) + ", kind: " + Kind[fieldInfo.kind] + ", byteOffset: " + fieldInfo.byteOffset;
       }
       writer.writeLn("Frame: " + this.methodInfo.implKey + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc + ", BC: " + Bytecodes[this.methodInfo.codeAttribute.code[this.pc]] + details);
       for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
@@ -526,6 +538,7 @@ module J2ME {
         case Kind.Short:
         case Kind.Boolean:
         case Kind.Float:
+          traceWriter && traceWriter.writeLn("REAING: " + i32[address >> 2] + " @ " + toHEX(address));
           i32[sp++] = i32[address >> 2];
           return;
         case Kind.Long:
@@ -549,6 +562,7 @@ module J2ME {
         case Kind.Boolean:
         case Kind.Float:
           i32[address >> 2] = i32[--sp];
+          traceWriter && traceWriter.writeLn("WRITING: " + i32[address >> 2] + " @ " + toHEX(address));
           break;
         case Kind.Long:
         case Kind.Double:
@@ -586,11 +600,10 @@ module J2ME {
       var opPC = pc;
       var op = code[pc++];
 
+      bytecodeCount++;
       if (traceWriter) {
-         //traceWriter.writeLn(bytecodeCount++ + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
-        frame.set(fp, sp, opPC);
-        // frameView.traceStack(traceWriter);
-        // frame.trace(traceWriter, fieldInfo);
+        traceWriter.writeLn("BEFORE: " + " " + mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
+        frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
       }
 
       try {
@@ -972,7 +985,7 @@ module J2ME {
             i32[sp - 2] = (i32[sp - 2] + i32[sp - 1]) | 0; sp--;
             continue;
           case Bytecodes.LADD:
-            ASM._lAdd((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
+            ASM._lAdd(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
           //        case Bytecodes.FADD:
           //          stack.push(Math.fround(stack.pop() + stack.pop()));
@@ -984,7 +997,7 @@ module J2ME {
             i32[sp - 2] = (i32[sp - 2] - i32[sp - 1]) | 0; sp--;
             continue;
           case Bytecodes.LSUB:
-            ASM._lSub((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
+            ASM._lSub(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
           //        case Bytecodes.FSUB:
           //          stack.push(Math.fround(-stack.pop() + stack.pop()));
@@ -996,7 +1009,7 @@ module J2ME {
             i32[sp - 2] = Math.imul(i32[sp - 2], i32[sp - 1]) | 0; sp--;
             continue;
           case Bytecodes.LMUL:
-            ASM._lMul((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
+            ASM._lMul(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
           //        case Bytecodes.FMUL:
           //          stack.push(Math.fround(stack.pop() * stack.pop()));
@@ -1016,7 +1029,7 @@ module J2ME {
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
               throwArithmeticException();
             }
-            ASM._lDiv((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
+            ASM._lDiv(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
           case Bytecodes.FDIV:
             fb = f32[--sp];
@@ -1038,7 +1051,7 @@ module J2ME {
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
               throwArithmeticException();
             }
-            ASM._lRem((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 2;
+            ASM._lRem(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
           case Bytecodes.FREM:
             fb = f32[--sp];
@@ -1053,9 +1066,9 @@ module J2ME {
           case Bytecodes.INEG:
             i32[sp - 1] = -i32[sp - 1] | 0;
             continue;
-          //        case Bytecodes.LNEG:
-          //          stack.push2(stack.pop2().negate());
-          //          break;
+          case Bytecodes.LNEG:
+            ASM._lNeg(sp - 2 << 2, sp - 2 << 2);
+            continue;
           //        case Bytecodes.FNEG:
           //          stack.push(-stack.pop());
           //          break;
@@ -1068,7 +1081,7 @@ module J2ME {
             i32[sp++] = ia << ib;
             continue;
           case Bytecodes.LSHL:
-            ASM._lShl(sp - 3 >> 2, sp - 3 >> 2, i32[sp - 1]); sp -= 1;
+            ASM._lShl(sp - 3 << 2, sp - 3 << 2, i32[sp - 1]); sp -= 1;
             continue;
           case Bytecodes.ISHR:
             ib = i32[--sp];
@@ -1076,7 +1089,7 @@ module J2ME {
             i32[sp++] = ia >> ib;
             continue;
           case Bytecodes.LSHR:
-            ASM._lShr(sp - 3 >> 2, sp - 3 >> 2, i32[sp - 1]); sp -= 1;
+            ASM._lShr(sp - 3 << 2, sp - 3 << 2, i32[sp - 1]); sp -= 1;
             continue;
           case Bytecodes.IUSHR:
             ib = i32[--sp];
@@ -1084,7 +1097,7 @@ module J2ME {
             i32[sp++] = ia >>> ib;
             continue;
           case Bytecodes.LUSHR:
-            ASM._lUshr(sp - 3 >> 2, sp - 3 >> 2, i32[sp - 1]); sp -= 1;
+            ASM._lUshr(sp - 3 << 2, sp - 3 << 2, i32[sp - 1]); sp -= 1;
             continue;
           case Bytecodes.IAND:
             i32[sp - 2] &= i32[--sp];
@@ -1105,7 +1118,7 @@ module J2ME {
           //          stack.push2(stack.pop2().xor(stack.pop2()));
           //          break;
           case Bytecodes.LCMP:
-            ASM._lCmp((sp - 4) >> 2, (sp - 4) >> 2, (sp - 2) >> 2); sp -= 3;
+            ASM._lCmp(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 3;
             break;
           case Bytecodes.FCMPL:
           case Bytecodes.FCMPG:
@@ -1341,7 +1354,7 @@ module J2ME {
               object = ref[--sp];
             }
             pushKindFromAddress(fieldInfo.kind, object._address + fieldInfo.byteOffset);
-            continue;
+            break;
           case Bytecodes.PUTFIELD:
           case Bytecodes.PUTSTATIC:
             index = readI16();
@@ -1357,7 +1370,7 @@ module J2ME {
               popKindIntoAddress(fieldInfo.kind, ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)]._address + fieldInfo.byteOffset);
               sp--;
             }
-            continue;
+            break;
           case Bytecodes.NEW:
             index = readI16();
             traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
@@ -1536,6 +1549,11 @@ module J2ME {
         cp = ci.constantPool;
         code = mi.codeAttribute.code;
         continue;
+      }
+
+      if (traceWriter) {
+        traceWriter.writeLn("AFTER: ");
+        frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
       }
     }
   }

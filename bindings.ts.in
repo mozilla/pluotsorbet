@@ -23,6 +23,15 @@ module J2ME {
         }
       }
     },
+    "java/lang/String": {
+      fields: {
+        instanceSymbols: {
+          "value": "[C",
+          "offset": "I",
+          "count": "I"
+        }
+      }
+    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
@@ -300,6 +309,11 @@ module J2ME {
       klass: Klass
 
       /**
+       * All objects have an address.
+       */
+      _address: number;
+
+      /**
        * All objects have an internal hash code.
        */
       _hashCode: number;
@@ -332,7 +346,9 @@ module J2ME {
     }
 
     export interface String extends java.lang.Object {
-      str: string;
+      value: Uint16Array;
+      offset: number;
+      count: number;
     }
 
     export interface Thread extends java.lang.Object {
