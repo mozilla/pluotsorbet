@@ -254,7 +254,8 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
 };
 
 Native["java/lang/System.currentTimeMillis.()J"] = function() {
-    return Long.fromNumber(Date.now());
+    var long = Long.fromNumber(Date.now());
+    return J2ME.returnLong(long.low_, long.high_);
 };
 
 Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(src, srcOffset, dst, dstOffset, length) {
@@ -390,42 +391,23 @@ Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(obj) {
     return obj && J2ME.isAssignableTo(obj.klass, this.runtimeKlass.templateKlass) ? 1 : 0;
 };
 
-Native["java/lang/Float.floatToIntBits.(F)I"] = (function() {
-    var fa = new Float32Array(1);
-    var ia = new Int32Array(fa.buffer);
-    return function(val) {
-        fa[0] = val;
-        return ia[0];
-    }
-})();
+Native["java/lang/Float.floatToIntBits.(F)I"] = function(f) {
+    return aliasedF32[0] = f, aliasedI32[0];
+}
 
-Native["java/lang/Double.doubleToLongBits.(D)J"] = (function() {
-    var da = new Float64Array(1);
-    var ia = new Int32Array(da.buffer);
-    return function(val) {
-        da[0] = val;
-        return Long.fromBits(ia[0], ia[1]);
-    }
-})();
+Native["java/lang/Double.doubleToLongBits.(D)J"] = function (l, h) {
+    return J2ME.returnLong(l, h);
+}
 
-Native["java/lang/Float.intBitsToFloat.(I)F"] = (function() {
-    var fa = new Float32Array(1);
-    var ia = new Int32Array(fa.buffer);
-    return function(val) {
-        ia[0] = val;
-        return fa[0];
-    }
-})();
+Native["java/lang/Float.intBitsToFloat.(I)F"] = function (i) {
+    return aliasedI32[0] = i, aliasedF32[0];
+}
 
-Native["java/lang/Double.longBitsToDouble.(J)D"] = (function() {
-    var da = new Float64Array(1);
-    var ia = new Int32Array(da.buffer);
-    return function(l) {
-        ia[0] = l.low_;
-        ia[1] = l.high_;
-        return da[0];
-    }
-})();
+Native["java/lang/Double.longBitsToDouble.(J)D"] = function (l, h) {
+    aliasedI32[0] = l;
+    aliasedI32[1] = h;
+    return aliasedF64[0];
+}
 
 Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
     this.stackTrace = [];
@@ -467,11 +449,11 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() 
 };
 
 Native["java/lang/Runtime.freeMemory.()J"] = function() {
-    return Long.fromInt(0x800000);
+    return J2ME.returnLong(0x800000, 0);
 };
 
 Native["java/lang/Runtime.totalMemory.()J"] = function() {
-    return Long.fromInt(0x1000000);
+    return J2ME.returnLong(0x1000000, 0);
 };
 
 Native["java/lang/Runtime.gc.()V"] = function() {
@@ -756,113 +738,4 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
     if (!release) {
         eval(J2ME.fromJavaString(src));
     }
-};
-
-Native["java/io/ByteArrayOutputStream.write.([BII)V"] = function(b, off, len) {
-  if ((off < 0) || (off > b.length) || (len < 0) ||
-      ((off + len) > b.length)) {
-    throw $.newIndexOutOfBoundsException();
-  }
-
-  if (len == 0) {
-    return;
-  }
-
-  var count = this.count;
-  var buf = this.buf;
-
-  var newcount = count + len;
-  if (newcount > buf.length) {
-    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
-    newbuf.set(buf);
-    buf = newbuf;
-    this.buf = buf;
-  }
-
-  buf.set(b.subarray(off, off + len), count);
-  this.count = newcount;
-};
-
-Native["java/io/ByteArrayOutputStream.write.(I)V"] = function(value) {
-  var count = this.count;
-  var buf = this.buf;
-
-  var newcount = count + 1;
-  if (newcount > buf.length) {
-    var newbuf = J2ME.newByteArray(Math.max(buf.length << 1, newcount));
-    newbuf.set(buf);
-    buf = newbuf;
-    this.buf = buf;
-  }
-
-  buf[count] = value;
-  this.count = newcount;
-};
-
-Native["java/io/ByteArrayInputStream.init.([BII)V"] = function(buf, offset, length) {
-  if (!buf) {
-    throw $.newNullPointerException();
-  }
-
-  this.buf = buf;
-  this.pos = this.mark = offset;
-  this.count = (offset + length <= buf.length) ? (offset + length) : buf.length;
-};
-
-Native["java/io/ByteArrayInputStream.read.()I"] = function() {
-  return (this.pos < this.count) ? (this.buf[this.pos++] & 0xFF) : -1;
-};
-
-Native["java/io/ByteArrayInputStream.read.([BII)I"] = function(b, off, len) {
-  if (!b) {
-    throw $.newNullPointerException();
-  }
-
-  if ((off < 0) || (off > b.length) || (len < 0) ||
-      ((off + len) > b.length)) {
-    throw $.newIndexOutOfBoundsException();
-  }
-
-  if (this.pos >= this.count) {
-    return -1;
-  }
-  if (this.pos + len > this.count) {
-    len = this.count - this.pos;
-  }
-  if (len === 0) {
-    return 0;
-  }
-
-  b.set(this.buf.subarray(this.pos, this.pos + len), off);
-
-  this.pos += len;
-  return len;
-};
-
-Native["java/io/ByteArrayInputStream.skip.(J)J"] = function(long) {
-  var n = long.toNumber();
-
-  if (this.pos + n > this.count) {
-    n = this.count - this.pos;
-  }
-
-  if (n < 0) {
-    return Long.fromNumber(0);
-  }
-
-  this.pos += n;
-
-  return Long.fromNumber(n);
-};
-
-Native["java/io/ByteArrayInputStream.available.()I"] = function() {
-  return this.count - this.pos;
-};
-
-Native["java/io/ByteArrayInputStream.mark.(I)V"] = function(readAheadLimit) {
-  this.mark = this.pos;
-};
-
-Native["java/io/ByteArrayInputStream.reset.()V"] = function() {
-  this.pos = this.mark;
 };

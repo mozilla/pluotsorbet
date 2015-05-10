@@ -57,8 +57,29 @@ module J2ME {
 
   export var onStackReplacementCount = 0;
 
+  /**
+   * Calling Convention:
+   *
+   * Interpreter -> Interpreter:
+   *   This follows the JVM bytecode calling convention. This interpreter is highly
+   *   optimized for this calling convention.
+   *
+   * Compiled / Native -> Compiled / Native:
+   *   64-bit floats and single word values can be encoded using only one JS value. However, 64-bit longs cannot and
+   *   require a (low, high) JS value pair. For example, the signature: "foo.(IDJi)J" is expressed as:
+   *
+   *   function foo(i, d, lowBits, highBits, i) {
+   *     return tempReturn0 = highBits, lowBits;
+   *   }
+   *
+   *   Returning longs is equally problamatic, the convention is to return the lowBits, and save the highBits in a
+   *   global |tempReturn0| variable.
+   */
+
   /*
-   *             +--------------------------------+
+   * Stack Frame Layout:
+   *
+   *   LP  --->  +--------------------------------+
    *             | Parameter 0                    |
    *             +--------------------------------+
    *             |              ...               |
@@ -195,7 +216,7 @@ module J2ME {
           prefix = "L" + (i - (this.fp + this.parameterOffset)) + ": ";
         }
         writer.writeLn(" " + prefix + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2)  + ": " +
-          String(i32[i]).padLeft(' ', 10) + " " +
+          String(i32[i]).padLeft(' ', 12) + " " +
           toName(ref[i]));
       }
     }
@@ -549,7 +570,7 @@ module J2ME {
       release || bytecodeCount++;
       if (!release && traceWriter) {
         traceWriter.writeLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
-        frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
+          frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
       }
 
       try {
@@ -1590,6 +1611,9 @@ module J2ME {
               saveThreadState();
               callee = calleeTargetMethodInfo.fn || getLinkedMethod(calleeTargetMethodInfo);
               result = callee.apply(object, args);
+              if (!release) {
+                assert(!(result instanceof Long.constructor), "NO LONGS ALLOWED");
+              }
               loadThreadState();
               if (calleeMethodInfo.returnKind !== Kind.Void) {
                 release || traceWriter && traceWriter.writeLn(">> Return Value: " + tempReturn0 + " " + result);
