@@ -12,6 +12,8 @@ var Benchmark = (function() {
     // to take effect, unless the distribution is too weird
     numRounds: 30,
     roundDelay: 5000, // ms to delay starting next round of tests
+    warmBench: false,
+    startFGDelay: 10000, // ms to delay starting FG MIDlet
     baseline: {},
     current: {},
     running: false,
@@ -233,6 +235,8 @@ var Benchmark = (function() {
       storage.running = true;
       storage.numRounds = "numRounds" in settings ? settings.numRounds : defaultStorage.numRounds;
       storage.roundDelay = "roundDelay" in settings ? settings.roundDelay : defaultStorage.roundDelay;
+      storage.warmBench = "warmBench" in settings ? settings.warmBench : defaultStorage.warmBench;
+      storage.startFGDelay = "startFGDelay" in settings ? settings.startFGDelay : defaultStorage.startFGDelay;
       storage.deleteFs = "deleteFs" in settings ? settings.deleteFs : defaultStorage.deleteFs;
       storage.deleteJitCache = "deleteJitCache" in settings ? settings.deleteJitCache : defaultStorage.deleteJitCache;
       storage.buildBaseline = "buildBaseline" in settings ? settings.buildBaseline : defaultStorage.buildBaseline;
@@ -380,6 +384,8 @@ var Benchmark = (function() {
 
   var numRoundsEl;
   var roundDelayEl;
+  var warmBenchEl;
+  var startFGDelayEl;
   var deleteFsEl;
   var deleteJitCacheEl;
   var startButton;
@@ -389,6 +395,8 @@ var Benchmark = (function() {
     return {
       numRounds: numRoundsEl.value | 0,
       roundDelay: roundDelayEl.value | 0,
+      warmBench: !!warmBenchEl.checked,
+      startFGDelay: startFGDelayEl.value | 0,
       deleteFs: !!deleteFsEl.checked,
       deleteJitCache: !!deleteJitCacheEl.checked,
       recordMemory: NO_SECURITY
@@ -409,6 +417,8 @@ var Benchmark = (function() {
     initUI: function() {
       numRoundsEl = document.getElementById("benchmark-num-rounds");
       roundDelayEl = document.getElementById("benchmark-round-delay");
+      warmBenchEl = document.getElementById("benchmark-warm-startup");
+      startFGDelayEl = document.getElementById("benchmark-startfg-delay");
       deleteFsEl = document.getElementById("benchmark-delete-fs");
       deleteJitCacheEl = document.getElementById("benchmark-delete-jit-cache");
       startButton = document.getElementById("benchmark-startup-run");
@@ -416,6 +426,8 @@ var Benchmark = (function() {
 
       numRoundsEl.value = storage.numRounds;
       roundDelayEl.value = storage.roundDelay;
+      warmBenchEl.checked = storage.warmBench;
+      startFGDelayEl.value = storage.startFGDelay;
       deleteFsEl.checked = storage.deleteFs;
       deleteJitCacheEl.checked = storage.deleteJitCache;
 
@@ -466,9 +478,27 @@ var Benchmark = (function() {
         Native[fgImplKey] = function() {
           var now = performance.now();
           startup.stopTimer("fgStartupTime", now);
-          startup.stopTimer("startupTime", now);
+          startup.stopTimer("startupTime", now - storage.startFGDelay);
           fgOriginalFn.apply(null, arguments);
         };
+
+        if (storage.warmBench) {
+          var startFGImplKey = "com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V";
+          var startFGOriginalImpl = Native[startFGImplKey];
+          Native[startFGImplKey] = function(midletClassName) {
+            if (J2ME.fromJavaString(midletClassName) !== fgMidletClass) {
+              return;
+            }
+
+            asyncImpl("V", new Promise(function(resolve, reject) {
+              setTimeout(function() {
+                startFGOriginalImpl(midletClassName);
+                startup.startTimer("fgStartupTime", performance.now());
+                resolve();
+              }, storage.startFGDelay);
+            }));
+          };
+        }
       },
       run: startup.run.bind(startup),
     }
