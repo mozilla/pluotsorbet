@@ -75,6 +75,11 @@ module J2ME {
   export var traceWriter = null;
 
   /**
+   * Traces bytecode execution.
+   */
+  export var traceStackWriter = null;
+
+  /**
    * Traces performance problems.
    */
   export var perfWriter = null;

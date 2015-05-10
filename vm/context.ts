@@ -21,17 +21,18 @@ module J2ME {
   declare var setZeroTimeout;
 
   export enum WriterFlags {
-    None  = 0x00,
-    Trace = 0x01,
-    Link  = 0x02,
-    Init  = 0x04,
-    Perf  = 0x08,
-    Load  = 0x10,
-    JIT   = 0x20,
-    Code  = 0x40,
-    Thread = 0x80,
+    None          = 0x00,
+    Trace         = 0x01,
+    Link          = 0x02,
+    Init          = 0x04,
+    Perf          = 0x08,
+    Load          = 0x10,
+    JIT           = 0x20,
+    Code          = 0x40,
+    Thread        = 0x80,
+    TraceStack    = 0x100,
 
-    All   = Trace | Link | Init | Perf | Load | JIT | Code | Thread
+    All           = Trace | TraceStack | Link | Init | Perf | Load | JIT | Code | Thread
   }
 
   /**
@@ -450,6 +451,7 @@ module J2ME {
      * Sets global writers. Uncomment these if you want to see trace output.
      */
     static setWriters(writer: IndentingWriter) {
+      traceStackWriter = writers & WriterFlags.TraceStack ? writer : null;
       traceWriter = writers & WriterFlags.Trace ? writer : null;
       perfWriter = writers & WriterFlags.Perf ? writer : null;
       linkWriter = writers & WriterFlags.Link ? writer : null;

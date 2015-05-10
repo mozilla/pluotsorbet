@@ -19,16 +19,20 @@ module J2ME {
 
   function toName(o) {
     if (o instanceof MethodInfo) {
-      return o.implKey;
+      return "MI: " + o.implKey;
     }
     function getArrayInfo(o) {
       var s = [];
       var x = [];
-      for (var i = 0; i < Math.min(o.length, 20); i++) {
+      for (var i = 0; i < Math.min(o.length, 8); i++) {
         s.push(o[i]);
         x.push(String.fromCharCode(o[i]));
       }
-      return fromUTF8(o.klass.classInfo.utf8Name) + ", length: " + o.length + " [" + s.join(", ") + " ...] " + " " + x.join("");
+      var suffix = (o.length > 8 ? "..." : "");
+      return fromUTF8(o.klass.classInfo.utf8Name) +
+        ", length: " + o.length +
+        ", values: [" + s.join(", ") + suffix + "]" +
+        ", chars: \"" + x.join("") + suffix + "\"";
     }
     function getObjectInfo(o) {
       if (o.length !== undefined) {
@@ -158,13 +162,8 @@ module J2ME {
           i32[this.fp + this.parameterOffset + i] = v;
           break;
         default:
-          release || assert(false);
+          release || assert(false, "Cannot set parameter of kind: " + Kind[kind]);
       }
-    }
-
-    setParameterO4(v: Object, i: number) {
-      // traceWriter.writeLn("Set Parameter: " + i + ", from: " + toHEX(fp + this.parameterOffset + i));
-      ref[this.fp + this.parameterOffset + i] = v;
     }
 
     get methodInfo(): MethodInfo {
@@ -199,7 +198,7 @@ module J2ME {
       this.pc = pc;
     }
 
-    trace(writer: IndentingWriter, fieldInfo: FieldInfo) {
+    trace(writer: IndentingWriter) {
       function toNumber(v) {
         if (v < 0) {
           return String(v);
@@ -210,11 +209,14 @@ module J2ME {
         }
       }
 
-      var details = " ";
-      if (fieldInfo) {
-        details += "FieldInfo: " + fromUTF8(fieldInfo.utf8Name) + ", kind: " + Kind[fieldInfo.kind] + ", byteOffset: " + fieldInfo.byteOffset;
+      function clampString(v, n) {
+        if (v.length > n) {
+          return v.substring(0, n - 3) + "...";
+        }
+        return v;
       }
-      writer.writeLn("Frame: " + this.methodInfo.implKey + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc + ", BC: " + Bytecodes[this.methodInfo.codeAttribute.code[this.pc]] + details);
+
+      writer.writeLn("Frame: " + this.methodInfo.implKey + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
       for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
         var prefix = "    ";
         if (i >= this.fp + this.stackOffset) {
@@ -228,10 +230,11 @@ module J2ME {
         } else if (i >= this.fp + this.parameterOffset) {
           prefix = "L" + (i - (this.fp + this.parameterOffset)) + ": ";
         }
-        writer.writeLn(" " + prefix + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2)  + ": " +
+        writer.writeLn(" " + prefix.padRight(' ', 5) + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2)  + ": " +
           String(i32[i]).padLeft(' ', 12) + " " +
-          // String(f32[i].toPrecision(8)).padLeft(' ', 12) + " " +
-          // String(wordsToDouble(i32[i], i32[i + 1]).toPrecision(8)).padLeft(' ', 12) + " " +
+          toHEX(i32[i]) + " " +
+          clampString(String(f32[i]), 12).padLeft(' ', 12) + " " +
+          clampString(String(wordsToDouble(i32[i], i32[i + 1])), 12).padLeft(' ', 12) + " " +
           toName(ref[i]));
       }
     }
@@ -540,9 +543,9 @@ module J2ME {
       // interpreterCounter.count(Bytecodes[op]);
 
       release || bytecodeCount++;
-      if (!release && traceWriter) {
-        traceWriter.writeLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
-        // frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
+      if (!release && traceStackWriter) {
+        frame.set(fp, sp, opPC); frame.trace(traceStackWriter);
+        traceStackWriter.writeLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
       }
 
       try {
@@ -852,7 +855,7 @@ module J2ME {
             }
             checkArrayStore(array, value);
             array[index] = value;
-            break;
+            continue;
           case Bytecodes.POP:
             --sp;
             continue;
@@ -867,7 +870,7 @@ module J2ME {
             i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2];
             i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1];
             sp += 2;
-            break;
+            continue;
           case Bytecodes.DUP_X1:
             i32[sp    ] = i32[sp - 1];      ref[sp    ] = ref[sp - 1];
             i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
@@ -938,7 +941,7 @@ module J2ME {
             continue;
           case Bytecodes.FADD:
             f32[sp - 2] = f32[sp - 2] + f32[sp - 1]; sp--;
-            break;
+            continue;
           case Bytecodes.DADD:
             aliasedI32[0] = i32[sp - 4];
             aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
@@ -957,7 +960,7 @@ module J2ME {
             continue;
           case Bytecodes.FSUB:
             f32[sp - 2] = f32[sp - 2] - f32[sp - 1]; sp--;
-            break;
+            continue;
           case Bytecodes.DSUB:
             aliasedI32[0] = i32[sp - 4];
             aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
@@ -1015,13 +1018,13 @@ module J2ME {
             i32[sp - 4] = aliasedI32[0];
             i32[sp - 3] = aliasedI32[1];
             sp -= 2;
-            break;
+            continue;
           case Bytecodes.IREM:
             if (i32[sp - 1] === 0) {
               throwArithmeticException();
             }
             i32[sp - 2] = (i32[sp - 2] % i32[sp - 1]) | 0; sp--;
-            break;
+            continue;
           case Bytecodes.LREM:
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
               throwArithmeticException();
@@ -1032,7 +1035,7 @@ module J2ME {
             fb = f32[--sp];
             fa = f32[--sp];
             f32[sp++] = Math.fround(fa % fb);
-            break;
+            continue;
           case Bytecodes.DREM:
             aliasedI32[0] = i32[sp - 4];
             aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
@@ -1051,7 +1054,7 @@ module J2ME {
             continue;
           case Bytecodes.FNEG:
             f32[sp - 1] = -f32[sp - 1];
-            break;
+            continue;
           case Bytecodes.DNEG:
             aliasedI32[0] = i32[sp - 2];
             aliasedI32[1] = i32[sp - 1];
@@ -1295,12 +1298,12 @@ module J2ME {
             value = Long.fromNumber(fa);
             i32[sp++] = value.low_;
             i32[sp++] = value.high_;
-            break;
+            continue;
           case Bytecodes.F2D:
             aliasedF64[0] = f32[--sp];
             i32[sp ++] = aliasedI32[0];
             i32[sp ++] = aliasedI32[1];
-            break;
+            continue;
           case Bytecodes.D2I:
             aliasedI32[0] = i32[sp - 2];
             aliasedI32[1] = i32[sp - 1];
@@ -1313,7 +1316,7 @@ module J2ME {
               i32[sp - 2] = fa | 0;
             }
             sp --;
-            break;
+            continue;
           case Bytecodes.D2L:
             aliasedI32[0] = i32[sp - 2];
             aliasedI32[1] = i32[sp - 1];
@@ -1335,7 +1338,7 @@ module J2ME {
             aliasedI32[1] = i32[sp - 1];
             f32[sp - 2] = Math.fround(aliasedF64[0]);
             sp --;
-            break;
+            continue;
           case Bytecodes.I2B:
             i32[sp - 1] = (i32[sp - 1] << 24) >> 24;
             continue;
@@ -1356,7 +1359,7 @@ module J2ME {
               offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
             }
             pc = opPC + offset;
-            break;
+            continue;
           case Bytecodes.LOOKUPSWITCH:
             pc = (pc + 3) & ~0x03; // Consume Padding
                 offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
@@ -1375,7 +1378,7 @@ module J2ME {
               }
             }
             pc = opPC + offset;
-            break;
+            continue;
           //        case Bytecodes.NEWARRAY:
           //          type = frame.read8();
           //          size = stack.pop();
@@ -1397,7 +1400,7 @@ module J2ME {
               lengths[i] = i32[--sp];
             }
             ref[sp++] = J2ME.newMultiArray(classInfo.klass, lengths.reverse());
-            break;
+            continue;
           case Bytecodes.ARRAYLENGTH:
             array = ref[--sp];
             i32[sp++] = array.length;
@@ -1416,7 +1419,7 @@ module J2ME {
               object = ref[--sp];
             }
             pushKindFromAddress(fieldInfo.kind, object._address + fieldInfo.byteOffset);
-            break;
+            continue;
           case Bytecodes.PUTFIELD:
           case Bytecodes.PUTSTATIC:
             index = code[pc++] << 8 | code[pc++];
@@ -1432,7 +1435,7 @@ module J2ME {
               popKindIntoAddress(fieldInfo.kind, ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)]._address + fieldInfo.byteOffset);
               sp--;
             }
-            break;
+            continue;
           case Bytecodes.NEW:
             index = code[pc++] << 8 | code[pc++];
             release || traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
@@ -1729,11 +1732,6 @@ module J2ME {
         cp = ci.constantPool;
         code = mi.codeAttribute.code;
         continue;
-      }
-
-      if (traceWriter) {
-        // traceWriter.writeLn("AFTER: ");
-        // frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
       }
     }
   }

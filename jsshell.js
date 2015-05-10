@@ -194,6 +194,9 @@ try {
   if (options.writers.value.indexOf("t") >= 0) {
     writers |= J2ME.WriterFlags.Trace;
   }
+  if (options.writers.value.indexOf("s") >= 0) {
+    writers |= J2ME.WriterFlags.TraceStack;
+  }
   J2ME.writers = writers;
 
   J2ME.enableRuntimeCompilation = false;
