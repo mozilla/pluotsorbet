@@ -1988,7 +1988,16 @@ module J2ME {
     CHAR_MIN = 0,
     CHAR_MAX = 65535,
     INT_MIN = -2147483648,
-    INT_MAX =  2147483647
+    INT_MAX =  2147483647,
+
+    LONG_MAX_LOW = 0xFFFFFFFF,
+    LONG_MAX_HIGH = 0x7FFFFFFF,
+
+    LONG_MIN_LOW = 0,
+    LONG_MIN_HIGH = 0x80000000,
+
+
+    TWO_PWR_32_DBL = 4294967296
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {

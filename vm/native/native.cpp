@@ -28,13 +28,13 @@ extern "C" {
     *result = *l % *r;
   }
   void lShl(int64_t *result, int64_t *l, int32_t v) {
-		*result = *l << v;
+		*result = *l << (v & 0x3F);
 	}
 	void lShr(int64_t *result, int64_t *l, int32_t v) {
-  	*result = *l >> v;
+  	*result = *l >> (v & 0x3F);
   }
   void lUshr(int64_t *result, int64_t *l, int32_t v) {
-  	*result = (uint64_t)*l >> v;
+  	*result = (uint64_t)*l >> (v & 0x3F);
   }
   void lCmp(int32_t *result, int64_t *l, int64_t *r) {
     if (*l > *r) {

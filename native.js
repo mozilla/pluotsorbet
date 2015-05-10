@@ -395,12 +395,13 @@ Native["java/lang/Float.floatToIntBits.(F)I"] = function(f) {
     return aliasedF32[0] = f, aliasedI32[0];
 }
 
-Native["java/lang/Double.doubleToLongBits.(D)J"] = function (l, h) {
-    return J2ME.returnLong(l, h);
-}
-
 Native["java/lang/Float.intBitsToFloat.(I)F"] = function (i) {
     return aliasedI32[0] = i, aliasedF32[0];
+}
+
+Native["java/lang/Double.doubleToLongBits.(D)J"] = function (d) {
+    aliasedF64[0] = d;
+    return J2ME.returnLong(aliasedI32[0], aliasedI32[1]);
 }
 
 Native["java/lang/Double.longBitsToDouble.(J)D"] = function (l, h) {

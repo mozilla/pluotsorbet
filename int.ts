@@ -58,6 +58,19 @@ module J2ME {
   export var onStackReplacementCount = 0;
 
   /**
+   * The closest floating-point representation to this long value.
+   */
+  function longToNumber(l: number, h: number): number {
+    return h * Constants.TWO_PWR_32_DBL + ((l >= 0) ? l : Constants.TWO_PWR_32_DBL + l);
+  }
+
+  function wordsToDouble(l: number, h: number): number {
+    aliasedI32[0] = l;
+    aliasedI32[1] = h;
+    return aliasedF64[0];
+  }
+
+  /**
    * Calling Convention:
    *
    * Interpreter -> Interpreter:
@@ -217,6 +230,8 @@ module J2ME {
         }
         writer.writeLn(" " + prefix + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2)  + ": " +
           String(i32[i]).padLeft(' ', 12) + " " +
+          // String(f32[i].toPrecision(8)).padLeft(' ', 12) + " " +
+          // String(wordsToDouble(i32[i], i32[i + 1]).toPrecision(8)).padLeft(' ', 12) + " " +
           toName(ref[i]));
       }
     }
@@ -373,6 +388,8 @@ module J2ME {
     return classInfo;
   }
 
+  var args = new Array(16);
+
   export function interpret(thread: Thread) {
     var frame = thread.frame;
 
@@ -446,51 +463,6 @@ module J2ME {
     }
 
     var values = new Array(8);
-
-    function popArguments(mi: MethodInfo) {
-      var signatureKinds = mi.signatureKinds;
-      var args = [];
-      for (var i = signatureKinds.length - 1; i > 0; i--) {
-        var kind = signatureKinds[i];
-        var value = popKind(kind);
-        if (isTwoSlot(kind)) {
-          args.unshift(tempReturn0);
-        }
-        args.unshift(value);
-      }
-      return args;
-    }
-
-    /** @inline */
-    function pushKind(kind: Kind, l: any, h: any) {
-      switch (kind) {
-        case Kind.Reference:
-          ref[sp++] = l;
-          return;
-        case Kind.Int:
-        case Kind.Byte:
-        case Kind.Char:
-        case Kind.Short:
-        case Kind.Boolean:
-          i32[sp++] = l;
-          break;
-        case Kind.Float:
-          f32[sp++] = l;
-          break;
-        case Kind.Long:
-          i32[sp++] = l;
-          i32[sp++] = h;
-          break;
-        case Kind.Double:
-          f32[sp++] = l;
-          sp++;
-          break;
-        case Kind.Void:
-          break;
-        default:
-          release || assert(false, "Cannot Push Kind: " + Kind[kind]);
-      }
-    }
 
     function pushKindFromAddress(kind: Kind, address: number) {
       switch (kind) {
@@ -570,7 +542,7 @@ module J2ME {
       release || bytecodeCount++;
       if (!release && traceWriter) {
         traceWriter.writeLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
-          frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
+        // frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
       }
 
       try {
@@ -964,9 +936,9 @@ module J2ME {
           case Bytecodes.LADD:
             ASM._lAdd(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
-          //        case Bytecodes.FADD:
-          //          stack.push(Math.fround(stack.pop() + stack.pop()));
-          //          break;
+          case Bytecodes.FADD:
+            f32[sp - 2] = f32[sp - 2] + f32[sp - 1]; sp--;
+            break;
           case Bytecodes.DADD:
             aliasedI32[0] = i32[sp - 4];
             aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
@@ -983,9 +955,9 @@ module J2ME {
           case Bytecodes.LSUB:
             ASM._lSub(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
-          //        case Bytecodes.FSUB:
-          //          stack.push(Math.fround(-stack.pop() + stack.pop()));
-          //          break;
+          case Bytecodes.FSUB:
+            f32[sp - 2] = f32[sp - 2] - f32[sp - 1]; sp--;
+            break;
           case Bytecodes.DSUB:
             aliasedI32[0] = i32[sp - 4];
             aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
@@ -1002,9 +974,9 @@ module J2ME {
           case Bytecodes.LMUL:
             ASM._lMul(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
-          //        case Bytecodes.FMUL:
-          //          stack.push(Math.fround(stack.pop() * stack.pop()));
-          //          break;
+          case Bytecodes.FMUL:
+            f32[sp - 2] = f32[sp - 2] * f32[sp - 1]; sp--;
+            continue;
           case Bytecodes.DMUL:
             aliasedI32[0] = i32[sp - 4];
             aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
@@ -1033,7 +1005,7 @@ module J2ME {
             fb = f32[--sp];
             fa = f32[--sp];
             f32[sp++] = Math.fround(fa / fb);
-            break;
+            continue;
           case Bytecodes.DDIV:
             aliasedI32[0] = i32[sp - 4];
             aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
@@ -1077,9 +1049,9 @@ module J2ME {
           case Bytecodes.LNEG:
             ASM._lNeg(sp - 2 << 2, sp - 2 << 2);
             continue;
-          //        case Bytecodes.FNEG:
-          //          stack.push(-stack.pop());
-          //          break;
+          case Bytecodes.FNEG:
+            f32[sp - 1] = -f32[sp - 1];
+            break;
           case Bytecodes.DNEG:
             aliasedI32[0] = i32[sp - 2];
             aliasedI32[1] = i32[sp - 1];
@@ -1298,18 +1270,32 @@ module J2ME {
           case Bytecodes.L2I:
             sp--;
             continue;
-          //        case Bytecodes.L2F:
-          //          stack.push(Math.fround(stack.pop2().toNumber()));
-          //          break;
-          //        case Bytecodes.L2D:
-          //          stack.push2(stack.pop2().toNumber());
-          //          break;
-          //        case Bytecodes.F2I:
-          //          stack.push(util.double2int(stack.pop()));
-          //          break;
-          //        case Bytecodes.F2L:
-          //          stack.push2(Long.fromNumber(stack.pop()));
-          //          break;
+          case Bytecodes.L2F:
+            aliasedF32[0] = Math.fround(longToNumber(i32[sp - 2], i32[sp - 1]));
+            i32[sp - 2] = aliasedI32[0];
+            sp --;
+            continue;
+          case Bytecodes.L2D:
+            aliasedF64[0] = longToNumber(i32[sp - 2], i32[sp - 1]);
+            i32[sp - 2] = aliasedI32[0];
+            i32[sp - 1] = aliasedI32[1];
+            continue;
+          case Bytecodes.F2I:
+            fa = f32[sp - 1];
+            if (fa > Constants.INT_MAX) {
+              i32[sp - 1] = Constants.INT_MAX;
+            } else if (fa < Constants.INT_MIN) {
+              i32[sp - 1] = Constants.INT_MIN;
+            } else {
+              i32[sp - 1] = fa | 0;
+            }
+            continue;
+          case Bytecodes.F2L:
+            fa = f32[--sp];
+            value = Long.fromNumber(fa);
+            i32[sp++] = value.low_;
+            i32[sp++] = value.high_;
+            break;
           case Bytecodes.F2D:
             aliasedF64[0] = f32[--sp];
             i32[sp ++] = aliasedI32[0];
@@ -1328,12 +1314,28 @@ module J2ME {
             }
             sp --;
             break;
-          //        case Bytecodes.D2L:
-          //          stack.push2(util.double2long(stack.pop2()));
-          //          break;
-          //        case Bytecodes.D2F:
-          //          stack.push(Math.fround(stack.pop2()));
-          //          break;
+          case Bytecodes.D2L:
+            aliasedI32[0] = i32[sp - 2];
+            aliasedI32[1] = i32[sp - 1];
+            fa = aliasedF64[0];
+            if (fa === Number.POSITIVE_INFINITY) {
+              i32[sp - 2] = Constants.LONG_MAX_LOW;
+              i32[sp - 1] = Constants.LONG_MAX_HIGH;
+            } else if (fa === Number.NEGATIVE_INFINITY) {
+              i32[sp - 2] = Constants.LONG_MIN_LOW;
+              i32[sp - 1] = Constants.LONG_MIN_HIGH;
+            } else {
+              value = Long.fromNumber(fa);
+              i32[sp - 2] = value.low_;
+              i32[sp - 1] = value.high_;
+            }
+            continue;
+          case Bytecodes.D2F:
+            aliasedI32[0] = i32[sp - 2];
+            aliasedI32[1] = i32[sp - 1];
+            f32[sp - 2] = Math.fround(aliasedF64[0]);
+            sp --;
+            break;
           case Bytecodes.I2B:
             i32[sp - 1] = (i32[sp - 1] << 24) >> 24;
             continue;
@@ -1556,7 +1558,7 @@ module J2ME {
               case Bytecodes.LRETURN:
               case Bytecodes.DRETURN:
                 i32[sp++] = i32[lastSP - 2]; // Low Bits
-                // Fallthrough ...
+                // Fallthrough
               case Bytecodes.IRETURN:
               case Bytecodes.FRETURN:
                 i32[sp++] = i32[lastSP - 1];
@@ -1604,20 +1606,79 @@ module J2ME {
 
             // Call Native or Compiled Method.
             if (calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled) {
-              var args = popArguments(calleeTargetMethodInfo);
+              args.length = 0;
+              var signatureKinds = calleeTargetMethodInfo.signatureKinds;
+              for (var i = signatureKinds.length - 1; i > 0; i--) {
+                kind = signatureKinds[i];
+                switch (kind) {
+                  case Kind.Double: // Doubles are passed in as a number value.
+                    aliasedI32[1] = i32[--sp];
+                    aliasedI32[0] = i32[--sp];
+                    args.unshift(aliasedF64[0]);
+                    break;
+                  case Kind.Float:
+                    args.unshift(f32[--sp]);
+                    break;
+                  case Kind.Long:
+                    args.unshift(i32[--sp]); // High Bits
+                    // Fallthrough
+                  case Kind.Int:
+                  case Kind.Byte:
+                  case Kind.Char:
+                  case Kind.Short:
+                  case Kind.Boolean:
+                    args.unshift(i32[--sp]);
+                    break;
+                  case Kind.Reference:
+                    args.unshift(ref[--sp]);
+                    break;
+                  default:
+                    release || assert(false, "Invalid Kind: " + Kind[kind]);
+                }
+              }
               if (!isStatic) {
                 --sp; // Pop Reference
               }
               saveThreadState();
               callee = calleeTargetMethodInfo.fn || getLinkedMethod(calleeTargetMethodInfo);
+              if (!release) {
+                assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
+              }
               result = callee.apply(object, args);
               if (!release) {
                 assert(!(result instanceof Long.constructor), "NO LONGS ALLOWED");
               }
               loadThreadState();
-              if (calleeMethodInfo.returnKind !== Kind.Void) {
-                release || traceWriter && traceWriter.writeLn(">> Return Value: " + tempReturn0 + " " + result);
-                pushKind(calleeMethodInfo.returnKind, result, tempReturn0);
+              kind = signatureKinds[0];
+
+              // Push return value.
+              switch (kind) {
+                case Kind.Double: // Doubles are passed in as a number value.
+                  aliasedF64[0] = result;
+                  i32[sp++] = aliasedI32[0];
+                  i32[sp++] = aliasedI32[1];
+                  continue;
+                case Kind.Float:
+                  f32[sp++] = result;
+                  continue;
+                case Kind.Long:
+                  i32[sp++] = result;
+                  i32[sp++] = tempReturn0;
+                  continue;
+                case Kind.Int:
+                case Kind.Byte:
+                case Kind.Char:
+                case Kind.Short:
+                case Kind.Boolean:
+                  i32[sp++] = result;
+                  continue;
+                case Kind.Reference:
+                  ref[sp++] = result;
+                  continue;
+                case Kind.Void:
+                  continue;
+                default:
+                  release || assert(false, "Invalid Kind: " + Kind[kind]);
               }
               continue;
             }
