@@ -124,7 +124,7 @@ module J2ME {
           i32[this.fp + this.parameterOffset + i] = v;
           break;
         default:
-          Debug.assert(false);
+          release || assert(false);
       }
     }
 
@@ -287,12 +287,12 @@ module J2ME {
     }
 
     tryCatch(e: java.lang.Exception) {
-      traceWriter && traceWriter.writeLn("tryCatch: " + toName(e));
+      release || traceWriter && traceWriter.writeLn("tryCatch: " + toName(e));
       var pc = -1;
       var classInfo;
       var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
       while (mi) {
-        traceWriter && traceWriter.writeLn(mi.implKey);
+        release || traceWriter && traceWriter.writeLn(mi.implKey);
         for (var i = 0; i < mi.exception_table_length; i++) {
           var exceptionEntryView = mi.getExceptionEntryViewByIndex(i);
           if (this.pc >= exceptionEntryView.start_pc && this.pc < exceptionEntryView.end_pc) {
@@ -316,7 +316,7 @@ module J2ME {
         }
         mi = this.popFrame(mi);
       }
-      traceWriter && traceWriter.writeLn("Cannot catch: " + toName(e));
+      release || traceWriter && traceWriter.writeLn("Cannot catch: " + toName(e));
       throw e;
     }
   }
@@ -325,7 +325,7 @@ module J2ME {
     var method = function fastInterpreterFrameAdapter() {
       var thread = $.ctx.nativeThread;
       var fp = thread.fp;
-      traceWriter && traceWriter.writeLn(">> Interpreter Enter");
+      release || traceWriter && traceWriter.writeLn(">> Interpreter Enter");
       thread.pushFrame(null);
       thread.pushFrame(methodInfo);
       var frame = thread.frame;
@@ -339,7 +339,7 @@ module J2ME {
       }
       var v = interpret(thread);
       release || assert(fp === thread.fp);
-      traceWriter && traceWriter.writeLn("<< Interpreter Exit");
+      release || traceWriter && traceWriter.writeLn("<< Interpreter Exit");
       return v;
     };
     (<any>method).methodInfo = methodInfo;
@@ -420,7 +420,7 @@ module J2ME {
         case Kind.Void:
           return;
         default:
-          Debug.assert(false, "Cannot Pop Kind: " + Kind[kind]);
+          release || assert(false, "Cannot Pop Kind: " + Kind[kind]);
       }
     }
 
@@ -467,7 +467,7 @@ module J2ME {
         case Kind.Void:
           break;
         default:
-          Debug.assert(false, "Cannot Push Kind: " + Kind[kind]);
+          release || assert(false, "Cannot Push Kind: " + Kind[kind]);
       }
     }
 
@@ -482,7 +482,7 @@ module J2ME {
         case Kind.Short:
         case Kind.Boolean:
         case Kind.Float:
-          traceWriter && traceWriter.writeLn("REAING: " + i32[address >> 2] + " @ " + toHEX(address));
+          release || traceWriter && traceWriter.writeLn("REAING: " + i32[address >> 2] + " @ " + toHEX(address));
           i32[sp++] = i32[address >> 2];
           return;
         case Kind.Long:
@@ -491,7 +491,7 @@ module J2ME {
           i32[sp++] = i32[address + 4 >> 2];
           return;
         default:
-          Debug.assert(false, "Cannot Push Kind: " + Kind[kind]);
+          release || assert(false, "Cannot Push Kind: " + Kind[kind]);
       }
     }
 
@@ -507,7 +507,7 @@ module J2ME {
         case Kind.Boolean:
         case Kind.Float:
           i32[address >> 2] = i32[--sp];
-          traceWriter && traceWriter.writeLn("WRITING: " + i32[address >> 2] + " @ " + toHEX(address));
+          release || traceWriter && traceWriter.writeLn("WRITING: " + i32[address >> 2] + " @ " + toHEX(address));
           break;
         case Kind.Long:
         case Kind.Double:
@@ -515,7 +515,7 @@ module J2ME {
           i32[address     >> 2] = i32[--sp];
           break;
         default:
-          Debug.assert(false, "Cannot Pop Kind: " + Kind[kind]);
+          release || assert(false, "Cannot Pop Kind: " + Kind[kind]);
       }
     }
 
@@ -547,7 +547,7 @@ module J2ME {
       // interpreterCounter.count(Bytecodes[op]);
 
       release || bytecodeCount++;
-      if (traceWriter) {
+      if (!release && traceWriter) {
         traceWriter.writeLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
         frame.set(fp, sp, opPC); frame.trace(traceWriter, fieldInfo);
       }
@@ -603,7 +603,7 @@ module J2ME {
             } else if (tag === TAGS.CONSTANT_String) {
               ref[sp++] = constant = ci.constantPool.resolve(index, tag, false);;
             } else {
-              assert(false, TAGS[tag]);
+              release || assert(false, TAGS[tag]);
             }
             continue;
           case Bytecodes.LDC2_W:
@@ -616,7 +616,7 @@ module J2ME {
               i32[sp    ] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
               sp += 2;
             } else {
-              assert(false, TAGS[tag]);
+              release || assert(false, TAGS[tag]);
             }
             continue;
           case Bytecodes.ILOAD:
@@ -1412,7 +1412,7 @@ module J2ME {
             break;
           case Bytecodes.NEW:
             index = code[pc++] << 8 | code[pc++];
-            traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
+            release || traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
             classInfo = resolveClass(index, ci);
             saveThreadState();
             classInitAndUnwindCheck(classInfo, pc - 3);
@@ -1524,8 +1524,8 @@ module J2ME {
             }
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
-            traceWriter && traceWriter.outdent();
-            traceWriter && traceWriter.writeLn("<< Interpreter Return");
+            release || traceWriter && traceWriter.outdent();
+            release || traceWriter && traceWriter.writeLn("<< Interpreter Return");
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
@@ -1577,7 +1577,7 @@ module J2ME {
                 calleeTargetMethodInfo = object.klass.classInfo.iTable[calleeMethodInfo.mangledName];
                 break;
               default:
-                traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
+                release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
                 assert(false, "Not Implemented: " + Bytecodes[op]);
             }
 
@@ -1592,13 +1592,13 @@ module J2ME {
               result = callee.apply(object, args);
               loadThreadState();
               if (calleeMethodInfo.returnKind !== Kind.Void) {
-                traceWriter && traceWriter.writeLn(">> Return Value: " + tempReturn0 + " " + result);
+                release || traceWriter && traceWriter.writeLn(">> Return Value: " + tempReturn0 + " " + result);
                 pushKind(calleeMethodInfo.returnKind, result, tempReturn0);
               }
               continue;
             }
 
-            traceWriter && traceWriter.writeLn(">> Interpreter Invoke: " + calleeMethodInfo.implKey);
+            release || traceWriter && traceWriter.writeLn(">> Interpreter Invoke: " + calleeMethodInfo.implKey);
             mi = calleeTargetMethodInfo;
             maxLocals = mi.codeAttribute.max_locals;
             ci = mi.classInfo;
@@ -1617,17 +1617,17 @@ module J2ME {
             opPC = pc = 0;
             code = mi.codeAttribute.code;
 
-            traceWriter && traceWriter.indent();
+            release || traceWriter && traceWriter.indent();
             continue;
           default:
-            traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op] + ", PC: " + opPC + ", CODE: " + code.length);
-            assert(false, "Not Implemented: " + Bytecodes[op]);
+            release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op] + ", PC: " + opPC + ", CODE: " + code.length);
+            release || assert(false, "Not Implemented: " + Bytecodes[op]);
             continue;
         }
       } catch (e) {
-        traceWriter && traceWriter.writeLn("XXXXXX " + e);
-        traceWriter && traceWriter.writeLn(e.stack);
-        // traceWriter && traceWriter.writeLn(jsGlobal.getBacktrace());
+        release || traceWriter && traceWriter.writeLn("XXXXXX " + e);
+        release || traceWriter && traceWriter.writeLn(e.stack);
+        // release || traceWriter && traceWriter.writeLn(jsGlobal.getBacktrace());
         e = translateException(e);
         if (!e.klass) {
           // A non-java exception was thrown. Rethrow so it is not handled by tryCatch.
