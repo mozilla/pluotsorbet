@@ -44,7 +44,7 @@ module J2ME {
     "com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;": YieldReason.Root,
     "com/nokia/mid/ui/TextEditor.setFocus.(Z)V": YieldReason.Root,
     "com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z": YieldReason.Root,
-    "com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V": YieldReason.Root,
+    "com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.receiveData.([B)I": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.waitConnection.()V": YieldReason.Root,
