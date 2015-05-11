@@ -1406,7 +1406,7 @@ module J2ME {
     var wrapper = function() {
       // jsGlobal.getBacktrace && traceWriter.writeLn(jsGlobal.getBacktrace());
       var args = Array.prototype.slice.apply(arguments);
-      traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
+      traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey);
       var s = performance.now();
       try {
         var value = fn.apply(this, args);

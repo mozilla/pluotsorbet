@@ -236,6 +236,7 @@ module J2ME {
         writer.writeLn(" " + prefix.padRight(' ', 5) + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2)  + ": " +
           String(i32[i]).padLeft(' ', 12) + " " +
           toHEX(i32[i]) + " " +
+          ((i32[i] >= 32 && i32[i] < 1024) ? String.fromCharCode(i32[i]) : "?") + " " +
           clampString(String(f32[i]), 12).padLeft(' ', 12) + " " +
           clampString(String(wordsToDouble(i32[i], i32[i + 1])), 12).padLeft(' ', 12) + " " +
           toName(ref[i]));
@@ -398,6 +399,16 @@ module J2ME {
 
   var args = new Array(16);
 
+  enum ExceptionType {
+    ArithmeticException,
+    ArrayIndexOutOfBoundsException
+  }
+  
+  /**
+   * Main interpreter loop. This method is carefully written to avoid memory allocation and
+   * function calls on fast paths. Thus, everything is inlined, even if it makes the code
+   * ugly.
+   */
   export function interpret(thread: Thread) {
     var frame = thread.frame;
 
@@ -411,7 +422,7 @@ module J2ME {
     var fp = thread.fp;
     var lp = fp - maxLocals;
     var sp = thread.sp;
-    var pc = thread.pc;
+    var opPC = 0, pc = thread.pc;
 
     var tag: TAGS;
     var type, size;
@@ -441,24 +452,39 @@ module J2ME {
       //}
     }
 
+    /**
+     * Thrown exceptions need to be constructed, and can thus damage the stack if we don't
+     * save the thread state. This is a helper function that does just that.
+     */
+    function throwException(type: ExceptionType, a?) {
+      thread.set(fp, sp, opPC);
+      switch (type) {
+        case ExceptionType.ArrayIndexOutOfBoundsException:
+          throwArrayIndexOutOfBoundsException(a);
+          break;
+        case ExceptionType.ArithmeticException:
+          throwArithmeticException();
+          break;
+      }
+    }
+
     // HEAD
 
     while (true) {
-      release || assert(code === mi.codeAttribute.code, "Bad Code.");
-      release || assert(ci === mi.classInfo, "Bad Class Info.");
-      release || assert(cp === ci.constantPool, "Bad Constant Pool.");
-      release || assert(lp === fp - mi.codeAttribute.max_locals, "Bad lp.");
+      opPC = pc, op = code[pc++];
 
-      fieldInfo = null;
-      var opPC = pc;
-      var op = code[pc++];
-      // interpreterCounter.count(Bytecodes[op]);
+      if (!release) {
+        assert(code === mi.codeAttribute.code, "Bad Code.");
+        assert(ci === mi.classInfo, "Bad Class Info.");
+        assert(cp === ci.constantPool, "Bad Constant Pool.");
+        assert(lp === fp - mi.codeAttribute.max_locals, "Bad lp.");
+        bytecodeCount++;
 
-      release || bytecodeCount++;
-      if (!release && traceStackWriter) {
-        frame.set(fp, sp, opPC); frame.trace(traceStackWriter);
-        traceStackWriter.writeLn();
-        traceStackWriter.greenLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
+        if (traceStackWriter) {
+          frame.set(fp, sp, opPC); frame.trace(traceStackWriter);
+          traceStackWriter.writeLn();
+          traceStackWriter.greenLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
+        }
       }
 
       try {
@@ -581,7 +607,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array[index];
             continue;
@@ -589,7 +615,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array[index];
             continue;
@@ -597,7 +623,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array[index];
             continue;
@@ -605,7 +631,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array[index];
             continue;
@@ -613,7 +639,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             f32[sp++] = array[index];
             continue;
@@ -621,7 +647,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             ref[sp++] = array[index];
             continue;
@@ -629,7 +655,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             aliasedF64[0] = array[index];
             i32[sp++] = aliasedI32[0];
@@ -687,7 +713,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -696,8 +722,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
-              throwArrayIndexOutOfBoundsException
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -706,7 +731,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -715,7 +740,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -724,7 +749,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -734,7 +759,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array.value[index * 2    ] = ll;
             array.value[index * 2 + 1] = lh;
@@ -743,7 +768,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array.value[index * 2    ];
             i32[sp++] = array.value[index * 2 + 1];
@@ -755,7 +780,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -764,7 +789,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwArrayIndexOutOfBoundsException(index);
+              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             checkArrayStore(array, value);
             array[index] = value;
@@ -905,7 +930,7 @@ module J2ME {
             continue;
           case Bytecodes.IDIV:
             if (i32[sp - 1] === 0) {
-              throwArithmeticException();
+              throwException(ExceptionType.ArithmeticException);
             }
             ia = i32[sp - 2];
             ib = i32[sp - 1];
@@ -913,7 +938,7 @@ module J2ME {
             continue;
           case Bytecodes.LDIV:
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
-              throwArithmeticException();
+              throwException(ExceptionType.ArithmeticException);
             }
             ASM._lDiv(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
@@ -934,13 +959,13 @@ module J2ME {
             continue;
           case Bytecodes.IREM:
             if (i32[sp - 1] === 0) {
-              throwArithmeticException();
+              throwException(ExceptionType.ArithmeticException);
             }
             i32[sp - 2] = (i32[sp - 2] % i32[sp - 1]) | 0; sp--;
             continue;
           case Bytecodes.LREM:
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
-              throwArithmeticException();
+              throwException(ExceptionType.ArithmeticException);
             }
             ASM._lRem(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
@@ -1259,7 +1284,7 @@ module J2ME {
             i32[sp - 1] &= 0xffff;
             continue;
           case Bytecodes.I2S:
-            i32[sp - 1] = (i32[sp - 1] << 16) >> 16;;
+            i32[sp - 1] = (i32[sp - 1] << 16) >> 16;
             continue;
           case Bytecodes.TABLESWITCH:
             pc = (pc + 3) & ~0x03; // Consume Padding
@@ -1494,6 +1519,7 @@ module J2ME {
           case Bytecodes.ARETURN:
           case Bytecodes.RETURN:
             var lastSP = sp;
+            var lastMI = mi;
             pc = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - maxLocals;
             fp = i32[fp + FrameLayout.CallerFPOffset];
@@ -1507,7 +1533,7 @@ module J2ME {
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
             release || traceWriter && traceWriter.outdent();
-            release || traceWriter && traceWriter.writeLn("<< I");
+            release || traceWriter && traceWriter.writeLn("<< I " + lastMI.implKey);
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
