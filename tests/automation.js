@@ -262,11 +262,12 @@ casper.test.begin("unit tests", 26 + gfxTests.length, function(test) {
             "I 16: Main isolate still running",
             "I DONE",
             ""];
-          output = output.split("\n");
+          output = output.split("\n").sort();
+          expectedOutput.sort();
           test.assert(expectedOutput.length === output.length, "Same number of lines output.");
           var allMatch = true;
-          for (var i = 0; i < output.length; i++) {
-            if (expectedOutput.indexOf(output[i]) === -1) {
+          for (var i = 0; i < expectedOutput.length; i++) {
+            if (expectedOutput[i] !== output[i]) {
               allMatch = false;
               break;
             }
