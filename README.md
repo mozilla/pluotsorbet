@@ -7,6 +7,16 @@ The current goals of j2me.js are:
 1. Run MIDlets in a way that emulates the reference implementation of phone ME Feature MR4 (b01)
 1. Keep j2me.js simple and small: Leverage the phoneME JDK/infrastructure and existing Java code as much as we can, and implement as little as possible in JavaScript
 
+## Install, Cold, and Warm runs
+
+J2ME.js launches MIDlets under three different circumstances. We are working to make the most common scenario the fastest, sometimes at the expense of making the least frequent scenarios a little slower.
+
+* Install run only happens once per device. It spends extra time downloading, optimizing, and precompiling so that subsequent runs will be faster.
+* Cold runs require starting up both foreground and background MIDlets, if needed
+* Warm runs only require starting up a foreground MIDlet; the interpreter should already be warm, thanks to being awoken once a minute for background MIDlet to run
+
+![](https://cloud.githubusercontent.com/assets/812428/7572315/0a3a174e-f7d2-11e4-811d-5e1a38caa439.png)
+
 ## Building j2me.js
 
 Make sure you have a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
