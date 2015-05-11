@@ -1408,8 +1408,13 @@ module J2ME {
       var args = Array.prototype.slice.apply(arguments);
       traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
       var s = performance.now();
-      var value = fn.apply(this, args);
-      traceWriter.outdent();
+      try {
+        var value = fn.apply(this, args);
+      } catch (e) {
+        traceWriter.leave("< " + MethodType[methodType][0] + " Throwing");
+        throw e;
+      }
+      traceWriter.leave("< " + MethodType[methodType][0]);
       return value;
     };
     (<any>wrapper).methodInfo = methodInfo;

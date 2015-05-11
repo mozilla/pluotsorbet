@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+declare var trackedOpts;
+
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
-var inBrowser = typeof console !== "undefined" && console.info;
+var inBrowser = typeof trackedOpts === "undefined";
+
 
 declare var putstr;
 declare var printErr;
