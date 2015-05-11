@@ -525,8 +525,12 @@ var fs = (function() {
 
     buffer.setSize(newLength);
 
-    for (var i = 0; i < length; i++) {
-      buffer.array[from + i] = data[offset + i];
+    if (length > 128) {
+      buffer.array.set(data.subarray(offset, offset + length), from);
+    } else {
+      for (var i = 0; i < length; i++) {
+        buffer.array[from + i] = data[offset + i];
+      }
     }
 
     file.position = from + length;
