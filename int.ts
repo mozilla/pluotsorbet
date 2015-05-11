@@ -416,6 +416,7 @@ module J2ME {
     var tag: TAGS;
     var type, size;
     var value, index, array, object, result, constant, offset, buffer, tag: TAGS, targetPC, returnValue, kind;
+    var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
     var fa = 0, fb = 0; // Float / Double Operands
@@ -428,84 +429,6 @@ module J2ME {
       lp = fp - maxLocals;
       sp = thread.sp;
       pc = thread.pc;
-    }
-
-    /** @inline */
-    function popKind(kind: Kind) {
-      switch(kind) {
-        case Kind.Reference:
-          return ref[--sp];
-        case Kind.Int:
-        case Kind.Byte:
-        case Kind.Char:
-        case Kind.Short:
-        case Kind.Boolean:
-          return i32[--sp];
-        case Kind.Float:
-          return f32[--sp];
-        case Kind.Long:
-          var h = i32[--sp];
-          var l = i32[--sp];
-          tempReturn0 = h;
-          return l;
-        case Kind.Double:
-          sp--;
-          return f32[--sp]; // REDUX:
-        case Kind.Void:
-          return;
-        default:
-          release || assert(false, "Cannot Pop Kind: " + Kind[kind]);
-      }
-    }
-
-    var values = new Array(8);
-
-    function pushKindFromAddress(kind: Kind, address: number) {
-      switch (kind) {
-        case Kind.Reference:
-          ref[sp++] = ref[address >> 2];
-          return;
-        case Kind.Int:
-        case Kind.Byte:
-        case Kind.Char:
-        case Kind.Short:
-        case Kind.Boolean:
-        case Kind.Float:
-          release || traceWriter && traceWriter.writeLn("REAING: " + i32[address >> 2] + " @ " + toHEX(address));
-          i32[sp++] = i32[address >> 2];
-          return;
-        case Kind.Long:
-        case Kind.Double:
-          i32[sp++] = i32[address     >> 2];
-          i32[sp++] = i32[address + 4 >> 2];
-          return;
-        default:
-          release || assert(false, "Cannot Push Kind: " + Kind[kind]);
-      }
-    }
-
-    function popKindIntoAddress(kind: Kind, address: number) {
-      switch (kind) {
-        case Kind.Reference:
-          ref[address >> 2] = ref[--sp];
-          return;
-        case Kind.Int:
-        case Kind.Byte:
-        case Kind.Char:
-        case Kind.Short:
-        case Kind.Boolean:
-        case Kind.Float:
-          i32[address >> 2] = i32[--sp];
-          release || traceWriter && traceWriter.writeLn("WRITING: " + i32[address >> 2] + " @ " + toHEX(address));
-          break;
-        case Kind.Long:
-        case Kind.Double:
-          i32[address + 4 >> 2] = i32[--sp];
-          i32[address     >> 2] = i32[--sp];
-          break;
-        default:
-          release || assert(false, "Cannot Pop Kind: " + Kind[kind]);
-      }
     }
 
     function classInitAndUnwindCheck(classInfo: ClassInfo, unusedPC: number) {
@@ -1408,22 +1331,65 @@ module J2ME {
             } else {
               object = ref[--sp];
             }
-            pushKindFromAddress(fieldInfo.kind, object._address + fieldInfo.byteOffset);
+            address = object._address + fieldInfo.byteOffset;
+            switch (fieldInfo.kind) {
+              case Kind.Reference:
+                ref[sp++] = ref[address >> 2];
+                continue;
+              case Kind.Int:
+              case Kind.Byte:
+              case Kind.Char:
+              case Kind.Short:
+              case Kind.Boolean:
+              case Kind.Float:
+                i32[sp++] = i32[address >> 2];
+                continue;
+              case Kind.Long:
+              case Kind.Double:
+                i32[sp++] = i32[address     >> 2];
+                i32[sp++] = i32[address + 4 >> 2];
+                continue;
+              default:
+                release || assert(false);
+            }
             continue;
           case Bytecodes.PUTFIELD:
           case Bytecodes.PUTSTATIC:
             index = code[pc++] << 8 | code[pc++];
             fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
-            if (op === Bytecodes.PUTSTATIC) {
+            isStatic = op === Bytecodes.PUTSTATIC;
+            if (isStatic) {
               classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
               //if (U) {
               //  return;
               //}
               object = fieldInfo.classInfo.getStaticObject($.ctx);
-              popKindIntoAddress(fieldInfo.kind, object._address + fieldInfo.byteOffset);
             } else {
-              popKindIntoAddress(fieldInfo.kind, ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)]._address + fieldInfo.byteOffset);
-              sp--;
+              object = ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
+            }
+            address = object._address + fieldInfo.byteOffset;
+            switch (fieldInfo.kind) {
+              case Kind.Reference:
+                ref[address >> 2] = ref[--sp];
+                break;
+              case Kind.Int:
+              case Kind.Byte:
+              case Kind.Char:
+              case Kind.Short:
+              case Kind.Boolean:
+              case Kind.Float:
+                i32[address >> 2] = i32[--sp];
+                break;
+              case Kind.Long:
+              case Kind.Double:
+                i32[address + 4 >> 2] = i32[--sp];
+                i32[address     >> 2] = i32[--sp];
+                break;
+              default:
+                release || assert(false);
+            }
+            if (!isStatic) {
+              sp--; // Pop Reference
             }
             continue;
           case Bytecodes.NEW:
@@ -1569,7 +1535,7 @@ module J2ME {
             if (op === Bytecodes.INVOKEINTERFACE) {
               pc += 2; // Args Number & Zero
             }
-            var isStatic = (op === Bytecodes.INVOKESTATIC);
+            isStatic = (op === Bytecodes.INVOKESTATIC);
 
             // Resolve method and do the class init check if necessary.
             var calleeMethodInfo = cp.resolved[index] || cp.resolveMethod(index, isStatic);
