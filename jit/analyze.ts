@@ -85,6 +85,10 @@ module J2ME {
     // "java/lang/Object.equals.(Ljava/lang/Object;)Z": YieldReason.None
   };
 
+  export var noPreemptMap = {
+    "java/lang/Class.initialize.()V": true
+  };
+
   export function isFinalClass(classInfo: ClassInfo): boolean {
     return classInfo.isFinal;
     // XXX The following can only be used if every class in all jars is loaded.
