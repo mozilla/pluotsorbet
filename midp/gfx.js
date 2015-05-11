@@ -70,7 +70,9 @@ var currentlyFocusedTextEditor;
         hideBackgroundScreen();
         hideSplashScreen();
 
-        asyncImpl("V", emoji.loadData());
+        if (!emoji.loaded) {
+          asyncImpl("V", Promise.all(loadingFGPromises));
+        }
 
         if (profile === 2) {
           // Use setTimeout to make sure our profiling enter/leave stack is not unpaired.

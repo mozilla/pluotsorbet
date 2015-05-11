@@ -135,6 +135,8 @@ if (config.downloadJAD) {
   }).then(backgroundCheck));
 }
 
+var loadingFGPromises = [ emoji.loadData() ];
+
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
                        loadScript("tests/mozactivitymock.unprivileged.js"),
