@@ -20,7 +20,7 @@ function asyncImpl(returnKind, promise) {
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
     ctx.pushFrame(Frame.create(methodInfo, [exception]));
-    ctx.execute();
+    J2ME.Scheduler.enqueue(ctx);
   });
   $.pause(asyncImplStringAsync);
 }
