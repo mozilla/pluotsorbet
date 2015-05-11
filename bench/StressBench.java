@@ -52,7 +52,10 @@ public class StressBench extends MIDlet {
       SocketConnection client = (SocketConnection)Connector.open("socket://localhost:8000");
 
       OutputStream os = client.openOutputStream();
-      os.write("GET /bench/benchmark.jar HTTP/1.1\r\nHost: localhost\r\n\r\n".getBytes());
+      os.write(("GET /bench/benchmark.jar HTTP/1.1\r\n" +
+                "Host: localhost\r\n" +
+                "Connection: close\r\n" +
+                "\r\n").getBytes());
       os.close();
 
       InputStream is = client.openInputStream();
