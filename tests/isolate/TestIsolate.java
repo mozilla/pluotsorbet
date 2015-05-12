@@ -3,61 +3,71 @@ package tests.isolate;
 import com.sun.cldc.isolate.*;
 import tests.isolate.IsolatedClass;
 
+import java.lang.String;
+
 public class TestIsolate {
+    static int dumpNumber = 0;
+    public static void dump(String s) {
+        System.out.println((dumpNumber++) + ": " + s);
+    }
+    public static void dump(int s) {
+        dump(s + "");
+    }
+
     public static void main(String args[]) {
-        System.out.println(IsolatedClass.val);
+        dump(IsolatedClass.val);
 
         new IsolatedClass().main(new String[] { "a" } );
 
-        System.out.println(IsolatedClass.val);
+        dump(IsolatedClass.val);
 
         Isolate myIso = Isolate.currentIsolate();
-        System.out.println(myIso.id());
+        dump(myIso.id());
 
         Isolate[] isolates = Isolate.getIsolates();
 
         if (isolates.length == 1) {
-            System.out.println("1 isolate");
+            dump("1 isolate");
         }
 
         if (isolates[0].id() == myIso.id()) {
-            System.out.println("Isolate ID correct");
+            dump("Isolate ID correct");
         }
 
         try {
             Isolate iso1 = new Isolate("tests.isolate.IsolatedClass", new String[] { "1" });
             Isolate iso2 = new Isolate("tests.isolate.IsolatedClass", new String[] { "2" });
 
-            System.out.println(iso1.id());
-            System.out.println(iso2.id());
+            dump(iso1.id());
+            dump(iso2.id());
 
             if (Isolate.getIsolates().length == 1) {
-                System.out.println("1 isolate");
+                dump("1 isolate");
             }
 
             iso1.start();
 
-            System.out.println(IsolatedClass.val);
+            dump(IsolatedClass.val);
 
             iso2.start();
 
-            System.out.println(IsolatedClass.val);
+            dump(IsolatedClass.val);
 
             if (Isolate.getIsolates().length == 3) {
-                System.out.println("3 isolates");
+                dump("3 isolates");
             }
 
             iso1.waitForExit();
             iso2.waitForExit();
 
-            System.out.println(IsolatedClass.val);
+            dump(IsolatedClass.val);
 
             if (Isolate.getIsolates().length == 1) {
-                System.out.println("1 isolate");
+                dump("1 isolate");
             }
 
             if (iso1.isTerminated() && iso2.isTerminated()) {
-                System.out.println("Isolates terminated");
+                dump("Isolates terminated");
             }
         } catch(Exception e) {
             e.printStackTrace();
@@ -65,14 +75,14 @@ public class TestIsolate {
 
         new IsolatedClass().main(new String[] { "r" });
 
-        System.out.println(IsolatedClass.val);
+        dump(IsolatedClass.val);
 
         new IsolatedClass().main(new String[] { "c" });
 
-        System.out.println(IsolatedClass.val);
+        dump(IsolatedClass.val);
 
         if (!myIso.isTerminated()) {
-            System.out.println("Main isolate still running");
+            dump("Main isolate still running");
         }
 
         System.out.println("DONE");

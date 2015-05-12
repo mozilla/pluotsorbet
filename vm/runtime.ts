@@ -450,10 +450,12 @@ module J2ME {
       ctx.setAsCurrentContext();
       for (var i = 0; i < preInit.length; i++) {
         var runtimeKlass = this.getRuntimeKlass(preInit[i].klass);
+        preemptionLockLevel++;
         var methodInfo = runtimeKlass.classObject.klass.classInfo.getMethodByNameString("initialize", "()V");
         runtimeKlass.classObject[methodInfo.virtualName]();
         // runtimeKlass.classObject.initialize();
         release || Debug.assert(!U, "Unexpected unwind during preInitializeClasses.");
+        preemptionLockLevel-- ;
       }
       ctx.clearCurrentContext();
       if (prevCtx) {
@@ -650,88 +652,9 @@ module J2ME {
     Stopping = 3
   }
 
-  /** @const */ export var MAX_PRIORITY: number = 10;
-  /** @const */ export var MIN_PRIORITY: number = 1;
-  /** @const */ export var NORMAL_PRIORITY: number = 5;
-
-  /** @const */ export var ISOLATE_MIN_PRIORITY: number = 1;
-  /** @const */ export var ISOLATE_NORM_PRIORITY: number = 2;
-  /** @const */ export var ISOLATE_MAX_PRIORITY: number = 3;
-
-  class PriorityQueue {
-    private _top: number;
-    private _queues: Context[][];
-
-    constructor() {
-      this._top = MIN_PRIORITY + ISOLATE_MIN_PRIORITY;
-      this._queues = [];
-      for (var i = MIN_PRIORITY + ISOLATE_MIN_PRIORITY; i <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY; i++) {
-        this._queues[i] = [];
-      }
-    }
-
-    enqueue(ctx: Context) {
-      var priority = ctx.getPriority() + ctx.runtime.priority;
-      release || assert(priority >= MIN_PRIORITY + ISOLATE_MIN_PRIORITY && priority <= MAX_PRIORITY + ISOLATE_MAX_PRIORITY,
-                        "Invalid priority: " + priority);
-      this._queues[priority].push(ctx);
-      this._top = Math.max(priority, this._top);
-    }
-
-    dequeue(): Context {
-      if (this.isEmpty()) {
-        return null;
-      }
-      var ctx = this._queues[this._top].shift();
-      while (this._queues[this._top].length === 0 && this._top > MIN_PRIORITY + ISOLATE_MIN_PRIORITY) {
-        this._top--;
-      }
-      return ctx;
-    }
-
-    isEmpty() {
-      return this._top === MIN_PRIORITY + ISOLATE_MIN_PRIORITY && this._queues[this._top].length === 0;
-    }
-  }
-
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
-    private static _runningQueue: PriorityQueue = new PriorityQueue();
-    private static _processQueueScheduled: boolean = false;
-
     id: number;
-
-
-    /*
-     * The thread scheduler uses green thread algorithm, which a non-preemptive,
-     * priority based algorithm.
-     * All Java threads have a priority and the thread with he highest priority
-     * is scheduled to run.
-     * In case two threads have the same priority a FIFO ordering is followed.
-     * A different thread is invoked to run only if the current thread blocks or
-     * terminates.
-     */
-    static scheduleRunningContext(ctx: Context) {
-      Runtime._runningQueue.enqueue(ctx);
-      Runtime.processRunningQueue();
-    }
-
-    private static processRunningQueue() {
-      if (Runtime._processQueueScheduled) {
-        return;
-      }
-      Runtime._processQueueScheduled = true;
-      (<any>window).setZeroTimeout(function() {
-        Runtime._processQueueScheduled = false;
-        try {
-          Runtime._runningQueue.dequeue().execute();
-        } finally {
-          if (!Runtime._runningQueue.isEmpty()) {
-            Runtime.processRunningQueue();
-          }
-        }
-      });
-    }
 
     /**
      * Bailout callback whenever a JIT frame is unwound.
@@ -1705,7 +1628,7 @@ module J2ME {
     }
 
     // Don't compile methods that are too large.
-    if (methodInfo.codeAttribute.code.length > 3000 && !config.forceRuntimeCompilation) {
+    if (methodInfo.codeAttribute.code.length > 4000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
       methodInfo.state = MethodState.NotCompiled;
       notCompiledMethodCount ++;
@@ -2045,35 +1968,8 @@ module J2ME {
     runtimeKlass.classObject[initializeMethodInfo.virtualName]();
   }
 
-  /**
-   * Last time we preempted a thread.
-   */
-  var lastPreemption = 0;
-
-  /**
-   * Number of ms between preemptions, chosen arbitrarily.
-   */
-  var preemptionInterval = 100;
-
-  /**
-   * Number of preemptions thus far.
-   */
-  export var preemptionCount = 0;
-
-  /**
-   * TODO: We will almost always preempt the next time we call this if the application
-   * has been idle. Figure out a better heurisitc here, maybe measure the frequency at
-   * at which |checkPreemption| is invoked and ony preempt if the frequency is sustained
-   * for a longer period of time *and* the time since we last preempted is above the
-   * |preemptionInterval|.
-   */
   export function preempt() {
-    var now = performance.now();
-    var elapsed = now - lastPreemption;
-    if (elapsed > preemptionInterval) {
-      lastPreemption = now;
-      preemptionCount ++;
-      threadWriter && threadWriter.writeLn("Preemption timeout: " + elapsed.toFixed(2) + " ms, samples: " + PS + ", count: " + preemptionCount);
+    if (Scheduler.shouldPreempt()) {
       $.yield("preemption");
     }
   }
