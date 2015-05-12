@@ -14,6 +14,7 @@
 ///<reference path='vm/classRegistry.ts' />
 ///<reference path='vm/jvm.ts' />
 ///<reference path='bindings.ts' />
+///<reference path='scheduler.ts' />
 ///<reference path='vm/runtime.ts' />
 ///<reference path='interpreter.ts' />
 ///<reference path='vm/context.ts' />

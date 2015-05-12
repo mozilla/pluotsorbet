@@ -344,12 +344,14 @@ module J2ME {
     thread: java.lang.Thread;
     writer: IndentingWriter;
     methodTimeline: any;
+    virtualRuntime: number;
     constructor(public runtime: Runtime) {
       var id = this.id = Context._nextId ++;
       this.frames = [];
       this.bailoutFrames = [];
       this.runtime = runtime;
       this.runtime.addContext(this);
+      this.virtualRuntime = 0;
       this.writer = new IndentingWriter(false, function (s) {
         console.log(s);
       });
@@ -462,7 +464,10 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
       var methodInfo = classInfo.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
+      preemptionLockLevel++;
       getLinkedMethod(methodInfo).call(exception, message ? newString(message) : null);
+      release || Debug.assert(!U, "Unexpected unwind during createException.");
+      preemptionLockLevel--;
       return exception;
     }
 
@@ -526,7 +531,7 @@ module J2ME {
     }
 
     resume() {
-      Runtime.scheduleRunningContext(this);
+      Scheduler.enqueue(this);
     }
 
     block(obj, queue, lockLevel) {
