@@ -91,6 +91,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
 
   // If the page is visible, just start the FG MIDlet
   if (!document.hidden) {
+    profile === 3 && startTimeline();
     showSplashScreen();
     hideBackgroundScreen();
     return;
@@ -105,6 +106,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
       }
     }, false);
   }).then(function() {
+    profile === 3 && startTimeline();
     showSplashScreen();
     hideBackgroundScreen();
   }));

@@ -72,7 +72,7 @@ var currentlyFocusedTextEditor;
 
         asyncImpl("V", emoji.loadData());
 
-        if (profile === 2) {
+        if (profile === 2 || profile === 3) {
           // Use setTimeout to make sure our profiling enter/leave stack is not unpaired.
           setTimeout(function () {
             stopAndSaveTimeline();

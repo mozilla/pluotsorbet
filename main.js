@@ -150,6 +150,7 @@ function toggle(button) {
 }
 
 var bigBang = 0;
+var profiling = false;
 
 function startTimeline() {
   jsGlobal.START_TIME = performance.now();
