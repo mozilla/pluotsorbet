@@ -53,12 +53,15 @@ export JSR_082
 JSR_179 ?= 1
 export JSR_179
 
-# Closure optimization level J2ME_OPTIMIZATIONS breaks the profiler somehow,
-# so we revert to level SIMPLE if the profiler is enabled.
 ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
 else
+  # Closure optimization level J2ME_OPTIMIZATIONS breaks the profiler somehow,
+  # so we revert to level SIMPLE if the profiler is enabled.
   J2ME_JS_OPTIMIZATION_LEVEL = SIMPLE
+
+  # Various build targets depend on shumway when the profiler is enabled.
+  PROFILE_DEP = shumway
 endif
 
 # Closure is really chatty, so we shush it by default to reduce log lines
@@ -161,7 +164,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
+all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js $(PROFILE_DEP)
 
 $(shell mkdir -p build_tools)
 
@@ -314,7 +317,7 @@ img/icon-512.png: $(ICON_512)
 icon: img/icon-128.png img/icon-512.png
 
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR)
+app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR) $(PROFILE_DEP)
 	tools/package.sh
 
 package: app
