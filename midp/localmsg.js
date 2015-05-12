@@ -50,18 +50,22 @@ LocalMsgConnection.prototype.sendMessageToClient = function(data, offset, length
     }
 }
 
-LocalMsgConnection.prototype.clientReceiveMessage = function(data) {
-    return new Promise((function(resolve, reject) {
-        if (this.clientMessages.length == 0) {
-            this.clientWaiting.push(function() {
-                resolve(this.copyMessage(this.clientMessages, data));
-            }.bind(this));
+LocalMsgConnection.prototype.getClientMessage = function(data) {
+  if (this.clientMessages.length > 0) {
+      console.log("getClientMessage successful");
+      return this.copyMessage(this.clientMessages, data);
+  }
 
-            return;
-        }
+  return -1;
+}
 
-        resolve(this.copyMessage(this.clientMessages, data));
-    }).bind(this));
+LocalMsgConnection.prototype.waitClientMessage = function(data) {
+    asyncImpl("I", new Promise((function(resolve, reject) {
+        this.clientWaiting.push(function() {
+            console.log("waitClientMessage successful");
+            resolve(this.copyMessage(this.clientMessages, data));
+        }.bind(this));
+    }).bind(this)));
 }
 
 LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
@@ -72,17 +76,22 @@ LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length
     }
 }
 
-LocalMsgConnection.prototype.serverReceiveMessage = function(data) {
-    return new Promise((function(resolve, reject) {
-        if (this.serverMessages.length == 0) {
-            this.serverWaiting.push(function() {
-                resolve(this.copyMessage(this.serverMessages, data));
-            }.bind(this));
-            return;
-        }
+LocalMsgConnection.prototype.getServerMessage = function(data) {
+  if (this.serverMessages.length > 0) {
+      console.log("getServerMessage successful");
+      return this.copyMessage(this.serverMessages, data);
+  }
 
-        resolve(this.copyMessage(this.serverMessages, data));
-    }).bind(this));
+  return -1;
+}
+
+LocalMsgConnection.prototype.waitServerMessage = function(data) {
+    asyncImpl("I", new Promise((function(resolve, reject) {
+        this.serverWaiting.push(function() {
+            console.log("waitServerMessage successful");
+            resolve(this.copyMessage(this.serverMessages, data));
+        }.bind(this));
+    }).bind(this)));
 }
 
 var NokiaMessagingLocalMsgConnection = function() {
@@ -1024,14 +1033,16 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
             return;
         }
 
-        asyncImpl("V", new Promise(function(resolve, reject) {
+        console.log("Connect to: " + this.protocolName);
+
+        asyncImpl("V", new Promise((function(resolve, reject) {
             localmsgServerWait = function() {
                 localmsgServerWait = null;
                 this.connection = MIDP.LocalMsgConnections[this.protocolName];
                 this.connection.notifyConnection();
                 resolve();
             }.bind(this);
-        }));
+        }).bind(this)));
 
         return;
     }
@@ -1063,7 +1074,13 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, of
 
 Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
     if (this.server) {
-        asyncImpl("I", this.connection.serverReceiveMessage(data));
+        var ret = this.connection.getServerMessage(data);
+        if (ret > 0) {
+          return ret;
+        }
+
+        this.connection.waitServerMessage(data);
+
         return;
     }
 
@@ -1071,7 +1088,12 @@ Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
         console.warn("receiveData from an unimplemented localmsg server (" + this.protocolName + ")");
     }
 
-    asyncImpl("I", this.connection.clientReceiveMessage(data));
+    var ret = this.connection.getClientMessage(data);
+    if (ret > 0) {
+      return ret;
+    }
+
+    this.connection.waitClientMessage(data);
 };
 
 Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function() {
