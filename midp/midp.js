@@ -4,8 +4,8 @@
 'use strict';
 
 var MIDP = (function() {
-  var canvas = document.getElementById("canvas");
-  var context2D = canvas.getContext("2d");
+  var deviceCanvas = document.getElementById("canvas");
+  var deviceContext = deviceCanvas.getContext("2d");
 
   // The foreground isolate will get the user events (keypresses, etc.)
   var FG = (function() {
@@ -94,13 +94,13 @@ var MIDP = (function() {
     var newHeight = physicalScreenHeight - headerHeight;
     var newWidth = physicalScreenWidth;
 
-    if (newHeight != canvas.height || newWidth != canvas.width) {
-      canvas.height = newHeight;
-      canvas.width = newWidth;
-      canvas.style.height = canvas.height + "px";
-      canvas.style.width = canvas.width + "px";
-      canvas.style.top = headerHeight + "px";
-      canvas.dispatchEvent(new Event("canvasresize"));
+    if (newHeight != deviceCanvas.height || newWidth != deviceCanvas.width) {
+      deviceCanvas.height = newHeight;
+      deviceCanvas.width = newWidth;
+      deviceCanvas.style.height = deviceCanvas.height + "px";
+      deviceCanvas.style.width = deviceCanvas.width + "px";
+      deviceCanvas.style.top = headerHeight + "px";
+      deviceCanvas.dispatchEvent(new Event("canvasresize"));
     }
   };
 
@@ -376,9 +376,9 @@ var MIDP = (function() {
   var supportsTouch = ("ontouchstart" in document.documentElement);
 
   // Cache the canvas position for future computation.
-  var canvasRect = canvas.getBoundingClientRect();
-  canvas.addEventListener("canvasresize", function() {
-    canvasRect = canvas.getBoundingClientRect();
+  var canvasRect = deviceCanvas.getBoundingClientRect();
+  deviceCanvas.addEventListener("canvasresize", function() {
+    canvasRect = deviceCanvas.getBoundingClientRect();
     sendRotationEvent();
   });
 
@@ -403,7 +403,7 @@ var MIDP = (function() {
   var longPressTimeoutID = null;
   var longPressDetected = false;
 
-  canvas.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
+  deviceCanvas.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
     event.preventDefault(); // Prevent unnecessary fake mouse events.
     var pt = getEventPoint(event);
     sendPenEvent(pt, PRESSED);
@@ -416,7 +416,7 @@ var MIDP = (function() {
     }, LONG_PRESS_TIMEOUT);
   });
 
-  canvas.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
+  deviceCanvas.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
     if (!mouseDownInfo) {
       return; // Mousemove on desktop; ignored.
     }
@@ -1236,7 +1236,7 @@ var MIDP = (function() {
   Native["com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I"] = function() {
     // We should return the number of pixels between the top of the
     // screen and the top of the keyboard
-    return canvas.height - getKeyboardHeight();
+    return deviceCanvas.height - getKeyboardHeight();
   };
 
   Native["com/nokia/mid/ui/VirtualKeyboard.getWidth.()I"] = function() {
@@ -1261,7 +1261,7 @@ var MIDP = (function() {
     sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
     sendKeyPress: sendKeyPress,
     sendKeyRelease: sendKeyRelease,
-    context2D: context2D,
+    deviceContext: deviceContext,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
     updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,
