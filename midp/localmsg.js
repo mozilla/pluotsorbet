@@ -52,7 +52,6 @@ LocalMsgConnection.prototype.sendMessageToClient = function(data, offset, length
 
 LocalMsgConnection.prototype.getClientMessage = function(data) {
   if (this.clientMessages.length > 0) {
-      console.log("getClientMessage successful");
       return this.copyMessage(this.clientMessages, data);
   }
 
@@ -62,7 +61,6 @@ LocalMsgConnection.prototype.getClientMessage = function(data) {
 LocalMsgConnection.prototype.waitClientMessage = function(data) {
     asyncImpl("I", new Promise((function(resolve, reject) {
         this.clientWaiting.push(function() {
-            console.log("waitClientMessage successful");
             resolve(this.copyMessage(this.clientMessages, data));
         }.bind(this));
     }).bind(this)));
@@ -78,7 +76,6 @@ LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length
 
 LocalMsgConnection.prototype.getServerMessage = function(data) {
   if (this.serverMessages.length > 0) {
-      console.log("getServerMessage successful");
       return this.copyMessage(this.serverMessages, data);
   }
 
@@ -88,7 +85,6 @@ LocalMsgConnection.prototype.getServerMessage = function(data) {
 LocalMsgConnection.prototype.waitServerMessage = function(data) {
     asyncImpl("I", new Promise((function(resolve, reject) {
         this.serverWaiting.push(function() {
-            console.log("waitServerMessage successful");
             resolve(this.copyMessage(this.serverMessages, data));
         }.bind(this));
     }).bind(this)));
@@ -1014,7 +1010,6 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
     this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
 
     if (this.server) {
-        console.log("Listen on: " + this.protocolName);
         // It seems that one server only serves on client at a time, let's
         // store an object instead of the constructor.
         this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
@@ -1032,8 +1027,6 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
             // to this unimplemented server to stop indefinitely.
             return;
         }
-
-        console.log("Connect to: " + this.protocolName);
 
         asyncImpl("V", new Promise((function(resolve, reject) {
             localmsgServerWait = function() {
