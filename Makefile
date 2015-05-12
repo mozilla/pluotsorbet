@@ -60,7 +60,7 @@ else
   # so we revert to level SIMPLE if the profiler is enabled.
   J2ME_JS_OPTIMIZATION_LEVEL = SIMPLE
 
-  # Various build targets depend on shumway when the profiler is enabled.
+  # Add dependency on shumway when the profiler is enabled.
   PROFILE_DEP = shumway
 endif
 
@@ -164,7 +164,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js $(PROFILE_DEP)
+all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
