@@ -96,16 +96,12 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
 
     if (profile === 3) {
       // Start the "warm startup" profiler after a timeout to better imitate
-      // what happens in a warm startup.  Even with this timeout, the profile
-      // won't be very accurate, and you should profile warm startup by letting
-      // the app start in the background, waiting until the background midlet
-      // settles down, and then opening the app.
-      console.warn("imitating warm startup time for profiler");
+      // what happens in a warm startup, where the bg midlet has time to settle.
       asyncImpl("V", new Promise(function(resolve, reject) {
         setTimeout(function() {
           startTimeline();
           resolve();
-        }, 0);
+        }, 5000);
       }));
     }
 
