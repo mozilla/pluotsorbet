@@ -106,7 +106,7 @@ module J2ME {
   /**
    * Emits preemption checks for methods that already yield.
    */
-  export var emitCheckPreemption = false;
+  export var emitCheckPreemption = true;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;
@@ -1128,12 +1128,12 @@ module J2ME {
     }
 
     private emitPreemptionCheck(emitter: Emitter, nextPC: string) {
-      if (!emitCheckPreemption) {
+      if (!emitCheckPreemption || this.methodInfo.implKey in noPreemptMap) {
         return;
       }
       emitter.writeLn("PS++;");
       emitter.writeLn("if((PS&" + preemptionSampleMask + ")===0)PE();");
-      this.emitUnwind(emitter, String(nextPC), String(nextPC));
+      this.emitUnwind(emitter, String(nextPC), String(nextPC), true);
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {

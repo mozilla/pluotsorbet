@@ -39,6 +39,9 @@ if (scriptArgs.length !== 1) {
 
 var callbacks = [];
 var window = {
+  setTimeout: function(callback) {
+    callbacks.push(callback);
+  },
   setZeroTimeout: function(callback) {
     callbacks.push(callback);
   },

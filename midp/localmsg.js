@@ -1005,6 +1005,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
     this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
     asyncImpl("V", new Promise((function(resolve, reject) {
         if (this.server) {
+            console.log("Listen on: " + this.protocolName);
             // It seems that one server only serves on client at a time, let's
             // store an object instead of the constructor.
             this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
@@ -1012,6 +1013,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
               localmsgServerWait();
             }
         } else {
+            console.log("Connect to: " + this.protocolName);
             if (!MIDP.LocalMsgConnections[this.protocolName]) {
                 if (this.protocolName.startsWith("nokia")) {
                     console.error("localmsg server (" + this.protocolName + ") unimplemented");

@@ -277,13 +277,6 @@ module J2ME {
         }
       }
     },
-    "com/sun/midp/links/Link": {
-      fields: {
-        instanceSymbols: {
-          "nativePointer": "I",
-        }
-      }
-    }
   };
 
   export var BindingsMap = new Uint8Hashtable(50);

@@ -29,6 +29,8 @@ package javax.microedition.midlet;
 import com.sun.midp.midlet.MIDletTunnel;
 import com.sun.midp.midlet.MIDletPeer;
 
+import com.nokia.mid.s40.bg.BGUtils;
+
 /** 
  * This is an implementation of the MIDletTunnel interface, to allow
  * com.sun.midp.midlet.MIDletState instance to call protected and package
@@ -57,6 +59,8 @@ class MIDletTunnelImpl implements MIDletTunnel {
      */
     public void callStartApp(MIDlet m) 
         throws MIDletStateChangeException {
+        BGUtils.maybeWaitUserInteraction(m.getClass().getName());
+        System.out.println("Starting: " + m.getClass().getName());
         m.startApp();
     }
 

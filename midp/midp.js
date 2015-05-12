@@ -194,7 +194,14 @@ var MIDP = (function() {
   };
 
   // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
+  var loadingMIDletPromisesResolved = false;
   Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
+    if (loadingMIDletPromisesResolved) {
+      return;
+    }
+
+    loadingMIDletPromisesResolved = true;
+
     asyncImpl("V", Promise.all(loadingMIDletPromises));
   };
 

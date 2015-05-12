@@ -75,21 +75,28 @@ Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
 
 MIDP.additionalProperties = {};
 
-Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"] = function(args) {
+Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] = function(midletSuiteVendor, midletName, midletNumber, startupNoteText, args) {
   J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
     var elems = arg.split("=");
     MIDP.additionalProperties[elems[0]] = elems[1];
   });
+
+  return 1;
 };
 
-Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
-  asyncImpl("V", new Promise(function(resolve, reject) {
-    // If the page is visible, just start the FG MIDlet
-    if (!document.hidden) {
-      resolve();
-      return;
-    }
+Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V"] = function(midletClassName) {
+  if (J2ME.fromJavaString(midletClassName) !== fgMidletClass) {
+    return;
+  }
 
+  // If the page is visible, just start the FG MIDlet
+  if (!document.hidden) {
+    showSplashScreen();
+    hideBackgroundScreen();
+    return;
+  }
+
+  asyncImpl("V", new Promise(function(resolve, reject) {
     // Otherwise, wait until the page becomes visible, then start the FG MIDlet
     document.addEventListener("visibilitychange", function onVisible() {
       if (!document.hidden) {
