@@ -1003,46 +1003,46 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 
     this.server = (name[2] == ":");
     this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
-    asyncImpl("V", new Promise((function(resolve, reject) {
-        if (this.server) {
-            console.log("Listen on: " + this.protocolName);
-            // It seems that one server only serves on client at a time, let's
-            // store an object instead of the constructor.
-            this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
-            if (localmsgServerWait) {
-              localmsgServerWait();
-            }
-        } else {
-            console.log("Connect to: " + this.protocolName);
-            if (!MIDP.LocalMsgConnections[this.protocolName]) {
-                if (this.protocolName.startsWith("nokia")) {
-                    console.error("localmsg server (" + this.protocolName + ") unimplemented");
-                    // Return without resolving the promise, we want the thread that is connecting
-                    // to this unimplemented server to stop indefinitely.
-                    return;
-                }
 
-                localmsgServerWait = function() {
-                    localmsgServerWait = null;
-                    this.connection = MIDP.LocalMsgConnections[this.protocolName];
-                    this.connection.notifyConnection();
-                    resolve();
-                }.bind(this);
-
-                return;
-            }
-
-            if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-                console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
-            }
-
-            this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
-              new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
-            this.connection.notifyConnection();
+    if (this.server) {
+        console.log("Listen on: " + this.protocolName);
+        // It seems that one server only serves on client at a time, let's
+        // store an object instead of the constructor.
+        this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
+        if (localmsgServerWait) {
+            localmsgServerWait();
         }
 
-        resolve();
-    }).bind(this)));
+        return;
+    }
+
+    if (!MIDP.LocalMsgConnections[this.protocolName]) {
+        if (this.protocolName.startsWith("nokia")) {
+            console.error("localmsg server (" + this.protocolName + ") unimplemented");
+            // Return without resolving the promise, we want the thread that is connecting
+            // to this unimplemented server to stop indefinitely.
+            return;
+        }
+
+        asyncImpl("V", new Promise(function(resolve, reject) {
+            localmsgServerWait = function() {
+                localmsgServerWait = null;
+                this.connection = MIDP.LocalMsgConnections[this.protocolName];
+                this.connection.notifyConnection();
+                resolve();
+            }.bind(this);
+        }));
+
+        return;
+    }
+
+    if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
+        console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
+    }
+
+    this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
+        new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
+    this.connection.notifyConnection();
 };
 
 Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
