@@ -91,9 +91,24 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
 
   // If the page is visible, just start the FG MIDlet
   if (!document.hidden) {
-    profile === 3 && startTimeline();
     showSplashScreen();
     hideBackgroundScreen();
+
+    if (profile === 3) {
+      // Start the "warm startup" profiler after a timeout to better imitate
+      // what happens in a warm startup.  Even with this timeout, the profile
+      // won't be very accurate, and you should profile warm startup by letting
+      // the app start in the background, waiting until the background midlet
+      // settles down, and then opening the app.
+      console.warn("imitating warm startup time for profiler");
+      asyncImpl("V", new Promise(function(resolve, reject) {
+        setTimeout(function() {
+          startTimeline();
+          resolve();
+        }, 0);
+      }));
+    }
+
     return;
   }
 
@@ -106,9 +121,9 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
       }
     }, false);
   }).then(function() {
-    profile === 3 && startTimeline();
     showSplashScreen();
     hideBackgroundScreen();
+    profile === 3 && startTimeline();
   }));
 };
 
