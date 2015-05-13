@@ -9,7 +9,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestLocalMsgProtocol implements Testlet {
-    public int getExpectedPass() { return 20; }
+    public int getExpectedPass() { return 23; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
     LocalMessageProtocolServerConnection server;
@@ -186,6 +186,56 @@ public class TestLocalMsgProtocol implements Testlet {
         }
     }
 
+    Object openLock = new Object();
+    boolean clientCreated = false;
+    boolean serverCreated = false;
+    boolean serverAcceptAndOpenCalled = false;
+
+    class ThreadClient extends Thread {
+        public void run() {
+            try {
+                synchronized (openLock) {
+                    clientCreated = true;
+                    openLock.notifyAll();
+                }
+
+                client = (LocalMessageProtocolConnection)Connector.open("localmsg://"+PROTO_NAME);
+            } catch (Exception e) {
+                th.fail("Unexpected exception: " + e);
+            }
+        }
+    }
+
+    class ThreadServerCreate extends Thread {
+        public void run() {
+            try {
+                server = (LocalMessageProtocolServerConnection)Connector.open("localmsg://:"+PROTO_NAME);
+
+                synchronized (openLock) {
+                    serverCreated = true;
+                    openLock.notifyAll();
+                }
+            } catch (Exception e) {
+                    th.fail("Unexpected exception: " + e);
+            }
+        }
+    }
+
+    class ThreadServerAcceptAndOpen extends Thread {
+        public void run() {
+            try {
+                synchronized (openLock) {
+                    serverAcceptAndOpenCalled = true;
+                    openLock.notifyAll();
+                }
+
+                server.acceptAndOpen();
+            } catch (Exception e) {
+                th.fail("Unexpected exception: " + e);
+            }
+        }
+    }
+
     Object clientWaiting = new Object();
     boolean clientIsWaiting = false;
 
@@ -292,6 +342,83 @@ public class TestLocalMsgProtocol implements Testlet {
 
             client.close();
             server.close();
+
+            // Test three scenarios that might exhibit race conditions.
+
+            // Scenario 1
+            Thread serverCreateThread = new ThreadServerCreate();
+            serverCreateThread.start();
+            synchronized (openLock) {
+                while (!serverCreated) {
+                    openLock.wait();
+                }
+            }
+            Thread serverAcceptAndOpenThread = new ThreadServerAcceptAndOpen();
+            serverAcceptAndOpenThread.start();
+            synchronized (openLock) {
+                while (!serverAcceptAndOpenCalled) {
+                    openLock.wait();
+                }
+            }
+            Thread clientThread = new ThreadClient();
+            clientThread.start();
+            serverCreateThread.join();
+            serverAcceptAndOpenThread.join();
+            clientThread.join();
+            clientCreated = false;
+            serverCreated = false;
+            serverAcceptAndOpenCalled = false;
+            client.close();
+            server.close();
+            th.check(true, "Server create, server accept and open, client open");
+
+            // Scenario 2
+            serverCreateThread.start();
+            synchronized (openLock) {
+                while (!serverCreated) {
+                    openLock.wait();
+                }
+            }
+            clientThread.start();
+            synchronized (openLock) {
+                while (!clientCreated) {
+                    openLock.wait();
+                }
+            }
+            serverAcceptAndOpenThread.start();
+            serverCreateThread.join();
+            serverAcceptAndOpenThread.join();
+            clientThread.join();
+            clientCreated = false;
+            serverCreated = false;
+            serverAcceptAndOpenCalled = false;
+            client.close();
+            server.close();
+            th.check(true, "Server create, client open, server accept and open");
+
+            // Scenario 3
+            clientThread.start();
+            synchronized (openLock) {
+                while (!clientCreated) {
+                    openLock.wait();
+                }
+            }
+            serverCreateThread.start();
+            synchronized (openLock) {
+                while (!serverCreated) {
+                    openLock.wait();
+                }
+            }
+            serverAcceptAndOpenThread.start();
+            serverCreateThread.join();
+            serverAcceptAndOpenThread.join();
+            clientThread.join();
+            clientCreated = false;
+            serverCreated = false;
+            serverAcceptAndOpenCalled = false;
+            client.close();
+            server.close();
+            th.check(true, "Client open, server create, server accept and open");
         } catch (IOException ioe) {
             th.fail("Unexpected exception");
             ioe.printStackTrace();
