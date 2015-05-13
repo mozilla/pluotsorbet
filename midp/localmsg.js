@@ -1050,7 +1050,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 
 Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
     if (this.connection.clientConnected) {
-      return;
+        return;
     }
 
     asyncImpl("V", this.connection.waitConnection());
