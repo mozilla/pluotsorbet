@@ -54,17 +54,13 @@ LocalMsgConnection.prototype.sendMessageToClient = function(data, offset, length
 }
 
 LocalMsgConnection.prototype.getClientMessage = function(data) {
-  if (this.clientMessages.length > 0) {
-      return this.copyMessage(this.clientMessages, data);
-  }
-
-  return -1;
+  return this.copyMessage(this.clientMessages, data);
 }
 
 LocalMsgConnection.prototype.waitClientMessage = function(data) {
     asyncImpl("I", new Promise((function(resolve, reject) {
         this.clientWaiting.push(function() {
-            resolve(this.copyMessage(this.clientMessages, data));
+            resolve(this.getClientMessage(data));
         }.bind(this));
     }).bind(this)));
 }
@@ -78,17 +74,13 @@ LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length
 }
 
 LocalMsgConnection.prototype.getServerMessage = function(data) {
-  if (this.serverMessages.length > 0) {
-      return this.copyMessage(this.serverMessages, data);
-  }
-
-  return -1;
+  return this.copyMessage(this.serverMessages, data);
 }
 
 LocalMsgConnection.prototype.waitServerMessage = function(data) {
     asyncImpl("I", new Promise((function(resolve, reject) {
         this.serverWaiting.push(function() {
-            resolve(this.copyMessage(this.serverMessages, data));
+            resolve(this.getServerMessage(data));
         }.bind(this));
     }).bind(this)));
 }
@@ -1074,13 +1066,11 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, of
 
 Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
     if (this.server) {
-        var ret = this.connection.getServerMessage(data);
-        if (ret > 0) {
-          return ret;
+        if (this.connection.serverMessages.length > 0) {
+          return this.connection.getServerMessage(data);
         }
 
         this.connection.waitServerMessage(data);
-
         return;
     }
 
@@ -1088,9 +1078,8 @@ Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
         console.warn("receiveData from an unimplemented localmsg server (" + this.protocolName + ")");
     }
 
-    var ret = this.connection.getClientMessage(data);
-    if (ret > 0) {
-      return ret;
+    if (this.connection.clientMessages.length > 0) {
+      return this.connection.getClientMessage(data);
     }
 
     this.connection.waitClientMessage(data);
