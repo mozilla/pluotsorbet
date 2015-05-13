@@ -9,7 +9,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestLocalMsgProtocol implements Testlet {
-    public int getExpectedPass() { return 19; }
+    public int getExpectedPass() { return 23; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
     LocalMessageProtocolServerConnection server;
@@ -17,8 +17,7 @@ public class TestLocalMsgProtocol implements Testlet {
     static final String PROTO_NAME = "marco";
     TestHarness th;
 
-    public void testServerSendsClientReceives(TestHarness th) throws IOException {
-        // Server sends data
+    public void serverSendData() throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
         dataOutputStream.writeByte(5);
@@ -27,8 +26,9 @@ public class TestLocalMsgProtocol implements Testlet {
         ((LocalMessageProtocolConnection)server).send(serverData, 0, serverData.length);
         dataOutputStream.close();
         byteArrayOutputStream.close();
+    }
 
-        // Client receives data
+    public void clientReceiveData() throws IOException {
         byte[] clientData = new byte[5];
         client.receive((byte[])clientData);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream((byte[])clientData);
@@ -41,8 +41,7 @@ public class TestLocalMsgProtocol implements Testlet {
         byteArrayInputStream.close();
     }
 
-    public void testClientSendsServerReceives(TestHarness th) throws IOException {
-        // Client sends data
+    public void clientSendData() throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
         dataOutputStream.writeByte(9);
@@ -51,8 +50,9 @@ public class TestLocalMsgProtocol implements Testlet {
         client.send(clientData, 0, clientData.length);
         dataOutputStream.close();
         byteArrayOutputStream.close();
+    }
 
-        // Server receives data
+    public void serverReceiveData() throws IOException {
         byte[] serverData = new byte[5];
         ((LocalMessageProtocolConnection)server).receive((byte[])serverData);
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream((byte[])serverData);
@@ -65,7 +65,17 @@ public class TestLocalMsgProtocol implements Testlet {
         byteArrayInputStream.close();
     }
 
-    public void testServerSendsClientReceives2(TestHarness th) throws IOException {
+    public void testServerSendsClientReceives() throws IOException {
+        serverSendData();
+        clientReceiveData();
+    }
+
+    public void testClientSendsServerReceives() throws IOException {
+        clientSendData();
+        serverReceiveData();
+    }
+
+    public void testServerSendsClientReceives2() throws IOException {
         // Server sends data
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
@@ -91,7 +101,7 @@ public class TestLocalMsgProtocol implements Testlet {
         byteArrayInputStream.close();
     }
 
-    public void testClientSendsServerReceives2(TestHarness th) throws IOException {
+    public void testClientSendsServerReceives2() throws IOException {
         // Client sends data
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         DataOutputStream dataOutputStream = new DataOutputStream(byteArrayOutputStream);
@@ -118,15 +128,13 @@ public class TestLocalMsgProtocol implements Testlet {
     }
 
     class TestThread extends Thread {
-        TestHarness th;
         int sleep1;
         int sleep2;
         int content;
         LocalMessageProtocolServerConnection server;
         LocalMessageProtocolConnection client;
 
-        public TestThread(TestHarness th, int sleepBeforeSend, int sleepBeforeReceive, int content) throws IOException {
-            this.th = th;
+        public TestThread(int sleepBeforeSend, int sleepBeforeReceive, int content) throws IOException {
             this.sleep1 = sleepBeforeSend;
             this.sleep2 = sleepBeforeReceive;
             this.content = content;
@@ -228,6 +236,70 @@ public class TestLocalMsgProtocol implements Testlet {
         }
     }
 
+    Object clientWaiting = new Object();
+    boolean clientIsWaiting = false;
+
+    class ThreadClientWaitMessage extends Thread {
+        public void run() {
+            try {
+                synchronized (clientWaiting) {
+                    clientIsWaiting = true;
+                    clientWaiting.notifyAll();
+                }
+                clientReceiveData();
+            } catch (IOException e) {
+                th.fail("Unexpected exception: " + e);
+            }
+        }
+    }
+
+    class ThreadServerSendMessage extends Thread {
+        public void run() {
+            try {
+                synchronized (clientWaiting) {
+                    while (!clientIsWaiting) {
+                        clientWaiting.wait();
+                    }
+                }
+                serverSendData();
+            } catch (Exception e) {
+                th.fail("Unexpected exception: " + e);
+            }
+        }
+    }
+
+    Object serverWaiting = new Object();
+    boolean serverIsWaiting = false;
+
+    class ThreadServerWaitMessage extends Thread {
+        public void run() {
+            try {
+                synchronized (serverWaiting) {
+                    serverIsWaiting = true;
+                    serverWaiting.notifyAll();
+                }
+                serverReceiveData();
+            } catch (IOException e) {
+                th.fail("Unexpected exception: " + e);
+            }
+        }
+    }
+
+    class ThreadClientSendMessage extends Thread {
+        public void run() {
+            try {
+                synchronized (serverWaiting) {
+                    while (!serverIsWaiting) {
+                        serverWaiting.wait();
+                    }
+                }
+                clientSendData();
+            } catch (Exception e) {
+                th.fail("Unexpected exception: " + e);
+            }
+        }
+    }
+
     public void test(TestHarness th) {
         this.th = th;
 
@@ -236,21 +308,37 @@ public class TestLocalMsgProtocol implements Testlet {
 
             client = (LocalMessageProtocolConnection)Connector.open("localmsg://"+PROTO_NAME);
 
-            testServerSendsClientReceives(th);
-            testClientSendsServerReceives(th);
+            testServerSendsClientReceives();
+            testClientSendsServerReceives();
 
-            testServerSendsClientReceives2(th);
-            testClientSendsServerReceives2(th);
+            testServerSendsClientReceives2();
+            testClientSendsServerReceives2();
 
-            Thread t1 = new TestThread(th, 10,   2000, 12421);
-            Thread t2 = new TestThread(th, 500, 500, 32311);
-            Thread t3 = new TestThread(th, 1000, 500, 92330);
+            Thread t1 = new TestThread(10,   2000, 12421);
+            Thread t2 = new TestThread(500, 500, 32311);
+            Thread t3 = new TestThread(1000, 500, 92330);
             t1.start();
             t2.start();
             t3.start();
             t1.join();
             t2.join();
             t3.join();
+
+            // Test client waiting for a message from the server when the message isn't available yet
+            Thread clientWait = new ThreadClientWaitMessage();
+            clientWait.start();
+            Thread serverSend = new ThreadServerSendMessage();
+            serverSend.start();
+            clientWait.join();
+            serverSend.join();
+
+            // Test server waiting for a message from the client when the message isn't available yet
+            Thread serverWait = new ThreadServerWaitMessage();
+            serverWait.start();
+            Thread clientSend = new ThreadClientSendMessage();
+            clientSend.start();
+            serverWait.join();
+            clientSend.join();
 
             client.close();
             server.close();
