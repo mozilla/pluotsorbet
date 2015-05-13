@@ -1128,30 +1128,31 @@ var emoji = (function() {
 
     squareSize: squareSize,
 
+    loaded: false,
     loadData: function() {
-      return new Promise(function(resolve, reject) {
-        var promises = [];
+      var promises = [];
 
-        for (var i = 0; i < 13; i++) {
-          if (i == 11) {
-            continue;
-          }
-
-          images[i] = new Image();
-          var num = i.toString(16);
-          if (config.customEmojiImageFormat) {
-            var fileName = config.customEmojiImageFormat.replace("NUM", num);
-            images[i].src = URL.createObjectURL(new Blob([ JARStore.loadFile(fileName) ]));
-          } else {
-            images[i].src = "style/emoji/emoji" + num + ".png";
-          }
-
-          promises.push(new Promise(function(resolve, reject) {
-            images[i].onload = resolve;
-          }));
+      for (var i = 0; i < 13; i++) {
+        if (i == 11) {
+          continue;
         }
 
-        Promise.all(promises).then(resolve);
+        images[i] = new Image();
+        var num = i.toString(16);
+        if (config.customEmojiImageFormat) {
+          var fileName = config.customEmojiImageFormat.replace("NUM", num);
+          images[i].src = URL.createObjectURL(new Blob([ JARStore.loadFile(fileName) ]));
+        } else {
+          images[i].src = "style/emoji/emoji" + num + ".png";
+        }
+
+        promises.push(new Promise(function(resolve, reject) {
+          images[i].onload = resolve;
+        }));
+      }
+
+      return Promise.all(promises).then(function() {
+        emoji.loaded = true;
       });
     },
 

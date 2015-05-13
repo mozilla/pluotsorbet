@@ -7,6 +7,10 @@ var Benchmark = (function() {
     return array.reduce(add, 0) / array.length;
   }
 
+  function logBenchmark(inString) {
+    console.log('bench: ' + inString);
+  }
+
   var defaultStorage = {
     // 30 is usually considered a large enough sample size for the central limit theorem
     // to take effect, unless the distribution is too weird
@@ -38,12 +42,12 @@ var Benchmark = (function() {
     }
     return new Promise(function(resolve, reject) {
       enableSuperPowers();
-      console.log("Starting minimize memory.");
+      logBenchmark("Starting minimize memory.");
       var gMgr = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
       Components.utils.import("resource://gre/modules/Services.jsm");
       Services.obs.notifyObservers(null, "child-mmu-request", null);
       gMgr.minimizeMemoryUsage(function() {
-        console.log("Finished minimize memory.");
+        logBenchmark("Finished minimize memory.");
         resolve();
       });
     });
@@ -181,7 +185,7 @@ var Benchmark = (function() {
         memoryReporter.sizeOfTab(window.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
           domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
       } catch (e) {
-        console.log(e);
+        logBenchmark(e);
       }
 
       var memValues = {
@@ -244,7 +248,7 @@ var Benchmark = (function() {
     },
     startTimer: function(which, now) {
       if (!storage.running) {
-        console.log("startTimer called while benchmark not running");
+        logBenchmark("startTimer called while benchmark not running");
         return;
       }
       if (!this.startTime) {
@@ -254,11 +258,11 @@ var Benchmark = (function() {
     },
     stopTimer: function(which, now) {
       if (!storage.running) {
-        console.log("stopTimer called while benchmark not running");
+        logBenchmark("stopTimer called while benchmark not running");
         return;
       }
       if (this.startTime[which] === null) {
-        console.log("stopTimer called without previous call to startTimer");
+        logBenchmark("stopTimer called without previous call to startTimer");
         return;
       }
       var took = now - this.startTime[which];
@@ -299,15 +303,15 @@ var Benchmark = (function() {
         });
       }
       if (storage.deleteFs) {
-        console.log("Deleting fs.");
+        logBenchmark("Deleting fs.");
         indexedDB.deleteDatabase("asyncStorage");
       }
       if (storage.deleteJitCache) {
-        console.log("Deleting jit cache.");
+        logBenchmark("Deleting jit cache.");
         indexedDB.deleteDatabase("CompiledMethodCache");
       }
       if (storage.round !== 0) {
-        console.log("Scheduling round " + (storage.round) + " of " + storage.numRounds + " finalization in " + storage.roundDelay + "ms");
+        logBenchmark("Scheduling round " + (storage.round) + " of " + storage.numRounds + " finalization in " + storage.roundDelay + "ms");
         setTimeout(run, storage.roundDelay);
       } else {
         run();
@@ -351,9 +355,9 @@ var Benchmark = (function() {
       if (storage.buildBaseline) {
         storage.baseline = storage.current;
         storage.buildBaseline = false;
-        console.log("FINISHED BUILDING BASELINE");
+        logBenchmark("FINISHED BUILDING BASELINE");
       }
-      console.log("Raw Values:\n" + "Current: " + JSON.stringify(storage.current) + "\nBaseline: " + JSON.stringify(storage.baseline))
+      logBenchmark("Raw Values:\n" + "Current: " + JSON.stringify(storage.current) + "\nBaseline: " + JSON.stringify(storage.baseline))
       var configRows = [
         ["Config", "Value"],
         ["User Agent", window.navigator.userAgent],
@@ -365,7 +369,7 @@ var Benchmark = (function() {
       var out = "\n" +
                 prettyTable(configRows, [LEFT, LEFT]) + "\n" +
                 prettyTable(rows, [LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT]);
-      console.log(out);
+      logBenchmark(out);
       saveStorage();
     }
 
