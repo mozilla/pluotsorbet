@@ -10,6 +10,7 @@ var LocalMsgConnectionMessage = function(data, offset, length) {
 }
 
 var LocalMsgConnection = function() {
+    this.clientConnected = false;
     this.waitingForConnection = null;
     this.serverWaiting = [];
     this.clientWaiting = [];
@@ -18,6 +19,8 @@ var LocalMsgConnection = function() {
 }
 
 LocalMsgConnection.prototype.notifyConnection = function() {
+    this.clientConnected = true;
+
     if (this.waitingForConnection) {
         this.waitingForConnection();
     }
@@ -1010,7 +1013,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
             // store an object instead of the constructor.
             this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
             if (localmsgServerWait) {
-              localmsgServerWait();
+                localmsgServerWait();
             }
         } else {
             console.log("Connect to: " + this.protocolName);
@@ -1046,6 +1049,10 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 };
 
 Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
+    if (this.connection.clientConnected) {
+      return;
+    }
+
     asyncImpl("V", this.connection.waitConnection());
 };
 
