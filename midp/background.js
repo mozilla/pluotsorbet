@@ -93,6 +93,18 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
   if (!document.hidden) {
     showSplashScreen();
     hideBackgroundScreen();
+
+    if (profile === 3) {
+      // Start the "warm startup" profiler after a timeout to better imitate
+      // what happens in a warm startup, where the bg midlet has time to settle.
+      asyncImpl("V", new Promise(function(resolve, reject) {
+        setTimeout(function() {
+          startTimeline();
+          resolve();
+        }, 5000);
+      }));
+    }
+
     return;
   }
 
@@ -107,6 +119,7 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
   }).then(function() {
     showSplashScreen();
     hideBackgroundScreen();
+    profile === 3 && startTimeline();
   }));
 };
 
