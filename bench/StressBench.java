@@ -23,26 +23,20 @@ public class StressBench extends MIDlet {
 
     public void paint(Graphics g) {
       int z = 0;
-      while (true) {
-        if ((x + dx) < 0 || (x + dx) > 200) {
-          dx *= -1;
-        }
-        if ((y + dy) < 0 || (y + dy) > 200) {
-          dy *= -1;
-        }
-        x += dx;
-        y += dy;
-        g.setColor(255, 255, 255);
-        g.fillRect(0, 0, 300, 300);
 
-        g.setColor((z + x) & 0xff, (z + y) & 0xff, (x + y) & 0xff);
-        g.fillRect(x, y, 10, 10);
-        try {
-          Thread.sleep(16);
-        } catch (Exception x) {
-          // ...
-        }
+      if ((x + dx) < 0 || (x + dx) > 200) {
+        dx *= -1;
       }
+      if ((y + dy) < 0 || (y + dy) > 200) {
+        dy *= -1;
+      }
+      x += dx;
+      y += dy;
+      g.setColor(255, 255, 255);
+      g.fillRect(0, 0, 300, 300);
+
+      g.setColor((z + x) & 0xff, (z + y) & 0xff, (x + y) & 0xff);
+      g.fillRect(x, y, 10, 10);
     }
   }
 
@@ -91,6 +85,16 @@ public class StressBench extends MIDlet {
       Thread thread = new Thread(new Worker(), "T" + i);
       thread.setPriority(Thread.MIN_PRIORITY);
       thread.start();
+    }
+
+    Thread current = Thread.currentThread();
+    current.setPriority(Thread.MAX_PRIORITY);
+
+    while (true) {
+      bouncyColors.repaint();
+      try {
+        Thread.sleep(16);
+      } catch (InterruptedException e) {}
     }
   }
 
