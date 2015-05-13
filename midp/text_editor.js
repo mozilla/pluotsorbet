@@ -186,7 +186,7 @@ var TextEditorProvider = (function() {
         setPosition: function(left, top) {
             this.left = left;
             this.top = top;
-            var t = MIDP.context2D.canvas.offsetTop + top;
+            var t = MIDP.deviceContext.canvas.offsetTop + top;
             this._setStyle("left", left + "px");
             this._setStyle("top",  t + "px");
         },
