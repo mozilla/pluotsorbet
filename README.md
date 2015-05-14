@@ -190,21 +190,9 @@ To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view 
   }
   ```
 
-The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2]`.
+The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2|3]`. Then wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
 
-Next, you will need to wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
-
-If you want to record every Java method call, change the line in `runtime.ts` from:
-
-```
-if (false && methodTimeline) {
-```
-to
-```
-if (methodTimeline) {
-```
-
-This will wrap all methods with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed trace of the application's execution. Note that this instrumentation has some overhead, and timing information of very short lived events may not be accurate and can lead to the entire application slowing down.
+Java methods are automatically wrapped with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed trace of the application's execution. Note that this instrumentation has some overhead, and timing information of very short lived events may not be accurate and can lead to the entire application slowing down.
 
 Similar to the way counters work, you can get creative with the timeline profiler. The API looks something like this:
 
@@ -239,7 +227,9 @@ The tooltip displays:
 - `all total` and `all self`: cumulative total and self times for all events with this name.
 - the remaining fields show the custom data specified in the `details` object.
 
-If you build with `PROFILE=2` the timeline will be saved to a text file instead of shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt` which you can later pull with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
+If you build with `PROFILE=2` or `PROFILE=3`, then the timeline will be saved to a text file instead of being shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt`, which you can later pull with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
+
+`PROFILE=1` and `PROFILE=2` automatically profile (most of) cold startup, from *JVM.startIsolate0* to *DisplayDevice.gainedForeground0*; while `PROFILE=3` profiles warm startup, from *BGUtils.maybeWaitUserInteraction* to *DisplayDevice.gainedForeground0*.
 
 ## Benchmarks
 
