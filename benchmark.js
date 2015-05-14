@@ -369,6 +369,7 @@ var Benchmark = (function() {
         ["Delay(ms)", storage.roundDelay],
         ["Delete FS", storage.deleteFs ? "yes" : "no"],
         ["Delete JIT CACHE", storage.deleteJitCache ? "yes" : "no"],
+        ["Warm benchmark", storage.warmBench ? "yes" : "no"],
       ];
       var out = "\n" +
                 prettyTable(configRows, [LEFT, LEFT]) + "\n" +
