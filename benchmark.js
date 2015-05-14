@@ -483,7 +483,7 @@ var Benchmark = (function() {
         Native[fgImplKey] = function() {
           var now = performance.now();
           startup.stopTimer("fgStartupTime", now);
-          startup.stopTimer("startupTime", now - storage.startFGDelay);
+          startup.stopTimer("startupTime", storage.warmBench ? (now - storage.startFGDelay) : now);
           fgOriginalFn.apply(null, arguments);
         };
 
