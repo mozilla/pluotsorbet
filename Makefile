@@ -72,6 +72,12 @@ else
   CLOSURE_WARNING_LEVEL = QUIET
 endif
 
+ifeq ($(RELEASE),1)
+	CLOSURE_FLAGS = 
+else
+	CLOSURE_FLAGS = --formatting PRETTY_PRINT
+endif
+
 MAIN_JS_SRCS = \
   polyfill/canvas-toblob.js \
   polyfill/fromcodepoint.js \
@@ -259,7 +265,7 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 # out-language) in order for Closure to compile them, even though for now
 # we're optimizing "WHITESPACE_ONLY".
 bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
-	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+	java -jar build_tools/closure.jar $(CLOSURE_FLAGS) --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
 j2me: bld/j2me.js bld/jsc.js
