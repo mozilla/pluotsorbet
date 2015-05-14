@@ -917,6 +917,15 @@ var fs = (function() {
     return store.import(blob, cb);
   }
 
+  function deleteDatabase() {
+    return new Promise(function(resolve, reject) {
+      store.db = null;
+      var request = indexedDB.deleteDatabase(Store.DBNAME);
+      request.onsuccess = resolve;
+      request.onerror = function() { reject(request.error.name) };
+    });
+  }
+
   return {
     normalize: normalizePath,
     dirname: dirname,
@@ -944,6 +953,7 @@ var fs = (function() {
     syncStore: syncStore,
     exportStore: exportStore,
     importStore: importStore,
+    deleteDatabase: deleteDatabase,
     createUniqueFile: createUniqueFile,
     getBlob: getBlob,
   };

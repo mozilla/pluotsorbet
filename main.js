@@ -268,15 +268,22 @@ if (typeof Benchmark !== "undefined") {
 
 window.onload = function() {
  document.getElementById("deleteDatabases").onclick = function() {
-   ["asyncStorage", "CompiledMethodCache", "JARStore"].forEach(function(database) {
-     console.log("Deleting " + database + "…");
-     var req = indexedDB.deleteDatabase(database);
-     req.onsuccess = function() {
-       console.log("Deleted " + database + ".");
-     };
-     req.onerror = function() {
-       console.error("Error deleting " + database + ": " + req.error.name);
-     };
+   fs.deleteDatabase().then(function() {
+     console.log("Deleted fs database.");
+   }).catch(function(error) {
+     console.log("Error deleting fs database: " + error);
+   });
+
+   CompiledMethodCache.deleteDatabase().then(function() {
+     console.log("Deleted CompiledMethodCache database.");
+   }).catch(function(error) {
+     console.log("Error deleting CompiledMethodCache database: " + error);
+   });
+
+   JARStore.deleteDatabase().then(function() {
+     console.log("Deleted JARStore database.");
+   }).catch(function(error) {
+     console.log("Error deleting JARStore database: " + error);
    });
  };
  document.getElementById("exportstorage").onclick = function() {

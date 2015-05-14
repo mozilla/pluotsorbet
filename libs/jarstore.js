@@ -187,6 +187,15 @@ var JARStore = (function() {
     });
   }
 
+  function deleteDatabase() {
+    return new Promise(function(resolve, reject) {
+      database = null;
+      var request = indexedDB.deleteDatabase(DATABASE);
+      request.onsuccess = resolve;
+      request.onerror = function() { reject(request.error.name) };
+    });
+  }
+
   return {
     addBuiltIn: addBuiltIn,
     installJAR: installJAR,
@@ -195,6 +204,7 @@ var JARStore = (function() {
     loadFile: loadFile,
     getJAD: getJAD,
     clear: clear,
+    deleteDatabase: deleteDatabase,
   };
 })();
 
