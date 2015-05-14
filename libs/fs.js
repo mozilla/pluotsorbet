@@ -917,12 +917,12 @@ var fs = (function() {
     return store.import(blob, cb);
   }
 
-  function deleteStore() {
+  function deleteDatabase() {
     return new Promise(function(resolve, reject) {
       store.db = null;
-      var request = indexedDB.deleteDatabase("asyncStorage");
+      var request = indexedDB.deleteDatabase(Store.DBNAME);
       request.onsuccess = resolve;
-      request.onerror = reject;
+      request.onerror = function() { reject(request.error.name) };
     });
   }
 
@@ -953,7 +953,7 @@ var fs = (function() {
     syncStore: syncStore,
     exportStore: exportStore,
     importStore: importStore,
-    deleteStore: deleteStore,
+    deleteDatabase: deleteDatabase,
     createUniqueFile: createUniqueFile,
     getBlob: getBlob,
   };

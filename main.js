@@ -267,11 +267,23 @@ if (typeof Benchmark !== "undefined") {
 }
 
 window.onload = function() {
- document.getElementById("deleteDatabase").onclick = function() {
-   fs.deleteStore().then(function() {
-     console.log("Delete file system completed.");
-   }, function() {
-     console.log("Failed to delete file system.");
+ document.getElementById("deleteDatabases").onclick = function() {
+   fs.deleteDatabase().then(function() {
+     console.log("Deleted fs database.");
+   }).catch(function(error) {
+     console.log("Error deleting fs database: " + error);
+   });
+
+   CompiledMethodCache.deleteDatabase().then(function() {
+     console.log("Deleted CompiledMethodCache database.");
+   }).catch(function(error) {
+     console.log("Error deleting CompiledMethodCache database: " + error);
+   });
+
+   JARStore.deleteDatabase().then(function() {
+     console.log("Deleted JARStore database.");
+   }).catch(function(error) {
+     console.log("Error deleting JARStore database: " + error);
    });
  };
  document.getElementById("exportstorage").onclick = function() {

@@ -157,10 +157,20 @@ var CompiledMethodCache = (function() {
     }
   }
 
+  function deleteDatabase() {
+    return new Promise(function(resolve, reject) {
+      database = null;
+      var request = indexedDB.deleteDatabase(DATABASE);
+      request.onsuccess = resolve;
+      request.onerror = function() { reject(request.error.name) };
+    });
+  }
+
   return {
     get: get,
     put: put,
     clear: clear,
+    deleteDatabase: deleteDatabase,
   };
 
 })();
