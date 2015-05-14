@@ -152,6 +152,11 @@ public class ShellTestlets {
     "gnu/testlet/java/lang/String/new_String",
     "gnu/testlet/java/lang/String/startsWith",
     "java/lang/TestString",
+    "gnu/testlet/java/lang/String/decode",
+    "gnu/testlet/java/lang/String/getBytes",
+    "gnu/testlet/java/lang/String/getBytes13",
+    "gnu/testlet/java/lang/String/getBytes14",
+    "gnu/testlet/java/lang/String/indexOf",
     null
   };
 
@@ -190,11 +195,6 @@ public class ShellTestlets {
 //  "gnu/testlet/java/lang/Object/constructor",
 //  "gnu/testlet/java/lang/Object/ObjectTest",
 //  "gnu/testlet/java/lang/Object/wait",
-//  "gnu/testlet/java/lang/String/decode",
-//  "gnu/testlet/java/lang/String/getBytes",
-//  "gnu/testlet/java/lang/String/getBytes13",
-//  "gnu/testlet/java/lang/String/getBytes14",
-//  "gnu/testlet/java/lang/String/indexOf",
 //  "gnu/testlet/java/lang/String/StringTest",
 //  "gnu/testlet/java/lang/StringBuffer/StringBufferTest",
 //  "gnu/testlet/java/lang/System/getProperty",
