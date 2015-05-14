@@ -1227,11 +1227,14 @@ module J2ME {
   }
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
-    var fn = jsGlobal[methodInfo.mangledClassAndMethodName];
-    if (fn) {
+    // Use aotMetaData to find AOT methods instead of jsGlobal because runtime compiled methods may
+    // be on the jsGlobal.
+    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
+    if (aotMetaData[mangledClassAndMethodName]) {
       aotMethodCount++;
       methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
-      return fn;
+      release || assert(jsGlobal[mangledClassAndMethodName], "function must be present when aotMetaData exists");
+      return jsGlobal[mangledClassAndMethodName];
     }
     if (enableCompiledMethodCache) {
       var cachedMethod;
@@ -1241,7 +1244,7 @@ module J2ME {
       }
     }
 
-    return jsGlobal[methodInfo.mangledClassAndMethodName];
+    return jsGlobal[mangledClassAndMethodName];
   }
 
   /**
