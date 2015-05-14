@@ -780,7 +780,6 @@ module J2ME {
 
     exception_table_length: number = -1;
     exception_table_offset: number = -1;
-    isOptimized: boolean = false;
 
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);

@@ -34,39 +34,6 @@ module J2ME {
     } 
   }
 
-  /**
-   * Optimize method bytecode.
-   */
-  function optimizeMethodBytecode(methodInfo: MethodInfo) {
-    interpreterCounter && interpreterCounter.count("optimize: " + methodInfo.implKey);
-    var stream = new BytecodeStream(methodInfo.codeAttribute.code);
-    while (stream.currentBC() !== Bytecodes.END) {
-      if (stream.rawCurrentBC() === Bytecodes.WIDE) {
-        stream.next();
-        continue;
-      }
-      switch (stream.currentBC()) {
-        case Bytecodes.ALOAD:
-          if (stream.nextBC() === Bytecodes.ILOAD) {
-            stream.writeCurrentBC(Bytecodes.ALOAD_ILOAD);
-          }
-          break;
-        case Bytecodes.IINC:
-          if (stream.nextBC() === Bytecodes.GOTO) {
-           stream.writeCurrentBC(Bytecodes.IINC_GOTO);
-          }
-          break;
-        case Bytecodes.ARRAYLENGTH:
-          if (stream.nextBC() === Bytecodes.IF_ICMPGE) {
-            stream.writeCurrentBC(Bytecodes.ARRAYLENGTH_IF_ICMPGE);
-          }
-          break;
-      }
-      stream.next();
-    }
-    methodInfo.isOptimized = true;
-  }
-
   function resolveClass(index: number, classInfo: ClassInfo): ClassInfo {
     var classInfo = classInfo.constantPool.resolveClass(index);
     linkKlass(classInfo);
@@ -226,12 +193,6 @@ module J2ME {
     var fieldInfo: FieldInfo;
     var classInfo: ClassInfo;
 
-    // We don't want to optimize methods for interpretation if we're going to be using the JIT until
-    // we teach the Baseline JIT about the new bytecodes.
-    if (!enableRuntimeCompilation && !frame.methodInfo.isOptimized && frame.methodInfo.stats.bytecodeCount > 100) {
-      optimizeMethodBytecode(frame.methodInfo);
-    }
-
     mi.stats.interpreterCallCount ++;
 
     interpreterCount ++;
@@ -356,11 +317,6 @@ module J2ME {
             stack.push(frame.local[frame.read8()]);
             break;
           case Bytecodes.ALOAD:
-            stack.push(frame.local[frame.read8()]);
-            break;
-          case Bytecodes.ALOAD_ILOAD:
-            stack.push(frame.local[frame.read8()]);
-            frame.pc ++;
             stack.push(frame.local[frame.read8()]);
             break;
           case Bytecodes.LLOAD:
@@ -552,13 +508,6 @@ module J2ME {
             index = frame.read8();
             value = frame.read8Signed();
             frame.local[index] += value | 0;
-            break;
-          case Bytecodes.IINC_GOTO:
-            index = frame.read8();
-            value = frame.read8Signed();
-            frame.local[index] += frame.local[index];
-            frame.pc ++;
-            frame.pc = frame.readTargetPC();
             break;
           case Bytecodes.IADD:
             stack.push((stack.pop() + stack.pop()) | 0);
@@ -951,15 +900,6 @@ module J2ME {
           case Bytecodes.ARRAYLENGTH:
             array = stack.pop();
             stack.push(array.length);
-            break;
-          case Bytecodes.ARRAYLENGTH_IF_ICMPGE:
-            array = stack.pop();
-            stack.push(array.length);
-            frame.pc ++;
-            pc = frame.readTargetPC();
-            if (stack.pop() <= stack.pop()) {
-              frame.pc = pc;
-            }
             break;
           case Bytecodes.GETFIELD:
             index = frame.read16();

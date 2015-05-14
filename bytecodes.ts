@@ -671,11 +671,6 @@ module J2ME.Bytecode {
       define(Bytecodes.GOTO_W              , "goto_w"          , "boooo", Flags.STOP | Flags.BRANCH);
       define(Bytecodes.JSR_W               , "jsr_w"           , "boooo", Flags.STOP | Flags.BRANCH);
       define(Bytecodes.BREAKPOINT          , "breakpoint"      , "b"    , Flags.TRAP);
-
-
-      define(Bytecodes.ALOAD_ILOAD                   , "aload_iload"               , "bi"   , Flags.LOAD);
-      define(Bytecodes.IINC_GOTO                     , "iinc_goto"                 , "bic"  , Flags.LOAD | Flags.STORE | Flags.STOP | Flags.BRANCH);
-      define(Bytecodes.ARRAYLENGTH_IF_ICMPGE         , "arraylength_IF_ICMPGE"     , "b"    , Flags.COMMUTATIVE | Flags.FALL_THROUGH | Flags.BRANCH | Flags.TRAP);
     }
     defineBytecodes();
   }
