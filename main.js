@@ -267,11 +267,16 @@ if (typeof Benchmark !== "undefined") {
 }
 
 window.onload = function() {
- document.getElementById("deleteDatabase").onclick = function() {
-   fs.deleteStore().then(function() {
-     console.log("Delete file system completed.");
-   }, function() {
-     console.log("Failed to delete file system.");
+ document.getElementById("deleteDatabases").onclick = function() {
+   ["asyncStorage", "CompiledMethodCache", "JARStore"].forEach(function(database) {
+     console.log("Deleting " + database + "…");
+     var req = indexedDB.deleteDatabase(database);
+     req.onsuccess = function() {
+       console.log("Deleted " + database + ".");
+     };
+     req.onerror = function() {
+       console.error("Error deleting " + database + ": " + req.error.name);
+     };
    });
  };
  document.getElementById("exportstorage").onclick = function() {

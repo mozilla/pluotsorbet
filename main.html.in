@@ -225,7 +225,7 @@
         <label><input type="checkbox" id="perfWriter">Perf</label>
       </section>
       <section>
-        <button id="deleteDatabase">Delete File System</button>
+        <button id="deleteDatabases">Delete Databases</button>
         <button id="exportstorage">Export File System</button>
         <div>Import storage:</div>
         <input type="file" id="importstoragefile">
