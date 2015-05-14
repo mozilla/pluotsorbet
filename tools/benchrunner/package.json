@@ -1,8 +1,8 @@
 {
-  "name": "casperjshello",
+  "name": "benchrunner",
   "version": "0.0.1",
-  "description": "try using casper",
-  "main": "server.js",
+  "description": "use node-firefox modules to automate running of j2me.js benchmarks",
+  "main": "benchrunner.js",
   "dependencies": {
     "node-firefox-start-simulator": "^1.3.1",
     "node-firefox-install-app": "^1.0.0",
