@@ -276,7 +276,8 @@ module J2ME {
 
   export var phase = ExecutionPhase.Runtime;
 
-  export var internedStrings: Map<string, java.lang.String> = new Map<string, java.lang.String>();
+  // Initial capacity of the interned strings is the capacity of a large midlet after startup.
+  export var internedStrings: TypedArrayHashtable = new TypedArrayHashtable(767);
 
   declare var util;
 
@@ -526,13 +527,17 @@ module J2ME {
       this.allCtxs.delete(ctx);
     }
 
-    newStringConstant(s: string): java.lang.String {
-      if (internedStrings.has(s)) {
-        return internedStrings.get(s);
+    newStringConstant(utf16Array: Uint16Array): java.lang.String {
+      var javaString = internedStrings.get(utf16Array);
+      if (javaString !== null) {
+        return javaString;
       }
-      var obj = J2ME.newString(s);
-      internedStrings.set(s, obj);
-      return obj;
+      javaString = <java.lang.String>newObject(Klasses.java.lang.String);
+      javaString.value = utf16Array;
+      javaString.offset = 0;
+      javaString.count = utf16Array.length;
+      internedStrings.put(utf16Array, javaString);
+      return javaString;
     }
 
     setStatic(field, value) {
@@ -1173,7 +1178,13 @@ module J2ME {
       switch (classInfo.getClassNameSlow()) {
         case "java/lang/Object": Klasses.java.lang.Object = klass; break;
         case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
-        case "java/lang/String": Klasses.java.lang.String = klass; break;
+        case "java/lang/String": Klasses.java.lang.String = klass;
+          Object.defineProperty(klass.prototype, "viewString", {
+            get: function () {
+              return fromJavaString(this);
+            }
+          });
+          break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
         case "java/lang/InstantiationException": Klasses.java.lang.InstantiationException = klass; break;

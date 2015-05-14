@@ -26,6 +26,7 @@ function asyncImpl(returnKind, promise) {
 }
 
 var Native = {};
+var Override = {};
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
     if (!src || !dst)
@@ -667,8 +668,6 @@ Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function() {
 Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(newPriority) {
 };
 
-
-
 Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(suiteId, className) {
   console.warn("com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V not implemented");
 };
@@ -739,4 +738,14 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
     if (!release) {
         eval(J2ME.fromJavaString(src));
     }
+};
+
+Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
+  var internedStrings = J2ME.internedStrings;
+  var internedString = internedStrings.getByRange(this.value, this.offset, this.count);
+  if (internedString !== null) {
+    return internedString;
+  }
+  internedStrings.put(this.value.subarray(this.offset, this.offset + this.count), this);
+  return this;
 };

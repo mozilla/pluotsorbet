@@ -159,7 +159,7 @@ try {
   }
   load("libs/relooper.js", "libs/native.js", "bld/j2me.js","libs/zipfile.js", "blackBox.js",
     "libs/encoding.js", "util.js", "libs/jarstore.js",
-    "native.js", "string.js",
+    "native.js",
     "midp/midp.js", "midp/gestures.js",
     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js"
     // "bld/classes.jar.js"

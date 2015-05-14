@@ -82,6 +82,9 @@ module J2ME {
         "java/lang/Boolean",
         "java/util/Hashtable",
         "java/lang/IndexOutOfBoundsException",
+        "java/lang/StringIndexOutOfBoundsException",
+        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        "com/sun/cldc/isolate/Isolate",
       ];
 
       for (var i = 0; i < classNames.length; i++) {

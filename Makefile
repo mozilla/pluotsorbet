@@ -81,7 +81,6 @@ MAIN_JS_SRCS = \
   timer.js \
   util.js \
   native.js \
-  string.js \
   libs/load.js \
   libs/zipfile.js \
   libs/jarstore.js \
