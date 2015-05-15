@@ -800,65 +800,55 @@ module J2ME {
           case Bytecodes.POP2:
             sp -= 2;
             continue;
-          case Bytecodes.DUP:
+          case Bytecodes.DUP: // ... a -> ... a, a
             i32[sp] = i32[sp - 1];          ref[sp] = ref[sp - 1];
             sp++;
             continue;
-          case Bytecodes.DUP2:
-            i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2];
-            i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1];
+          case Bytecodes.DUP2: // ... b, a -> ... b, a, b, a
+            i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2]; // b
+            i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1]; // a
             sp += 2;
             continue;
-          case Bytecodes.DUP_X1:
-            i32[sp    ] = i32[sp - 1];      ref[sp    ] = ref[sp - 1];
-            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
-            i32[sp - 2] = i32[sp];          ref[sp - 2] = ref[sp];
+          case Bytecodes.DUP_X1: // ... b, a -> ... a, b, a
+            i32[sp    ] = i32[sp - 1];      ref[sp    ] = ref[sp - 1]; // a
+            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2]; // b
+            i32[sp - 2] = i32[sp];          ref[sp - 2] = ref[sp];     // a
             sp++;
             continue;
-          case Bytecodes.DUP_X2:
-            i32[sp    ] = i32[sp - 1];      ref[sp    ] = ref[sp - 1];
-            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
-            i32[sp - 2] = i32[sp - 3];      ref[sp - 2] = ref[sp - 3];
-            i32[sp - 3] = i32[sp];          ref[sp - 3] = ref[sp];
+          case Bytecodes.DUP_X2: // ... c, b, a -> ... a, c, b, a
+            i32[sp    ] = i32[sp - 1];      ref[sp    ] = ref[sp - 1]; // a
+            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2]; // b
+            i32[sp - 2] = i32[sp - 3];      ref[sp - 2] = ref[sp - 3]; // c
+            i32[sp - 3] = i32[sp];          ref[sp - 3] = ref[sp];     // a
             sp++;
             continue;
-          //        case Bytecodes.DUP_X2:
-          //          a = stack.pop();
-          //          b = stack.pop();
-          //          c = stack.pop();
-          //          stack.push(a);
-          //          stack.push(c);
-          //          stack.push(b);
-          //          stack.push(a);
-          //          break;
-          //        case Bytecodes.DUP2_X1:
-          //          a = stack.pop();
-          //          b = stack.pop();
-          //          c = stack.pop();
-          //          stack.push(b);
-          //          stack.push(a);
-          //          stack.push(c);
-          //          stack.push(b);
-          //          stack.push(a);
-          //          break;
-          //        case Bytecodes.DUP2_X2:
-          //          a = stack.pop();
-          //          b = stack.pop();
-          //          c = stack.pop();
-          //          var d = stack.pop();
-          //          stack.push(b);
-          //          stack.push(a);
-          //          stack.push(d);
-          //          stack.push(c);
-          //          stack.push(b);
-          //          stack.push(a);
-          //          break;
-          //        case Bytecodes.SWAP:
-          //          a = stack.pop();
-          //          b = stack.pop();
-          //          stack.push(a);
-          //          stack.push(b);
-          //          break;
+          case Bytecodes.DUP2_X1: // ... c, b, a -> ... b, a, c, b, a
+            i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1]; // a
+            i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2]; // b
+            i32[sp - 1] = i32[sp - 3];      ref[sp - 1] = ref[sp - 3]; // c
+            i32[sp - 2] = i32[sp + 1];      ref[sp - 2] = ref[sp + 1]; // a
+            i32[sp - 3] = i32[sp    ];      ref[sp - 3] = ref[sp    ]; // b
+            sp += 2;
+            continue;
+          case Bytecodes.DUP2: // ... b, a -> ... b, a, b, a
+            i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1]; // a
+            i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2]; // b
+            sp += 2;
+            continue;
+          case Bytecodes.DUP2_X2: // ... d, c, b, a -> ... b, a, d, c, b, a
+            i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1]; // a
+            i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2]; // b
+            i32[sp - 1] = i32[sp - 3];      ref[sp - 1] = ref[sp - 3]; // c
+            i32[sp - 2] = i32[sp - 4];      ref[sp - 2] = ref[sp - 4]; // d
+            i32[sp - 3] = i32[sp + 1];      ref[sp - 3] = ref[sp + 1]; // a
+            i32[sp - 4] = i32[sp    ];      ref[sp - 4] = ref[sp    ]; // b
+            sp += 2;
+            continue;
+          case Bytecodes.SWAP:
+            ia = i32[sp - 1];               object = ref[sp - 1];
+            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
+            i32[sp - 2] = ia;               ref[sp - 2] = object;
+            continue;
           case Bytecodes.IINC:
             index = code[pc++];
             value = code[pc++] << 24 >> 24;
