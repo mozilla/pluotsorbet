@@ -157,6 +157,8 @@ public class ShellTestlets {
     "gnu/testlet/java/lang/String/getBytes13",
     "gnu/testlet/java/lang/String/getBytes14",
     "gnu/testlet/java/lang/String/indexOf",
+    "gnu/testlet/java/io/ByteArrayInputStream/SimpleRead",
+    // "gnu/testlet/java/io/ByteArrayInputStream/ProtectedVars", I think this test case is wrong.
     null
   };
 
@@ -185,8 +187,6 @@ public class ShellTestlets {
 //  "com/sun/midp/rms/TestRecordStoreFileNatives",
 //  "com/sun/midp/ssl/TestSSLStreamConnection",
 //  "com/sun/midp/util/isolate/TestInterIsolateMutex",
-//  "gnu/testlet/java/io/ByteArrayInputStream/ProtectedVars",
-//  "gnu/testlet/java/io/ByteArrayInputStream/SimpleRead",
 //  "gnu/testlet/java/io/PrintStreamTest",
 //  "gnu/testlet/java/lang/Math/cos",
 //  "gnu/testlet/java/lang/Math/max",
