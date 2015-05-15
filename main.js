@@ -60,11 +60,6 @@ function processJAD(data) {
       var key = entry.substring(0, keyEnd);
       var val = entry.substring(keyEnd + 1).trim();
       MIDP.manifest[key] = val;
-
-      if (key == "MIDlet-Name") {
-        var title = document.getElementById("splash-screen").querySelector(".title");
-        title.textContent = "Loading " + val;
-      }
     }
   });
 }
@@ -73,17 +68,16 @@ if (config.jad) {
   loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
 }
 
-function performDownload(url, dialog, callback) {
-  var dialogText = dialog.querySelector('h1.download-dialog-text');
-  dialogText.textContent = "Downloading " + MIDlet.name + "…";
-
-  var progressBar = dialog.querySelector('progress.pack-activity');
+function performDownload(url, callback) {
+  showDownloadScreen();
+  var progressBar = downloadDialog.querySelector('progress.pack-activity');
 
   var sender = DumbPipe.open("JARDownloader", url, function(message) {
     switch (message.type) {
       case "done":
         DumbPipe.close(sender);
-
+        hideDownloadScreen();
+        progressBar.value = 0;
         callback(message.data);
 
         break;
@@ -94,25 +88,18 @@ function performDownload(url, dialog, callback) {
 
       case "fail":
         DumbPipe.close(sender);
-
+        hideDownloadScreen();
         progressBar.value = 0;
-        progressBar.style.display = "none";
 
-        var dialogText = dialog.querySelector('h1.download-dialog-text');
-        dialogText.textContent = "Download failure";
+        var failureDialog = document.getElementById('download-failure-dialog');
+        failureDialog.style.display = '';
 
-        var btnRetry = dialog.querySelector('button.recommend');
-        btnRetry.style.display = '';
-
+        var btnRetry = failureDialog.querySelector('button.recommend');
         btnRetry.addEventListener('click', function onclick(e) {
           e.preventDefault();
           btnRetry.removeEventListener('click', onclick);
-
-          btnRetry.style.display = "none";
-
-          progressBar.style.display = '';
-
-          performDownload(url, dialog, callback);
+          failureDialog.style.display = 'none';
+          performDownload(url, callback);
         });
 
         break;
@@ -124,20 +111,21 @@ if (config.downloadJAD) {
   loadingMIDletPromises.push(new Promise(function(resolve, reject) {
     JARStore.loadJAR("midlet.jar").then(function(loaded) {
       if (loaded) {
+        if (!document.hidden) {
+          // Show the splash screen as soon as possible.
+          showSplashScreen();
+        }
         processJAD(JARStore.getJAD());
         resolve();
         return;
       }
 
-      var progressTemplateNode = document.getElementById('download-progress-dialog');
-      var dialog = progressTemplateNode.cloneNode(true);
-      dialog.style.display = 'block';
-      dialog.classList.add('visible');
-      progressTemplateNode.parentNode.appendChild(dialog);
-
-      performDownload(config.downloadJAD, dialog, function(data) {
-        dialog.parentElement.removeChild(dialog);
-
+      performDownload(config.downloadJAD, function(data) {
+        if (!document.hidden) {
+          // Show the splash screen as soon as possible after showing
+          // the download screen while downloading the JAD/JAR files.
+          showSplashScreen();
+        }
         JARStore.installJAR("midlet.jar", data.jarData, data.jadData).then(function() {
           processJAD(data.jadData);
           resolve();
@@ -146,6 +134,8 @@ if (config.downloadJAD) {
     });
   }).then(backgroundCheck));
 }
+
+var loadingFGPromises = [ emoji.loadData() ];
 
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
@@ -162,6 +152,7 @@ function toggle(button) {
 }
 
 var bigBang = 0;
+var profiling = false;
 
 function startTimeline() {
   jsGlobal.START_TIME = performance.now();
@@ -276,11 +267,23 @@ if (typeof Benchmark !== "undefined") {
 }
 
 window.onload = function() {
- document.getElementById("deleteDatabase").onclick = function() {
-   fs.deleteStore().then(function() {
-     console.log("Delete file system completed.");
-   }, function() {
-     console.log("Failed to delete file system.");
+ document.getElementById("deleteDatabases").onclick = function() {
+   fs.deleteDatabase().then(function() {
+     console.log("Deleted fs database.");
+   }).catch(function(error) {
+     console.log("Error deleting fs database: " + error);
+   });
+
+   CompiledMethodCache.deleteDatabase().then(function() {
+     console.log("Deleted CompiledMethodCache database.");
+   }).catch(function(error) {
+     console.log("Error deleting CompiledMethodCache database: " + error);
+   });
+
+   JARStore.deleteDatabase().then(function() {
+     console.log("Deleted JARStore database.");
+   }).catch(function(error) {
+     console.log("Error deleting JARStore database: " + error);
    });
  };
  document.getElementById("exportstorage").onclick = function() {

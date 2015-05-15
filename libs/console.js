@@ -69,7 +69,7 @@
       if (false) {
         s = this.time.toFixed(2) + " " + s;
       }
-      return padRight(s.toString(), " ", 4) + " | ";
+      return padRight(s.toString(), " ", 8) + " | ";
     },
 
     get message() {

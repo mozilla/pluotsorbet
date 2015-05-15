@@ -724,7 +724,7 @@ DumbPipe.registerOpener("windowOpen", function(message, sender) {
 
 // #if BENCHMARK == "true"
 DumbPipe.registerOpener("gcReload", function(message, sender) {
-  window.location = window.location.href.replace("index.html", "gc.html");
+  window.location.replace(window.location.href.replace("index.html", "gc.html"));
 });
 // #endif
 

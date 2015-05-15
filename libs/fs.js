@@ -506,7 +506,7 @@ var fs = (function() {
     return buffer.array.subarray(from, to);
   }
 
-  function write(fd, data, from) {
+  function write(fd, data, offset, length, from) {
     var file = openedFiles.get(fd);
 
     if (DEBUG_FS) { console.log("fs write " + file.path); }
@@ -521,13 +521,19 @@ var fs = (function() {
       from = buffer.contentSize;
     }
 
-    var newLength = (from + data.byteLength > buffer.contentSize) ? (from + data.byteLength) : (buffer.contentSize);
+    var newLength = (from + length > buffer.contentSize) ? (from + length) : (buffer.contentSize);
 
     buffer.setSize(newLength);
 
-    buffer.array.set(data, from);
+    if (length > 128) {
+      buffer.array.set(data.subarray(offset, offset + length), from);
+    } else {
+      for (var i = 0; i < length; i++) {
+        buffer.array[from + i] = data[offset + i];
+      }
+    }
 
-    file.position = from + data.byteLength;
+    file.position = from + length;
     file.mtime = Date.now();
     file.size = buffer.contentSize;
     file.dirty = true;
@@ -911,12 +917,12 @@ var fs = (function() {
     return store.import(blob, cb);
   }
 
-  function deleteStore() {
+  function deleteDatabase() {
     return new Promise(function(resolve, reject) {
       store.db = null;
-      var request = indexedDB.deleteDatabase("asyncStorage");
+      var request = indexedDB.deleteDatabase(Store.DBNAME);
       request.onsuccess = resolve;
-      request.onerror = reject;
+      request.onerror = function() { reject(request.error.name) };
     });
   }
 
@@ -947,7 +953,7 @@ var fs = (function() {
     syncStore: syncStore,
     exportStore: exportStore,
     importStore: importStore,
-    deleteStore: deleteStore,
+    deleteDatabase: deleteDatabase,
     createUniqueFile: createUniqueFile,
     getBlob: getBlob,
   };

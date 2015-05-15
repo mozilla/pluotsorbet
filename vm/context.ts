@@ -360,6 +360,7 @@ module J2ME {
       runtime.isolate = isolate;
 
       runtime.updateStatus(RuntimeStatus.Started);
+      runtime.priority = isolate._priority;
 
       var mainClass = J2ME.fromJavaString(isolate._mainClass).replace(/\./g, "/");
       var mainArgs = isolate._mainArgs;
@@ -420,11 +421,13 @@ module J2ME {
     thread: java.lang.Thread;
     writer: IndentingWriter;
     methodTimeline: any;
+    virtualRuntime: number;
     constructor(public runtime: Runtime) {
       var id = this.id = Context._nextId ++;
       this.runtime = runtime;
       this.runtime.addContext(this);
       this.nativeThread = new Thread(this);
+      this.virtualRuntime = 0;
       this.writer = new IndentingWriter(false, function (s) {
         console.log(s);
       });
@@ -442,7 +445,7 @@ module J2ME {
     }
     public static currentContextPrefix() {
       if ($) {
-        return Context.color($.id) + ":" + Context.color($.ctx.id);
+        return Context.color($.id) + "." + $.ctx.runtime.priority + ":" + Context.color($.ctx.id) + "." + $.ctx.getPriority();
       }
       return "";
     }
@@ -513,7 +516,10 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
       var methodInfo = classInfo.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
+      preemptionLockLevel++;
       getLinkedMethod(methodInfo).call(exception, message ? newString(message) : null);
+      release || Debug.assert(!U, "Unexpected unwind during createException.");
+      preemptionLockLevel--;
       return exception;
     }
 
@@ -578,7 +584,7 @@ module J2ME {
     }
 
     resume() {
-      Runtime.scheduleRunningContext(this);
+      Scheduler.enqueue(this);
     }
 
     block(obj, queue, lockLevel) {

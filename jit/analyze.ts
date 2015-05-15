@@ -35,8 +35,6 @@ module J2ME {
     "com/sun/cldc/isolate/Isolate.waitStatus.(I)V": YieldReason.Root,
     "com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z": YieldReason.Root,
     "com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B": YieldReason.Root,
-    "com/sun/midp/links/LinkPortal.getLinkCount0.()I": YieldReason.Root,
-    "com/sun/midp/links/Link.receive0.(Lcom/sun/midp/links/LinkMessage;Lcom/sun/midp/links/Link;)V": YieldReason.Root,
     "com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V": YieldReason.Root,
     "com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I": YieldReason.Root,
     "com/sun/midp/io/j2me/push/ConnectionRegistry.poll0.(J)I": YieldReason.Root,
@@ -46,7 +44,7 @@ module J2ME {
     "com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;": YieldReason.Root,
     "com/nokia/mid/ui/TextEditor.setFocus.(Z)V": YieldReason.Root,
     "com/nokia/mid/ui/VKVisibilityNotificationRunnable.sleepUntilVKVisibilityChange.()Z": YieldReason.Root,
-    "com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V": YieldReason.Root,
+    "com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.receiveData.([B)I": YieldReason.Root,
     "org/mozilla/io/LocalMsgConnection.waitConnection.()V": YieldReason.Root,
@@ -85,6 +83,10 @@ module J2ME {
     // These can technically yield but are worth the risk.
     // XXX Determine the current status of this item.
     // "java/lang/Object.equals.(Ljava/lang/Object;)Z": YieldReason.None
+  };
+
+  export var noPreemptMap = {
+    "java/lang/Class.initialize.()V": true
   };
 
   export function isFinalClass(classInfo: ClassInfo): boolean {

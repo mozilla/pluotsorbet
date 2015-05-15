@@ -165,7 +165,7 @@ var TextEditorProvider = (function() {
 
         setFont: function(font) {
             this.font = font;
-            this._setStyle("font", font.css);
+            this._setStyle("font", font.context.font);
         },
 
         setSize: function(width, height) {
@@ -186,7 +186,7 @@ var TextEditorProvider = (function() {
         setPosition: function(left, top) {
             this.left = left;
             this.top = top;
-            var t = MIDP.context2D.canvas.offsetTop + top;
+            var t = MIDP.deviceContext.canvas.offsetTop + top;
             this._setStyle("left", left + "px");
             this._setStyle("top",  t + "px");
         },
@@ -448,7 +448,7 @@ var TextEditorProvider = (function() {
         getContentHeight: function() {
             var div = document.getElementById("hidden-textarea-editor");
             div.style.setProperty("width", this.getWidth() + "px");
-            div.style.setProperty("font", this.font.css);
+            div.style.setProperty("font", this.font.context.font);
             div.innerHTML = this.html;
             var height = div.offsetHeight;
 

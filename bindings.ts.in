@@ -44,6 +44,7 @@ module J2ME {
         instanceSymbols: {
           "_mainArgs": "[Ljava/lang/String;",
           "_mainClass": "Ljava/lang/String;",
+          "_priority": "I",
         }
       }
     },
@@ -285,13 +286,6 @@ module J2ME {
         }
       }
     },
-    "com/sun/midp/links/Link": {
-      fields: {
-        instanceSymbols: {
-          "nativePointer": "I",
-        }
-      }
-    }
   };
 
   export var BindingsMap = new TypedArrayHashtable(50);
@@ -447,6 +441,7 @@ module J2ME {
       runtime: Runtime;
       _mainArgs: java.lang.String [];
       _mainClass: java.lang.String;
+      _priority: number;
     }
   }
 

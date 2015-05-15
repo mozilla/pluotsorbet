@@ -65,7 +65,8 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ipBytes, 
         this.options[SOCKET_OPT.RCVBUF] = 8192;
         this.options[SOCKET_OPT.SNDBUF] = 8192;
 
-        this.data = new Int8Array();
+        this.data = [];
+        this.dataLen = 0;
         this.waitingData = null;
 
         this.socket.onopen = function() {
@@ -86,15 +87,8 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ipBytes, 
         }.bind(this);
 
         this.socket.ondata = (function(message) {
-            // console.log("this.socket.ondata: " + JSON.stringify(message));
-            if (this.data.byteLength === 0) {
-                this.data = new Int8Array(message.data);
-            } else {
-                var newArray = new Int8Array(this.data.byteLength + message.data.byteLength);
-                newArray.set(this.data);
-                newArray.set(new Int8Array(message.data), this.data.byteLength);
-                this.data = newArray;
-            }
+            this.data.push(new Int8Array(message.data));
+            this.dataLen += message.data.byteLength;
 
             if (this.waitingData) {
                 this.waitingData();
@@ -105,7 +99,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(ipBytes, 
 
 Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function() {
     // console.log("Protocol.available0: " + this.data.byteLength);
-    return this.data.byteLength;
+    return this.dataLen;
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(data, offset, length) {
@@ -114,22 +108,36 @@ Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(data, of
     asyncImpl("I", new Promise((function(resolve, reject) {
         // There might be data left in the buffer when the socket is closed, so we
         // should allow buffer reading even the socket has been closed.
-        if (this.socket.isClosed && this.data.length == 0) {
+        if (this.socket.isClosed && this.dataLen === 0) {
             resolve(-1);
             return;
         }
 
         var copyData = (function() {
-            var toRead = (length < this.data.byteLength) ? length : this.data.byteLength;
+            var toRead = (length < this.dataLen) ? length : this.dataLen;
+            var read = 0;
+            while (read < toRead) {
+                var remaining = toRead - read;
 
-            data.set(this.data.subarray(0, toRead), offset);
+                var array = this.data[0];
 
-            this.data = this.data.subarray(toRead);
+                if (array.byteLength > remaining) {
+                    data.set(array.subarray(0, remaining), read + offset);
+                    this.data[0] = array.subarray(remaining);
+                    read += remaining;
+                } else {
+                    data.set(array, read + offset);
+                    this.data.shift();
+                    read += array.byteLength;
+                }
+            }
 
-            resolve(toRead);
+            this.dataLen -= read;
+
+            resolve(read);
         }).bind(this);
 
-        if (this.data.byteLength == 0) {
+        if (this.dataLen === 0) {
             this.waitingData = (function() {
                 this.waitingData = null;
                 copyData();

@@ -15,14 +15,22 @@ function asyncImpl(returnKind, promise) {
     } else {
       // void, do nothing
     }
-    ctx.execute();
+    J2ME.Scheduler.enqueue(ctx);
   }, function(exception) {
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
     ctx.pushFrame(Frame.create(methodInfo, [exception]));
-    ctx.execute();
+    J2ME.Scheduler.enqueue(ctx);
   });
   $.pause(asyncImplStringAsync);
+}
+
+function preemptingImpl(returnKind, returnValue) {
+  if (J2ME.Scheduler.shouldPreempt()) {
+      asyncImpl(returnKind, Promise.resolve(returnValue));
+      return;
+  }
+  return returnValue;
 }
 
 var Native = {};
@@ -312,6 +320,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var classInfo = this.runtimeKlass.templateKlass.classInfo;
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
+    J2ME.preemptionLockLevel++;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
         $.ctx.executeMethod(clinit);
     }
@@ -323,6 +332,7 @@ Native["java/lang/Class.invoke_verify.()V"] = function() {
 
 Native["java/lang/Class.init9.()V"] = function() {
     $.setClassInitialized(this.runtimeKlass);
+    J2ME.preemptionLockLevel--;
 };
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function() {
