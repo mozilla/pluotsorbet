@@ -112,7 +112,7 @@ module J2ME {
    *             +--------------------------------+
    *             | Non-Parameter Local (L-1)      |
    *   FP  --->  +--------------------------------+
-   *             | Caller Return Address          |
+   *             | Caller Return Address          | // The opPC of the caller's invoke bytecode.
    *             +--------------------------------+
    *             | Caller FP                      |
    *             +--------------------------------+
@@ -338,12 +338,14 @@ module J2ME {
         release || traceWriter && traceWriter.writeLn("Looking for handler in: " + mi.implKey);
         for (var i = 0; i < mi.exception_table_length; i++) {
           var exceptionEntryView = mi.getExceptionEntryViewByIndex(i);
+          release || traceWriter && traceWriter.writeLn("Checking catch range: " + exceptionEntryView.start_pc + " - " + exceptionEntryView.end_pc);
           if (this.pc >= exceptionEntryView.start_pc && this.pc < exceptionEntryView.end_pc) {
             if (exceptionEntryView.catch_type === 0) {
               pc = exceptionEntryView.handler_pc;
               break;
             } else {
               classInfo = resolveClass(exceptionEntryView.catch_type, mi.classInfo);
+              release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo.klass);
               if (isAssignableTo(e.klass, classInfo.klass)) {
                 pc = exceptionEntryView.handler_pc;
                 break;
@@ -1505,12 +1507,12 @@ module J2ME {
           case Bytecodes.RETURN:
             var lastSP = sp;
             var lastMI = mi;
-            pc = i32[fp + FrameLayout.CallerRAOffset];
+            opPC = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - maxLocals;
             fp = i32[fp + FrameLayout.CallerFPOffset];
             mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
             if (mi === null) {
-              thread.set(fp, sp, pc);
+              thread.set(fp, sp, opPC);
               thread.popFrame(null);
               // REDUX: What do we do about the return value here?
               return;
@@ -1522,7 +1524,8 @@ module J2ME {
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
-
+            // Calculate the PC based on the size of the caller's invoke bytecode.
+            pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
             // Push return value.
             switch (op) {
               case Bytecodes.LRETURN:
@@ -1672,7 +1675,7 @@ module J2ME {
             sp += maxLocals - mi.argumentSlots;
 
             // Caller saved values.
-            i32[sp++] = pc;
+            i32[sp++] = opPC;
             i32[sp++] = fp;
             ref[sp++] = mi;
             fp = sp - FrameLayout.CallerSaveSize;
