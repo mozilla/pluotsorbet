@@ -1072,103 +1072,103 @@ module J2ME {
             }
             continue;
           case Bytecodes.IFEQ:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] === 0) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IFNE:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] !== 0) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IFLT:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] < 0) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IFGE:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] >= 0) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IFGT:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] > 0) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IFLE:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] <= 0) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ICMPEQ:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] === i32[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ICMPNE:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] !== i32[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ICMPLT:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] > i32[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ICMPGE:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] <= i32[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ICMPGT:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] < i32[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ICMPLE:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] >= i32[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ACMPEQ:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (ref[--sp] === ref[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ACMPNE:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (ref[--sp] !== ref[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IFNULL:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (!ref[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IFNONNULL:
-            targetPC = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (ref[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.GOTO:
-            pc = opPC + (code[pc++] << 8 | code[pc ++]) << 16 >> 16;
+            pc = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             continue;
           //        case Bytecodes.GOTO_W:
           //          frame.pc = frame.read32Signed() - 1;
@@ -1307,11 +1307,6 @@ module J2ME {
             }
             pc = opPC + offset;
             continue;
-          //        case Bytecodes.NEWARRAY:
-          //          type = frame.read8();
-          //          size = stack.pop();
-          //          stack.push(newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size));
-          //          break;
           case Bytecodes.ANEWARRAY:
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
