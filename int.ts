@@ -1481,7 +1481,7 @@ module J2ME {
                 continue;
               case Bytecodes.IINC:
                 index = code[pc++] << 8 | code[pc++];
-                value = code[pc++] << 24 >> 24;
+                value = (code[pc++] << 8 | code[pc++]) << 16 >> 16;
                 i32[lp + index] = i32[lp + index] + value | 0;
                 continue;
               //case Bytecodes.RET:
