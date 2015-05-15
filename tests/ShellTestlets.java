@@ -256,6 +256,7 @@ public class ShellTestlets {
 //  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInstanceof",
 //  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInvokeInterface",
 //  "test/org/jikesrvm/basic/core/classloading/TestUTF8",
+  "gnu/testlet/vm/DoubleTest",
   null};
 
   static {
