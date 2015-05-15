@@ -686,10 +686,19 @@ module J2ME {
       return !!(this.accessFlags & ACCESS_FLAGS.ACC_STATIC);
     }
 
-    //public get(object: java.lang.Object) {
-    //  return object[this.mangledName];
-    //}
-    //
+    public get(object: java.lang.Object) {
+      switch (this.kind) {
+        case Kind.Int:
+          return i32[object._address + this.byteOffset >> 2];
+        case Kind.Reference:
+          return ref[object._address + this.byteOffset >> 2];
+        case Kind.Float:
+          return f32[object._address + this.byteOffset >> 2];
+        default:
+          Debug.assert(false, Kind[this.kind]);
+      }
+    }
+
     public set(object: java.lang.Object, value: any) {
       switch (this.kind) {
         case Kind.Int:

@@ -1630,6 +1630,15 @@ module J2ME {
                 // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
               }
               result = callee.apply(object, args);
+
+              //if (!release) {
+              //  checkReturnValue(calleeMethodInfo, returnValue);
+              //}
+
+              if (U) {
+                return;
+              }
+
               if (!release) {
                 assert(!(result instanceof Long.constructor), "NO LONGS ALLOWED");
               }

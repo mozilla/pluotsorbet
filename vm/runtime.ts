@@ -693,8 +693,6 @@ module J2ME {
       threadWriter && threadWriter.writeLn("yielding " + reason);
       runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
-      console.info("\nYielding\n");
-      console.info(new Error().stack)
     }
 
     pause(reason: string) {
@@ -702,8 +700,6 @@ module J2ME {
       threadWriter && threadWriter.writeLn("pausing " + reason);
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
-      console.info("\nPausing\n");
-      console.info(new Error().stack)
     }
 
     stop() {
@@ -1251,9 +1247,16 @@ module J2ME {
               setter = new Function("value", "ref[this._address + " + field.byteOffset + " >> 2] = value;");
               getter = new Function("return ref[this._address + " + field.byteOffset + " >> 2];");
               break;
+            case Kind.Byte:
+            case Kind.Short:
+            case Kind.Boolean:
             case Kind.Int:
               setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
               getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
+              break;
+            case Kind.Float:
+              setter = new Function("value", "f32[this._address + " + field.byteOffset + " >> 2] = value;");
+              getter = new Function("return f32[this._address + " + field.byteOffset + " >> 2];");
               break;
             default:
               Debug.assert(false, Kind[field.kind]);

@@ -349,7 +349,7 @@ module J2ME {
       ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
       ctx.nativeThread.frame.setParameter(Kind.Reference, 1, J2ME.newString(className.replace(/\./g, "/")));
       ctx.nativeThread.frame.setParameter(Kind.Reference, 2, array);
-      ctx.execute();
+      ctx.start();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 
@@ -381,7 +381,8 @@ module J2ME {
       ctx.nativeThread.pushFrame(null);
       ctx.nativeThread.pushFrame(entryPoint);
       ctx.nativeThread.frame.setParameter(Kind.Reference, 0, args);
-      ctx.execute();
+      ctx.start();
+      release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
 
       // Debug.assert(false, "REDUX");
       //var frames = [Frame.create(entryPoint, [ args ])];
@@ -395,7 +396,6 @@ module J2ME {
       //                         [ runtime.mainThread, J2ME.newString("main") ]));
       //
       //ctx.start(frames);
-      //release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 
   }
@@ -544,17 +544,33 @@ module J2ME {
       Context.setWriters(Context.writer);
     }
 
-    //start(frames: Frame[]) {
-    //  this.frames.push(Frame.Start);
-    //  for (var i = 0; i < frames.length; i++) {
-    //    this.pushFrame(frames[i]);
-    //  }
-    //  this.resume();
-    //}
+    start() {
+      this.resume();
+    }
 
     execute() {
       this.setAsCurrentContext();
       this.nativeThread.run();
+      if (U) {
+        //if (this.bailoutFrames.length) {
+        //  Array.prototype.push.apply(this.frames, this.bailoutFrames);
+        //  this.bailoutFrames = [];
+        //}
+        switch (U) {
+          case VMState.Yielding:
+            this.resume();
+            break;
+          case VMState.Pausing:
+            break;
+          case VMState.Stopping:
+            this.clearCurrentContext();
+            this.kill();
+            return;
+        }
+        U = VMState.Running;
+        this.clearCurrentContext();
+        return;
+      }
     //  do {
     //    VM.execute();
     //    if (U) {
