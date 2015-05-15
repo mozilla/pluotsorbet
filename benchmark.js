@@ -485,7 +485,6 @@ var Benchmark = (function() {
         Native[fgImplKey] = function() {
           var now = performance.now();
           startup.stopTimer("fgStartupTime", now);
-          startup.stopTimer("startupTime", storage.warmBench ? (now - storage.startFGDelay) : now);
           startup.startTimer("fgRefreshStartupTime", now);
           fgOriginalFn.apply(null, arguments);
         };
@@ -497,6 +496,7 @@ var Benchmark = (function() {
           if (!refreshCalled) {
             refreshCalled = true;
             startup.stopTimer("fgRefreshStartupTime", performance.now());
+            startup.stopTimer("startupTime", storage.warmBench ? (now - storage.startFGDelay) : now);
           }
           refreshOriginalFn.apply(null, arguments);
         }
