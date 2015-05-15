@@ -159,6 +159,13 @@ public class ShellTestlets {
     "gnu/testlet/java/lang/String/indexOf",
     "gnu/testlet/java/io/ByteArrayInputStream/SimpleRead",
     // "gnu/testlet/java/io/ByteArrayInputStream/ProtectedVars", I think this test case is wrong.
+    "test/org/jikesrvm/basic/core/classloading/TestUTF8",
+    "gnu/testlet/vm/DoubleTest",
+    "gnu/testlet/java/io/PrintStreamTest",
+    "gnu/testlet/java/lang/Math/max",
+    "gnu/testlet/java/lang/Math/min",
+    "gnu/testlet/java/lang/Math/cos",
+    "gnu/testlet/java/lang/Math/sin",
     null
   };
 
@@ -172,8 +179,6 @@ public class ShellTestlets {
 //  "com/nokia/mid/ui/TestVirtualKeyboard",
 //  "com/sun/midp/crypto/TestMD5",
 //  "com/sun/midp/crypto/TestRSA",
-//  "com/sun/midp/events/TestEventQueue",
-//  "com/sun/midp/events/TestNativeEventPool",
 //  "com/sun/midp/i18n/TestResourceConstants",
 //  "com/sun/midp/io/j2me/http/TestHttpConnection",
 //  "com/sun/midp/io/j2me/http/TestHttpHeaders",
@@ -187,11 +192,6 @@ public class ShellTestlets {
 //  "com/sun/midp/rms/TestRecordStoreFileNatives",
 //  "com/sun/midp/ssl/TestSSLStreamConnection",
 //  "com/sun/midp/util/isolate/TestInterIsolateMutex",
-//  "gnu/testlet/java/io/PrintStreamTest",
-//  "gnu/testlet/java/lang/Math/cos",
-//  "gnu/testlet/java/lang/Math/max",
-//  "gnu/testlet/java/lang/Math/min",
-//  "gnu/testlet/java/lang/Math/sin",
 //  "gnu/testlet/java/lang/Object/constructor",
 //  "gnu/testlet/java/lang/Object/ObjectTest",
 //  "gnu/testlet/java/lang/Object/wait",
@@ -255,11 +255,11 @@ public class ShellTestlets {
 //  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnCheckcast",
 //  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInstanceof",
 //  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInvokeInterface",
-//  "test/org/jikesrvm/basic/core/classloading/TestUTF8",
-  "gnu/testlet/vm/DoubleTest",
+//  "com/sun/midp/events/TestEventQueue",
+//  "com/sun/midp/events/TestNativeEventPool",
   null};
 
   static {
-    // list = brokenList;
+     // list = brokenList;
   }
 };
