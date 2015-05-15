@@ -25,6 +25,7 @@ public class BackgroundMIDlet3 extends MIDlet {
         } catch (InterruptedException e) {
         }
 
+        BGUtils.setBGMIDletResident(true);
         BGUtils.launchIEMIDlet("Mozilla", "ForegroundMIDlet", 1, "unknown", ";prop1=hello;prop2=ciao");
     }
 

@@ -1,4 +1,7 @@
 // Basics
+
+///<reference path='tools/lib.d.ts' />
+
 ///<reference path='config.ts' />
 ///<reference path='utilities.ts' />
 ///<reference path='vm/hashtable.ts' />
@@ -12,6 +15,7 @@
 ///<reference path='vm/classRegistry.ts' />
 ///<reference path='bindings.ts' />
 ///<reference path='int.ts' />
+///<reference path='scheduler.ts' />
 ///<reference path='vm/runtime.ts' />
 ///<reference path='vm/context.ts' />
 

@@ -7,11 +7,17 @@ var Benchmark = (function() {
     return array.reduce(add, 0) / array.length;
   }
 
+  function logBenchmark(inString) {
+    console.log('bench: ' + inString);
+  }
+
   var defaultStorage = {
     // 30 is usually considered a large enough sample size for the central limit theorem
     // to take effect, unless the distribution is too weird
     numRounds: 30,
     roundDelay: 5000, // ms to delay starting next round of tests
+    warmBench: false,
+    startFGDelay: 10000, // ms to delay starting FG MIDlet
     baseline: {},
     current: {},
     running: false,
@@ -38,12 +44,12 @@ var Benchmark = (function() {
     }
     return new Promise(function(resolve, reject) {
       enableSuperPowers();
-      console.log("Starting minimize memory.");
+      logBenchmark("Starting minimize memory.");
       var gMgr = Components.classes["@mozilla.org/memory-reporter-manager;1"].getService(Components.interfaces.nsIMemoryReporterManager);
       Components.utils.import("resource://gre/modules/Services.jsm");
       Services.obs.notifyObservers(null, "child-mmu-request", null);
       gMgr.minimizeMemoryUsage(function() {
-        console.log("Finished minimize memory.");
+        logBenchmark("Finished minimize memory.");
         resolve();
       });
     });
@@ -181,7 +187,7 @@ var Benchmark = (function() {
         memoryReporter.sizeOfTab(window.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
           domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
       } catch (e) {
-        console.log(e);
+        logBenchmark(e);
       }
 
       var memValues = {
@@ -233,6 +239,8 @@ var Benchmark = (function() {
       storage.running = true;
       storage.numRounds = "numRounds" in settings ? settings.numRounds : defaultStorage.numRounds;
       storage.roundDelay = "roundDelay" in settings ? settings.roundDelay : defaultStorage.roundDelay;
+      storage.warmBench = "warmBench" in settings ? settings.warmBench : defaultStorage.warmBench;
+      storage.startFGDelay = "startFGDelay" in settings ? settings.startFGDelay : defaultStorage.startFGDelay;
       storage.deleteFs = "deleteFs" in settings ? settings.deleteFs : defaultStorage.deleteFs;
       storage.deleteJitCache = "deleteJitCache" in settings ? settings.deleteJitCache : defaultStorage.deleteJitCache;
       storage.buildBaseline = "buildBaseline" in settings ? settings.buildBaseline : defaultStorage.buildBaseline;
@@ -244,7 +252,7 @@ var Benchmark = (function() {
     },
     startTimer: function(which, now) {
       if (!storage.running) {
-        console.log("startTimer called while benchmark not running");
+        logBenchmark("startTimer called while benchmark not running");
         return;
       }
       if (!this.startTime) {
@@ -254,11 +262,11 @@ var Benchmark = (function() {
     },
     stopTimer: function(which, now) {
       if (!storage.running) {
-        console.log("stopTimer called while benchmark not running");
+        logBenchmark("stopTimer called while benchmark not running");
         return;
       }
       if (this.startTime[which] === null) {
-        console.log("stopTimer called without previous call to startTimer");
+        logBenchmark("stopTimer called without previous call to startTimer");
         return;
       }
       var took = now - this.startTime[which];
@@ -299,15 +307,15 @@ var Benchmark = (function() {
         });
       }
       if (storage.deleteFs) {
-        console.log("Deleting fs.");
+        logBenchmark("Deleting fs.");
         indexedDB.deleteDatabase("asyncStorage");
       }
       if (storage.deleteJitCache) {
-        console.log("Deleting jit cache.");
+        logBenchmark("Deleting jit cache.");
         indexedDB.deleteDatabase("CompiledMethodCache");
       }
       if (storage.round !== 0) {
-        console.log("Scheduling round " + (storage.round) + " of " + storage.numRounds + " finalization in " + storage.roundDelay + "ms");
+        logBenchmark("Scheduling round " + (storage.round) + " of " + storage.numRounds + " finalization in " + storage.roundDelay + "ms");
         setTimeout(run, storage.roundDelay);
       } else {
         run();
@@ -351,9 +359,9 @@ var Benchmark = (function() {
       if (storage.buildBaseline) {
         storage.baseline = storage.current;
         storage.buildBaseline = false;
-        console.log("FINISHED BUILDING BASELINE");
+        logBenchmark("FINISHED BUILDING BASELINE");
       }
-      console.log("Raw Values:\n" + "Current: " + JSON.stringify(storage.current) + "\nBaseline: " + JSON.stringify(storage.baseline))
+      logBenchmark("Raw Values:\n" + "Current: " + JSON.stringify(storage.current) + "\nBaseline: " + JSON.stringify(storage.baseline))
       var configRows = [
         ["Config", "Value"],
         ["User Agent", window.navigator.userAgent],
@@ -361,11 +369,12 @@ var Benchmark = (function() {
         ["Delay(ms)", storage.roundDelay],
         ["Delete FS", storage.deleteFs ? "yes" : "no"],
         ["Delete JIT CACHE", storage.deleteJitCache ? "yes" : "no"],
+        ["Warm startup", storage.warmBench ? "yes" : "no"],
       ];
       var out = "\n" +
                 prettyTable(configRows, [LEFT, LEFT]) + "\n" +
                 prettyTable(rows, [LEFT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT]);
-      console.log(out);
+      logBenchmark(out);
       saveStorage();
     }
 
@@ -380,6 +389,8 @@ var Benchmark = (function() {
 
   var numRoundsEl;
   var roundDelayEl;
+  var warmBenchEl;
+  var startFGDelayEl;
   var deleteFsEl;
   var deleteJitCacheEl;
   var startButton;
@@ -389,6 +400,8 @@ var Benchmark = (function() {
     return {
       numRounds: numRoundsEl.value | 0,
       roundDelay: roundDelayEl.value | 0,
+      warmBench: !!warmBenchEl.checked,
+      startFGDelay: startFGDelayEl.value | 0,
       deleteFs: !!deleteFsEl.checked,
       deleteJitCache: !!deleteJitCacheEl.checked,
       recordMemory: NO_SECURITY
@@ -409,6 +422,8 @@ var Benchmark = (function() {
     initUI: function() {
       numRoundsEl = document.getElementById("benchmark-num-rounds");
       roundDelayEl = document.getElementById("benchmark-round-delay");
+      warmBenchEl = document.getElementById("benchmark-warm-startup");
+      startFGDelayEl = document.getElementById("benchmark-startfg-delay");
       deleteFsEl = document.getElementById("benchmark-delete-fs");
       deleteJitCacheEl = document.getElementById("benchmark-delete-jit-cache");
       startButton = document.getElementById("benchmark-startup-run");
@@ -416,6 +431,8 @@ var Benchmark = (function() {
 
       numRoundsEl.value = storage.numRounds;
       roundDelayEl.value = storage.roundDelay;
+      warmBenchEl.checked = storage.warmBench;
+      startFGDelayEl.value = storage.startFGDelay;
       deleteFsEl.checked = storage.deleteFs;
       deleteJitCacheEl.checked = storage.deleteJitCache;
 
@@ -466,9 +483,27 @@ var Benchmark = (function() {
         Native[fgImplKey] = function() {
           var now = performance.now();
           startup.stopTimer("fgStartupTime", now);
-          startup.stopTimer("startupTime", now);
+          startup.stopTimer("startupTime", storage.warmBench ? (now - storage.startFGDelay) : now);
           fgOriginalFn.apply(null, arguments);
         };
+
+        if (storage.warmBench) {
+          var startFGImplKey = "com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V";
+          var startFGOriginalImpl = Native[startFGImplKey];
+          Native[startFGImplKey] = function(midletClassName) {
+            if (J2ME.fromJavaString(midletClassName) !== fgMidletClass) {
+              return;
+            }
+
+            asyncImpl("V", new Promise(function(resolve, reject) {
+              setTimeout(function() {
+                startFGOriginalImpl(midletClassName);
+                startup.startTimer("fgStartupTime", performance.now());
+                resolve();
+              }, storage.startFGDelay);
+            }));
+          };
+        }
       },
       run: startup.run.bind(startup),
     }

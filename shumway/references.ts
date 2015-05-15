@@ -1,3 +1,4 @@
+/// <reference path='../tools/lib.d.ts' />
 /// <reference path='module.ts' />
 /// <reference path='theme/ui.ts' />
 /// <reference path='profiler/references.ts' />

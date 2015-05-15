@@ -927,7 +927,6 @@ module J2ME {
           case Bytecodes.ANEWARRAY:
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo);
-            classInitAndUnwindCheck(classInfo, frame.pc - 3);
             size = stack.pop();
             stack.push(newArray(classInfo.klass, size));
             break;
