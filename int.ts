@@ -1191,12 +1191,12 @@ module J2ME {
             continue;
           case Bytecodes.I2F:
             aliasedF32[0] = i32[--sp];
-            i32[sp ++] = aliasedI32[0];
+            i32[sp++] = aliasedI32[0];
             continue;
           case Bytecodes.I2D:
             aliasedF64[0] = i32[--sp];
-            i32[sp ++] = aliasedI32[0];
-            i32[sp ++] = aliasedI32[1];
+            i32[sp++] = aliasedI32[0];
+            i32[sp++] = aliasedI32[1];
             continue;
           case Bytecodes.L2I:
             sp--;
@@ -1229,8 +1229,8 @@ module J2ME {
             continue;
           case Bytecodes.F2D:
             aliasedF64[0] = f32[--sp];
-            i32[sp ++] = aliasedI32[0];
-            i32[sp ++] = aliasedI32[1];
+            i32[sp++] = aliasedI32[0];
+            i32[sp++] = aliasedI32[1];
             continue;
           case Bytecodes.D2I:
             aliasedI32[0] = i32[sp - 2];
