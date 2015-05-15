@@ -495,7 +495,8 @@ var Benchmark = (function() {
         Native[refreshImplKey] = function() {
           if (!refreshCalled) {
             refreshCalled = true;
-            startup.stopTimer("fgRefreshStartupTime", performance.now());
+            var now = performance.now();
+            startup.stopTimer("fgRefreshStartupTime", now);
             startup.stopTimer("startupTime", storage.warmBench ? (now - storage.startFGDelay) : now);
           }
           refreshOriginalFn.apply(null, arguments);
