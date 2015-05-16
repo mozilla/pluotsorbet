@@ -29,102 +29,150 @@ console.log('app package:', pathToPackagedApp);
 var manifestString = fs.readFileSync(pathToPackagedApp + '/manifest.webapp', 'utf8');
 var manifest = JSON.parse(manifestString);
 
+var gDeviceClient = null;
+var gEmulatorWebApp = null;
 
-if (args[3]) {
+// find the device, uninstall the old packaged app, install the new packaged app
 
-// find the device, uninstall the old packaged app, install the new packaged app, then launch it
+function reinstallEmulatorApp() {
 
-findPorts().then(function(results) {
-	console.log('findPorts', results);
-	connect(results[0].port).then(function(client) {
+	return findPorts()
+
+	.then(function connectToDevice(results) {
+		console.log('findPorts', results);
+		return connect(results[0].port);
+	})
+
+	.then(function connected(client) {
 		console.log('Connected');
 
-		// 1. find the  old version of this app
-		findApp({
+		gDeviceClient = client;
+		return client;
+	})
+
+	.then(function findEmulatorApp(client) {
+		// find the  old version of this app
+		return findApp({
 			manifest: manifest,
 			client: client
-		}).then(function(apps) {
-			// 2. uninstall the old version
-			console.log('Found', apps.length, 'existing apps');
-			Promise.all(apps.map(function(app) {
-				console.log('Uninstalling', app.manifestURL);
-				return uninstallApp({ manifestURL: app.manifestURL, client: client })
-			}));
-		}).then(installApp({
+		})
+	})
+
+	.then(function uninstallEmulatorApp(apps) {
+		// uninstall the old version
+		console.log('Found', apps.length, 'existing apps');
+		return Promise.all(apps.map(function(app) {
+			console.log('Uninstalling', app.manifestURL);
+			return uninstallApp({ manifestURL: app.manifestURL, client: gDeviceClient })
+		}));
+	})
+
+	.then(function installEmulatorApp() {
+		console.log('Installing');
+		return installApp({
 			// 3. install the new version
 			appPath: pathToPackagedApp,
-			client: client
-		}).then(function(appId) {
-			// 4. find the new version
-			console.log('App installed', appId);
-			process.exit(0);
-		}))
+			client: gDeviceClient
+		})
 	})
-});
 
+	.then(function finishInstallEmulatorApp(appId) {
+		// 4. find the new version
+		console.log('App installed', appId);
 
-} else {
+		// TODO: this is rude from a Promises point of view.
+		process.exit(0);
+	});
+}
 
 // find the device, find, launch, and connect to the j2me app, connect to the console, run the benchmark
  
-findPorts().then(function(results) {
-	console.log('findPorts', results);
-	connect(results[0].port).then(function(client) {
+function benchmarkEmulatorApp() {
+
+	return findPorts()
+
+	.then(function connectToDevice(results) {
+		console.log('findPorts', results);
+		return connect(results[0].port);
+	})
+
+	.then(function connected(client) {
 		console.log('Connected');
-		// find the j2me app
-		findApp({
+
+		gDeviceClient = client;
+		return client;
+	})
+
+	.then(function findEmulatorApp(client) {
+		return findApp({
 			manifest: manifest,
 			client: client
-		}).then(function(apps) {
-		// launch the j2me app
-			if (apps.length > 0) {
-				var firstApp = apps[0];
-				console.log('Found', firstApp.name, firstApp.manifestURL);
-				launchApp({
-					client: client,
-					manifestURL: firstApp.manifestURL
-				}).then(function(result) {
-					console.log('Launched app', result);
-
-					client.getWebapps(function(err, webapps) {
-						console.log('Getting app', manifest);
-						webapps.getApp(firstApp.manifestURL, function (err, app) {
-							if (err) {
-								console.log(err);
-							}
-
-							app.Console.addListener('console-api-call', function(e) {
-								var consoleLine = e.arguments[0];
-
-								if (consoleLine.indexOf('bench: ') >= 0) {
-									console.log(consoleLine);
-								}
-							});
-
-							app.Console.startListening();
-							console.log('Listening to console');
-
-							setTimeout(function () {
-								app.Console.evaluateJS("cd(frames[0])", function(err, resp) {
-									console.log('cd(frames[0])', err, resp);
-
-									app.Console.evaluateJS("Benchmark.start()", function(err, resp) {
-										console.log('Started Benchmark', err, resp);
-									});
-
-								});
-							}, 30000);
-						});
-					});
-  				}, function(err) {
-					console.error('Could not launch app', err);
-				});
-			}
-		}, function(e) {
-			console.error('Could not find app', e);
 		});
 	})
-});
 
+	.then(function launchEmulatorApp(apps) {
+		// launch the j2me app
+		if (apps.length > 0) {
+			gEmulatorWebApp = apps[0];
+			console.log('Found', gEmulatorWebApp.name, gEmulatorWebApp.manifestURL);
+			return launchApp({
+				client: gDeviceClient,
+				manifestURL: gEmulatorWebApp.manifestURL
+			});
+		} else {
+			return null;
+		}
+	})
 
+	.then(function connectToAppConsoleAndRunTest(result) {
+		console.log('Launched app', result);
+
+		gDeviceClient.getWebapps(function(err, webapps) {
+			console.log('Getting webapp', gEmulatorWebApp.manifestURL);
+			if (err) {
+				console.log(err);
+			}
+
+			webapps.getApp(gEmulatorWebApp.manifestURL, function (err, app) {
+				if (err) {
+					console.log(err);
+				}
+
+				app.Console.addListener('console-api-call', function(e) {
+					var consoleLine = e.arguments[0];
+
+					if (consoleLine.indexOf('bench: ') >= 0) {
+						console.log(consoleLine);
+
+						if (consoleLine.indexOf('bench: done') >= 0) {
+							// TODO: this is rude from a Promises point of view.
+							process.exit(0);
+						}
+					}
+				});
+
+				app.Console.startListening();
+				console.log('Listening to console');
+
+				setTimeout(function () {
+					app.Console.evaluateJS("cd(frames[0])", function(err, resp) {
+						console.log('cd(frames[0])', err, resp);
+
+						app.Console.evaluateJS("Benchmark.start()", function(err, resp) {
+							console.log('Started Benchmark', err, resp);
+						});
+
+					});
+				}, 30000);
+			});
+		});
+	});
 }
+
+// Start process
+Promise.resolve().then(function() {
+	// reinstallEmulatorApp();
+	benchmarkEmulatorApp();
+})
+
+
