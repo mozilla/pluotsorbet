@@ -3,57 +3,7 @@
 
 'use strict';
 
-var asyncImplStringAsync = "Async";
-function asyncImpl(returnKind, promise) {
-  var ctx = $.ctx;
-
-  promise.then(function(low, high) {
-    release || J2ME.Debug.assert(!(low instanceof Long.constructor), "NO LONGS");
-    var mi = ctx.nativeThread.frame.methodInfo;
-    var code = mi.codeAttribute.code;
-    // Calculate the PC based on the size of the caller's invoke bytecode.
-    ctx.nativeThread.pc += (code[ctx.nativeThread.pc] === J2ME.Bytecode.Bytecodes.INVOKEINTERFACE ? 5 : 3);
-    // Push return value.
-    var sp = ctx.nativeThread.sp;
-    switch (returnKind) {
-      case "D": // Doubles are passed in as a number value.
-        aliasedF64[0] = low;
-        i32[sp++] = aliasedI32[0];
-        i32[sp++] = aliasedI32[1];
-        break;
-      case "F":
-        f32[sp++] = low;
-        break;
-      case "J":
-        i32[sp++] = low;
-        i32[sp++] = high;
-        break;
-      case "I":
-      case "B":
-      case "C":
-      case "S":
-      case "Z":
-        i32[sp++] = low;
-        break;
-      case "A":
-        ref[sp++] = low;
-        break;
-      case "V":
-        break;
-      default:
-        release || J2ME.Debug.assert(false, "Invalid Kind: " + returnKind);
-    }
-    ctx.nativeThread.sp = sp;
-    J2ME.Scheduler.enqueue(ctx);
-  }, function(exception) {
-    var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
-    var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
-    ctx.nativeThread.pushFrame(methodInfo);
-    ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, exception);
-    J2ME.Scheduler.enqueue(ctx);
-  });
-  $.pause(asyncImplStringAsync);
-}
+var asyncImpl = J2ME.asyncImplOld;
 
 function preemptingImpl(returnKind, returnValue) {
   if (J2ME.Scheduler.shouldPreempt()) {

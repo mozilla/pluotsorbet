@@ -66,6 +66,21 @@ module J2ME {
     }
   }
 
+  export function kindCharacterToKind(kindCharacter: string): Kind {
+    switch (kindCharacter) {
+      case 'Z': return Kind.Boolean;
+      case 'B': return Kind.Byte;
+      case 'S': return Kind.Short;
+      case 'C': return Kind.Char;
+      case 'I': return Kind.Int;
+      case 'F': return Kind.Float;
+      case 'J': return Kind.Long;
+      case 'D': return Kind.Double;
+      case 'V': return Kind.Void;
+      default: throw Debug.unexpected("Unknown kind character: " + kindCharacter);
+    }
+  }
+
   export function arrayTypeCodeToKind(typeCode): Kind {
     switch (typeCode) {
       case 4:  return Kind.Boolean;
@@ -85,31 +100,6 @@ module J2ME {
       return 8;
     }
     return 4;
-  }
-
-  export function kindCharacter(kind: Kind): string {
-    switch (kind) {
-      case Kind.Boolean:
-        return 'Z';
-      case Kind.Byte:
-        return 'B';
-      case Kind.Short:
-        return 'S';
-      case Kind.Char:
-        return 'C';
-      case Kind.Int:
-        return 'I';
-      case Kind.Float:
-        return 'F';
-      case Kind.Long:
-        return 'J';
-      case Kind.Double:
-        return 'D';
-      case Kind.Reference:
-        return 'R';
-      case Kind.Void:
-        return 'V';
-    }
   }
 
   export function getKindCheck(kind: Kind): (x: any) => boolean {

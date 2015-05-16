@@ -1,16 +1,3 @@
-declare var ASM;
-
-var buffer = ASM.buffer;
-
-var i32: Int32Array = ASM.HEAP32;
-var u32: Uint32Array = ASM.HEAPU32;
-var f32: Float32Array = ASM.HEAPF32;
-var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
-
-var aliasedI32 = J2ME.IntegerUtilities.i32;
-var aliasedF32 = J2ME.IntegerUtilities.f32;
-var aliasedF64 = J2ME.IntegerUtilities.f64;
-
 module J2ME {
 
   import assert = Debug.assert;
