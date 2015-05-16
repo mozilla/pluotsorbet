@@ -696,16 +696,16 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openDir.()J"] = function() {
         index: -1,
     });
 
-    return Long.fromNumber(openDirHandle);
+    return J2ME.returnLong(openDirHandle, 0);
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeDir.(J)V"] = function(dirHandle) {
-    MIDP.openDirs.delete(dirHandle.toNumber());
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeDir.(J)V"] = function(dirHandleLow, dirHandleHigh) {
+    MIDP.openDirs.delete(dirHandleLow);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.dirGetNextFile.(JZ)Ljava/lang/String;"] =
-function(dirHandle, includeHidden) {
-    var iterator = MIDP.openDirs.get(dirHandle.toNumber());
+function(dirHandleLow, dirHandleHigh, includeHidden) {
+    var iterator = MIDP.openDirs.get(dirHandleLow);
     var nextFile = iterator.files[++iterator.index];
 DEBUG_FS && console.log(iterator.index + " " + nextFile);
     return nextFile ? J2ME.newString(nextFile) : null;

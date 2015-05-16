@@ -118,6 +118,8 @@ module J2ME {
    *             +--------------------------------+
    *             | Callee Method Info             |
    *             +--------------------------------+
+   *             | Monitor                        |
+   *             +--------------------------------+
    *             | Stack slot 0                   |
    *             +--------------------------------+
    *             |              ...               |
@@ -130,7 +132,8 @@ module J2ME {
     CalleeMethodInfoOffset      = 2,
     CallerFPOffset              = 1,
     CallerRAOffset              = 0,
-    CallerSaveSize              = 3
+    MonitorOffset               = 3,
+    CallerSaveSize              = 4
   }
 
   export class FrameView {
@@ -175,6 +178,14 @@ module J2ME {
 
     set methodInfo(methodInfo: MethodInfo) {
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo;
+    }
+
+    set monitor(object: java.lang.Object) {
+      ref[this.fp + FrameLayout.MonitorOffset] = object;
+    }
+
+    get monitor(): java.lang.Object {
+      return ref[this.fp + FrameLayout.MonitorOffset];
     }
 
     get parameterOffset() {
@@ -308,10 +319,11 @@ module J2ME {
       } else {
         this.fp = this.sp;
       }
-      this.sp = this.fp;
-      i32[this.sp++] = this.pc;    // Caller RA
-      i32[this.sp++] = fp;         // Caller FP
-      ref[this.sp++] = methodInfo; // Callee
+      i32[this.fp + FrameLayout.CallerRAOffset] = this.pc;    // Caller RA
+      i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
+      ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo; // Callee
+      ref[this.fp + FrameLayout.MonitorOffset] = null; // Monitor
+      this.sp = this.fp + FrameLayout.CallerSaveSize;
       this.pc = 0;
     }
 
@@ -384,6 +396,17 @@ module J2ME {
       for (var i = 1; i < kinds.length; i++) {
         frame.setParameter(kinds[i], index++, arguments[i - 1]);
       }
+      if (methodInfo.isSynchronized) {
+        var monitor = methodInfo.isStatic
+          ? methodInfo.classInfo.getClassObject()
+          : this;
+        frame.monitor = monitor;
+        $.ctx.monitorEnter(monitor);
+        if (U === VMState.Pausing || U === VMState.Stopping) {
+          debugger;
+          return;
+        }
+      }
       var v = interpret(thread);
       release || assert(fp === thread.fp);
       // release || traceWriter && traceWriter.writeLn("<< I");
@@ -436,6 +459,8 @@ module J2ME {
 
     var classInfo: ClassInfo;
     var fieldInfo: FieldInfo;
+
+    var monitor: java.lang.Object;
 
     function loadThreadState() {
       fp = thread.fp;
@@ -1336,9 +1361,10 @@ module J2ME {
             fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
             if (op === Bytecodes.GETSTATIC) {
               classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
-              //if (U) {
-              //  return;
-              //}
+              if (U) {
+                debugger;
+                return;
+              }
               object = fieldInfo.classInfo.getStaticObject($.ctx);
             } else {
               object = ref[--sp];
@@ -1372,9 +1398,10 @@ module J2ME {
             isStatic = op === Bytecodes.PUTSTATIC;
             if (isStatic) {
               classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
-              //if (U) {
-              //  return;
-              //}
+              if (U) {
+                debugger;
+                return;
+              }
               object = fieldInfo.classInfo.getStaticObject($.ctx);
             } else {
               object = ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
@@ -1411,6 +1438,7 @@ module J2ME {
             thread.set(fp, sp, pc);
             classInitAndUnwindCheck(classInfo, opPC);
             if (U) {
+              debugger;
               return;
             }
             loadThreadState();
@@ -1511,11 +1539,15 @@ module J2ME {
             sp = fp - maxLocals;
             fp = i32[fp + FrameLayout.CallerFPOffset];
             mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
+            monitor = ref[fp + FrameLayout.MonitorOffset];
             if (mi === null) {
               thread.set(fp, sp, opPC);
               thread.popFrame(null);
               // REDUX: What do we do about the return value here?
               return;
+            }
+            if (mi.isSynchronized && monitor) {
+              $.ctx.monitorExit(monitor);
             }
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
@@ -1553,13 +1585,22 @@ module J2ME {
 
             // Resolve method and do the class init check if necessary.
             var calleeMethodInfo = cp.resolved[index] || cp.resolveMethod(index, isStatic);
-            var calleeTargetMethodInfo = null;
+            var calleeTargetMethodInfo: MethodInfo = null;
 
             var callee = null;
             object = null;
             if (!isStatic) {
               object = ref[sp - calleeMethodInfo.argumentSlots];
             }
+
+            if (isStatic) {
+              classInitAndUnwindCheck(calleeMethodInfo.classInfo, opPC);
+              if (U) {
+                thread.set(fp, sp, opPC);
+                return;
+              }
+            }
+
             switch (op) {
               case Bytecodes.INVOKESPECIAL:
                 checkNull(object);
@@ -1612,7 +1653,7 @@ module J2ME {
               if (!isStatic) {
                 --sp; // Pop Reference
               }
-              thread.set(fp, sp, pc);
+              thread.set(fp, sp, opPC);
               callee = calleeTargetMethodInfo.fn || getLinkedMethod(calleeTargetMethodInfo);
               if (!release) {
                 // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
@@ -1630,7 +1671,8 @@ module J2ME {
               if (!release) {
                 assert(!(result instanceof Long.constructor), "NO LONGS ALLOWED");
               }
-              loadThreadState();
+              //loadThreadState();
+
               kind = signatureKinds[0];
 
               // Push return value.
@@ -1671,15 +1713,29 @@ module J2ME {
             ci = mi.classInfo;
             cp = ci.constantPool;
 
+            var callerFPOffset = fp;
             // Reserve space for non-parameter locals.
-            sp += maxLocals - mi.argumentSlots;
+            lp = sp - mi.argumentSlots;
+            fp = lp + maxLocals;
+            sp = fp + FrameLayout.CallerSaveSize;
 
             // Caller saved values.
-            i32[sp++] = opPC;
-            i32[sp++] = fp;
-            ref[sp++] = mi;
-            fp = sp - FrameLayout.CallerSaveSize;
-            lp = fp - maxLocals;
+            i32[fp + FrameLayout.CallerRAOffset] = opPC;
+            i32[fp + FrameLayout.CallerFPOffset] = callerFPOffset;
+            ref[fp + FrameLayout.CalleeMethodInfoOffset] = mi;
+            ref[fp + FrameLayout.MonitorOffset] = null; // Monitor
+
+            if (calleeTargetMethodInfo.isSynchronized) {
+              monitor = calleeTargetMethodInfo.isStatic
+                ? calleeTargetMethodInfo.classInfo.getClassObject()
+                : object;
+              ref[fp + FrameLayout.MonitorOffset] = monitor;
+              $.ctx.monitorEnter(monitor);
+              if (U === VMState.Pausing || U === VMState.Stopping) {
+                frame.set(fp, sp, opPC);
+                return;
+              }
+            }
 
             opPC = pc = 0;
             code = mi.codeAttribute.code;
