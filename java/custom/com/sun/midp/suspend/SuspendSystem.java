@@ -111,27 +111,11 @@ public class SuspendSystem extends AbstractSubsystem {
         protected synchronized void resumeImpl() {
             midletKilled = false;
             midletPaused = false;
-            
-            // j2me.js does not alert when all MIDlets are suspended
-            //SuspendResumeUI.dismissSuspendAlert();
-            alertIfAllMidletsKilled();
 
             if (null != lastForeground) {
                 mpl.setForegroundMIDlet(lastForeground);
                 lastForeground = null;
             }
-        }
-
-        /**
-         * Shows proper alert if all user midlets were killed by a preceding
-         * suspend operation, and the event is not reported yet.
-         */
-        private synchronized void alertIfAllMidletsKilled() {
-            // j2me.js does not alert when all MIDlets are suspended
-            //
-            //if (allMidletsKilled()) {
-            //    SuspendResumeUI.showAllKilledAlert(classSecurityToken);
-            //}
         }
 
         /**
@@ -176,13 +160,6 @@ public class SuspendSystem extends AbstractSubsystem {
                     midletPaused = true;
                 }
                 removeSuspendDependency(midlet);
-            } else if (reason == MIDletProxyListListener.MIDLET_STATE &&
-                    amsMidlet &&
-                    midlet.getMidletState() == MIDletProxy.MIDLET_ACTIVE) {
-                /* An AMS midlet has been activated, checking if it is a
-                 * result of abnormal midlet termination during suspend.
-                 */
-                alertIfAllMidletsKilled();
             }
         }
 
