@@ -372,10 +372,10 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() 
     DEBUG_FS && console.log("DefaultFileHandler.fileSize: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.fileSize: ignored file");
-        return Long.fromNumber(0);
+        return J2ME.returnLong(0, 0);
     }
 
-    return Long.fromNumber(fs.size(pathname));
+    return J2ME.returnLong(fs.size(pathname), 0);
 };
 
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySize.(Z)J", Long.fromNumber(0));
@@ -633,7 +633,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
     return preemptingImpl("I", len);
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offset) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offsetLow, offsetHigh) {
     DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + J2ME.fromJavaString(this.nativePath));
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: ignored file");
@@ -641,7 +641,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = fu
     }
 
     var fd = this.nativeDescriptor;
-    fs.setpos(fd, offset.toNumber());
+    fs.setpos(fd, Long.fromBits(offsetLow, offsetHigh).toNumber());
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
