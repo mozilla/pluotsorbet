@@ -92,7 +92,8 @@ public class SuspendSystem extends AbstractSubsystem {
             if (ACTIVE == state) {
                 SuspendTimer.start(mpl);
                 lastForeground = mpl.getForegroundMIDlet();
-                SuspendResumeUI.showSuspendAlert(classSecurityToken);
+                // j2me.js does not alert when all MIDlets are suspended
+                //SuspendResumeUI.showSuspendAlert(classSecurityToken);
                 super.suspend();
             }
         }
@@ -111,7 +112,8 @@ public class SuspendSystem extends AbstractSubsystem {
             midletKilled = false;
             midletPaused = false;
             
-            SuspendResumeUI.dismissSuspendAlert();
+            // j2me.js does not alert when all MIDlets are suspended
+            //SuspendResumeUI.dismissSuspendAlert();
             alertIfAllMidletsKilled();
 
             if (null != lastForeground) {
@@ -125,9 +127,11 @@ public class SuspendSystem extends AbstractSubsystem {
          * suspend operation, and the event is not reported yet.
          */
         private synchronized void alertIfAllMidletsKilled() {
-            if (allMidletsKilled()) {
-                SuspendResumeUI.showAllKilledAlert(classSecurityToken);
-            }
+            // j2me.js does not alert when all MIDlets are suspended
+            //
+            //if (allMidletsKilled()) {
+            //    SuspendResumeUI.showAllKilledAlert(classSecurityToken);
+            //}
         }
 
         /**
