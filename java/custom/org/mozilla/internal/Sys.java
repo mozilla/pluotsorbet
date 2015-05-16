@@ -87,4 +87,9 @@ public final class Sys {
       t.notifyAll();
     }
   }
+
+  public static void isolate0Entry(String name, String args[]) throws com.sun.cldc.isolate.IsolateStartupException {
+    com.sun.cldc.isolate.Isolate isolate = new com.sun.cldc.isolate.Isolate(name, args);
+    isolate.start();
+  }
 }

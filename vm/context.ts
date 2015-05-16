@@ -325,30 +325,16 @@ module J2ME {
     startIsolate0(className: string, args: string []) {
       var ctx = this.createIsolateCtx();
 
-      var isolateClassInfo = CLASSES.getClass("com/sun/cldc/isolate/Isolate");
-      var isolate: Isolate = <Isolate>newObject(isolateClassInfo.klass);
-      isolate.id = util.id();
+      var sys = CLASSES.getClass("org/mozilla/internal/Sys");
 
       var array = newStringArray(args.length);
       for (var n = 0; n < args.length; ++n)
         array[n] = args[n] ? J2ME.newString(args[n]) : null;
 
-      // The <init> frames go at the end of the array so they are executed first to initialize the thread and isolate.
-      //ctx.start([
-      //  Frame.create(isolateClassInfo.getMethodByNameString("start", "()V"), [ isolate ]),
-      //  Frame.create(isolateClassInfo.getMethodByNameString("<init>", "(Ljava/lang/String;[Ljava/lang/String;)V"),
-      //                                 [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ])
-      //]);
-      //
-
       ctx.nativeThread.pushFrame(null);
-      ctx.nativeThread.pushFrame(isolateClassInfo.getMethodByNameString("start", "()V"));
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
-
-      ctx.nativeThread.pushFrame(isolateClassInfo.getMethodByNameString("<init>", "(Ljava/lang/String;[Ljava/lang/String;)V"));
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 1, J2ME.newString(className.replace(/\./g, "/")));
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 2, array);
+      ctx.nativeThread.pushFrame(sys.getMethodByNameString("isolate0Entry", "(Ljava/lang/String;[Ljava/lang/String;)V"));
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newString(className.replace(/\./g, "/")));
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 1, array);
       ctx.start();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
