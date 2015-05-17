@@ -201,11 +201,6 @@ public class ShellTestlets {
 //  "gnu/testlet/java/lang/String/StringTest",
 //  "gnu/testlet/java/lang/StringBuffer/StringBufferTest",
 //  "gnu/testlet/java/lang/System/getProperty",
-//  "gnu/testlet/java/lang/Thread/isAlive",
-//  "gnu/testlet/java/lang/Thread/join",
-//  "gnu/testlet/java/lang/Thread/name",
-//  "gnu/testlet/java/lang/Thread/priority",
-//  "gnu/testlet/java/lang/Thread/wait",
 //  "gnu/testlet/vm/FieldNotFoundException",
 //  "gnu/testlet/vm/InterfaceTest",
 //  "gnu/testlet/vm/MethodNotFoundException",
@@ -215,6 +210,7 @@ public class ShellTestlets {
 //  "java/lang/TestStringIntern",
 //  "java/lang/TestSystem",
 //  "java/lang/TestThread",
+//  "java/lang/TestThreads",
 //  "java/lang/TestThreadJoin",
 //  "java/lang/TestThreadPriority",
 //  "javax/crypto/TestRC4",
@@ -259,9 +255,15 @@ public class ShellTestlets {
 //  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInvokeInterface",
 //  "com/sun/midp/events/TestEventQueue",
 //  "com/sun/midp/events/TestNativeEventPool",
+//  "gnu/testlet/java/lang/Thread/isAlive",
+//  "gnu/testlet/java/lang/Thread/yield",
+//  "gnu/testlet/java/lang/Thread/join",
+//  "gnu/testlet/java/lang/Thread/name",
+//  "gnu/testlet/java/lang/Thread/priority",
+//  "gnu/testlet/java/lang/Thread/wait",
   null};
 
   static {
-     // list = brokenList;
+//  list = brokenList;
   }
 };
