@@ -13,7 +13,6 @@ function preemptingImpl(returnKind, returnValue) {
   return returnValue;
 }
 
-var Native = {};
 var Override = {};
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
@@ -523,12 +522,6 @@ Native["java/lang/Thread.start0.()V"] = function() {
 
 Native["java/lang/Thread.isAlive.()Z"] = function() {
     return this.alive ? 1 : 0;
-};
-
-Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
-    asyncImpl("V", new Promise(function(resolve, reject) {
-        window.setTimeout(resolve, delay.toNumber());
-    }));
 };
 
 Native["java/lang/Thread.yield.()V"] = function() {

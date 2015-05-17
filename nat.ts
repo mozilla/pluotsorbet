@@ -3,6 +3,8 @@
  */
 declare var ASM;
 
+var Native = Object.create(null);
+
 /**
  * Asm.js heap buffer and views.
  */
@@ -90,4 +92,10 @@ module J2ME {
 
     $.pause(asyncImplStringAsync);
   }
+
+  Native["java/lang/Thread.sleep.(J)V"] = function(delayL: number, delayH: number) {
+    asyncImpl(Kind.Void, new Promise(function(resolve, reject) {
+      window.setTimeout(resolve, delayL);
+    }));
+  };
 }
