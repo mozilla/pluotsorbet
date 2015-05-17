@@ -1,6 +1,7 @@
 // Basics
 
 ///<reference path='tools/lib.d.ts' />
+///<reference path='tools/es6-promises.d.ts' />
 
 ///<reference path='config.ts' />
 ///<reference path='utilities.ts' />

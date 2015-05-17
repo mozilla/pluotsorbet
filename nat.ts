@@ -23,7 +23,7 @@ module J2ME {
 
   var asyncImplStringAsync = "Async";
 
-  export function asyncImplOld(returnKind: string, promise) {
+  export function asyncImplOld(returnKind: string, promise: Promise<any>) {
     return asyncImpl(kindCharacterToKind(returnKind), promise);
   }
 
@@ -36,7 +36,7 @@ module J2ME {
    *
    * |onRejected| is called with a java.lang.Exception object.
    */
-  export function asyncImpl(returnKind: Kind, promise) {
+  export function asyncImpl(returnKind: Kind, promise: Promise<any>) {
     var ctx = $.ctx;
 
     promise.then(function onFulfilled(l: any, h?: number) {

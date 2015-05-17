@@ -1,6 +1,5 @@
 module J2ME {
   declare var util, config;
-  declare var Promise;
 
   import BytecodeStream = Bytecode.BytecodeStream;
   import BlockMap = Bytecode.BlockMap;

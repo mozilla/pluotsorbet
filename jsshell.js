@@ -85,28 +85,10 @@ if (files.length !== 1) {
 }
 
 var callbacks = [];
-var window = {
-  setTimeout: function(callback) {
-    callbacks.push(callback);
-  },
-  setZeroTimeout: function(callback) {
-    callbacks.push(callback);
-  },
-  addEventListener: function() {
-  },
-  crypto: {
-    getRandomValues: function() {
-    },
-  },
-};
 
 var navigator = {
   language: "en-US",
 };
-
-function Promise() {
-  // ...
-}
 
 var document = {
   documentElement: {
@@ -146,6 +128,32 @@ var document = {
   },
 };
 
+var microTaskQueue = null;
+
+var window = {
+  addEventListener: function() {
+  },
+  crypto: {
+    getRandomValues: function() {
+    },
+  },
+};
+
+window.setZeroTimeout = window.setTimeout = function (fn, interval) {
+  var args = arguments.length > 2 ? Array.prototype.slice.call(arguments, 2) : [];
+  var task = microTaskQueue.scheduleInterval(fn, args, interval, false);
+  return task.id;
+};
+
+window.setInterval = function (fn, interval) {
+  var args = arguments.length > 2 ? Array.prototype.slice.call(arguments, 2) : [];
+  var task = microTaskQueue.scheduleInterval(fn, args, interval, true);
+  return task.id;
+};
+window.clearTimeout = function (id) {
+  microTaskQueue.remove(id);
+};
+
 var Event = function() {
 }
 
@@ -160,12 +168,14 @@ try {
   if (profileTimeline) {
     load("bld/shumway.js");
   }
-  load("libs/relooper.js", "libs/native.js", "bld/j2me.js","libs/zipfile.js", "blackBox.js",
+  load("polyfill/promise.js", "libs/relooper.js", "libs/native.js", "bld/j2me.js","libs/zipfile.js", "blackBox.js",
     "libs/encoding.js", "util.js", "libs/jarstore.js",
     "native.js", "midp/midp.js",
     "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js"
     // "bld/classes.jar.js"
   );
+
+  microTaskQueue = new J2ME.Shell.MicroTasksQueue();
 
   // load("bld/classes.jar.js");
   // load("bld/program.jar.js");
@@ -205,9 +215,12 @@ try {
 
   start = dateNow();
   var runtime = jvm.startIsolate0(files[0], config.args);
-  while (callbacks.length) {
-    (callbacks.shift())();
-  }
+
+  // Pump Event Queue
+  microTaskQueue.run(0, 0, false, function () {
+    return true;
+  });
+
   print("Time: " + (dateNow() - start).toFixed(4) + " ms");
   print("Bytecodes: " + J2ME.bytecodeCount);
   J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter(false, function (x) {

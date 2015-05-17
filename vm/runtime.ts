@@ -21,13 +21,9 @@ declare var Long: {
   fromNumber(value: number);
 }
 
-interface Promise {
-  catch(onRejected: { (reason: any): any; }): Promise;
-}
-
 interface CompiledMethodCache {
   get(key: string): { key: string; source: string; referencedClasses: string[]; };
-  put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise;
+  put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise<any>;
 }
 
 interface AOTMetaData {
