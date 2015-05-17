@@ -167,6 +167,7 @@ public class ShellTestlets {
     "gnu/testlet/java/lang/Math/cos",
     "gnu/testlet/java/lang/Math/sin",
     "gnu/testlet/java/util/Vector/copyInto",
+    "gnu/testlet/java/lang/Thread/sleep",
     null
   };
 
@@ -204,7 +205,6 @@ public class ShellTestlets {
 //  "gnu/testlet/java/lang/Thread/name",
 //  "gnu/testlet/java/lang/Thread/priority",
 //  "gnu/testlet/java/lang/Thread/wait",
-
 //  "gnu/testlet/vm/FieldNotFoundException",
 //  "gnu/testlet/vm/InterfaceTest",
 //  "gnu/testlet/vm/MethodNotFoundException",
