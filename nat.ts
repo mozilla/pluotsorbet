@@ -23,14 +23,12 @@ module J2ME {
   import Bytecodes = Bytecode.Bytecodes;
   import toHEX = IntegerUtilities.toHEX;
 
-  var asyncImplStringAsync = "Async";
-
   export function asyncImplOld(returnKind: string, promise: Promise<any>) {
     return asyncImpl(kindCharacterToKind(returnKind), promise);
   }
 
   /**
-   * Suspends the execution of this thread and resumes it later once the specified
+   * Suspends the execution of the current thread and resumes it later once the specified
    * |promise| is fulfilled.
    *
    * |onFulfilled| is called with one or two arguments |l| and |h|. |l| can be any
@@ -45,10 +43,8 @@ module J2ME {
       release || J2ME.Debug.assert(!(l instanceof Long.constructor), "Long objects are no longer supported, use low / high pairs.");
       var thread = ctx.nativeThread;
 
-      // The thread state currently points to the beggining of an invoke bytecode. We need to
-      // calculate the PC based on the size of the caller's invoke bytecode.
-      var code = thread.frame.methodInfo.codeAttribute.code;
-      thread.pc += (code[thread.pc] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
+      // The caller's |pc| is currently at the invoke bytecode, we need to skip over the invoke when resuming.
+      thread.advancePastInvokeBytecode();
 
       // Push return value.
       var sp = thread.sp;
@@ -90,7 +86,7 @@ module J2ME {
       Scheduler.enqueue(ctx);
     });
 
-    $.pause(asyncImplStringAsync);
+    $.pause("Async");
   }
 
   Native["java/lang/Thread.sleep.(J)V"] = function(delayL: number, delayH: number) {
@@ -100,7 +96,7 @@ module J2ME {
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
-    release || assert(timeoutH === 0);
+    release || assert(timeoutH === 0, "H: " + timeoutH);
     $.ctx.wait(this, timeoutL);
   };
 

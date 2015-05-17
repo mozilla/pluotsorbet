@@ -209,6 +209,9 @@ try {
   if (options.writers.value.indexOf("s") >= 0) {
     writers |= J2ME.WriterFlags.TraceStack;
   }
+  if (options.writers.value.indexOf("h") >= 0) {
+    writers |= J2ME.WriterFlags.Thread;
+  }
   J2ME.writers = writers;
 
   J2ME.enableRuntimeCompilation = false;

@@ -102,28 +102,28 @@ module J2ME {
     return 4;
   }
 
-  export function getKindCheck(kind: Kind): (x: any) => boolean {
+  export function getKindCheck(kind: Kind): (l: any, h: number) => boolean {
     switch (kind) {
       case Kind.Boolean:
-        return (x) => x === 0 || x === 1;
+        return (l, h) => l === 0 || l === 1;
       case Kind.Byte:
-        return (x) => (x | 0) === x && x >= Constants.BYTE_MIN && x <= Constants.BYTE_MAX;
+        return (l, h) => (l | 0) === l && l >= Constants.BYTE_MIN && l <= Constants.BYTE_MAX;
       case Kind.Short:
-        return (x) => (x | 0) === x && x >= Constants.SHORT_MIN && x <= Constants.SHORT_MAX;
+        return (l, h) => (l | 0) === l && l >= Constants.SHORT_MIN && l <= Constants.SHORT_MAX;
       case Kind.Char:
-        return (x) => (x | 0) === x && x >= Constants.CHAR_MIN && x <= Constants.CHAR_MAX;
+        return (l, h) => (l | 0) === l && l >= Constants.CHAR_MIN && l <= Constants.CHAR_MAX;
       case Kind.Int:
-        return (x) => (x | 0) === x;
+        return (l, h) => (l | 0) === l;
       case Kind.Float:
-        return (x) => isNaN(x) || Math.fround(x) === x;
+        return (l, h) => isNaN(l) || Math.fround(l) === l;
       case Kind.Long:
-        return (x) => x instanceof Long.constructor;
+        return (l, h) => ((l | 0) === l) && ((h | 0) === h);
       case Kind.Double:
-        return (x) => isNaN(x) || (+x) === x;
+        return (l, h) => isNaN(l) || (+l) === l;
       case Kind.Reference:
-        return (x) => x === null || x instanceof Object;
+        return (l, h) => l === null || l instanceof Object;
       case Kind.Void:
-        return (x) => typeof x === "undefined";
+        return (l, h) => typeof l === "undefined";
       default:
         throw Debug.unexpected("Unknown kind: " + kind);
     }

@@ -195,9 +195,9 @@ module J2ME {
       return <(any) => void> new Function("value", "this[\"" + target + "\"] = value;");
     }
 
-    export function makeDebugForwardingSetter(target: string, checker: (x: any) => boolean): (any) => void {
+    export function makeDebugForwardingSetter(target: string, checker: (l: any, h: number) => boolean): (any) => void {
       return function (value) {
-        Debug.assert(checker(value), "Unexpected value for target " + target);
+        Debug.assert(checker(value, 0), "Unexpected value for target " + target);
         this[target] = value;
       }
     }

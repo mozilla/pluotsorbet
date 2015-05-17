@@ -294,6 +294,17 @@ module J2ME {
       this.pc = pc;
     }
 
+    /**
+     * Advances the |pc| to the next |pc| after the current invoke bytecode.
+     */
+    advancePastInvokeBytecode() {
+      var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
+      var code = mi.codeAttribute.code;
+      var op = code[this.pc];
+      release || assert(Bytecode.isInvoke(op), "The PC should be at an invoke bytecode.");
+      this.pc += (op === Bytecodes.INVOKEINTERFACE ? 5 : 3);
+    }
+
     get frame(): FrameView {
       this.view.set(this.fp, this.sp, this.pc);
       return this.view;
@@ -415,6 +426,21 @@ module J2ME {
     ArithmeticException,
     ArrayIndexOutOfBoundsException
   }
+
+  /**
+   * Debugging helper to make sure native methods were implemented correctly.
+   */
+  function checkReturnValue(methodInfo: MethodInfo, l: any, h: number) {
+    if (U) {
+      if (typeof l !== "undefined") {
+        assert(false, "Expected undefined return value during unwind, got " + l + " in " + methodInfo.implKey);
+      }
+      return;
+    }
+    if (!(getKindCheck(methodInfo.returnKind)(l, h))) {
+      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got " + l + " in " + methodInfo.implKey);
+    }
+  }
   
   /**
    * Main interpreter loop. This method is carefully written to avoid memory allocation and
@@ -438,7 +464,7 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, array, object, result, constant, offset, buffer, tag: TAGS, targetPC, returnValue, kind;
+    var value, index, array, object, returnValue, constant, offset, buffer, tag: TAGS, targetPC, kind;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
@@ -1446,8 +1472,7 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
             object = ref[--sp];
-            result = !object ? false : isAssignableTo(object.klass, classInfo.klass);
-            i32[sp++] = result ? 1 : 0;
+            i32[sp++] = (!object ? false : isAssignableTo(object.klass, classInfo.klass)) ? 1 : 0;
             continue;
           case Bytecodes.ATHROW:
             object = ref[--sp];
@@ -1645,35 +1670,34 @@ module J2ME {
               if (!release) {
                 // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
               }
-              result = callee.apply(object, args);
+              returnValue = callee.apply(object, args);
 
-              //if (!release) {
-              //  checkReturnValue(calleeMethodInfo, returnValue);
-              //}
+              if (!release) {
+                checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
+              }
 
               if (U) {
                 return;
               }
 
               if (!release) {
-                assert(!(result instanceof Long.constructor), "NO LONGS ALLOWED");
+                assert(!(returnValue instanceof Long.constructor), "NO LONGS ALLOWED");
               }
-              //loadThreadState();
 
               kind = signatureKinds[0];
 
               // Push return value.
               switch (kind) {
                 case Kind.Double: // Doubles are passed in as a number value.
-                  aliasedF64[0] = result;
+                  aliasedF64[0] = returnValue;
                   i32[sp++] = aliasedI32[0];
                   i32[sp++] = aliasedI32[1];
                   continue;
                 case Kind.Float:
-                  f32[sp++] = result;
+                  f32[sp++] = returnValue;
                   continue;
                 case Kind.Long:
-                  i32[sp++] = result;
+                  i32[sp++] = returnValue;
                   i32[sp++] = tempReturn0;
                   continue;
                 case Kind.Int:
@@ -1681,10 +1705,10 @@ module J2ME {
                 case Kind.Char:
                 case Kind.Short:
                 case Kind.Boolean:
-                  i32[sp++] = result;
+                  i32[sp++] = returnValue;
                   continue;
                 case Kind.Reference:
-                  ref[sp++] = result;
+                  ref[sp++] = returnValue;
                   continue;
                 case Kind.Void:
                   continue;
