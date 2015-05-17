@@ -77,6 +77,11 @@ public final class Sys {
    */
   public native static void eval(String src);
 
+  /**
+   * Returns the total number of times the VM has unwound threads.
+   */
+  public native static int getUnwindCount();
+
   public static void throwException(Exception e) throws Exception {
     throw e;
   }

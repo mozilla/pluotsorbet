@@ -508,14 +508,6 @@ Native["java/lang/Thread.start0.()V"] = function() {
     newCtx.start();
 }
 
-Native["java/lang/Thread.isAlive.()Z"] = function() {
-    return this.alive ? 1 : 0;
-};
-
-Native["java/lang/Thread.yield.()V"] = function() {
-    $.yield("Thread.yield");
-};
-
 Native["java/lang/Thread.activeCount.()I"] = function() {
     return $.ctx.runtime.threadCount;
 };

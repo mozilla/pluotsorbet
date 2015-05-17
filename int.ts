@@ -401,7 +401,6 @@ module J2ME {
         frame.monitor = monitor;
         $.ctx.monitorEnter(monitor);
         if (U === VMState.Pausing || U === VMState.Stopping) {
-          debugger;
           return;
         }
       }
@@ -1383,7 +1382,6 @@ module J2ME {
             if (op === Bytecodes.GETSTATIC) {
               classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
               if (U) {
-                debugger;
                 return;
               }
               object = fieldInfo.classInfo.getStaticObject($.ctx);
@@ -1420,7 +1418,6 @@ module J2ME {
             if (isStatic) {
               classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
               if (U) {
-                debugger;
                 return;
               }
               object = fieldInfo.classInfo.getStaticObject($.ctx);
@@ -1459,7 +1456,6 @@ module J2ME {
             thread.set(fp, sp, pc);
             classInitAndUnwindCheck(classInfo, opPC);
             if (U) {
-              debugger;
               return;
             }
             loadThreadState();
@@ -1686,10 +1682,6 @@ module J2ME {
 
               if (U) {
                 return;
-              }
-
-              if (!release) {
-                assert(!(returnValue instanceof Long.constructor), "NO LONGS ALLOWED");
               }
 
               kind = signatureKinds[0];

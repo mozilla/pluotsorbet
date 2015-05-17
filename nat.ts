@@ -95,9 +95,19 @@ module J2ME {
     }));
   };
 
+  Native["java/lang/Thread.isAlive.()Z"] = function() {
+    return this.alive ? 1 : 0;
+  };
+
+  Native["java/lang/Thread.yield.()V"] = function() {
+    $.yield("Thread.yield");
+    $.ctx.nativeThread.advancePastInvokeBytecode();
+  };
+
   Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
     release || assert(timeoutH === 0, "H: " + timeoutH);
     $.ctx.wait(this, timeoutL);
+    $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
   Native["java/lang/Object.notify.()V"] = function() {
@@ -106,5 +116,9 @@ module J2ME {
 
   Native["java/lang/Object.notifyAll.()V"] = function() {
     $.ctx.notify(this, true);
+  };
+
+  Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function() {
+    return unwindCount;
   };
 }

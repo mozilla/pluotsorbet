@@ -168,6 +168,7 @@ public class ShellTestlets {
     "gnu/testlet/java/lang/Math/sin",
     "gnu/testlet/java/util/Vector/copyInto",
     "gnu/testlet/java/lang/Thread/sleep",
+    "gnu/testlet/java/lang/Thread/yield",
     null
   };
 
