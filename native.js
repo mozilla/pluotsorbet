@@ -275,18 +275,6 @@ Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {
     return $.getRuntimeKlass(this.klass).classObject;
 };
 
-Native["java/lang/Object.wait.(J)V"] = function(timeoutLow, timeoutHigh) {
-    $.ctx.wait(this, Long.fromBits(timeoutLow, timeoutHigh).toNumber());
-};
-
-Native["java/lang/Object.notify.()V"] = function() {
-    $.ctx.notify(this);
-};
-
-Native["java/lang/Object.notifyAll.()V"] = function() {
-    $.ctx.notify(this, true);
-};
-
 Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
     var superKlass = this.runtimeKlass.templateKlass.superKlass;
     if (!superKlass) {

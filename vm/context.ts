@@ -589,33 +589,33 @@ module J2ME {
       Scheduler.enqueue(this);
     }
 
-    block(obj, queue, lockLevel) {
-      obj._lock[queue].push(this);
+    block(object: java.lang.Object, queue, lockLevel: number) {
+      object._lock[queue].push(this);
       this.lockLevel = lockLevel;
       $.pause("block");
     }
 
-    unblock(obj, queue, notifyAll) {
-      while (obj._lock[queue].length) {
-        var ctx = obj._lock[queue].pop();
+    unblock(object: java.lang.Object, queue, notifyAll: boolean) {
+      while (object._lock[queue].length) {
+        var ctx = object._lock[queue].pop();
         if (!ctx)
           continue;
-          ctx.wakeup(obj)
+          ctx.wakeup(object)
         if (!notifyAll)
           break;
       }
     }
 
-    wakeup(obj) {
+    wakeup(object: java.lang.Object) {
       if (this.lockTimeout !== null) {
         window.clearTimeout(this.lockTimeout);
         this.lockTimeout = null;
       }
-      if (obj._lock.level !== 0) {
-        obj._lock.ready.push(this);
+      if (object._lock.level !== 0) {
+        object._lock.ready.push(this);
       } else {
         while (this.lockLevel-- > 0) {
-          this.monitorEnter(obj);
+          this.monitorEnter(object);
           if (U === VMState.Pausing || U === VMState.Stopping) {
             return;
           }
@@ -656,7 +656,7 @@ module J2ME {
       this.unblock(object, "ready", false);
     }
 
-    wait(object: java.lang.Object, timeout) {
+    wait(object: java.lang.Object, timeout: number) {
       var lock = object._lock;
       if (timeout < 0)
         throw $.newIllegalArgumentException();
@@ -683,11 +683,11 @@ module J2ME {
       this.block(object, "waiting", lockLevel);
     }
 
-    notify(obj, notifyAll) {
-      if (!obj._lock || obj._lock.thread !== this.thread)
+    notify(object: java.lang.Object, notifyAll: boolean) {
+      if (!object._lock || object._lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
 
-      this.unblock(obj, "waiting", notifyAll);
+      this.unblock(object, "waiting", notifyAll);
     }
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {

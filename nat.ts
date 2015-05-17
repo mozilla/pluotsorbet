@@ -98,4 +98,17 @@ module J2ME {
       window.setTimeout(resolve, delayL);
     }));
   };
+
+  Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
+    release || assert(timeoutH === 0);
+    $.ctx.wait(this, timeoutL);
+  };
+
+  Native["java/lang/Object.notify.()V"] = function() {
+    $.ctx.notify(this, false);
+  };
+
+  Native["java/lang/Object.notifyAll.()V"] = function() {
+    $.ctx.notify(this, true);
+  };
 }
