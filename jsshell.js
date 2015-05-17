@@ -139,7 +139,7 @@ var window = {
   },
 };
 
-window.setZeroTimeout = window.setTimeout = function (fn, interval) {
+this.setZeroTimeout = window.setZeroTimeout = window.setTimeout = this.setTimeout = function (fn, interval) {
   var args = arguments.length > 2 ? Array.prototype.slice.call(arguments, 2) : [];
   var task = microTaskQueue.scheduleInterval(fn, args, interval, false);
   return task.id;
@@ -217,7 +217,7 @@ try {
   var runtime = jvm.startIsolate0(files[0], config.args);
 
   // Pump Event Queue
-  microTaskQueue.run(0, 0, false, function () {
+  microTaskQueue.run(100000, 10000, false, function () {
     return true;
   });
 

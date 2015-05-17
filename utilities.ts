@@ -936,42 +936,9 @@ module J2ME.Shell {
     }
   }
 
-  var RealDate = Date;
-  var fakeTime = 1428107694580; // 3-Apr-2015
-  var jsGlobal = (function() { return this || (1, eval)('this//# sourceURL=jsGlobal-getter'); })();
-
-  /**
-   * This should only be called if you need fake time.
-   */
-  export function installTimeWarper() {
-
-    // Go back in time.
-    fakeTime = 1428107694580; // 3-Apr-2015
-
-    // Overload
-    jsGlobal.Date = function (yearOrTimevalue, month, date, hour, minute, second, millisecond) {
-      switch (arguments.length) {
-        case  0: return new RealDate(fakeTime); break;
-        case  1: return new RealDate(yearOrTimevalue); break;
-        case  2: return new RealDate(yearOrTimevalue, month); break;
-        case  3: return new RealDate(yearOrTimevalue, month, date); break;
-        case  4: return new RealDate(yearOrTimevalue, month, date, hour); break;
-        case  5: return new RealDate(yearOrTimevalue, month, date, hour, minute); break;
-        case  6: return new RealDate(yearOrTimevalue, month, date, hour, minute, second); break;
-        default: return new RealDate(yearOrTimevalue, month, date, hour, minute, second, millisecond); break;
-      }
-    }
-
-    // Make date now deterministic.
-    jsGlobal.Date.now = function () {
-      return fakeTime += 10; // Advance time.
-    }
-  }
-
   export class MicroTasksQueue {
     private tasks: MicroTask[] = [];
     private nextId: number = 1;
-    private time: number = 1388556000000; // 1-Jan-2014
     private stopped: boolean = true;
 
     constructor() {
@@ -995,7 +962,7 @@ module J2ME.Shell {
 
     public enqueue(task: MicroTask) {
       var tasks = this.tasks;
-      task.runAt = this.time + task.interval;
+      task.runAt = dateNow() + task.interval;
       var i = tasks.length;
       while (i > 0 && tasks[i - 1].runAt > task.runAt) {
         i--;
@@ -1007,9 +974,11 @@ module J2ME.Shell {
       }
     }
 
-    public dequeue(): MicroTask {
+    public dequeue(runAt: number): MicroTask {
+      if (this.tasks[0].runAt > runAt) {
+        return null;
+      }
       var task = this.tasks.shift();
-      this.time = task.runAt;
       return task;
     }
 
@@ -1045,7 +1014,10 @@ module J2ME.Shell {
         if (count > 0 && executedTasks >= count) {
           break;
         }
-        var task = this.dequeue();
+        var task = null;
+        do {
+          task = this.dequeue(dateNow());
+        } while (!task);
         if (preCallback && !preCallback(task)) {
           return;
         }
