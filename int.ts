@@ -444,8 +444,16 @@ module J2ME {
   
   /**
    * Main interpreter loop. This method is carefully written to avoid memory allocation and
-   * function calls on fast paths. Thus, everything is inlined, even if it makes the code
-   * ugly.
+   * function calls on fast paths. Therefore, everything is inlined, even if it makes the code
+   * look ugly.
+   *
+   * The interpreter loop caches the thread state in local variables. Doing so avoids a lot of
+   * property accesses but also makes the code brittle since you need to manually sync up the
+   * thread state with the local thead state at precise points.
+   *
+   * At call sites, caller frame |pc|s are always at the beggining of invoke bytecodes. In the
+   * interpreter return bytecodes advance the pc past the invoke bytecode. Native code that
+   * unwinds and resumes execution at a later point needs to adjust the pc accordingly.
    */
   export function interpret(thread: Thread) {
     var frame = thread.frame;
