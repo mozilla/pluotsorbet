@@ -9,6 +9,7 @@ var Native = Object.create(null);
  * Asm.js heap buffer and views.
  */
 var buffer = ASM.buffer;
+var u8: Uint32Array = ASM.HEAPU8;
 var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
 var f32: Float32Array = ASM.HEAPF32;

@@ -1355,7 +1355,7 @@ module J2ME {
         traceWriter.leave("< " + MethodType[methodType][0] + " Throwing");
         throw e;
       }
-      traceWriter.leave("< " + MethodType[methodType][0]);
+      traceWriter.leave("< " + MethodType[methodType][0] + " " + methodInfo.implKey);
       return value;
     };
     (<any>wrapper).methodInfo = methodInfo;

@@ -327,6 +327,17 @@ module J2ME {
       return h >>> 0;
     }
     // end of imported section
+
+    export function hashBytesTo32BitsAdler(data: Uint8Array, offset: number, length: number): number {
+      var a = 1;
+      var b = 0;
+      var end = offset + length;
+      for (var i = offset; i < end; ++i) {
+        a = (a + (data[i] & 0xff)) % 65521;
+        b = (b + a) % 65521;
+      }
+      return (b << 16) | a;
+    }
   }
 
   export enum Numbers {

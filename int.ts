@@ -286,12 +286,19 @@ module J2ME {
       this.pc = -1;
       this.view = new FrameView();
       this.ctx = ctx;
+      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp) + " " + toHEX(i32.byteLength));
     }
 
     set(fp: number, sp: number, pc: number) {
       this.fp = fp;
       this.sp = sp;
       this.pc = pc;
+    }
+
+    hashFrame(): number {
+      var fp = this.fp << 2;
+      var sp = this.sp << 2;
+      return HashUtilities.hashBytesTo32BitsAdler(u8, fp, sp);
     }
 
     /**
@@ -1674,6 +1681,12 @@ module J2ME {
               if (!release) {
                 // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
               }
+
+              var frameHash = 0;
+              if (!release) {
+                frameHash = thread.hashFrame();
+              }
+
               returnValue = callee.apply(object, args);
 
               if (!release) {
@@ -1681,7 +1694,15 @@ module J2ME {
               }
 
               if (U) {
+                release || traceWriter && traceWriter.writeLn("<< U Unwind");
                 return;
+              }
+
+              if (false && !release) { // This fails at the moment because of Isolate.nativeStart
+                if (thread.hashFrame() !== frameHash) {
+                  traceWriter && thread.frame.trace(traceWriter);
+                }
+                assert(thread.hashFrame() === frameHash, "Frame Hash: " + frameHash);
               }
 
               kind = signatureKinds[0];
