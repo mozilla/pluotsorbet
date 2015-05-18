@@ -50,15 +50,16 @@ extern "C" {
   int allocation = 0;
 
   uintptr_t gcMalloc(int32_t size) {
-    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
-// Bump allocator.
-// uintptr_t curr = bump;
-// bump += (size + 3) & ~0x03;
-// return curr;
+//    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
+    // Bump allocator.
+    uintptr_t curr = bump;
+    bump += (size + 3) & ~0x03;
+    return curr;
   }
 }
 
 int main() {
-  GC_INIT();
-  GC_set_max_heap_size(1024 * 1024 * 16);
+//   GC_INIT();
+//   GC_set_max_heap_size(1024 * 1024 * 16);
+  heap = bump = (uintptr_t)malloc(1024 * 1024 * 16);
 }

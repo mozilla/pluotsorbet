@@ -169,6 +169,7 @@ public class ShellTestlets {
     "gnu/testlet/java/util/Vector/copyInto",
     "gnu/testlet/java/lang/Thread/sleep",
     "gnu/testlet/java/lang/Thread/yield",
+    "java/lang/TestThreads",
     null
   };
 
@@ -210,7 +211,6 @@ public class ShellTestlets {
 //  "java/lang/TestStringIntern",
 //  "java/lang/TestSystem",
 //  "java/lang/TestThread",
-//  "java/lang/TestThreads",
 //  "java/lang/TestThreadJoin",
 //  "java/lang/TestThreadPriority",
 //  "javax/crypto/TestRC4",

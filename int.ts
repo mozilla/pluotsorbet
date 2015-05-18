@@ -286,7 +286,7 @@ module J2ME {
       this.pc = -1;
       this.view = new FrameView();
       this.ctx = ctx;
-      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp) + " " + toHEX(i32.byteLength));
+      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp << 2) + " " + toHEX(i32.byteLength));
     }
 
     set(fp: number, sp: number, pc: number) {

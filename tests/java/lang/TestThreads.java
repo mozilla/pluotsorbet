@@ -16,16 +16,22 @@ public class TestThreads implements Testlet {
     return 0;
   }
 
+  public static int count = 0;
   public void test(TestHarness th) {
-    Thread[] threads = new Thread[1024];
+    Thread[] threads = new Thread[32];
     System.out.println("Starting " + threads.length + " threads.");
     for (int i = 0; i < threads.length; i++) {
       Thread t = new Thread() {
         public void run() {
-          System.out.println(Thread.currentThread().getName());
+
+          for (int i = 0; i < 10; i++) {
+            System.out.println(Thread.currentThread().getName());
+            Thread.yield();
+            TestThreads.count ++;
+          }
         }
       };
-      // System.out.println("Starting Thread: " + i);
+      System.out.println("Starting Thread: " + (i + 1));
       t.start();
       threads[i] = t;
     }
@@ -39,6 +45,8 @@ public class TestThreads implements Testlet {
       }
     } catch (InterruptedException e) {
     }
-    th.check(System.currentTimeMillis() - start < 500);
+    // th.check(System.currentTimeMillis() - start < 500);
+    System.out.println("Count: " + TestThreads.count);
+    th.check(TestThreads.count == threads.length * 10);
   }
 }
