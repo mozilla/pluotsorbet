@@ -344,15 +344,17 @@ casper.test.begin("unit tests", 28 + gfxTests.length, function(test) {
     casper
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/destroy.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
-        casper.waitForSelector("#canvas", function() {
-          var elemInfo = this.getElementInfo("#canvas");
-          this.mouse.click(elemInfo.x, elemInfo.y);
-        });
+        casper.waitForText("PAINTED", function() {
+          casper.waitForSelector("#canvas", function() {
+            var elemInfo = this.getElementInfo("#canvas");
+            this.mouse.click(elemInfo.x, elemInfo.y);
+          });
 
-        casper.waitForText("DONE", function() {
-          var content = this.getPageContent();
-          test.assertEquals(content.match(/startApp1/g).length, 2, "Two startApp1");
-          test.assertEquals(content.match(/destroyApp/g).length, 1, "One destroyApp");
+          casper.waitForText("DONE", function() {
+            var content = this.getPageContent();
+            test.assertEquals(content.match(/startApp1/g).length, 2, "Two startApp1");
+            test.assertEquals(content.match(/destroyApp/g).length, 1, "One destroyApp");
+          });
         });
     });
 

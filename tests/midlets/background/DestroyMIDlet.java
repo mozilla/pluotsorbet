@@ -17,6 +17,7 @@ public class DestroyMIDlet extends MIDlet {
         protected void paint(Graphics g) {
             g.setColor(0x00FFFFFF);
             g.fillRect(0, 0, getWidth(), getHeight());
+            System.out.println("PAINTED");
         }
 
         protected void pointerReleased(int x, int y) {
