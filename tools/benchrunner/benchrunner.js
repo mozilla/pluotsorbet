@@ -20,17 +20,24 @@ var connect = require('node-firefox-connect');
 var args = require('system').args;
 var fs = require('fs');
 
-// command line looks like "node benchrunner.js /path/to/packaged/app [install]"
-var pathToPackagedApp = args[2];
-console.log('app package:', pathToPackagedApp);
+var gBenchRunner = {};
+
+gBenchRunner.deviceClient = null;
+gBenchRunner.emulatorWebApp = null;
+gBenchRunner.pathToPackagedApp = args[2];
+
+if (gBenchRunner.pathToPackagedApp == null) {
+	console.log('usage: node benchrunner.js /path/to/packaged/app');
+	process.exit(1);
+}
+
+console.log('app package:', gBenchRunner.pathToPackagedApp);
 
 // parse manifest file
 
-var manifestString = fs.readFileSync(pathToPackagedApp + '/manifest.webapp', 'utf8');
-var manifest = JSON.parse(manifestString);
+var manifestString = fs.readFileSync(gBenchRunner.pathToPackagedApp + '/manifest.webapp', 'utf8');
+gBenchRunner.manifest = JSON.parse(manifestString);
 
-var gDeviceClient = null;
-var gEmulatorWebApp = null;
 
 // find the device, uninstall the old packaged app, install the new packaged app
 
@@ -46,15 +53,15 @@ function reinstallEmulatorApp() {
 	.then(function connected(client) {
 		console.log('Connected');
 
-		gDeviceClient = client;
+		gBenchRunner.deviceClient = client;
 		return client;
 	})
 
 	.then(function findEmulatorApp(client) {
 		// find the  old version of this app
 		return findApp({
-			manifest: manifest,
-			client: client
+			manifest: gBenchRunner.manifest,
+			client: gBenchRunner.deviceClient
 		})
 	})
 
@@ -63,7 +70,7 @@ function reinstallEmulatorApp() {
 		console.log('Found', apps.length, 'existing apps');
 		return Promise.all(apps.map(function(app) {
 			console.log('Uninstalling', app.manifestURL);
-			return uninstallApp({ manifestURL: app.manifestURL, client: gDeviceClient })
+			return uninstallApp({ manifestURL: app.manifestURL, client: gBenchRunner.deviceClient })
 		}));
 	})
 
@@ -71,8 +78,8 @@ function reinstallEmulatorApp() {
 		console.log('Installing');
 		return installApp({
 			// 3. install the new version
-			appPath: pathToPackagedApp,
-			client: gDeviceClient
+			appPath: gBenchRunner.pathToPackagedApp,
+			client: gBenchRunner.deviceClient
 		})
 	})
 
@@ -99,13 +106,13 @@ function benchmarkEmulatorApp() {
 	.then(function connected(client) {
 		console.log('Connected');
 
-		gDeviceClient = client;
+		gBenchRunner.deviceClient = client;
 		return client;
 	})
 
 	.then(function findEmulatorApp(client) {
 		return findApp({
-			manifest: manifest,
+			manifest: gBenchRunner.manifest,
 			client: client
 		});
 	})
@@ -113,11 +120,11 @@ function benchmarkEmulatorApp() {
 	.then(function launchEmulatorApp(apps) {
 		// launch the j2me app
 		if (apps.length > 0) {
-			gEmulatorWebApp = apps[0];
-			console.log('Found', gEmulatorWebApp.name, gEmulatorWebApp.manifestURL);
+			gBenchRunner.emulatorWebApp = apps[0];
+			console.log('Found', gBenchRunner.emulatorWebApp.name, gBenchRunner.emulatorWebApp.manifestURL);
 			return launchApp({
-				client: gDeviceClient,
-				manifestURL: gEmulatorWebApp.manifestURL
+				client: gBenchRunner.deviceClient,
+				manifestURL: gBenchRunner.emulatorWebApp.manifestURL
 			});
 		} else {
 			return null;
@@ -127,13 +134,13 @@ function benchmarkEmulatorApp() {
 	.then(function connectToAppConsoleAndRunTest(result) {
 		console.log('Launched app', result);
 
-		gDeviceClient.getWebapps(function(err, webapps) {
-			console.log('Getting webapp', gEmulatorWebApp.manifestURL);
+		gBenchRunner.deviceClient.getWebapps(function(err, webapps) {
+			console.log('Getting webapp', gBenchRunner.emulatorWebApp.manifestURL);
 			if (err) {
 				console.log(err);
 			}
 
-			webapps.getApp(gEmulatorWebApp.manifestURL, function (err, app) {
+			webapps.getApp(gBenchRunner.emulatorWebApp.manifestURL, function (err, app) {
 				if (err) {
 					console.log(err);
 				}
@@ -171,8 +178,8 @@ function benchmarkEmulatorApp() {
 
 // Start process
 Promise.resolve().then(function() {
-	// reinstallEmulatorApp();
-	benchmarkEmulatorApp();
+	reinstallEmulatorApp();
+	// benchmarkEmulatorApp();
 })
 
 
