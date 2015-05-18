@@ -383,6 +383,11 @@ module J2ME {
       release || traceWriter && traceWriter.writeLn("Cannot catch: " + toName(e));
       throw e;
     }
+
+    classInitAndUnwindCheck(fp: number, sp: number, pc: number, classInfo: ClassInfo) {
+      this.set(fp, sp, pc);
+      classInitCheck(classInfo);
+    }
   }
 
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
@@ -489,23 +494,6 @@ module J2ME {
     var fieldInfo: FieldInfo;
 
     var monitor: java.lang.Object;
-
-    function loadThreadState() {
-      fp = thread.fp;
-      lp = fp - maxLocals;
-      sp = thread.sp;
-      pc = thread.pc;
-    }
-
-    function classInitAndUnwindCheck(classInfo: ClassInfo) {
-      thread.set(fp, sp, pc);
-      classInitCheck(classInfo);
-      loadThreadState();
-      //if (U) {
-      //  $.ctx.current().pc = pc;
-      //  return;
-      //}
-    }
 
     /**
      * Thrown exceptions need to be constructed, and can thus damage the stack if we don't
@@ -1387,7 +1375,7 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
             if (op === Bytecodes.GETSTATIC) {
-              classInitAndUnwindCheck(fieldInfo.classInfo);
+              thread.classInitAndUnwindCheck(fp, sp, opPC, fieldInfo.classInfo);
               if (U) {
                 return;
               }
@@ -1423,7 +1411,7 @@ module J2ME {
             fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
             isStatic = op === Bytecodes.PUTSTATIC;
             if (isStatic) {
-              classInitAndUnwindCheck(fieldInfo.classInfo);
+              thread.classInitAndUnwindCheck(fp, sp, opPC, fieldInfo.classInfo);
               if (U) {
                 return;
               }
@@ -1460,12 +1448,10 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             release || traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
             classInfo = resolveClass(index, ci);
-            thread.set(fp, sp, pc);
-            classInitAndUnwindCheck(classInfo);
+            thread.classInitAndUnwindCheck(fp, sp, opPC, classInfo);
             if (U) {
               return;
             }
-            loadThreadState();
             ref[sp++] = newObject(classInfo.klass);
             continue;
           case Bytecodes.CHECKCAST:
@@ -1619,9 +1605,8 @@ module J2ME {
             }
 
             if (isStatic) {
-              classInitAndUnwindCheck(calleeMethodInfo.classInfo);
+              thread.classInitAndUnwindCheck(fp, sp, opPC, calleeMethodInfo.classInfo);
               if (U) {
-                thread.set(fp, sp, opPC);
                 return;
               }
             }
@@ -1787,7 +1772,11 @@ module J2ME {
           throw e;
         }
         thread.exceptionUnwind(e);
-        loadThreadState();
+
+        // Load thread state after exception unwind.
+        fp = thread.fp;
+        sp = thread.sp;
+        pc = thread.pc;
 
         mi = thread.frame.methodInfo;
         maxLocals = mi.codeAttribute.max_locals;
