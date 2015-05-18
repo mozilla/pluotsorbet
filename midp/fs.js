@@ -344,7 +344,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)
     }
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(byteOffset) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(byteOffsetL, byteOffsetH) {
     var pathname = J2ME.fromJavaString(this.nativePath);
     DEBUG_FS && console.log("DefaultFileHandler.lastModified: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -364,7 +364,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(b
 
     // TODO: If the file is open, flush it first.
 
-    fs.truncate(pathname, byteOffset.toNumber());
+    fs.truncate(pathname, byteOffsetL); // REDUX: Is byteOffsetL precise enough?
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() {
@@ -372,10 +372,10 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() 
     DEBUG_FS && console.log("DefaultFileHandler.fileSize: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.fileSize: ignored file");
-        return J2ME.returnLong(0, 0);
+        return J2ME.returnLongValue(0);
     }
 
-    return J2ME.returnLong(fs.size(pathname), 0);
+    return J2ME.returnLongValue(fs.size(pathname));
 };
 
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySize.(Z)J", Long.fromNumber(0));
@@ -388,7 +388,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function() {
         return 1;
     }
 
-    return fs.exists(pathname) ? 1 : 0;
+    return J2ME.returnLongValue(fs.exists(pathname) ? 1 : 0);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canWrite.()Z"] = function() {
@@ -460,11 +460,11 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = functio
     DEBUG_FS && console.log("DefaultFileHandler.lastModified: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.lastModified: ignored file");
-        return Long.fromNumber(0);
+        return J2ME.returnLongValue(0);
     }
 
     var stat = fs.stat(pathname);
-    return Long.fromNumber(stat != null ? stat.mtime : 0);
+    return J2ME.returnLongValue(stat != null ? stat.mtime : 0);
 };
 
 MIDP.markFileHandler = function(fileHandler, mode, state) {
@@ -594,17 +594,17 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
     return (data.byteLength > 0) ? data.byteLength : -1;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(n) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(l, h) {
     DEBUG_FS && console.log("DefaultFileHandler.skip: " + J2ME.fromJavaString(this.nativePath));
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.skip: ignored file");
         return -1;
     }
 
-    var toSkip = n.toNumber();
+    var toSkip = l;
 
     if (toSkip < 0) {
-        return Long.fromNumber(0);
+        return J2ME.returnLongValue(0);
     }
 
     var fd = this.nativeDescriptor;
@@ -612,10 +612,10 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(n) {
     var size = fs.getsize(fd);
     if (pos + toSkip > size) {
         fs.setpos(fd, size);
-        return Long.fromNumber(size - pos);
+        return J2ME.returnLongValue(size - pos);
     } else {
         fs.setpos(fd, pos + toSkip);
-        return n;
+        return l;
     }
 };
 
@@ -696,7 +696,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openDir.()J"] = function() {
         index: -1,
     });
 
-    return J2ME.returnLong(openDirHandle, 0);
+    return J2ME.returnLongValue(openDirHandle);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeDir.(J)V"] = function(dirHandleLow, dirHandleHigh) {

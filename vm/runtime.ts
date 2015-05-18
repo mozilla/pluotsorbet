@@ -44,6 +44,11 @@ module J2ME {
     return l;
   }
 
+  export function returnLongValue(v: number) {
+    var value = Long.fromNumber(v);
+    return returnLong(value.low_, value.high_);
+  }
+
   declare var Native, config;
   declare var VM;
   declare var CompiledMethodCache;
