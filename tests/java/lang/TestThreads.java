@@ -25,19 +25,14 @@ public class TestThreads implements Testlet {
         public void run() {
 
           for (int i = 0; i < 10; i++) {
-            System.out.println(Thread.currentThread().getName());
             Thread.yield();
             TestThreads.count ++;
           }
         }
       };
-      System.out.println("Starting Thread: " + (i + 1));
       t.start();
       threads[i] = t;
     }
-
-    System.out.println("Started all threads.");
-
     long start = System.currentTimeMillis();
     try {
       for (int i = 0; i < threads.length; i++) {
@@ -45,8 +40,6 @@ public class TestThreads implements Testlet {
       }
     } catch (InterruptedException e) {
     }
-    // th.check(System.currentTimeMillis() - start < 500);
-    System.out.println("Count: " + TestThreads.count);
     th.check(TestThreads.count == threads.length * 10);
   }
 }
