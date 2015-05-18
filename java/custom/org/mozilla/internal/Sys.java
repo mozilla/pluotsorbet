@@ -87,4 +87,7 @@ public final class Sys {
       t.notifyAll();
     }
   }
+
+  public native static void startProfile();
+  public native static void stopProfile();
 }

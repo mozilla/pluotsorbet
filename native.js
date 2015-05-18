@@ -946,6 +946,32 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
     }
 };
 
+var profileStarted = false;
+Native["org/mozilla/internal/Sys.startProfile.()V"] = function() {
+    if (profile === 4) {
+        if (!profileStarted) {
+            profileStarted = true;
+
+            console.log("Start profile at: " + performance.now());
+            startTimeline();
+        }
+    }
+};
+
+var profileSaved = false;
+Native["org/mozilla/internal/Sys.stopProfile.()V"] = function() {
+    if (profile === 4) {
+        if (!profileSaved) {
+            profileSaved = true;
+
+            console.log("Stop profile at: " + performance.now());
+            setZeroTimeout(function() {
+                stopAndSaveTimeline();
+            });
+        }
+    }
+};
+
 Native["java/io/ByteArrayOutputStream.write.([BII)V"] = function(b, off, len) {
   if ((off < 0) || (off > b.length) || (len < 0) ||
       ((off + len) > b.length)) {
