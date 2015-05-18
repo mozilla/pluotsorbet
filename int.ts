@@ -1683,9 +1683,6 @@ module J2ME {
               }
 
               var frameHash = 0;
-              if (!release) {
-                frameHash = thread.hashFrame();
-              }
 
               returnValue = callee.apply(object, args);
 
@@ -1696,13 +1693,6 @@ module J2ME {
               if (U) {
                 release || traceWriter && traceWriter.writeLn("<< U Unwind");
                 return;
-              }
-
-              if (false && !release) { // This fails at the moment because of Isolate.nativeStart
-                if (thread.hashFrame() !== frameHash) {
-                  traceWriter && thread.frame.trace(traceWriter);
-                }
-                assert(thread.hashFrame() === frameHash, "Frame Hash: " + frameHash);
               }
 
               kind = signatureKinds[0];

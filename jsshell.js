@@ -64,7 +64,6 @@ function parseArguments(options, tokens) {
       leftover.push(tokens[i]);
     }
   }
-  // print(JSON.stringify(options, null, 2));
   return leftover;
 }
 
