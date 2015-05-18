@@ -41,38 +41,13 @@ gBenchRunner.manifest = JSON.parse(manifestString);
 
 // find the device, uninstall the old packaged app, install the new packaged app
 
-function reinstallEmulatorApp() {
+function reinstallEmulatorApp(apps) {
+	console.log('Found', apps.length, 'existing apps');
 
-	return findPorts()
-
-	.then(function connectToDevice(results) {
-		console.log('findPorts', results);
-		return connect(results[0].port);
-	})
-
-	.then(function connected(client) {
-		console.log('Connected');
-
-		gBenchRunner.deviceClient = client;
-		return client;
-	})
-
-	.then(function findEmulatorApp(client) {
-		// find the  old version of this app
-		return findApp({
-			manifest: gBenchRunner.manifest,
-			client: gBenchRunner.deviceClient
-		})
-	})
-
-	.then(function uninstallEmulatorApp(apps) {
-		// uninstall the old version
-		console.log('Found', apps.length, 'existing apps');
-		return Promise.all(apps.map(function(app) {
-			console.log('Uninstalling', app.manifestURL);
-			return uninstallApp({ manifestURL: app.manifestURL, client: gBenchRunner.deviceClient })
-		}));
-	})
+	return Promise.all(apps.map(function(app) {
+		console.log('Uninstalling', app.manifestURL);
+		return uninstallApp({ manifestURL: app.manifestURL, client: gBenchRunner.deviceClient })
+	}))
 
 	.then(function installEmulatorApp() {
 		console.log('Installing');
@@ -94,41 +69,15 @@ function reinstallEmulatorApp() {
 
 // find the device, find, launch, and connect to the j2me app, connect to the console, run the benchmark
  
-function benchmarkEmulatorApp() {
+function benchmarkEmulatorApp(apps) {
 
-	return findPorts()
+	gBenchRunner.emulatorWebApp = apps[0];
 
-	.then(function connectToDevice(results) {
-		console.log('findPorts', results);
-		return connect(results[0].port);
-	})
+	console.log('Found', gBenchRunner.emulatorWebApp.name, gBenchRunner.emulatorWebApp.manifestURL);
 
-	.then(function connected(client) {
-		console.log('Connected');
-
-		gBenchRunner.deviceClient = client;
-		return client;
-	})
-
-	.then(function findEmulatorApp(client) {
-		return findApp({
-			manifest: gBenchRunner.manifest,
-			client: client
-		});
-	})
-
-	.then(function launchEmulatorApp(apps) {
-		// launch the j2me app
-		if (apps.length > 0) {
-			gBenchRunner.emulatorWebApp = apps[0];
-			console.log('Found', gBenchRunner.emulatorWebApp.name, gBenchRunner.emulatorWebApp.manifestURL);
-			return launchApp({
-				client: gBenchRunner.deviceClient,
-				manifestURL: gBenchRunner.emulatorWebApp.manifestURL
-			});
-		} else {
-			return null;
-		}
+	return launchApp({
+		client: gBenchRunner.deviceClient,
+		manifestURL: gBenchRunner.emulatorWebApp.manifestURL
 	})
 
 	.then(function connectToAppConsoleAndRunTest(result) {
@@ -178,8 +127,37 @@ function benchmarkEmulatorApp() {
 
 // Start process
 Promise.resolve().then(function() {
-	reinstallEmulatorApp();
-	// benchmarkEmulatorApp();
+	findPorts()
+
+	.then(function connectToDevice(results) {
+		console.log('findPorts', results);
+		return connect(results[0].port);
+	})
+
+	.then(function connected(client) {
+		console.log('Connected');
+
+		gBenchRunner.deviceClient = client;
+		return client;
+	})
+
+	.then(function findEmulatorApp(client) {
+		// find the  old version of this app
+		return findApp({
+			manifest: gBenchRunner.manifest,
+			client: gBenchRunner.deviceClient
+		})
+	})
+
+	.then(function doTheThing(apps) {
+
+		if (false) {
+			return reinstallEmulatorApp(apps);
+		} else {
+			return benchmarkEmulatorApp(apps);
+		}
+
+	})
 })
 
 
