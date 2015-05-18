@@ -407,6 +407,7 @@ module J2ME {
           : this;
         frame.monitor = monitor;
         $.ctx.monitorEnter(monitor);
+        release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
           return;
         }
@@ -496,7 +497,7 @@ module J2ME {
       pc = thread.pc;
     }
 
-    function classInitAndUnwindCheck(classInfo: ClassInfo, unusedPC: number) {
+    function classInitAndUnwindCheck(classInfo: ClassInfo) {
       thread.set(fp, sp, pc);
       classInitCheck(classInfo);
       loadThreadState();
@@ -1364,7 +1365,6 @@ module J2ME {
           case Bytecodes.ANEWARRAY:
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
-            classInitAndUnwindCheck(classInfo, opPC);
             size = i32[--sp];
             ref[sp++] = newArray(classInfo.klass, size);
             continue;
@@ -1387,7 +1387,7 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
             if (op === Bytecodes.GETSTATIC) {
-              classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
+              classInitAndUnwindCheck(fieldInfo.classInfo);
               if (U) {
                 return;
               }
@@ -1423,7 +1423,7 @@ module J2ME {
             fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
             isStatic = op === Bytecodes.PUTSTATIC;
             if (isStatic) {
-              classInitAndUnwindCheck(fieldInfo.classInfo, opPC);
+              classInitAndUnwindCheck(fieldInfo.classInfo);
               if (U) {
                 return;
               }
@@ -1461,7 +1461,7 @@ module J2ME {
             release || traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
             classInfo = resolveClass(index, ci);
             thread.set(fp, sp, pc);
-            classInitAndUnwindCheck(classInfo, opPC);
+            classInitAndUnwindCheck(classInfo);
             if (U) {
               return;
             }
@@ -1495,7 +1495,9 @@ module J2ME {
           case Bytecodes.MONITORENTER:
             object = ref[--sp];
             thread.ctx.monitorEnter(object);
+            release || assert(U !== VMState.Yielding, "Monitors should never yield.");
             if (U === VMState.Pausing || U === VMState.Stopping) {
+              thread.set(fp, sp, pc); // We need to resume past the MONITORENTER bytecode.
               return;
             }
             continue;
@@ -1617,7 +1619,7 @@ module J2ME {
             }
 
             if (isStatic) {
-              classInitAndUnwindCheck(calleeMethodInfo.classInfo, opPC);
+              classInitAndUnwindCheck(calleeMethodInfo.classInfo);
               if (U) {
                 thread.set(fp, sp, opPC);
                 return;
@@ -1691,7 +1693,7 @@ module J2ME {
               }
 
               if (U) {
-                release || traceWriter && traceWriter.writeLn("<< U Unwind");
+                release || traceWriter && traceWriter.writeLn("<< U Unwind: " + VMState[U]);
                 return;
               }
 
@@ -1729,6 +1731,7 @@ module J2ME {
               continue;
             }
 
+            // Call Interpreted Method.
             release || traceWriter && traceWriter.writeLn(">> I " + calleeMethodInfo.implKey);
             mi = calleeTargetMethodInfo;
             maxLocals = mi.codeAttribute.max_locals;
@@ -1747,19 +1750,22 @@ module J2ME {
             ref[fp + FrameLayout.CalleeMethodInfoOffset] = mi;
             ref[fp + FrameLayout.MonitorOffset] = null; // Monitor
 
+            // Reset PC.
+            opPC = pc = 0;
+
             if (calleeTargetMethodInfo.isSynchronized) {
               monitor = calleeTargetMethodInfo.isStatic
                 ? calleeTargetMethodInfo.classInfo.getClassObject()
                 : object;
               ref[fp + FrameLayout.MonitorOffset] = monitor;
               $.ctx.monitorEnter(monitor);
+              release || assert(U !== VMState.Yielding, "Monitors should never yield.");
               if (U === VMState.Pausing || U === VMState.Stopping) {
                 frame.set(fp, sp, opPC);
                 return;
               }
             }
 
-            opPC = pc = 0;
             code = mi.codeAttribute.code;
 
             release || traceWriter && traceWriter.indent();
