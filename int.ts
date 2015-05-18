@@ -436,7 +436,9 @@ module J2ME {
 
   enum ExceptionType {
     ArithmeticException,
-    ArrayIndexOutOfBoundsException
+    ArrayIndexOutOfBoundsException,
+    NegativeArraySizeException,
+    NullPointerException
   }
 
   /**
@@ -466,6 +468,10 @@ module J2ME {
    * At call sites, caller frame |pc|s are always at the beggining of invoke bytecodes. In the
    * interpreter return bytecodes advance the pc past the invoke bytecode. Native code that
    * unwinds and resumes execution at a later point needs to adjust the pc accordingly.
+   *
+   * Bytecodes that construct exception objects must save the tread state before executing any
+   * code that may overwrite the frame. Use the |throwException| helper method to ensure that
+   * the thread state is property saved.
    */
   export function interpret(thread: Thread) {
     var frame = thread.frame;
@@ -507,6 +513,12 @@ module J2ME {
           break;
         case ExceptionType.ArithmeticException:
           throwArithmeticException();
+          break;
+        case ExceptionType.NegativeArraySizeException:
+          throwNegativeArraySizeException();
+          break;
+        case ExceptionType.NullPointerException:
+          throwNullPointerException();
           break;
       }
     }
@@ -1354,6 +1366,9 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
             size = i32[--sp];
+            if (size < 0) {
+              throwException(ExceptionType.NegativeArraySizeException);
+            }
             ref[sp++] = newArray(classInfo.klass, size);
             continue;
           case Bytecodes.MULTIANEWARRAY:
@@ -1363,6 +1378,9 @@ module J2ME {
             var lengths = new Array(dimensions);
             for (var i = 0; i < dimensions; i++) {
               lengths[i] = i32[--sp];
+              if (size < 0) {
+                throwException(ExceptionType.NegativeArraySizeException);
+              }
             }
             ref[sp++] = J2ME.newMultiArray(classInfo.klass, lengths.reverse());
             continue;
@@ -1474,7 +1492,7 @@ module J2ME {
           case Bytecodes.ATHROW:
             object = ref[--sp];
             if (!object) {
-              throw $.newNullPointerException();
+              throwException(ExceptionType.NullPointerException);
             }
             throw object;
             continue;
@@ -1536,6 +1554,9 @@ module J2ME {
           case Bytecodes.NEWARRAY:
             type = code[pc++];
             size = i32[--sp];
+            if (size < 0) {
+              throwException(ExceptionType.NegativeArraySizeException);
+            }
             ref[sp++] = newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size);
             continue;
           case Bytecodes.LRETURN:
@@ -1613,7 +1634,9 @@ module J2ME {
 
             switch (op) {
               case Bytecodes.INVOKESPECIAL:
-                checkNull(object);
+                if (!object) {
+                  throwException(ExceptionType.NullPointerException);
+                }
               case Bytecodes.INVOKESTATIC:
                 calleeTargetMethodInfo = calleeMethodInfo;
                 break;

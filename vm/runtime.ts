@@ -1828,6 +1828,10 @@ module J2ME {
     throw $.newNegativeArraySizeException();
   }
 
+  export function throwNullPointerException() {
+    throw $.newNullPointerException();
+  }
+
   export function newObjectArray(size: number): java.lang.Object[] {
     return newArray(Klasses.java.lang.Object, size);
   }
