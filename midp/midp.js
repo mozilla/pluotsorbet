@@ -683,9 +683,22 @@ var MIDP = (function() {
     showExitScreen();
   }
 
-  var pendingMIDletUpdate = null;
+  // If the user kills the app willingly, we will close it.
+  // In some cases instead we want to kill the FG MIDlet only
+  // to restart it.
+  var destroyedForRestart = false;
+  function setDestroyedForRestart(val) {
+    destroyedForRestart = val;
+  }
 
+  var pendingMIDletUpdate = null;
   Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
+    if (destroyedForRestart) {
+      destroyedForRestart = false;
+      FG.reset();
+      return;
+    }
+
     console.info("Isolate stops with code " + code + " and reason " + reason);
     if (!pendingMIDletUpdate) {
       exit();
@@ -775,12 +788,27 @@ var MIDP = (function() {
     }, false);
   }
 
+  function sendExecuteMIDletEvent() {
+    sendNativeEvent({
+      type: NATIVE_MIDLET_EXECUTE_REQUEST,
+    }, AMSIsolateId);
+  }
+
+  function sendDestroyMIDletEvent(midletClassName) {
+    FG.sendNativeEventToForeground({
+      type: DESTROY_MIDLET_EVENT,
+      stringParam1: midletClassName,
+    }, false);
+  }
+
   var KEY_EVENT = 1;
   var PEN_EVENT = 2;
   var PRESSED = 1;
   var RELEASED = 2;
   var DRAGGED = 3;
   var COMMAND_EVENT = 3;
+  var NATIVE_MIDLET_EXECUTE_REQUEST = 36;
+  var DESTROY_MIDLET_EVENT = 14;
   var EVENT_QUEUE_SHUTDOWN = 31;
   var ROTATION_EVENT = 43;
   var MMAPI_EVENT = 45;
@@ -1261,6 +1289,9 @@ var MIDP = (function() {
     sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
     sendKeyPress: sendKeyPress,
     sendKeyRelease: sendKeyRelease,
+    sendDestroyMIDletEvent: sendDestroyMIDletEvent,
+    setDestroyedForRestart: setDestroyedForRestart,
+    sendExecuteMIDletEvent: sendExecuteMIDletEvent,
     deviceContext: deviceContext,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
     updateCanvas: updateCanvas,
