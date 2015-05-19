@@ -1576,19 +1576,19 @@ module J2ME {
           case Bytecodes.RETURN:
             var lastSP = sp;
             var lastMI = mi;
+            if (lastMI.isSynchronized) {
+              monitor = ref[fp + FrameLayout.MonitorOffset];
+              $.ctx.monitorExit(monitor);
+            }
             opPC = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - maxLocals;
             fp = i32[fp + FrameLayout.CallerFPOffset];
             mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
-            monitor = ref[fp + FrameLayout.MonitorOffset];
             if (mi === null) {
               thread.set(fp, sp, opPC);
               thread.popFrame(null);
               // REDUX: What do we do about the return value here?
               return;
-            }
-            if (mi.isSynchronized && monitor) {
-              $.ctx.monitorExit(monitor);
             }
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;

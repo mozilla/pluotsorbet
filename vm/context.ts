@@ -630,6 +630,10 @@ module J2ME {
       if (--lock.level > 0) {
         return;
       }
+
+      if (lock.level < 0) {
+        throw $.newIllegalMonitorStateException("Unbalanced monitor enter/exit.");
+      }
       this.unblock(object, "ready", false);
     }
 
