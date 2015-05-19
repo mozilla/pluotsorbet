@@ -1400,7 +1400,7 @@ module J2ME {
           case Bytecodes.GETFIELD:
           case Bytecodes.GETSTATIC:
             index = code[pc++] << 8 | code[pc++];
-            fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
+            fieldInfo = cp.resolved[index] || cp.resolveField(index, op === Bytecodes.GETSTATIC);
             if (op === Bytecodes.GETSTATIC) {
               thread.classInitAndUnwindCheck(fp, sp, opPC, fieldInfo.classInfo);
               if (U) {
@@ -1435,7 +1435,7 @@ module J2ME {
           case Bytecodes.PUTFIELD:
           case Bytecodes.PUTSTATIC:
             index = code[pc++] << 8 | code[pc++];
-            fieldInfo = cp.resolved[index] || cp.resolveField(index, false);
+            fieldInfo = cp.resolved[index] || cp.resolveField(index, op === Bytecodes.PUTSTATIC);
             isStatic = op === Bytecodes.PUTSTATIC;
             if (isStatic) {
               thread.classInitAndUnwindCheck(fp, sp, opPC, fieldInfo.classInfo);
@@ -1750,7 +1750,7 @@ module J2ME {
             }
 
             // Call Interpreted Method.
-            release || traceWriter && traceWriter.writeLn(">> I " + calleeMethodInfo.implKey);
+            release || traceWriter && traceWriter.writeLn(">> I " + calleeTargetMethodInfo.implKey);
             mi = calleeTargetMethodInfo;
             maxLocals = mi.codeAttribute.max_locals;
             ci = mi.classInfo;
