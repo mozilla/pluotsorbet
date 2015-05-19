@@ -199,6 +199,9 @@ function stopAndSaveTimeline() {
       writer.writeLn("Timeline Statistics: " + i);
       snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
     }
+    // Trace Aggregate Statistics
+    writer.writeLn("Timeline Aggregate Statistics:");
+    new Shumway.Tools.Profiler.TimelineBufferSnapshotSet(snapshots).traceStatistics(writer, 1);
     // Trace Events
     for (var i = 0; i < snapshots.length; i++) {
       writer.writeLn("Timeline Events: " + i);
