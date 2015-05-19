@@ -194,14 +194,14 @@ function stopAndSaveTimeline() {
     for (var i = 0; i < buffers.length; i++) {
       snapshots.push(buffers[i].createSnapshot());
     }
-    // Trace Statistcs
+    // Trace Statistics
     for (var i = 0; i < snapshots.length; i++) {
-      writer.writeLn("Timeline Statistics: " + i);
+      writer.writeLn("Timeline Statistics: " + snapshots[i].name);
       snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
     }
     // Trace Events
     for (var i = 0; i < snapshots.length; i++) {
-      writer.writeLn("Timeline Events: " + i);
+      writer.writeLn("Timeline Events: " + snapshots[i].name);
       snapshots[i].trace(writer, 0.1); // Don't trace anything below 0.1 ms.
     }
   });
