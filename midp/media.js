@@ -1084,9 +1084,9 @@ Native["com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z"] = function
     return 1;
 };
 
-Native["com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V"] = function(handle, contentSize) {
+Native["com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V"] = function(handle, contentSizeLow, contentSizeHigh) {
     var player = Media.PlayerCache[handle];
-    player.wholeContentSize = contentSize.toNumber();
+    player.wholeContentSize = J2ME.longToNumber(contentSizeLow, contentSizeHigh);
 };
 
 Native["com/sun/mmedia/DirectPlayer.nIsToneControlSupported.(I)Z"] = function(handle) {
