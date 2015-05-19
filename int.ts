@@ -1789,7 +1789,7 @@ module J2ME {
               $.ctx.monitorEnter(monitor);
               release || assert(U !== VMState.Yielding, "Monitors should never yield.");
               if (U === VMState.Pausing || U === VMState.Stopping) {
-                frame.set(fp, sp, opPC);
+                thread.set(fp, sp, opPC);
                 return;
               }
             }
