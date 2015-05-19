@@ -346,8 +346,7 @@ casper.test.begin("unit tests", 28 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("PAINTED", function() {
           casper.waitForSelector("#canvas", function() {
-            var elemInfo = this.getElementInfo("#canvas");
-            this.mouse.click(elemInfo.x, elemInfo.y);
+            this.click("#canvas");
           });
 
           casper.waitForText("DONE", function() {
