@@ -177,7 +177,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 26 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 24 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -303,31 +303,15 @@ casper.test.begin("unit tests", 26 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/background1.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.ForegroundMIDlet&jad=tests/midlets/background/background.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
-        casper.waitForText("Hello World from foreground MIDlet", function() {
-            test.pass("First background test");
+        casper.waitForText("Hello World from background MIDlet", function() {
+            test.pass("Background test");
         });
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet2&jad=tests/midlets/background/background2.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
-    .withFrame(0, function() {
-        casper.waitForText("Hello World from foreground MIDlet", function() {
-            test.pass("Second background test");
-        });
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet3&jad=tests/midlets/background/background3.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
-    .withFrame(0, function() {
-        casper.waitForText("Hello World from foreground MIDlet", function() {
-            test.assertTextExists("prop1=hello prop2=ciao");
-        });
-    });
-
-    casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundExit.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log", function() {
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.ForegroundExitMIDlet&jad=tests/midlets/background/foregroundExit.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log", function() {
       casper.evaluate(function() {
         window.close = function() {
           document.title = "window.close called";

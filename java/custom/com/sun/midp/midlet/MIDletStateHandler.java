@@ -360,6 +360,10 @@ public class MIDletStateHandler {
         return midletSuite;
     }
 
+    private native boolean hasBGMIDlet();
+    private native int getBGMIDletAppId();
+    private native String getBGMIDletClassName();
+
     /**
      * Runs MIDlets until there are none.
      * Handle any pending state transitions of any MIDlet.
@@ -382,6 +386,8 @@ public class MIDletStateHandler {
            throws ClassNotFoundException, InstantiationException,
            IllegalAccessException {
 
+        System.out.println("startSuite " + classname);
+
         if (midletSuite != null) {
             throw new RuntimeException(
                  "There is already a MIDlet Suite running.");
@@ -389,7 +395,16 @@ public class MIDletStateHandler {
         }
 
         midletSuite = aMidletSuite;
+
         createAndRegisterMIDlet(externalAppId, classname);
+
+        if (hasBGMIDlet()) {
+            System.out.println("loading BG MIDlet");
+            System.out.println("\tappId=" + getBGMIDletAppId());
+            System.out.println("\tclass name=" + getBGMIDletClassName());
+            createAndRegisterMIDlet(getBGMIDletAppId(), getBGMIDletClassName());
+            System.out.println("done loading BG MIDlet");
+        }
 
         /*
          * Until there are no MIDlets
@@ -478,7 +493,9 @@ public class MIDletStateHandler {
                         listener.preActivated(getMIDletSuite(),
                             curr.getMIDlet().getClass().getName());
                        
+                        System.out.println("calling startApp");
                         curr.startApp();
+                        System.out.println("returned from startApp");
                     } catch (Throwable ex) {
                         if (Logging.TRACE_ENABLED) {
                             Logging.trace(ex, "startApp threw an Exception");
@@ -492,13 +509,17 @@ public class MIDletStateHandler {
                      * The actual state of the MIDlet is already active.
                      * But any notifications done after startApp call.
                      */
+                    System.out.println("notifying listeners of startApp");
                     listener.midletActivated(getMIDletSuite(),
                         curr.getMIDlet());
+                    System.out.println("done notifying listeners of startApp");
                     break;
 
                 case MIDletPeer.PAUSE_PENDING:
                     try {
+                        System.out.println("calling pauseApp");
                         curr.pauseApp();
+                        System.out.println("returned from pauseApp");
                     } catch (Throwable ex) {
                         if (Logging.TRACE_ENABLED) {
                             Logging.trace(ex, "pauseApp threw an Exception");
@@ -513,8 +534,10 @@ public class MIDletStateHandler {
                      * The actual state of the MIDlet is already paused.
                      * But any notifications done after pauseApp() call.
                      */
+                    System.out.println("notifying listeners of pauseApp");
                     listener.midletPaused(getMIDletSuite(),
                         curr.getMIDlet().getClass().getName());
+                    System.out.println("done notifying listeners of pauseApp");
 
                     break;
 
@@ -523,7 +546,9 @@ public class MIDletStateHandler {
                     // call its destroyApp method to clean it up.
                     try {
                         // Tell the MIDlet to cleanup.
+                        System.out.println("calling destroyApp");
                         curr.destroyApp(true);
+                        System.out.println("returned from destroyApp");
                     } catch (MIDletStateChangeException ex) {
                         if (Logging.REPORT_LEVEL <= Logging.WARNING) {
                             Logging.report(Logging.WARNING,
@@ -541,9 +566,11 @@ public class MIDletStateHandler {
                     break;
 
                 case MIDletPeer.DESTROYED:
+                    System.out.println("notifying listeners of destroyApp");
                     listener.midletDestroyed(getMIDletSuite(),
                         curr.getMIDlet().getClass().getName(),
                         curr.getMIDlet());
+                    System.out.println("done notifying listeners of destroyApp");
                     break;
                 }
             } catch (Throwable ex) {

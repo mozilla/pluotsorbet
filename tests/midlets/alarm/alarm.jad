@@ -15,7 +15,6 @@ MIDlet-Vendor: Mozilla
 Nokia-MIDlet-bg-memory-size: 350
 Nokia-MIDlet-Background-Exit-Confirm-en: DO NOT EXIT!
 Nokia-MIDlet-Save-Location: Root
-Nokia-MIDlet-bg-server: 2
 MIDlet-Name: AlarmMIDlet
 Nokia-MIDlet-Dual-SIM-Compliant: true
 MIDlet-Version: 2.12.25

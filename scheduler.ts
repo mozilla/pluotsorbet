@@ -56,6 +56,10 @@ module J2ME {
    * @type {Array}
    */
   var runningQueue: Context [] = [];
+  var frozenQueue: Context [] = [];
+
+  var excludedIsolates: number [] = [];
+  var isFrozen: boolean = false;
 
   /**
    * The smallest virtual runtime of all the currently executing threads. This number is
@@ -89,17 +93,68 @@ module J2ME {
    * MAX_WINDOW_EXECUTION_TIME/PREEMPTION_INTERVAL threads per execution window.
    */
   export class Scheduler {
+    static excludeFromFreezing(isolateId: number) {
+      excludedIsolates.push(isolateId);
+    }
+
+    static freezeFGThreads() {
+      isFrozen = true;
+      frozenQueue = runningQueue.filter(function(ctx) {
+        for (var i = 0; i < excludedIsolates.length; i++) {
+          if (ctx.runtime.isolate.id === excludedIsolates[i]) {
+            return false;
+          }
+        }
+        return true;
+      });
+      runningQueue = runningQueue.filter(function(ctx) {
+        for (var i = 0; i < excludedIsolates.length; i++) {
+          if (ctx.runtime.isolate.id === excludedIsolates[i]) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
+
+    static unfreezeFGThreads() {
+      isFrozen = false;
+      while (frozenQueue.length > 0) {
+        runningQueue.unshift(frozenQueue.shift());
+      }
+
+      runningQueue.sort(function(a: Context, b: Context) {
+        return a.virtualRuntime - b.virtualRuntime;
+      });
+
+      Scheduler.processRunningQueue(true);
+    }
 
     static enqueue(ctx: Context, directExecution?: boolean) {
       if (ctx.virtualRuntime === 0) {
         // Ensure the new thread doesn't dominate.
         ctx.virtualRuntime = minVirtualRuntime;
       }
-      runningQueue.unshift(ctx);
-      runningQueue.sort(function(a: Context, b: Context) {
-        return a.virtualRuntime - b.virtualRuntime;
-      });
-      Scheduler.updateMinVirtualRuntime();
+
+      var isExcluded = false;
+      if (isFrozen) {
+        for (var i = 0; i < excludedIsolates.length; i++) {
+          if (ctx.runtime.isolate.id === excludedIsolates[i]) {
+            isExcluded = true;
+            break;
+          }
+        }
+      }
+
+      if (isFrozen && !isExcluded) {
+        frozenQueue.unshift(ctx);
+      } else {
+        runningQueue.unshift(ctx);
+        runningQueue.sort(function(a: Context, b: Context) {
+          return a.virtualRuntime - b.virtualRuntime;
+        });
+        Scheduler.updateMinVirtualRuntime();
+      }
       Scheduler.processRunningQueue(directExecution);
     }
 

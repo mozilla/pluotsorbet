@@ -3,21 +3,25 @@ package tests.background;
 import java.io.IOException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.io.Connector;
-import com.nokia.mid.s40.io.LocalMessageProtocolServerConnection;
+import com.nokia.mid.s40.bg.BGUtils;
+import com.nokia.mid.s40.io.LocalMessageProtocolConnection;
 
-public class ForegroundMIDlet extends MIDlet {
-    public ForegroundMIDlet() {
+public class BackgroundMIDlet extends MIDlet {
+    public BackgroundMIDlet() {
     }
 
     public void startApp() {
         try {
-            LocalMessageProtocolServerConnection server = (LocalMessageProtocolServerConnection)Connector.open("localmsg://:mozilla");
+            LocalMessageProtocolConnection client = (LocalMessageProtocolConnection)Connector.open("localmsg://mozilla");
         } catch (IOException e) {
             System.out.println("Unexpected exception: " + e);
             e.printStackTrace();
+            return;
         }
 
-        System.out.println("Hello World from foreground MIDlet");
+        BGUtils.setBGMIDletResident(true);
+
+        System.out.println("Hello World from background MIDlet");
     }
 
     public void pauseApp() {

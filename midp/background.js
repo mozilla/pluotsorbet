@@ -3,9 +3,6 @@
 
 'use strict';
 
-var fgMidletNumber;
-var fgMidletClass;
-
 var display = document.getElementById("display");
 
 // The splash and download screens generate many style recalculations while
@@ -50,81 +47,61 @@ function showExitScreen() {
   document.getElementById("exit-screen").style.display = "block";
 }
 
+var bgMidletClass = null;
+var bgMidletNumber = 0;
 function backgroundCheck() {
-  var bgServer = MIDP.manifest["Nokia-MIDlet-bg-server"];
-  if (!bgServer) {
+  var str = MIDP.manifest["Nokia-MIDlet-bg-server"];
+  if (!str) {
     showSplashScreen();
     hideBackgroundScreen();
     return;
   }
 
-  // We're assuming there are only two midlets
-  fgMidletNumber = (bgServer == 2) ? 1 : 2;
-  fgMidletClass = MIDP.manifest["MIDlet-" + fgMidletNumber].split(",")[2];
+  bgMidletNumber = parseInt(str);
+  bgMidletClass = MIDP.manifest["MIDlet-" + str].split(",")[2];
 
   DumbPipe.close(DumbPipe.open("backgroundCheck", {}));
 }
 
-Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function() {
-  return J2ME.newString(fgMidletClass);
-};
+Native["com/sun/midp/midlet/MIDletStateHandler.hasBGMIDlet.()Z"] = function() {
+    return (bgMidletNumber ? 1 : 0);
+}
 
-Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
-  return fgMidletNumber;
-};
+Native["com/sun/midp/midlet/MIDletStateHandler.getBGMIDletAppId.()I"] = function() {
+    return bgMidletNumber;
+}
+
+Native["com/sun/midp/midlet/MIDletStateHandler.getBGMIDletClassName.()Ljava/lang/String;"] = function() {
+    return J2ME.newString(bgMidletClass);
+}
 
 MIDP.additionalProperties = {};
 
-Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] = function(midletSuiteVendor, midletName, midletNumber, startupNoteText, args) {
-  J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
-    var elems = arg.split("=");
-    MIDP.additionalProperties[elems[0]] = elems[1];
-  });
-
-  return 1;
+Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"] = function(args) {
+   console.log("addSystemProperties: " + args);
+   J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
+     var elems = arg.split("=");
+     MIDP.additionalProperties[elems[0]] = elems[1];
+   });
 };
 
-Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V"] = function(midletClassName) {
-  if (J2ME.fromJavaString(midletClassName) !== fgMidletClass) {
-    return;
+document.addEventListener("visibilitychange", function() {
+  visibilityChange(document.hidden);
+});
+
+function visibilityChange(hidden) {
+  console.log("visibility change: " + (hidden ? "hidden" : "visible"));
+  if (hidden) {
+    MIDP.sendPauseAllEvent();
+  } else {
+    MIDP.sendActivateAllEvent();
   }
-
-  // If the page is visible, just start the FG MIDlet
-  if (!document.hidden) {
-    showSplashScreen();
-    hideBackgroundScreen();
-
-    if (profile === 3) {
-      // Start the "warm startup" profiler after a timeout to better imitate
-      // what happens in a warm startup, where the bg midlet has time to settle.
-      asyncImpl("V", new Promise(function(resolve, reject) {
-        setTimeout(function() {
-          startTimeline();
-          resolve();
-        }, 5000);
-      }));
-    }
-
-    return;
-  }
-
-  asyncImpl("V", new Promise(function(resolve, reject) {
-    // Otherwise, wait until the page becomes visible, then start the FG MIDlet
-    document.addEventListener("visibilitychange", function onVisible() {
-      if (!document.hidden) {
-        document.removeEventListener("visibilitychange", onVisible, false);
-        resolve();
-      }
-    }, false);
-  }).then(function() {
-    showSplashScreen();
-    hideBackgroundScreen();
-    profile === 3 && startTimeline();
-  }));
-};
+}
 
 // If the document is hidden, then we've been started by an alarm and are in
 // the background, so we show the background screen.
 if (document.hidden) {
   showBackgroundScreen();
+  console.log("Launched in background");
+  MIDP.sendPauseAllEvent();
 }

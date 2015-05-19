@@ -5,15 +5,32 @@ import com.sun.midp.main.AmsUtil;
 import com.sun.midp.midletsuite.MIDletSuiteStorage;
 
 public class BGUtils {
-    private static native int getFGMIDletNumber();
-    private static native String getFGMIDletClass();
-    public static native void maybeWaitUserInteraction(String midletClassName);
+    private static native void addSystemProperties(String args);
 
-    public static void setBGMIDletResident(boolean param) {
-        AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, BGUtils.getFGMIDletNumber(),
-                                BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, Isolate.MAX_PRIORITY,
-                                null, false);
+    public static native void setBGMIDletResident(boolean param);
+
+    public static boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args) {
+      System.out.println("launchIEMIDlet(" + midletNumber + ", " + midletName + ", " + args + ")");
+      try {
+          BGUtils.addSystemProperties(args);
+          AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(),
+                                  0, // external app id
+                                  midletNumber, // suite id
+                                  midletName, // class name
+                                  null, // display name
+                                  null, // arg0
+                                  null, // arg1
+                                  null, // arg2
+                                  -1, // memoryReserved
+                                  -1, // memoryTotal
+                                  Isolate.MAX_PRIORITY,
+                                  null, // profile name
+                                  false); // `true` for debug mode
+        } catch (Exception e) {
+            System.out.println("Unexpected exception: " + e);
+            e.printStackTrace();
+        }
+
+        return true;
     }
-
-    public static native boolean launchIEMIDlet(String midletSuiteVendor, String midletName, int midletNumber, String startupNoteText, String args);
 }
