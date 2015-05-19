@@ -1260,6 +1260,14 @@ module J2ME {
               setter = new Function("value", "f32[this._address + " + field.byteOffset + " >> 2] = value;");
               getter = new Function("return f32[this._address + " + field.byteOffset + " >> 2];");
               break;
+            case Kind.Long:
+              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value); i32[this._address + 4 + " + field.byteOffset + " >> 2] = tempReturn0;");
+              getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2], i32[this._address + 4 + " + field.byteOffset + " >> 2]);");
+              break;
+            case Kind.Double:
+              setter = new Function("value", "aliasedF64[0] = value; i32[this._address + " + field.byteOffset + " >> 2] = aliasedI32[0]; i32[this._address + 4 + " + field.byteOffset + " >> 2] = aliasedI32[1];");
+              getter = new Function("aliasedI32[0] = i32[this._address + " + field.byteOffset + " >> 2];  aliasedI32[1] = i32[this._address + 4 + " + field.byteOffset + " >> 2]; return aliasedF64[0];");
+              break;
             default:
               Debug.assert(false, Kind[field.kind]);
               break;

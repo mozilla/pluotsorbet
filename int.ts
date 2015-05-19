@@ -58,6 +58,13 @@ module J2ME {
     return h * Constants.TWO_PWR_32_DBL + ((l >= 0) ? l : Constants.TWO_PWR_32_DBL + l);
   }
 
+  export function numberToLong(v: number): number {
+    // TODO Extract logic from Long so we don't allocate here.
+    var long = Long.fromNumber(v);
+    tempReturn0 = long.high_;
+    return long.low_;
+  }
+
   function wordsToDouble(l: number, h: number): number {
     aliasedI32[0] = l;
     aliasedI32[1] = h;
