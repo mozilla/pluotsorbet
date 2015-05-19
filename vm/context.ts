@@ -345,43 +345,20 @@ module J2ME {
       isolate.runtime = runtime;
       runtime.isolate = isolate;
 
+      var sys = CLASSES.getClass("org/mozilla/internal/Sys");
+
       runtime.updateStatus(RuntimeStatus.Started);
       runtime.priority = isolate._priority;
 
-      var mainClass = J2ME.fromJavaString(isolate._mainClass).replace(/\./g, "/");
-      var mainArgs = isolate._mainArgs;
-      var classInfo = CLASSES.getClass(mainClass);
-      linkKlass(classInfo);
-      if (!classInfo)
-        throw new Error("Could not find or load main class " + mainClass);
-
-      var entryPoint = CLASSES.getEntryPoint(classInfo);
+      var entryPoint = sys.getMethodByNameString("isolateEntryPoint", "(Lcom/sun/cldc/isolate/Isolate;)V");
       if (!entryPoint)
-        throw new Error("Could not find main method in class " + mainClass);
-
-      var args = J2ME.newStringArray(mainArgs.length);
-      for (var n = 0; n < mainArgs.length; ++n) {
-        args[n] = mainArgs[n];
-      }
+        throw new Error("Could not find isolate entry point.");
 
       ctx.nativeThread.pushFrame(null);
       ctx.nativeThread.pushFrame(entryPoint);
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, args);
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
       ctx.start();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
-
-      // Debug.assert(false, "REDUX");
-      //var frames = [Frame.create(entryPoint, [ args ])];
-      //
-      //var clinit = classInfo.staticInitializer;
-      //if (clinit) {
-      //  frames.push(Frame.create(clinit, []));
-      //}
-      //
-      //frames.push(Frame.create(CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V"),
-      //                         [ runtime.mainThread, J2ME.newString("main") ]));
-      //
-      //ctx.start(frames);
     }
 
   }

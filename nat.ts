@@ -122,4 +122,20 @@ module J2ME {
   Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function() {
     return unwindCount;
   };
+
+  Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function() {
+    var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
+    getLinkedMethod(methodInfo).call($.mainThread, J2ME.newString("main"));
+  };
+
+  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): java.lang.String {
+    return $.isolate._mainClass;
+  };
+
+  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(main: java.lang.Class) {
+    var entryPoint = CLASSES.getEntryPoint(main.runtimeKlass.templateKlass.classInfo);
+    if (!entryPoint)
+      throw new Error("Could not find isolate main.");
+    getLinkedMethod(entryPoint).call(null, $.isolate._mainArgs);
+  };
 }

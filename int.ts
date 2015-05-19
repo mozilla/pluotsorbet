@@ -339,7 +339,7 @@ module J2ME {
       var maxLocals = mi ? mi.codeAttribute.max_locals : 0;
       this.sp = this.fp - maxLocals;
       this.fp = i32[this.fp + FrameLayout.CallerFPOffset];
-      return ref[this.fp + FrameLayout.CalleeMethodInfoOffset]
+      return ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
     }
 
     run() {
@@ -393,10 +393,12 @@ module J2ME {
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
     var method = function fastInterpreterFrameAdapter() {
       var thread = $.ctx.nativeThread;
-      var fp = thread.fp;
+      var callerFP = thread.fp;
+      var callerPC = thread.pc;
       // release || traceWriter && traceWriter.writeLn(">> I");
       thread.pushFrame(null);
       thread.pushFrame(methodInfo);
+      var calleeFP = thread.fp;
       var frame = thread.frame;
       var kinds = methodInfo.signatureKinds;
       var index = 0;
@@ -418,7 +420,14 @@ module J2ME {
         }
       }
       var v = interpret(thread);
-      release || assert(fp === thread.fp);
+      if (U) {
+        release || assert(v === undefined, "Return value must be undefined.");
+        // Splice out the marker frame so the interpreter doesn't return early when execution is resumed.
+        i32[calleeFP + FrameLayout.CallerFPOffset] = callerFP;
+        i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
+        return;
+      }
+      release || assert(callerFP === thread.fp);
       // release || traceWriter && traceWriter.writeLn("<< I");
       return v;
     };

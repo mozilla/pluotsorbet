@@ -30,6 +30,7 @@ import java.io.*;
 import com.sun.cldchi.io.*;
 import java.security.*;
 import java.util.PropertyPermission;
+import com.sun.cldc.isolate.Isolate;
 
 /**
  * The <code>Sys</code> class contains several useful privileged functions.
@@ -94,7 +95,20 @@ public final class Sys {
   }
 
   public static void isolate0Entry(String name, String args[]) throws com.sun.cldc.isolate.IsolateStartupException {
-    com.sun.cldc.isolate.Isolate isolate = new com.sun.cldc.isolate.Isolate(name, args);
+    Isolate isolate = new com.sun.cldc.isolate.Isolate(name, args);
     isolate.start();
+  }
+
+  private native static void constructCurrentThread();
+  private native static String getIsolateMain();
+  private native static void executeMain(Class main);
+
+  public static void isolateEntryPoint(Isolate isolate) throws ClassNotFoundException {
+    // Run thread initializer.
+    constructCurrentThread();
+    // Get the main class.
+    Class main = Class.forName(getIsolateMain());
+    // Execute main.
+    executeMain(main);
   }
 }
