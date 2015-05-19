@@ -200,7 +200,7 @@ function stopAndSaveTimeline() {
       snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
     }
     // Trace Aggregate Method Statistics
-    writer.writeLn("Aggregate Method Timeline Statistics:");
+    writer.writeLn("Timeline Statistics: All Threads");
     var methodSnapshots = snapshots.slice(2);
     new Shumway.Tools.Profiler.TimelineBufferSnapshotSet(methodSnapshots).traceStatistics(writer, 1);
     // Trace Events
