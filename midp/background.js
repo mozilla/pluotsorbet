@@ -75,11 +75,53 @@ Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
 
 MIDP.additionalProperties = {};
 
+Native["com/nokia/mid/s40/bg/BGUtils.setBGMIDletResident.(Z)V"] = function(param) {
+  MIDP.sendExecuteMIDletEvent(fgMidletNumber, // externalAppId
+                              1, // suiteId
+                              fgMidletClass, // className
+                              null, // displayName
+                              null, // arg0
+                              null, // arg1
+                              null, // arg2
+                              -1, // memoryReserved
+                              -1, // memoryTotal
+                              1, // priority TODO: Set this appropriately
+                              null); // profile
+};
+
 Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] = function(midletSuiteVendor, midletName, midletNumber, startupNoteText, args) {
+  var vendor = J2ME.fromJavaString(midletSuiteVendor);
+  if (vendor !== MIDP.manifest["MIDlet-Vendor"]) {
+    console.warn("Launching MIDlets from other suites is not supported! (vendor mismatch)");
+    return 0;
+  }
+
+  var name = J2ME.fromJavaString(midletName);
+  if (name !== MIDP.manifest["MIDlet-Name"]) {
+    console.warn("Launching MIDlets from other suites is not supported! (name mismatch)");
+    return 0;
+  }
+
+  // Set up args
+  MIDP.additionalProperties = {};
   J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
     var elems = arg.split("=");
     MIDP.additionalProperties[elems[0]] = elems[1];
   });
+
+  var className = MIDP.manifest["MIDlet-" + midletNumber].split(",")[2];
+
+  MIDP.sendExecuteMIDletEvent(midletNumber, // externalAppId
+                              1, // suiteId
+                              className, // className
+                              null, // displayName
+                              null, // arg0
+                              null, // arg1
+                              null, // arg2
+                              -1, // memoryReserved
+                              -1, // memoryTotal
+                              1, // priority TODO: Set this appropriately
+                              null); // profile
 
   return 1;
 };

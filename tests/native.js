@@ -237,12 +237,23 @@ Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function() {
 
 Native["tests/background/DestroyMIDlet.sendDestroyMIDletEvent.()V"] = function() {
   MIDP.setDestroyedForRestart(true);
-  MIDP.sendDestroyMIDletEvent(J2ME.newString("tests.background.DestroyMIDlet"));
+  MIDP.sendDestroyMIDletEvent(1, "tests.background.DestroyMIDlet");
 };
 
 Native["tests/background/DestroyMIDlet.sendExecuteMIDletEvent.()V"] = function() {
   setTimeout(function() {
-    MIDP.sendExecuteMIDletEvent();
+    MIDP.sendExecuteMIDletEvent(
+        1, // external app id
+        1, // suiteId
+        "tests.background.DestroyMIDlet", // class name
+        null, // display name
+        null, // arg0
+        null, // arg1
+        null, // arg2
+        -1, // memory reserved
+        -1, // memory total
+        1, // priority
+        null); // profile
   }, 0);
 };
 

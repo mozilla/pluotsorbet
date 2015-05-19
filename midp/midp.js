@@ -830,17 +830,29 @@ var MIDP = (function() {
     }, false);
   }
 
-  function sendExecuteMIDletEvent() {
+  function sendExecuteMIDletEvent(externalAppId, suiteId, className, displayName, arg0, arg1, arg2, memoryReserved, memoryTotal, priority, profile) {
     AMS.sendNativeEventToAMSIsolate({
       type: NATIVE_MIDLET_EXECUTE_REQUEST,
+      intParam1: externalAppId,
+      intParam2: suiteId,
+      stringParam1: J2ME.newString(className),
+      stringParam2: J2ME.newString(displayName),
+      stringParam3: J2ME.newString(arg0),
+      stringParam4: J2ME.newString(arg1),
+      stringParam5: J2ME.newString(arg2),
+      intParam3: memoryReserved,
+      intParam4: memoryTotal,
+      intParam5: priority,
+      stringParam6: J2ME.newString(profile),
     });
   }
 
-  function sendDestroyMIDletEvent(midletClassName) {
-    FG.sendNativeEventToForeground({
-      type: DESTROY_MIDLET_EVENT,
-      stringParam1: midletClassName,
-    }, false);
+  function sendDestroyMIDletEvent(suiteId, midletClassName) {
+    AMS.sendNativeEventToAMSIsolate({
+      type: NATIVE_MIDLET_DESTROY_REQUEST,
+      intParam1: suiteId,
+      stringParam1: J2ME.newString(midletClassName),
+    });
   }
 
   var KEY_EVENT = 1;
@@ -850,7 +862,7 @@ var MIDP = (function() {
   var DRAGGED = 3;
   var COMMAND_EVENT = 3;
   var NATIVE_MIDLET_EXECUTE_REQUEST = 36;
-  var DESTROY_MIDLET_EVENT = 14;
+  var NATIVE_MIDLET_DESTROY_REQUEST = 39;
   var EVENT_QUEUE_SHUTDOWN = 31;
   var ROTATION_EVENT = 43;
   var MMAPI_EVENT = 45;
