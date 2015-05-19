@@ -167,10 +167,34 @@ try {
   if (profileTimeline) {
     load("bld/shumway.js");
   }
-  load("polyfill/promise.js", "libs/relooper.js", "libs/native.js", "bld/j2me.js","libs/zipfile.js", "blackBox.js",
-    "libs/encoding.js", "util.js", "libs/jarstore.js",
-    "native.js", "midp/midp.js",
-    "libs/long.js", "midp/crypto.js", "libs/forge/md5.js", "libs/forge/util.js"
+  load("polyfill/promise.js", "libs/relooper.js", "libs/native.js", "bld/j2me.js",
+    "libs/zipfile.js",
+    "blackBox.js",
+    "libs/encoding.js",
+    "util.js",
+    "libs/jarstore.js",
+    "libs/long.js",
+    "native.js",
+    "midp/midp.js",
+    "midp/frameanimator.js",
+    "midp/fs.js",
+    "midp/crypto.js",
+    // "midp/gfx.js",
+    "midp/text_editor.js",
+    //"midp/localmsg.js",
+    //"midp/socket.js",
+    //"midp/sms.js",
+    //"midp/codec.js",
+    //"midp/pim.js",
+    "midp/device_control.js",
+    //"midp/background.js",
+    //"midp/media.js",
+
+    "midp/crypto.js",
+    "libs/forge/util.js",
+    "libs/forge/md5.js",
+    "libs/jsbn/jsbn.js",
+    "libs/jsbn/jsbn2.js"
     // "bld/classes.jar.js"
   );
 
