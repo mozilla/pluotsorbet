@@ -236,7 +236,7 @@ Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function() {
 };
 
 Native["tests/background/DestroyMIDlet.sendDestroyMIDletEvent.(Ljava/lang/String;)V"] = function(midletClassName) {
-  MIDP.setDestroyedForRestart();
+  MIDP.setDestroyedForRestart(true);
   MIDP.sendDestroyMIDletEvent(midletClassName);
 };
 

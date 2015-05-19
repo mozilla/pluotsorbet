@@ -687,8 +687,8 @@ var MIDP = (function() {
   // In some cases instead we want to kill the FG MIDlet only
   // to restart it.
   var destroyedForRestart = false;
-  function setDestroyedForRestart() {
-    destroyedForRestart = true;
+  function setDestroyedForRestart(val) {
+    destroyedForRestart = val;
   }
 
   var pendingMIDletUpdate = null;
