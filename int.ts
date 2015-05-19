@@ -1486,6 +1486,7 @@ module J2ME {
             classInfo = resolveClass(index, mi.classInfo);
             object = ref[sp - 1];
             if (object && !isAssignableTo(object.klass, classInfo.klass)) {
+              thread.set(fp, sp, opPC);
               throw $.newClassCastException (
                 object.klass.classInfo.getClassNameSlow() + " is not assignable to " +
                 classInfo.getClassNameSlow()

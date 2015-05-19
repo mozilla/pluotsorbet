@@ -187,6 +187,9 @@ public class ShellTestlets {
     "com/sun/midp/events/TestNativeEventPool",
     "com/nokia/mid/ui/frameanimator/TestFrameAnimator",
     "java/lang/TestStringIntern",
+    "test/org/jikesrvm/basic/core/bytecode/TestResolveOnCheckcast",
+    "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInstanceof",
+    "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInvokeInterface",
     null
   };
 
@@ -248,9 +251,6 @@ public class ShellTestlets {
 //  "org/mozilla/io/TestNokiaPhoneStatusServer",
 //  "org/mozilla/io/TestNokiaProductInfoServer",
 //  "org/mozilla/io/TestNokiaSASrvRegServer",
-//  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnCheckcast",
-//  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInstanceof",
-//  "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInvokeInterface",
 
 //  "gnu/testlet/java/lang/Thread/isAlive",
 //  "gnu/testlet/java/lang/Thread/join",
