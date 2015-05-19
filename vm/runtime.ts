@@ -1337,7 +1337,7 @@ module J2ME {
             r = fn.apply(this, arguments);
         }
         if (U) {
-          assert(ctx.paused, "context is paused");
+          release || assert(ctx.paused, "context is paused");
 
           if (methodInfo.isNative) {
             // A fake frame that just returns is pushed so when the ctx resumes from the unwind
