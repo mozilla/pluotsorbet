@@ -31,7 +31,7 @@ public class ShellTestlets {
     "gnu/testlet/vm/MathTest",
     "gnu/testlet/vm/OpsTest",
     "gnu/testlet/vm/StringBufferTest",
-    // "gnu/testlet/vm/StringTest",
+    "gnu/testlet/vm/StringTest",
     "gnu/testlet/vm/TestArithmetic",
     "test/org/jikesrvm/basic/core/bytecode/TestArrayAccess",
     "test/org/jikesrvm/basic/core/bytecode/TestCompare",
