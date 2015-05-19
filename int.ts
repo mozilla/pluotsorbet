@@ -54,7 +54,7 @@ module J2ME {
   /**
    * The closest floating-point representation to this long value.
    */
-  function longToNumber(l: number, h: number): number {
+  export function longToNumber(l: number, h: number): number {
     return h * Constants.TWO_PWR_32_DBL + ((l >= 0) ? l : Constants.TWO_PWR_32_DBL + l);
   }
 
@@ -375,6 +375,9 @@ module J2ME {
           this.sp = this.fp + FrameLayout.CallerSaveSize;
           ref[this.sp++] = e;
           return;
+        }
+        if (mi.isSynchronized) {
+          this.ctx.monitorExit(ref[this.fp + FrameLayout.MonitorOffset]);
         }
         mi = this.popFrame(mi);
         release || traceWriter && traceWriter.outdent();

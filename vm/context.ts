@@ -513,7 +513,15 @@ module J2ME {
 
     execute() {
       this.setAsCurrentContext();
-      this.nativeThread.run();
+      try {
+        this.nativeThread.run();
+      } catch (e) {
+        // The exception was never caught and the thread must be terminated.
+        this.kill();
+        this.clearCurrentContext();
+        // Rethrow so the exception is not silent.
+        throw e;
+      }
       if (U) {
         //if (this.bailoutFrames.length) {
         //  Array.prototype.push.apply(this.frames, this.bailoutFrames);
@@ -534,30 +542,6 @@ module J2ME {
         this.clearCurrentContext();
         return;
       }
-    //  do {
-    //    VM.execute();
-    //    if (U) {
-    //      if (this.bailoutFrames.length) {
-    //        Array.prototype.push.apply(this.frames, this.bailoutFrames);
-    //        this.bailoutFrames = [];
-    //      }
-    //      var frames = this.frames;
-    //      switch (U) {
-    //        case VMState.Yielding:
-    //          this.resume();
-    //          break;
-    //        case VMState.Pausing:
-    //          break;
-    //        case VMState.Stopping:
-    //          this.clearCurrentContext();
-    //          this.kill();
-    //          return;
-    //      }
-    //      U = VMState.Running;
-    //      this.clearCurrentContext();
-    //      return;
-    //    }
-    //  } while (this.current() !== Frame.Start);
       this.clearCurrentContext();
       this.kill();
     }

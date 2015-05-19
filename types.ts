@@ -67,7 +67,7 @@ module J2ME {
   }
 
   export function kindCharacterToKind(kindCharacter: string): Kind {
-    switch (kindCharacter) {
+    switch (kindCharacter[0]) {
       case 'Z': return Kind.Boolean;
       case 'B': return Kind.Byte;
       case 'S': return Kind.Short;
@@ -77,6 +77,7 @@ module J2ME {
       case 'J': return Kind.Long;
       case 'D': return Kind.Double;
       case 'V': return Kind.Void;
+      case 'L': return Kind.Reference;
       default: throw Debug.unexpected("Unknown kind character: " + kindCharacter);
     }
   }

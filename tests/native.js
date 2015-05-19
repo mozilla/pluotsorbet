@@ -5,16 +5,16 @@ Native["gnu/testlet/vm/NativeTest.getInt.()I"] = function() {
   return ~~(0xFFFFFFFF);
 };
 
-Native["gnu/testlet/vm/NativeTest.getLongReturnLong.(J)J"] = function(val) {
-  return Long.fromNumber(40 + val.toNumber());
+Native["gnu/testlet/vm/NativeTest.getLongReturnLong.(J)J"] = function(valLow, valHigh) {
+  return J2ME.returnLong(valLow + 40, valHigh);
 };
 
-Native["gnu/testlet/vm/NativeTest.getLongReturnInt.(J)I"] = function(val) {
-  return ~~(40 + val.toNumber());
+Native["gnu/testlet/vm/NativeTest.getLongReturnInt.(J)I"] = function(valLow, valHigh) {
+  return ~~(40 + J2ME.longToNumber(valLow, valHigh));
 };
 
 Native["gnu/testlet/vm/NativeTest.getIntReturnLong.(I)J"] = function(val) {
-  return Long.fromNumber(40 + val);
+  return J2ME.returnLongValue(40 + val);
 };
 
 Native["gnu/testlet/vm/NativeTest.throwException.()V"] = function() {

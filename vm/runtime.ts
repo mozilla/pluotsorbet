@@ -12,6 +12,7 @@ interface Math {
 }
 interface Long {
   isZero(): boolean;
+  toNumber(): number;
 }
 declare var Long: {
   new (low: number, high: number): Long;

@@ -106,8 +106,7 @@ module J2ME {
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
-    release || assert(timeoutH === 0, "H: " + timeoutH);
-    $.ctx.wait(this, timeoutL);
+    $.ctx.wait(this, longToNumber(timeoutL, timeoutH));
     $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
