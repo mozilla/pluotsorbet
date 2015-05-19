@@ -9,7 +9,7 @@ import com.sun.midp.main.MIDletSuiteUtils;
 public class DestroyMIDlet extends MIDlet {
     int started = 0;
 
-    static native void sendDestroyMIDletEvent(String midletClassName);
+    static native void sendDestroyMIDletEvent();
     static native void sendExecuteMIDletEvent();
     static native void maybePrintDone();
 
@@ -21,7 +21,7 @@ public class DestroyMIDlet extends MIDlet {
         }
 
         protected void pointerReleased(int x, int y) {
-            sendDestroyMIDletEvent("tests.background.DestroyMIDlet");
+            sendDestroyMIDletEvent();
         }
     }
 
