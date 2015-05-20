@@ -900,11 +900,6 @@ module J2ME {
             i32[sp - 3] = i32[sp    ];      ref[sp - 3] = ref[sp    ]; // b
             sp += 2;
             continue;
-          case Bytecodes.DUP2: // ... b, a -> ... b, a, b, a
-            i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1]; // a
-            i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2]; // b
-            sp += 2;
-            continue;
           case Bytecodes.DUP2_X2: // ... d, c, b, a -> ... b, a, d, c, b, a
             i32[sp + 1] = i32[sp - 1];      ref[sp + 1] = ref[sp - 1]; // a
             i32[sp    ] = i32[sp - 2];      ref[sp    ] = ref[sp - 2]; // b
@@ -924,13 +919,6 @@ module J2ME {
             value = code[pc++] << 24 >> 24;
             i32[lp + index] = i32[lp + index] + value | 0;
             continue;
-          //        case Bytecodes.IINC_GOTO:
-          //          index = frame.read8();
-          //          value = frame.read8Signed();
-          //          frame.local[index] += frame.local[index];
-          //          frame.pc ++;
-          //          frame.pc = frame.readTargetPC();
-          //          break;
           case Bytecodes.IADD:
             i32[sp - 2] = (i32[sp - 2] + i32[sp - 1]) | 0; sp--;
             continue;
