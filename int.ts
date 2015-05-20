@@ -527,11 +527,10 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, array, object, returnValue, constant, offset, buffer, tag: TAGS, targetPC, kind;
+    var value, index, array, object, offset, buffer, tag: TAGS, targetPC;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
-    var fa = 0, fb = 0; // Float / Double Operands
 
     var classInfo: ClassInfo;
     var fieldInfo: FieldInfo;
@@ -606,7 +605,7 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Integer || tag === TAGS.CONSTANT_Float) {
               i32[sp++] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
             } else if (tag === TAGS.CONSTANT_String) {
-              ref[sp++] = constant = ci.constantPool.resolve(index, tag, false);;
+              ref[sp++] = ci.constantPool.resolve(index, tag, false);
             } else {
               release || assert(false, TAGS[tag]);
             }
@@ -991,9 +990,7 @@ module J2ME {
             ASM._lDiv(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
           case Bytecodes.FDIV:
-            fb = f32[--sp];
-            fa = f32[--sp];
-            f32[sp++] = Math.fround(fa / fb);
+            f32[sp - 2] = Math.fround(f32[sp - 2] / f32[sp - 1]); sp--;
             continue;
           case Bytecodes.DDIV:
             aliasedI32[0] = i32[sp - 4];
@@ -1018,9 +1015,7 @@ module J2ME {
             ASM._lRem(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
           case Bytecodes.FREM:
-            fb = f32[--sp];
-            fa = f32[--sp];
-            f32[sp++] = Math.fround(fa % fb);
+            f32[sp - 2] = Math.fround(f32[sp - 2] % f32[sp - 1]); sp--;
             continue;
           case Bytecodes.DREM:
             aliasedI32[0] = i32[sp - 4];
@@ -1098,13 +1093,13 @@ module J2ME {
             continue;
           case Bytecodes.FCMPL:
           case Bytecodes.FCMPG:
-            fb = f32[--sp];
-            fa = f32[--sp];
-            if (isNaN(fa) || isNaN(fb)) {
+            var FCMP_fb = f32[--sp];
+            var FCMP_fa = f32[--sp];
+            if (isNaN(FCMP_fa) || isNaN(FCMP_fb)) {
               i32[sp++] = op === Bytecodes.FCMPL ? -1 : 1;
-            } else if (fa > fb) {
+            } else if (FCMP_fa > FCMP_fb) {
               i32[sp++] = 1;
-            } else if (fa < fb) {
+            } else if (FCMP_fa < FCMP_fb) {
               i32[sp++] = -1;
             } else {
               i32[sp++] = 0;
@@ -1114,16 +1109,16 @@ module J2ME {
           case Bytecodes.DCMPG:
             aliasedI32[0] = i32[sp - 2];
             aliasedI32[1] = i32[sp - 1];
-            fb = aliasedF64[0];
+            var DCMP_fb = aliasedF64[0];
             aliasedI32[0] = i32[sp - 4];
             aliasedI32[1] = i32[sp - 3];
-            fa = aliasedF64[0];
+            var DCMP_fa = aliasedF64[0];
             sp -= 4;
-            if (isNaN(fa) || isNaN(fb)) {
+            if (isNaN(DCMP_fa) || isNaN(DCMP_fb)) {
               i32[sp++] = op === Bytecodes.DCMPL ? -1 : 1;
-            } else if (fa > fb) {
+            } else if (DCMP_fa > DCMP_fb) {
               i32[sp++] = 1;
-            } else if (fa < fb) {
+            } else if (DCMP_fa < DCMP_fb) {
               i32[sp++] = -1;
             } else {
               i32[sp++] = 0;
@@ -1270,18 +1265,17 @@ module J2ME {
             i32[sp - 1] = aliasedI32[1];
             continue;
           case Bytecodes.F2I:
-            fa = f32[sp - 1];
-            if (fa > Constants.INT_MAX) {
+            var F2I_fa = f32[sp - 1];
+            if (F2I_fa > Constants.INT_MAX) {
               i32[sp - 1] = Constants.INT_MAX;
-            } else if (fa < Constants.INT_MIN) {
+            } else if (F2I_fa < Constants.INT_MIN) {
               i32[sp - 1] = Constants.INT_MIN;
             } else {
-              i32[sp - 1] = fa | 0;
+              i32[sp - 1] = F2I_fa | 0;
             }
             continue;
           case Bytecodes.F2L:
-            fa = f32[--sp];
-            value = Long.fromNumber(fa);
+            value = Long.fromNumber(f32[--sp]);
             i32[sp++] = value.low_;
             i32[sp++] = value.high_;
             continue;
@@ -1293,28 +1287,28 @@ module J2ME {
           case Bytecodes.D2I:
             aliasedI32[0] = i32[sp - 2];
             aliasedI32[1] = i32[sp - 1];
-            fa = aliasedF64[0];
-            if (fa > Constants.INT_MAX) {
+            var D2I_fa = aliasedF64[0];
+            if (D2I_fa > Constants.INT_MAX) {
               i32[sp - 2] = Constants.INT_MAX;
-            } else if (fa < Constants.INT_MIN) {
+            } else if (D2I_fa < Constants.INT_MIN) {
               i32[sp - 2] = Constants.INT_MIN;
             } else {
-              i32[sp - 2] = fa | 0;
+              i32[sp - 2] = D2I_fa | 0;
             }
             sp --;
             continue;
           case Bytecodes.D2L:
             aliasedI32[0] = i32[sp - 2];
             aliasedI32[1] = i32[sp - 1];
-            fa = aliasedF64[0];
-            if (fa === Number.POSITIVE_INFINITY) {
+            var D2L_fa = aliasedF64[0];
+            if (D2L_fa === Number.POSITIVE_INFINITY) {
               i32[sp - 2] = Constants.LONG_MAX_LOW;
               i32[sp - 1] = Constants.LONG_MAX_HIGH;
-            } else if (fa === Number.NEGATIVE_INFINITY) {
+            } else if (D2L_fa === Number.NEGATIVE_INFINITY) {
               i32[sp - 2] = Constants.LONG_MIN_LOW;
               i32[sp - 1] = Constants.LONG_MIN_HIGH;
             } else {
-              value = Long.fromNumber(fa);
+              value = Long.fromNumber(D2L_fa);
               i32[sp - 2] = value.low_;
               i32[sp - 1] = value.high_;
             }
@@ -1657,6 +1651,7 @@ module J2ME {
 
             // Call Native or Compiled Method.
             if (calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled) {
+              var kind = Kind.Void;
               args.length = 0;
               var signatureKinds = calleeTargetMethodInfo.signatureKinds;
               for (var i = signatureKinds.length - 1; i > 0; i--) {
@@ -1698,7 +1693,7 @@ module J2ME {
 
               var frameHash = 0;
 
-              returnValue = callee.apply(object, args);
+              var returnValue = callee.apply(object, args);
 
               if (!release) {
                 checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
