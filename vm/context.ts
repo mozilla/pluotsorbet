@@ -356,7 +356,7 @@ module J2ME {
         console.log(s);
       });
       if (profile && typeof Shumway !== "undefined") {
-        this.methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Thread: " + this.runtime.id + ":" + this.id);
+        this.methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Thread " + this.runtime.id + ":" + this.id);
         methodTimelines.push(this.methodTimeline);
       }
     }
