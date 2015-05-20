@@ -71,7 +71,7 @@ module J2ME {
         "java/util/Vector",
         "java/io/IOException",
         "java/lang/IllegalArgumentException",
-        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        // Preload the Isolate class, that is needed to start the VM (see context.ts)
         "com/sun/cldc/isolate/Isolate",
         "org/mozilla/internal/Sys",
         "java/lang/System",
@@ -82,6 +82,9 @@ module J2ME {
         "java/lang/Boolean",
         "java/util/Hashtable",
         "java/lang/IndexOutOfBoundsException",
+        "java/lang/StringIndexOutOfBoundsException",
+        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        "com/sun/cldc/isolate/Isolate",
       ];
 
       for (var i = 0; i < classNames.length; i++) {

@@ -155,7 +155,7 @@ function(port, msid, handle, smsPacket) {
             smsPacket.message = message;
             smsPacket.address = address;
             smsPacket.port = port;
-            smsPacket.sentAt = Long.fromNumber(Date.now());
+            smsPacket.sentAt = Date.now();
             smsPacket.messageType = 0; // GSM_TEXT
 
             return text.length;

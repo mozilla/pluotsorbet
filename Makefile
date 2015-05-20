@@ -91,7 +91,6 @@ MAIN_JS_SRCS = \
   timer.js \
   util.js \
   native.js \
-  string.js \
   libs/load.js \
   libs/zipfile.js \
   libs/jarstore.js \
@@ -244,11 +243,15 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
+
+libs/native.js: vm/native/Makefile vm/native/native.cpp
+	make -C vm/native/
+
+bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) libs/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 ifeq ($(RELEASE),1)
-	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
+	java -jar build_tools/closure.jar --formatting PRETTY_PRINT --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 endif
 

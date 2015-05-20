@@ -5,11 +5,14 @@
 
 var $: J2ME.Runtime; // The currently-executing runtime.
 
+var tempReturn0 = 0;
+
 interface Math {
   fround(value: number): number;
 }
 interface Long {
   isZero(): boolean;
+  toNumber(): number;
 }
 declare var Long: {
   new (low: number, high: number): Long;
@@ -19,13 +22,9 @@ declare var Long: {
   fromNumber(value: number);
 }
 
-interface Promise {
-  catch(onRejected: { (reason: any): any; }): Promise;
-}
-
 interface CompiledMethodCache {
   get(key: string): { key: string; source: string; referencedClasses: string[]; };
-  put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise;
+  put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise<any>;
 }
 
 interface AOTMetaData {
@@ -40,6 +39,17 @@ declare var throwPause;
 declare var throwYield;
 
 module J2ME {
+
+  export function returnLong(l: number, h: number) {
+    tempReturn0 = h;
+    return l;
+  }
+
+  export function returnLongValue(v: number) {
+    var value = Long.fromNumber(v);
+    return returnLong(value.low_, value.high_);
+  }
+
   declare var Native, config;
   declare var VM;
   declare var CompiledMethodCache;
@@ -49,7 +59,7 @@ module J2ME {
   /**
    * Turns on just-in-time compilation of methods.
    */
-  export var enableRuntimeCompilation = true;
+  export var enableRuntimeCompilation = false;
 
   /**
    * Turns on onStackReplacement
@@ -65,6 +75,11 @@ module J2ME {
    * Traces method execution.
    */
   export var traceWriter = null;
+
+  /**
+   * Traces bytecode execution.
+   */
+  export var traceStackWriter = null;
 
   /**
    * Traces performance problems.
@@ -204,14 +219,9 @@ module J2ME {
     long: null
   };
 
-  function Int64Array(size: number) {
-    var array = Array(size);
-    for (var i = 0; i < size; i++) {
-      array[i] = Long.ZERO;
-    }
-    // We can't put the klass on the prototype.
-    (<any>array).klass = Klasses.long;
-    return array;
+  function Int64Array(length: number) {
+    this.value = new Int32Array(length * 2);
+    this.length = length;
   }
 
   var arrays = {
@@ -268,7 +278,8 @@ module J2ME {
 
   export var phase = ExecutionPhase.Runtime;
 
-  export var internedStrings: Map<string, java.lang.String> = new Map<string, java.lang.String>();
+  // Initial capacity of the interned strings is the capacity of a large midlet after startup.
+  export var internedStrings: TypedArrayHashtable = new TypedArrayHashtable(767);
 
   declare var util;
 
@@ -521,13 +532,17 @@ module J2ME {
       this.allCtxs.delete(ctx);
     }
 
-    newStringConstant(s: string): java.lang.String {
-      if (internedStrings.has(s)) {
-        return internedStrings.get(s);
+    newStringConstant(utf16Array: Uint16Array): java.lang.String {
+      var javaString = internedStrings.get(utf16Array);
+      if (javaString !== null) {
+        return javaString;
       }
-      var obj = J2ME.newString(s);
-      internedStrings.set(s, obj);
-      return obj;
+      javaString = <java.lang.String>newObject(Klasses.java.lang.String);
+      javaString.value = utf16Array;
+      javaString.offset = 0;
+      javaString.count = utf16Array.length;
+      internedStrings.put(utf16Array, javaString);
+      return javaString;
     }
 
     setStatic(field, value) {
@@ -775,6 +790,9 @@ module J2ME {
   }
 
   export class RuntimeKlass {
+
+    _address: number;
+
     templateKlass: Klass;
 
     /**
@@ -789,6 +807,7 @@ module J2ME {
     // isRuntimeKlass: boolean;
 
     constructor(templateKlass: Klass) {
+      this._address = ASM._gcMalloc(templateKlass.classInfo.sizeOfStaticFields);
       this.templateKlass = templateKlass;
     }
   }
@@ -817,26 +836,27 @@ module J2ME {
       $.setClassInitialized(runtimeKlass);
       return;
     }
-    var fields = runtimeKlass.templateKlass.classInfo.getFields();
-    for (var i = 0; i < fields.length; i++) {
-      var field = fields[i];
-      if (field.isStatic) {
-        var kind = getSignatureKind(field.utf8Signature);
-        var defaultValue;
-        switch (kind) {
-          case Kind.Reference:
-            defaultValue = null;
-            break;
-          case Kind.Long:
-            defaultValue = Long.ZERO;
-            break;
-          default:
-            defaultValue = 0;
-            break;
-        }
-        field.set(<java.lang.Object><any>runtimeKlass, defaultValue);
-      }
-    }
+    //REDUX: No need.
+    //var fields = runtimeKlass.templateKlass.classInfo.getFields();
+    //for (var i = 0; i < fields.length; i++) {
+    //  var field = fields[i];
+    //  if (field.isStatic) {
+    //    var kind = getSignatureKind(field.utf8Signature);
+    //    var defaultValue;
+    //    switch (kind) {
+    //      case Kind.Reference:
+    //        defaultValue = null;
+    //        break;
+    //      case Kind.Long:
+    //        defaultValue = Long.ZERO;
+    //        break;
+    //      default:
+    //        defaultValue = 0;
+    //        break;
+    //    }
+    //    field.set(<java.lang.Object><any>runtimeKlass, defaultValue);
+    //  }
+    //}
   }
 
   /**
@@ -1086,7 +1106,13 @@ module J2ME {
       switch (classInfo.getClassNameSlow()) {
         case "java/lang/Object": Klasses.java.lang.Object = klass; break;
         case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
-        case "java/lang/String": Klasses.java.lang.String = klass; break;
+        case "java/lang/String": Klasses.java.lang.String = klass;
+          Object.defineProperty(klass.prototype, "viewString", {
+            get: function () {
+              return fromJavaString(this);
+            }
+          });
+          break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
         case "java/lang/InstantiationException": Klasses.java.lang.InstantiationException = klass; break;
@@ -1175,58 +1201,7 @@ module J2ME {
     return null;
   }
 
-  function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
-
-    // Adapter for the most common case.
-    if (!methodInfo.isSynchronized && !methodInfo.hasTwoSlotArguments) {
-      var method = function fastInterpreterFrameAdapter() {
-        var frame = Frame.create(methodInfo, []);
-        var j = 0;
-        if (!methodInfo.isStatic) {
-          frame.local[j++] = this;
-        }
-        var slots = methodInfo.argumentSlots;
-        for (var i = 0; i < slots; i++) {
-          frame.local[j++] = arguments[i];
-        }
-        return $.ctx.executeFrame(frame);
-      };
-      (<any>method).methodInfo = methodInfo;
-      return method;
-    }
-
-    var method = function interpreterFrameAdapter() {
-      var frame = Frame.create(methodInfo, []);
-      var j = 0;
-      if (!methodInfo.isStatic) {
-        frame.local[j++] = this;
-      }
-      var signatureKinds = methodInfo.signatureKinds;
-      release || assert (arguments.length === signatureKinds.length - 1,
-        "Number of adapter frame arguments (" + arguments.length + ") does not match signature descriptor.");
-      for (var i = 1; i < signatureKinds.length; i++) {
-        frame.local[j++] = arguments[i - 1];
-        if (isTwoSlot(signatureKinds[i])) {
-          frame.local[j++] = null;
-        }
-      }
-      if (methodInfo.isSynchronized) {
-        if (!frame.lockObject) {
-          frame.lockObject = methodInfo.isStatic
-            ? methodInfo.classInfo.getClassObject()
-            : frame.local[0];
-        }
-        $.ctx.monitorEnter(frame.lockObject);
-        if (U === VMState.Pausing) {
-          $.ctx.pushFrame(frame);
-          return;
-        }
-      }
-      return $.ctx.executeFrame(frame);
-    };
-    (<any>method).methodInfo = methodInfo;
-    return method;
-  }
+  var frameView = new FrameView();
 
   function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
     // Use aotMetaData to find AOT methods instead of jsGlobal because runtime compiled methods may
@@ -1268,10 +1243,37 @@ module J2ME {
         release || assert(!field.isStatic, "Static field was defined as instance in BindingsMap");
         var object = field.isStatic ? klass : klass.prototype;
         release || assert (!object.hasOwnProperty(fieldName), "Should not overwrite existing properties.");
-        var getter = FunctionUtilities.makeForwardingGetter(field.mangledName);
+        var getter;
         var setter;
-        if (release) {
-          setter = FunctionUtilities.makeForwardingSetter(field.mangledName);
+        if (true || release) {
+          switch (field.kind) {
+            case Kind.Reference:
+              setter = new Function("value", "ref[this._address + " + field.byteOffset + " >> 2] = value;");
+              getter = new Function("return ref[this._address + " + field.byteOffset + " >> 2];");
+              break;
+            case Kind.Byte:
+            case Kind.Short:
+            case Kind.Boolean:
+            case Kind.Int:
+              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
+              getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
+              break;
+            case Kind.Float:
+              setter = new Function("value", "f32[this._address + " + field.byteOffset + " >> 2] = value;");
+              getter = new Function("return f32[this._address + " + field.byteOffset + " >> 2];");
+              break;
+            case Kind.Long:
+              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value); i32[this._address + 4 + " + field.byteOffset + " >> 2] = tempReturn0;");
+              getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2], i32[this._address + 4 + " + field.byteOffset + " >> 2]);");
+              break;
+            case Kind.Double:
+              setter = new Function("value", "aliasedF64[0] = value; i32[this._address + " + field.byteOffset + " >> 2] = aliasedI32[0]; i32[this._address + 4 + " + field.byteOffset + " >> 2] = aliasedI32[1];");
+              getter = new Function("aliasedI32[0] = i32[this._address + " + field.byteOffset + " >> 2];  aliasedI32[1] = i32[this._address + 4 + " + field.byteOffset + " >> 2]; return aliasedF64[0];");
+              break;
+            default:
+              Debug.assert(false, Kind[field.kind]);
+              break;
+          }
         } else {
           setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
         }
@@ -1342,10 +1344,11 @@ module J2ME {
           if (methodInfo.isNative) {
             // A fake frame that just returns is pushed so when the ctx resumes from the unwind
             // the frame will be popped triggering a leaveMethodTimeline.
-            var fauxFrame = Frame.create(null, []);
-            fauxFrame.methodInfo = methodInfo;
-            fauxFrame.code = code;
-            ctx.bailoutFrames.unshift(fauxFrame);
+            //REDUX
+            //var fauxFrame = Frame.create(null, []);
+            //fauxFrame.methodInfo = methodInfo;
+            //fauxFrame.code = code;
+            //ctx.bailoutFrames.unshift(fauxFrame);
           }
         } else {
           ctx.leaveMethodTimeline(key, methodType);
@@ -1359,22 +1362,31 @@ module J2ME {
   }
 
   function tracingWrapper(fn: Function, methodInfo: MethodInfo, methodType: MethodType) {
-    return function() {
+    var wrapper = function() {
+      // jsGlobal.getBacktrace && traceWriter.writeLn(jsGlobal.getBacktrace());
       var args = Array.prototype.slice.apply(arguments);
-      traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey + " " + (methodInfo.stats.callCount ++));
+      traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey);
       var s = performance.now();
-      var value = fn.apply(this, args);
-      traceWriter.outdent();
+      try {
+        var value = fn.apply(this, args);
+      } catch (e) {
+        traceWriter.leave("< " + MethodType[methodType][0] + " Throwing");
+        throw e;
+      }
+      traceWriter.leave("< " + MethodType[methodType][0] + " " + methodInfo.implKey);
       return value;
     };
+    (<any>wrapper).methodInfo = methodInfo;
+    return wrapper;
   }
 
   export function getLinkedMethod(methodInfo: MethodInfo) {
     if (methodInfo.fn) {
       return methodInfo.fn;
     }
+    linkKlass(methodInfo.classInfo);
     linkKlassMethod(methodInfo.classInfo.klass, methodInfo);
-    assert (methodInfo.fn);
+    release || assert (methodInfo.fn);
     return methodInfo.fn;
   }
 
@@ -1794,12 +1806,14 @@ module J2ME {
     return new klass();
   }
 
-  export function newString(str: string): java.lang.String {
-    if (str === null || str === undefined) {
+  export function newString(jsString: string): java.lang.String {
+    if (jsString === null || jsString === undefined) {
       return null;
     }
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
-    object.str = str;
+    object.value = util.stringToCharArray(jsString);
+    object.offset = 0;
+    object.count = object.value.length;
     return object;
   }
 
@@ -1825,6 +1839,10 @@ module J2ME {
 
   export function throwNegativeArraySizeException() {
     throw $.newNegativeArraySizeException();
+  }
+
+  export function throwNullPointerException() {
+    throw $.newNullPointerException();
   }
 
   export function newObjectArray(size: number): java.lang.Object[] {
@@ -1886,7 +1904,7 @@ module J2ME {
     if (!value) {
       return null;
     }
-    return value.str;
+    return util.fromJavaChars(value.value, value.offset, value.count);
   }
 
   export function checkDivideByZero(value: number) {
@@ -1943,7 +1961,16 @@ module J2ME {
     CHAR_MIN = 0,
     CHAR_MAX = 65535,
     INT_MIN = -2147483648,
-    INT_MAX =  2147483647
+    INT_MAX =  2147483647,
+
+    LONG_MAX_LOW = 0xFFFFFFFF,
+    LONG_MAX_HIGH = 0x7FFFFFFF,
+
+    LONG_MIN_LOW = 0,
+    LONG_MIN_HIGH = 0x80000000,
+
+
+    TWO_PWR_32_DBL = 4294967296
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
@@ -2077,7 +2104,8 @@ var B7 = J2ME.throwUnwind7;
 /**
  * OSR Frame.
  */
-var O: J2ME.Frame = null;
+// REDUX
+var O = null;
 
 /**
  * Runtime exports for compiled code.

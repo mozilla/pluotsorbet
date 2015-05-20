@@ -23,6 +23,15 @@ module J2ME {
         }
       }
     },
+    "java/lang/String": {
+      fields: {
+        instanceSymbols: {
+          "value": "[C",
+          "offset": "I",
+          "count": "I"
+        }
+      }
+    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
@@ -279,7 +288,7 @@ module J2ME {
     },
   };
 
-  export var BindingsMap = new Uint8Hashtable(50);
+  export var BindingsMap = new TypedArrayHashtable(50);
 
   // Create a map of the classes that have bindings.
   for (var k in Bindings) {
@@ -292,6 +301,11 @@ module J2ME {
        * Reference to the runtime klass.
        */
       klass: Klass
+
+      /**
+       * All objects have an address.
+       */
+      _address: number;
 
       /**
        * All objects have an internal hash code.
@@ -326,7 +340,9 @@ module J2ME {
     }
 
     export interface String extends java.lang.Object {
-      str: string;
+      value: Uint16Array;
+      offset: number;
+      count: number;
     }
 
     export interface Thread extends java.lang.Object {
