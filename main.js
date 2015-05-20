@@ -214,8 +214,21 @@ function stopAndSaveTimeline() {
     }
   });
   var text = output.join("\n");
-  var profileFilename = "profile.txt";
-  var blob = new Blob([text], {type : 'text/html'});
+
+  var fileExtension, mediaType;
+  switch (traceFormat) {
+    case Shumway.Tools.Profiler.TraceFormat.CSV:
+      fileExtension = "csv";
+      mediaType = "text/csv";
+      break;
+    case Shumway.Tools.Profiler.PLAIN:
+    default:
+      fileExtension = "txt";
+      mediaType = "text/plain";
+      break;
+  }
+  var profileFilename = "profile." + fileExtension;
+  var blob = new Blob([text], {type : mediaType});
   saveAs(blob, profileFilename);
   console.log("Saved profile in: adb pull /sdcard/downloads/" + profileFilename);
 }
