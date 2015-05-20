@@ -242,8 +242,7 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
 };
 
 Native["java/lang/System.currentTimeMillis.()J"] = function() {
-    var long = Long.fromNumber(Date.now());
-    return J2ME.returnLong(long.low_, long.high_);
+    return J2ME.returnLongValue(Date.now());
 };
 
 Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(src, srcOffset, dst, dstOffset, length) {
@@ -267,8 +266,7 @@ Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Lja
 };
 
 Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function() {
-    var long = Long.fromNumber(performance.now());
-    return J2ME.returnLong(long.low_, long.high_);
+    return J2ME.returnLongValue(performance.now());
 };
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {

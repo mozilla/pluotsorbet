@@ -1075,8 +1075,8 @@ var MIDP = (function() {
     return 0;
   };
 
-  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = function(jMidlet, jTime) {
-    var time = jTime.toNumber(), midlet = util.decodeUtf8(jMidlet);
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = function(jMidlet, jTimeLow, jTimeHigh) {
+    var time = J2ME.longToNumber(jTimeLow, jTimeHigh), midlet = util.decodeUtf8(jMidlet);
 
     var lastAlarm = 0;
     var id = null;
@@ -1113,7 +1113,7 @@ var MIDP = (function() {
       }, relativeTime);
     }
 
-    return Long.fromNumber(lastAlarm);
+    return J2ME.returnLongValue(lastAlarm);
   };
 
   Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(handle, regentry, entrysz) {
