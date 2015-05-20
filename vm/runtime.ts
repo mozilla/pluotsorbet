@@ -680,6 +680,7 @@ module J2ME {
       threadWriter && threadWriter.writeLn("yielding " + reason);
       runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
+      profile && $.ctx.pauseMethodTimeline();
     }
 
     pause(reason: string) {
@@ -687,6 +688,7 @@ module J2ME {
       threadWriter && threadWriter.writeLn("pausing " + reason);
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
+      profile && $.ctx.pauseMethodTimeline();
     }
 
     stop() {
@@ -1335,6 +1337,8 @@ module J2ME {
             r = fn.apply(this, arguments);
         }
         if (U) {
+          release || assert(ctx.paused, "context is paused");
+
           if (methodInfo.isNative) {
             // A fake frame that just returns is pushed so when the ctx resumes from the unwind
             // the frame will be popped triggering a leaveMethodTimeline.
