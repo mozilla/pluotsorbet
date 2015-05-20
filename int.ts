@@ -398,6 +398,24 @@ module J2ME {
       this.set(fp, sp, pc);
       classInitCheck(classInfo);
     }
+
+    throwException(fp: number, sp: number, pc: number, type: ExceptionType, a?) {
+      this.set(fp, sp, pc);
+      switch (type) {
+        case ExceptionType.ArrayIndexOutOfBoundsException:
+          throwArrayIndexOutOfBoundsException(a);
+          break;
+        case ExceptionType.ArithmeticException:
+          throwArithmeticException();
+          break;
+        case ExceptionType.NegativeArraySizeException:
+          throwNegativeArraySizeException();
+          break;
+        case ExceptionType.NullPointerException:
+          throwNullPointerException();
+          break;
+      }
+    }
   }
 
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
@@ -453,7 +471,7 @@ module J2ME {
 
   var args = new Array(16);
 
-  enum ExceptionType {
+  export enum ExceptionType {
     ArithmeticException,
     ArrayIndexOutOfBoundsException,
     NegativeArraySizeException,
@@ -519,28 +537,6 @@ module J2ME {
     var fieldInfo: FieldInfo;
 
     var monitor: java.lang.Object;
-
-    /**
-     * Thrown exceptions need to be constructed, and can thus damage the stack if we don't
-     * save the thread state. This is a helper function that does just that.
-     */
-    function throwException(type: ExceptionType, a?) {
-      thread.set(fp, sp, opPC);
-      switch (type) {
-        case ExceptionType.ArrayIndexOutOfBoundsException:
-          throwArrayIndexOutOfBoundsException(a);
-          break;
-        case ExceptionType.ArithmeticException:
-          throwArithmeticException();
-          break;
-        case ExceptionType.NegativeArraySizeException:
-          throwNegativeArraySizeException();
-          break;
-        case ExceptionType.NullPointerException:
-          throwNullPointerException();
-          break;
-      }
-    }
 
     // HEAD
 
@@ -681,7 +677,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array[index];
             continue;
@@ -689,7 +685,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array[index];
             continue;
@@ -697,7 +693,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array[index];
             continue;
@@ -705,7 +701,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array[index];
             continue;
@@ -713,7 +709,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             f32[sp++] = array[index];
             continue;
@@ -721,7 +717,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             ref[sp++] = array[index];
             continue;
@@ -729,7 +725,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             aliasedF64[0] = array[index];
             i32[sp++] = aliasedI32[0];
@@ -787,7 +783,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -796,7 +792,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -805,7 +801,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -814,7 +810,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -823,7 +819,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -833,7 +829,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array.value[index * 2    ] = ll;
             array.value[index * 2 + 1] = lh;
@@ -842,7 +838,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[sp++] = array.value[index * 2    ];
             i32[sp++] = array.value[index * 2 + 1];
@@ -854,7 +850,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             array[index] = value;
             continue;
@@ -863,7 +859,7 @@ module J2ME {
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
-              throwException(ExceptionType.ArrayIndexOutOfBoundsException, index);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             checkArrayStore(array, value);
             array[index] = value;
@@ -994,7 +990,7 @@ module J2ME {
             continue;
           case Bytecodes.IDIV:
             if (i32[sp - 1] === 0) {
-              throwException(ExceptionType.ArithmeticException);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArithmeticException);
             }
             ia = i32[sp - 2];
             ib = i32[sp - 1];
@@ -1002,7 +998,7 @@ module J2ME {
             continue;
           case Bytecodes.LDIV:
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
-              throwException(ExceptionType.ArithmeticException);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArithmeticException);
             }
             ASM._lDiv(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
@@ -1023,13 +1019,13 @@ module J2ME {
             continue;
           case Bytecodes.IREM:
             if (i32[sp - 1] === 0) {
-              throwException(ExceptionType.ArithmeticException);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArithmeticException);
             }
             i32[sp - 2] = (i32[sp - 2] % i32[sp - 1]) | 0; sp--;
             continue;
           case Bytecodes.LREM:
             if (i32[sp - 2] === 0 && i32[sp - 1] === 0) {
-              throwException(ExceptionType.ArithmeticException);
+              thread.throwException(fp, sp, opPC, ExceptionType.ArithmeticException);
             }
             ASM._lRem(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
             continue;
@@ -1386,7 +1382,7 @@ module J2ME {
             classInfo = resolveClass(index, ci);
             size = i32[--sp];
             if (size < 0) {
-              throwException(ExceptionType.NegativeArraySizeException);
+              thread.throwException(fp, sp, opPC, ExceptionType.NegativeArraySizeException);
             }
             ref[sp++] = newArray(classInfo.klass, size);
             continue;
@@ -1398,7 +1394,7 @@ module J2ME {
             for (var i = 0; i < dimensions; i++) {
               lengths[i] = i32[--sp];
               if (size < 0) {
-                throwException(ExceptionType.NegativeArraySizeException);
+                thread.throwException(fp, sp, opPC, ExceptionType.NegativeArraySizeException);
               }
             }
             ref[sp++] = J2ME.newMultiArray(classInfo.klass, lengths.reverse());
@@ -1512,7 +1508,7 @@ module J2ME {
           case Bytecodes.ATHROW:
             object = ref[--sp];
             if (!object) {
-              throwException(ExceptionType.NullPointerException);
+              thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
             }
             throw object;
             continue;
@@ -1575,7 +1571,7 @@ module J2ME {
             type = code[pc++];
             size = i32[--sp];
             if (size < 0) {
-              throwException(ExceptionType.NegativeArraySizeException);
+              thread.throwException(fp, sp, opPC, ExceptionType.NegativeArraySizeException);
             }
             ref[sp++] = newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size);
             continue;
@@ -1655,7 +1651,7 @@ module J2ME {
             switch (op) {
               case Bytecodes.INVOKESPECIAL:
                 if (!object) {
-                  throwException(ExceptionType.NullPointerException);
+                  thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
                 }
               case Bytecodes.INVOKESTATIC:
                 calleeTargetMethodInfo = calleeMethodInfo;
