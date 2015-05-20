@@ -243,9 +243,9 @@ module Shumway.Tools.Profiler {
           s.push(this.statistics[i]);
         }
       }
-      // Sort by self time.
+      // Sort by self time descending, so expensive events are more prominent.
       s.sort(function (a, b) {
-        return a.selfTime - b.selfTime;
+        return b.selfTime - a.selfTime;
       })
       for (var i = 0; i < s.length; i++) {
         var statistic = s[i];
