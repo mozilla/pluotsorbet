@@ -77,6 +77,7 @@ module J2ME {
       case 'J': return Kind.Long;
       case 'D': return Kind.Double;
       case 'V': return Kind.Void;
+      case '[': // Fallthrough
       case 'L': return Kind.Reference;
       default: throw Debug.unexpected("Unknown kind character: " + kindCharacter);
     }
