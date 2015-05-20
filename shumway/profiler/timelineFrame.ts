@@ -15,6 +15,11 @@
  */
 module Shumway.Tools.Profiler {
 
+  export enum TraceFormat {
+    PLAIN,
+    CSV
+  }
+
   export interface TimelineFrameRange {
     startIndex: number;
     endIndex: number;
@@ -235,7 +240,7 @@ module Shumway.Tools.Profiler {
       return this.statistics;
     }
 
-    public traceStatistics(writer: IndentingWriter, minTime: number = 0.0001) {
+    public traceStatistics(writer: IndentingWriter, minTime: number = 0.0001, format: TraceFormat = TraceFormat.PLAIN) {
       this.calculateStatistics();
       var s = [];
       // Filter out null values.
@@ -250,12 +255,24 @@ module Shumway.Tools.Profiler {
       })
       for (var i = 0; i < s.length; i++) {
         var statistic = s[i];
-        writer.writeLn(
-          (statistic.kind ? statistic.kind.name + ": " : "?: ") +
-          "count: " + statistic.count + ", " +
-          "self: " + statistic.selfTime.toFixed(3) + " ms, " +
-          "total: " + statistic.totalTime.toFixed(3) + " ms."
-        );
+        switch (format) {
+          case TraceFormat.PLAIN:
+            writer.writeLn(
+              (statistic.kind ? statistic.kind.name + ": " : "?: ") +
+              "count: " + statistic.count + ", " +
+              "self: " + statistic.selfTime.toFixed(3) + " ms, " +
+              "total: " + statistic.totalTime.toFixed(3) + " ms."
+            );
+            break;
+          case TraceFormat.CSV:
+            writer.writeLn([
+              (statistic.kind ? statistic.kind.name : "?"),
+              statistic.count,
+              statistic.selfTime.toFixed(3),
+              statistic.totalTime.toFixed(3)
+            ].join(","));
+            break;
+        }
       }
     }
 
