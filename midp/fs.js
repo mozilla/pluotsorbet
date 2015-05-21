@@ -378,7 +378,8 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() 
     return J2ME.returnLongValue(fs.size(pathname));
 };
 
-addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySize.(Z)J", J2ME.returnLongValue(0));
+addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySize.(Z)J",
+                       function() { return J2ME.returnLongValue(0) });
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function() {
     var pathname = J2ME.fromJavaString(this.nativePath);
@@ -451,9 +452,9 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.mkdir.()V"] = function() {
 
 // Pretend there is 1GiB in total and available.
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.availableSize.()J",
-                       J2ME.returnLongValue(1024 * 1024 * 1024));
+                       function() { return J2ME.returnLongValue(1024 * 1024 * 1024) });
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.totalSize.()J",
-                       J2ME.returnLongValue(1024 * 1024 * 1024));
+                       function() { return J2ME.returnLongValue(1024 * 1024 * 1024) });
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = function() {
     var pathname = J2ME.fromJavaString(this.nativePath);
@@ -665,7 +666,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
 // Not implemented because we don't use native pointers, so we've commented out
 // calls to this private method in DefaultFileHandler.
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativeName.(Ljava/lang/String;J)J",
-                       J2ME.returnLongValue(0));
+                       function() { return J2ME.returnLongValue(0) });
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getFileSeparator.()C"] = function() {
     return "/".charCodeAt(0);
