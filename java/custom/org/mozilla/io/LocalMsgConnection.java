@@ -25,9 +25,9 @@ public class LocalMsgConnection implements LocalMessageProtocolConnection, Local
       closeConnection();
     }
 
-    public native int receiveData(byte[] message);
+    public native int receiveData(byte[] message) throws IOException;
 
-    public int receive(byte[] message) {
+    public int receive(byte[] message) throws IOException {
         receiveData(message);
         return 0;
     }
