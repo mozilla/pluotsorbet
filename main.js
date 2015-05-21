@@ -194,14 +194,18 @@ function stopAndSaveTimeline() {
     for (var i = 0; i < buffers.length; i++) {
       snapshots.push(buffers[i].createSnapshot());
     }
-    // Trace Statistcs
+    // Trace Statistics
     for (var i = 0; i < snapshots.length; i++) {
-      writer.writeLn("Timeline Statistics: " + i);
+      writer.writeLn("Timeline Statistics: " + snapshots[i].name);
       snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
     }
+    // Trace Aggregate Method Statistics
+    writer.writeLn("Timeline Statistics: All Threads");
+    var methodSnapshots = snapshots.slice(2);
+    new Shumway.Tools.Profiler.TimelineBufferSnapshotSet(methodSnapshots).traceStatistics(writer, 1);
     // Trace Events
     for (var i = 0; i < snapshots.length; i++) {
-      writer.writeLn("Timeline Events: " + i);
+      writer.writeLn("Timeline Events: " + snapshots[i].name);
       snapshots[i].trace(writer, 0.1); // Don't trace anything below 0.1 ms.
     }
   });
@@ -436,6 +440,8 @@ window.onload = function() {
 
 function requestTimelineBuffers(fn) {
   if (J2ME.timeline) {
+    // If you change the position at which method timelines begin in this array,
+    // then also update the method timeline aggregation in stopAndSaveTimeline.
     var activeTimeLines = [
       J2ME.threadTimeline,
       J2ME.timeline,
