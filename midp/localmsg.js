@@ -19,6 +19,7 @@ var LocalMsgConnection = function() {
 }
 
 LocalMsgConnection.prototype.reset = function() {
+    this.clientConnected = false;
     this.clientWaiting = [];
     this.clientMessages = [];
     while (this.serverWaiting.length > 0) {
