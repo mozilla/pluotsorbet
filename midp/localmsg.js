@@ -18,7 +18,7 @@ var LocalMsgConnection = function() {
     this.clientMessages = [];
 }
 
-LocalMsgConnection.prototype.resetConnection = function() {
+LocalMsgConnection.prototype.reset = function() {
     this.clientWaiting = [];
     this.clientMessages = [];
     while (this.serverWaiting.length > 0) {
@@ -1059,7 +1059,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
         new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
 
     var ctx = $.ctx;
-    this.connection.resetConnection();
+    this.connection.reset();
     ctx.setAsCurrentContext();
 
     this.connection.notifyConnection();
