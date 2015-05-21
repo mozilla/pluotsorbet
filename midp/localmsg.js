@@ -19,6 +19,8 @@ var LocalMsgConnection = function() {
 }
 
 LocalMsgConnection.prototype.reset = function() {
+    var ctx = $.ctx;
+
     this.clientConnected = false;
     this.clientWaiting = [];
     this.clientMessages = [];
@@ -26,6 +28,8 @@ LocalMsgConnection.prototype.reset = function() {
         this.serverWaiting.shift()(false);
     }
     this.serverMessages = [];
+
+    ctx.setAsCurrentContext();
 }
 
 LocalMsgConnection.prototype.notifyConnection = function() {
@@ -1059,9 +1063,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
     this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
         new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
 
-    var ctx = $.ctx;
     this.connection.reset();
-    ctx.setAsCurrentContext();
 
     this.connection.notifyConnection();
 };
