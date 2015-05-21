@@ -1084,10 +1084,3 @@ Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
 
     this.connection.waitClientMessage(data);
 };
-
-Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function() {
-    if (this.server) {
-        delete MIDP.LocalMsgConnections[this.protocolName];
-    }
-    delete this.connection;
-};
