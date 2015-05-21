@@ -15,6 +15,7 @@ public class TestLocalMsgProtocol implements Testlet {
     LocalMessageProtocolServerConnection server;
     LocalMessageProtocolConnection client;
     static final String PROTO_NAME = "marco";
+    static int serverNum = 0;
     TestHarness th;
 
     public void serverSendData() throws IOException {
@@ -140,8 +141,8 @@ public class TestLocalMsgProtocol implements Testlet {
             this.content = content;
             // To prevent the native localmsg connections mess with each other, we initialize
             // client and server in constructor here.
-            this.server = (LocalMessageProtocolServerConnection)Connector.open("localmsg://:"+PROTO_NAME);
-            this.client = (LocalMessageProtocolConnection)Connector.open("localmsg://"+PROTO_NAME);
+            this.server = (LocalMessageProtocolServerConnection)Connector.open("localmsg://:" + PROTO_NAME + serverNum);
+            this.client = (LocalMessageProtocolConnection)Connector.open("localmsg://" + PROTO_NAME + serverNum);
         }
 
         public void testServerSendsClientReceives() throws IOException, InterruptedException {
@@ -199,7 +200,7 @@ public class TestLocalMsgProtocol implements Testlet {
                     openLock.notifyAll();
                 }
 
-                client = (LocalMessageProtocolConnection)Connector.open("localmsg://"+PROTO_NAME);
+                client = (LocalMessageProtocolConnection)Connector.open("localmsg://" + PROTO_NAME + serverNum);
             } catch (Exception e) {
                 th.fail("Unexpected exception: " + e);
             }
@@ -209,7 +210,7 @@ public class TestLocalMsgProtocol implements Testlet {
     class ThreadServerCreate extends Thread {
         public void run() {
             try {
-                server = (LocalMessageProtocolServerConnection)Connector.open("localmsg://:"+PROTO_NAME);
+                server = (LocalMessageProtocolServerConnection)Connector.open("localmsg://:" + PROTO_NAME + serverNum);
 
                 synchronized (openLock) {
                     serverCreated = true;
@@ -304,9 +305,11 @@ public class TestLocalMsgProtocol implements Testlet {
         this.th = th;
 
         try {
-            server = (LocalMessageProtocolServerConnection)Connector.open("localmsg://:"+PROTO_NAME);
+            server = (LocalMessageProtocolServerConnection)Connector.open("localmsg://:" + PROTO_NAME + serverNum);
 
-            client = (LocalMessageProtocolConnection)Connector.open("localmsg://"+PROTO_NAME);
+            client = (LocalMessageProtocolConnection)Connector.open("localmsg://" + PROTO_NAME + serverNum);
+
+            serverNum++;
 
             testServerSendsClientReceives();
             testClientSendsServerReceives();
@@ -323,6 +326,8 @@ public class TestLocalMsgProtocol implements Testlet {
             t1.join();
             t2.join();
             t3.join();
+
+            serverNum++;
 
             // Test client waiting for a message from the server when the message isn't available yet
             Thread clientWait = new ThreadClientWaitMessage();
@@ -371,6 +376,7 @@ public class TestLocalMsgProtocol implements Testlet {
             client.close();
             server.close();
             th.check(true, "Server create, server accept and open, client open");
+            serverNum++;
 
             // Scenario 2
             serverCreateThread.start();
@@ -395,6 +401,7 @@ public class TestLocalMsgProtocol implements Testlet {
             client.close();
             server.close();
             th.check(true, "Server create, client open, server accept and open");
+            serverNum++;
 
             // Scenario 3
             clientThread.start();
@@ -419,6 +426,7 @@ public class TestLocalMsgProtocol implements Testlet {
             client.close();
             server.close();
             th.check(true, "Client open, server create, server accept and open");
+            serverNum++;
         } catch (IOException ioe) {
             th.fail("Unexpected exception");
             ioe.printStackTrace();
