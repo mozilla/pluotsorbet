@@ -540,7 +540,6 @@ module J2ME {
     // HEAD
 
     while (true) {
-      opPC = pc, op = code[pc++];
 
       if (!release) {
         assert(code === mi.codeAttribute.code, "Bad Code.");
@@ -555,6 +554,7 @@ module J2ME {
           traceStackWriter.greenLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
         }
       }
+      opPC = pc, op = code[pc], pc = pc + 1 | 0;
 
       try {
         switch (op) {

@@ -239,7 +239,7 @@ try {
   });
 
   print("Time: " + (dateNow() - start).toFixed(4) + " ms");
-  print("Bytecodes: " + J2ME.bytecodeCount);
+  J2ME.bytecodeCount && print("Bytecodes: " + J2ME.bytecodeCount);
   J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter(false, function (x) {
     print(x);
   }));

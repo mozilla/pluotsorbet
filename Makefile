@@ -243,6 +243,23 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
+# Creates a stand alone shell build of j2me that you can use to file bug reports.
+shell: j2me
+	mkdir -p shell
+	mkdir -p shell/java
+	mkdir -p shell/tests
+	mkdir -p shell/bench
+	cp -r libs shell/libs
+	cp -r bld shell/bld
+	cp -r polyfill shell/polyfill
+	cp -r midp shell/midp
+	cp java/classes.jar shell/java/classes.jar
+	cp tests/tests.jar shell/tests/tests.jar
+	cp bench/benchmark.jar shell/bench/benchmark.jar
+	cp blackBox.js shell/blackBox.js
+	cp util.js shell/util.js
+	cp native.js shell/native.js
+	cp jsshell.js shell/jsshell.js
 
 libs/native.js: vm/native/Makefile vm/native/native.cpp
 	make -C vm/native/
