@@ -149,6 +149,7 @@ var Benchmark = (function() {
     vmStartupTime: msFormatter,
     bgStartupTime: msFormatter,
     fgStartupTime: msFormatter,
+    fgRefreshStartupTime: msFormatter,
     totalSize: byteFormatter,
     domSize: byteFormatter,
     styleSize: byteFormatter,
@@ -224,6 +225,7 @@ var Benchmark = (function() {
       current.vmStartupTime = [];
       current.bgStartupTime = [];
       current.fgStartupTime = [];
+      current.fgRefreshStartupTime = [];
       if (settings.recordMemory) {
         storage.recordMemory = true;
         current.totalSize     = [];
@@ -483,9 +485,22 @@ var Benchmark = (function() {
         Native[fgImplKey] = function() {
           var now = performance.now();
           startup.stopTimer("fgStartupTime", now);
-          startup.stopTimer("startupTime", storage.warmBench ? (now - storage.startFGDelay) : now);
+          startup.startTimer("fgRefreshStartupTime", now);
           fgOriginalFn.apply(null, arguments);
         };
+
+        var refreshImplKey = "com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V";
+        var refreshOriginalFn = Native[refreshImplKey];
+        var refreshCalled = false;
+        Native[refreshImplKey] = function() {
+          if (!refreshCalled) {
+            refreshCalled = true;
+            var now = performance.now();
+            startup.stopTimer("fgRefreshStartupTime", now);
+            startup.stopTimer("startupTime", storage.warmBench ? (now - storage.startFGDelay) : now);
+          }
+          refreshOriginalFn.apply(null, arguments);
+        }
 
         if (storage.warmBench) {
           var startFGImplKey = "com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V";

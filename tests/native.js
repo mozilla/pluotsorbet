@@ -234,3 +234,21 @@ Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function() {
     }
   }));
 };
+
+Native["tests/background/DestroyMIDlet.sendDestroyMIDletEvent.()V"] = function() {
+  MIDP.setDestroyedForRestart(true);
+  MIDP.sendDestroyMIDletEvent(J2ME.newString("tests.background.DestroyMIDlet"));
+};
+
+Native["tests/background/DestroyMIDlet.sendExecuteMIDletEvent.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendExecuteMIDletEvent();
+  }, 0);
+};
+
+var called = 0;
+Native["tests/background/DestroyMIDlet.maybePrintDone.()V"] = function() {
+  if (++called === 2) {
+    console.log("DONE");
+  }
+};

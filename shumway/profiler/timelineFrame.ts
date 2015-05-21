@@ -218,7 +218,7 @@ module Shumway.Tools.Profiler {
       return depth;
     }
 
-    public calculateStatistics() {
+    public calculateStatistics(): TimelineFrameStatistics [] {
       var statistics = this.statistics = [];
       function visit(frame: TimelineFrame) {
         if (frame.kind) {
@@ -232,6 +232,7 @@ module Shumway.Tools.Profiler {
         }
       }
       visit(this);
+      return this.statistics;
     }
 
     public traceStatistics(writer: IndentingWriter, minTime: number = 0.0001) {
@@ -243,9 +244,9 @@ module Shumway.Tools.Profiler {
           s.push(this.statistics[i]);
         }
       }
-      // Sort by self time.
+      // Sort by self time descending, so expensive events are more prominent.
       s.sort(function (a, b) {
-        return a.selfTime - b.selfTime;
+        return b.selfTime - a.selfTime;
       })
       for (var i = 0; i < s.length; i++) {
         var statistic = s[i];
@@ -282,4 +283,32 @@ module Shumway.Tools.Profiler {
     }
   }
 
+  export class TimelineBufferSnapshotSet extends TimelineBufferSnapshot {
+    constructor (public snapshots: TimelineBufferSnapshot []) {
+      super(null);
+    }
+
+    public calculateStatistics(): TimelineFrameStatistics [] {
+      var snapshots = this.snapshots;
+      var aggregateStats = {};
+
+      for (var i = 0; i < snapshots.length; i++) {
+        var snapshot = snapshots[i];
+        var statistics = snapshot.statistics || snapshot.calculateStatistics();
+
+        for (var j = 0; j < statistics.length; j++) {
+          var stat = statistics[j];
+          if (stat) {
+            var name = stat.kind ? stat.kind.name : "?";
+            var aggregateStat = aggregateStats[name] = aggregateStats[name] || new TimelineFrameStatistics(stat.kind);
+            aggregateStat.count += stat.count;
+            aggregateStat.selfTime += stat.selfTime;
+            aggregateStat.totalTime += stat.totalTime;
+          }
+        }
+      }
+
+      return this.statistics = Object.keys(aggregateStats).map(function (key) { return aggregateStats[key] });
+    }
+  }
 }

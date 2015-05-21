@@ -177,7 +177,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 26 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 28 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -339,6 +339,22 @@ casper.test.begin("unit tests", 26 + gfxTests.length, function(test) {
       }, function() {
         test.assertEquals(this.getTitle(), "window.close called", "window.close called");
       });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/destroy.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("PAINTED", function() {
+          casper.waitForSelector("#canvas", function() {
+            this.click("#canvas");
+          });
+
+          casper.waitForText("DONE", function() {
+            var content = this.getPageContent();
+            test.assertEquals(content.match(/startApp1/g).length, 2, "Two startApp1");
+            test.assertEquals(content.match(/destroyApp/g).length, 1, "One destroyApp");
+          });
+        });
     });
 
     casper
