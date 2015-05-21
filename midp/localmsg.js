@@ -18,6 +18,15 @@ var LocalMsgConnection = function() {
     this.clientMessages = [];
 }
 
+LocalMsgConnection.prototype.resetConnection = function() {
+    this.clientWaiting = [];
+    this.clientMessages = [];
+    while (this.serverWaiting.length > 0) {
+        this.serverWaiting.shift()(false);
+    }
+    this.serverMessages = [];
+}
+
 LocalMsgConnection.prototype.notifyConnection = function() {
     this.clientConnected = true;
 
@@ -69,7 +78,7 @@ LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length
     this.serverMessages.push(new LocalMsgConnectionMessage(data, offset, length));
 
     if (this.serverWaiting.length > 0) {
-        this.serverWaiting.shift()();
+        this.serverWaiting.shift()(true);
     }
 }
 
@@ -78,9 +87,16 @@ LocalMsgConnection.prototype.getServerMessage = function(data) {
 }
 
 LocalMsgConnection.prototype.waitServerMessage = function(data) {
+    var ctx = $.ctx;
+
     asyncImpl("I", new Promise((function(resolve, reject) {
-        this.serverWaiting.push(function() {
-            resolve(this.getServerMessage(data));
+        this.serverWaiting.push(function(successful) {
+            if (successful) {
+                resolve(this.getServerMessage(data));
+            } else {
+                ctx.setAsCurrentContext();
+                reject($.newIOException("Client disconnected"));
+            }
         }.bind(this));
     }).bind(this)));
 }
@@ -1041,6 +1057,11 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 
     this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
         new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
+
+    var ctx = $.ctx;
+    this.connection.resetConnection();
+    ctx.setAsCurrentContext();
+
     this.connection.notifyConnection();
 };
 
