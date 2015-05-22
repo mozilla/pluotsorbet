@@ -158,7 +158,7 @@ public class ShellTestlets {
     "gnu/testlet/java/lang/String/getBytes14",
     "gnu/testlet/java/lang/String/indexOf",
     "gnu/testlet/java/io/ByteArrayInputStream/SimpleRead",
-    // "gnu/testlet/java/io/ByteArrayInputStream/ProtectedVars", I think this test case is wrong.
+    "gnu/testlet/java/io/ByteArrayInputStream/ProtectedVars",
     "test/org/jikesrvm/basic/core/classloading/TestUTF8",
     "gnu/testlet/vm/DoubleTest",
     "gnu/testlet/java/io/PrintStreamTest",
