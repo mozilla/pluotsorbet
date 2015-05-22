@@ -4,16 +4,32 @@
 'use strict';
 
 var Content = (function() {
-   var chRegisteredClassName = null;
-   var chRegisteredStorageID = -1;
-   var chRegisteredID = null;
-   var chRegisteredRegistrationMethod = -1;
+  var chRegisteredClassName = null;
+  var chRegisteredStorageID = -1;
+  var chRegisteredID = null;
+  var chRegisteredRegistrationMethod = -1;
+
+  function serializeString(parts) {
+    return parts.reduce(function(prev, current) {
+      return prev + String.fromCharCode(current.length * 2) + current;
+    }, "");
+  }
 
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.init.()Z", 1);
 
   Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
-    console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
-    return J2ME.newString("");
+    if (!chRegisteredClassName) {
+      return null;
+    }
+
+    var serializedString = serializeString([
+                                              chRegisteredID,
+                                              chRegisteredStorageID.toString(16),
+                                              chRegisteredClassName,
+                                              chRegisteredRegistrationMethod.toString(16)
+                                           ]);
+
+    return J2ME.newString(String.fromCharCode(serializedString.length * 2) + serializedString);
   };
 
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
@@ -27,7 +43,26 @@ var Content = (function() {
     return 1;
   };
 
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", null);
+  Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(callerId, ID, mode) {
+    if (!chRegisteredClassName) {
+      return null;
+    }
+
+    if (mode != 0) {
+      console.warn("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String; expected mode = 0");
+    }
+
+    if (callerId) {
+      console.warn("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String; expected callerId = null");
+    }
+
+    return J2ME.newString(serializeString([
+                                            chRegisteredID,
+                                            chRegisteredStorageID.toString(16),
+                                            chRegisteredClassName,
+                                            chRegisteredRegistrationMethod.toString(16)
+                                          ]));
+  };
 
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
     // We are in MVM mode (multiple MIDlets running concurrently)
