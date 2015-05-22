@@ -192,6 +192,9 @@ public class ShellTestlets {
     "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInvokeInterface",
     "gnu/testlet/vm/InterfaceTest",
     "java/lang/TestStaticInitRaceCondition",
+    "gnu/testlet/java/lang/Thread/isAlive",
+    "gnu/testlet/java/lang/Thread/join",
+    "gnu/testlet/java/lang/Thread/name",
     null
   };
 
@@ -253,10 +256,6 @@ public class ShellTestlets {
 //  "org/mozilla/io/TestNokiaPhoneStatusServer",
 //  "org/mozilla/io/TestNokiaProductInfoServer",
 //  "org/mozilla/io/TestNokiaSASrvRegServer",
-
-//  "gnu/testlet/java/lang/Thread/isAlive",
-//  "gnu/testlet/java/lang/Thread/join",
-//  "gnu/testlet/java/lang/Thread/name",
 
 //    "com/sun/midp/i18n/TestResourceConstants",
 //    "com/sun/midp/io/j2me/http/TestHttpConnection",
