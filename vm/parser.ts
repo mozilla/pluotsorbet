@@ -1285,11 +1285,10 @@ module J2ME {
       var iTable = this.iTable;
       for (var i = 0; i < vTable.length; i++) {
         var methodInfo = vTable[i];
-        if (methodInfo.implementsInterface) {
-          release || assert(methodInfo.mangledName);
-          release || assert(!iTable[methodInfo.mangledName]);
-          iTable[methodInfo.mangledName] = methodInfo;
-        }
+        // TODO: Find out why only doing this when |methodInfo.implementsInterface| is |true|, fails.
+        release || assert(methodInfo.mangledName);
+        release || assert(!iTable[methodInfo.mangledName]);
+        iTable[methodInfo.mangledName] = methodInfo;
       }
     }
 
