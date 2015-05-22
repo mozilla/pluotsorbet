@@ -63,15 +63,15 @@ module J2ME {
         }
       }
     }
-
     // Emit class initializer.
     writer.enter("function " + mangledClassName + "() {");
+    writer.writeLn("this._address = ASM._gcMalloc(" + classInfo.sizeOfFields + ");");
     //
     // Should we or should we not generate hash codes at this point? Eager or lazy, we should at least
     // initialize it zero to keep object shapes fixed.
     // writer.writeLn("this._hashCode = $.nextHashCode(this);");
-    writer.writeLn("this._hashCode = 0;");
-    emitFields(classInfo.fTable, false);
+    //writer.writeLn("this._hashCode = 0;");
+    //emitFields(classInfo.fTable, false);
     writer.leave("}");
 
     if (emitter.klassHeaderOnly) {

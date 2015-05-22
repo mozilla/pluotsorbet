@@ -26,9 +26,9 @@ import gnu.testlet.TestHarness;
 
 public class cos implements Testlet
 {
-  public int getExpectedPass() { return 24; }
+  public int getExpectedPass() { return 26; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 2; }
+  public int getExpectedKnownFail() { return 0; }
 
   /**
    * Function (=static method) checked by this test.
@@ -140,7 +140,7 @@ public class cos implements Testlet
       harness.check (new Double (Math.cos (0)).toString (), "1.0");
       harness.check (new Double (Math.cos (Math.PI)).toString (), "-1.0");
       harness.check (Math.abs (Math.cos (Math.PI/2))
-		     <= 1.1102230246251565E-16); 
+		     <= 1.1102230246251565E-16);
       // It's unreasonable to expect the result of this to be eactly
       // zero, but 2^-53, the value of the constant used here, is 1ulp
       // in the range of cos.

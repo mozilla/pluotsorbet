@@ -86,7 +86,16 @@ public class ByteArrayOutputStream extends OutputStream {
      *
      * @param   b   the byte to be written.
      */
-    native public synchronized void write(int b);
+    public synchronized void write(int b) {
+        int newcount = count + 1;
+        if (newcount > buf.length) {
+            byte newbuf[] = new byte[Math.max(buf.length << 1, newcount)];
+            System.arraycopy(buf, 0, newbuf, 0, count);
+            buf = newbuf;
+        }
+        buf[count] = (byte)b;
+        count = newcount;
+    }
 
     /**
      * Writes <code>len</code> bytes from the specified byte array
@@ -96,7 +105,22 @@ public class ByteArrayOutputStream extends OutputStream {
      * @param   off   the start offset in the data.
      * @param   len   the number of bytes to write.
      */
-    native public synchronized void write(byte b[], int off, int len);
+    public synchronized void write(byte b[], int off, int len) {
+        if ((off < 0) || (off > b.length) || (len < 0) ||
+            ((off + len) > b.length) || ((off + len) < 0)) {
+            throw new IndexOutOfBoundsException();
+        } else if (len == 0) {
+            return;
+        }
+        int newcount = count + len;
+        if (newcount > buf.length) {
+            byte newbuf[] = new byte[Math.max(buf.length << 1, newcount)];
+            System.arraycopy(buf, 0, newbuf, 0, count);
+            buf = newbuf;
+        }
+        System.arraycopy(b, off, buf, count, len);
+        count = newcount;
+    }
 
     /**
      * Resets the <code>count</code> field of this byte array output

@@ -22,7 +22,7 @@ class BubbleSort {
 
     long total = 0L;
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 5; i++) {
       for (int j = 0; j < array.length; j++) {
         array[j] = array.length - j;
       }
@@ -31,11 +31,11 @@ class BubbleSort {
       total += JVM.monotonicTimeMillis() - start;
     }
 
-    String s = "";
-    for (int i = 0; i < array.length; i++) {
-      s += array[i] + " ";
-    }
-    System.out.println(s);
+//    String s = "";
+//    for (int i = 0; i < array.length; i++) {
+//      s += array[i] + " ";
+//    }
+//    System.out.println(s);
 
     System.out.println("BubbleSort: " + total);
   }
