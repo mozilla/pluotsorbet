@@ -70,9 +70,41 @@ var Content = (function() {
   };
 
   addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
+  addUnimplementedNative("com/sun/j2me/content/AppProxy.platformFinish0.(I)Z", 0);
+
+  var invocation = null;
+
+  function addInvocation(argument, action) {
+    invocation = {
+      argument: argument,
+      action: action,
+    };
+  }
+
+  Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] = function(invoc, suiteId, className, mode, shouldBlock) {
+    if (!invocation) {
+      return 0;
+    }
+
+    if (invoc.arguments.length != 1) {
+      invoc.argsLen = 1;
+      return -1;
+    }
+
+    invoc.arguments[0] = J2ME.newString(invocation.argument);
+    invoc.action = J2ME.newString(invocation.action);
+    invoc.status = 2; // Invocation.ACTIVE
+
+    invocation = null;
+
+    return 1;
+  };
 
   addUnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
   addUnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
   addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
+
+  return {
+    addInvocation: addInvocation,
+  };
 })();
