@@ -4,6 +4,11 @@
 'use strict';
 
 var Content = (function() {
+   var chRegisteredClassName = null;
+   var chRegisteredStorageID = -1;
+   var chRegisteredID = null;
+   var chRegisteredRegistrationMethod = -1;
+
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.init.()Z", 1);
 
   Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
@@ -12,7 +17,16 @@ var Content = (function() {
   };
 
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z", 0);
+
+  Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] = function(storageId, className, handlerData) {
+    chRegisteredID = J2ME.fromJavaString(handlerData.ID);
+    chRegisteredClassName = J2ME.fromJavaString(className);
+    chRegisteredStorageID = storageId;
+    chRegisteredRegistrationMethod = handlerData.registrationMethod;
+
+    return 1;
+  };
+
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", null);
 
   Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {

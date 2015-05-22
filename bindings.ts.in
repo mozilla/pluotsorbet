@@ -277,6 +277,14 @@ module J2ME {
         }
       }
     },
+    "com/sun/j2me/content/ContentHandlerRegData": {
+      fields: {
+        instanceSymbols: {
+          "ID": "Ljava/lang/String;",
+          "registrationMethod": "I",
+        }
+      }
+    },
   };
 
   export var BindingsMap = new Uint8Hashtable(50);
