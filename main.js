@@ -185,10 +185,14 @@ function stopTimeline(cb) {
 
 function stopAndSaveTimeline() {
   console.log("Saving profile, please wait ...");
+  var traceFormat = Shumway.Tools.Profiler.TraceFormat[profileFormat.toUpperCase()];
   var output = [];
   var writer = new J2ME.IndentingWriter(false, function (s) {
     output.push(s);
   });
+  if (traceFormat === Shumway.Tools.Profiler.TraceFormat.CSV) {
+    writer.writeLn("Name,Count,Self (ms),Total (ms)");
+  }
   stopTimeline(function (buffers) {
     var snapshots = [];
     for (var i = 0; i < buffers.length; i++) {
@@ -197,12 +201,12 @@ function stopAndSaveTimeline() {
     // Trace Statistics
     for (var i = 0; i < snapshots.length; i++) {
       writer.writeLn("Timeline Statistics: " + snapshots[i].name);
-      snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
+      snapshots[i].traceStatistics(writer, 1, traceFormat); // Don't trace any totals below 1 ms.
     }
     // Trace Aggregate Method Statistics
     writer.writeLn("Timeline Statistics: All Threads");
     var methodSnapshots = snapshots.slice(2);
-    new Shumway.Tools.Profiler.TimelineBufferSnapshotSet(methodSnapshots).traceStatistics(writer, 1);
+    new Shumway.Tools.Profiler.TimelineBufferSnapshotSet(methodSnapshots).traceStatistics(writer, 1, traceFormat);
     // Trace Events
     for (var i = 0; i < snapshots.length; i++) {
       writer.writeLn("Timeline Events: " + snapshots[i].name);
@@ -210,8 +214,21 @@ function stopAndSaveTimeline() {
     }
   });
   var text = output.join("\n");
-  var profileFilename = "profile.txt";
-  var blob = new Blob([text], {type : 'text/html'});
+
+  var fileExtension, mediaType;
+  switch (traceFormat) {
+    case Shumway.Tools.Profiler.TraceFormat.CSV:
+      fileExtension = "csv";
+      mediaType = "text/csv";
+      break;
+    case Shumway.Tools.Profiler.PLAIN:
+    default:
+      fileExtension = "txt";
+      mediaType = "text/plain";
+      break;
+  }
+  var profileFilename = "profile." + fileExtension;
+  var blob = new Blob([text], {type : mediaType});
   saveAs(blob, profileFilename);
   console.log("Saved profile in: adb pull /sdcard/downloads/" + profileFilename);
 }
