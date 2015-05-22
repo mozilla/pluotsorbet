@@ -191,6 +191,7 @@ public class ShellTestlets {
     "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInstanceof",
     "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInvokeInterface",
     "gnu/testlet/vm/InterfaceTest",
+    "java/lang/TestStaticInitRaceCondition",
     null
   };
 
@@ -261,7 +262,6 @@ public class ShellTestlets {
 //    "com/sun/midp/io/j2me/http/TestHttpConnection",
 //    "com/sun/midp/io/j2me/storage/TestRandomAccessStream",
 //    "gnu/testlet/java/lang/System/getProperty",
-//    "java/lang/TestStaticInitRaceCondition",
   null};
 
   static {

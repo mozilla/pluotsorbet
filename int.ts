@@ -2,7 +2,9 @@ module J2ME {
 
   import assert = Debug.assert;
   import Bytecodes = Bytecode.Bytecodes;
+  import isInvoke = Bytecode.isInvoke;
   import toHEX = IntegerUtilities.toHEX;
+
 
   function toName(o) {
     if (o instanceof MethodInfo) {
@@ -134,11 +136,13 @@ module J2ME {
     public fp: number;
     public sp: number;
     public pc: number;
+    public thread: Thread;
     constructor() {
 
     }
 
-    set(fp: number, sp: number, pc: number) {
+    set(thread: Thread, fp: number, sp: number, pc: number) {
+      this.thread = thread;
       this.fp = fp;
       this.sp = sp;
       this.pc = pc;
@@ -194,9 +198,9 @@ module J2ME {
       var fp = this.fp;
       var sp = this.sp;
       var pc = this.pc;
-      while (this.fp > FrameLayout.CallerSaveSize) {
+      while (this.fp > this.thread.tp) {
         writer.writeLn((this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
-        this.set(i32[this.fp + FrameLayout.CallerFPOffset],
+        this.set(this.thread, i32[this.fp + FrameLayout.CallerFPOffset],
                  this.fp + this.parameterOffset,
                  i32[this.fp + FrameLayout.CallerRAOffset]);
 
@@ -315,12 +319,12 @@ module J2ME {
       var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
       var code = mi.codeAttribute.code;
       var op = code[this.pc];
-      release || assert(Bytecode.isInvoke(op), "The PC should be at an invoke bytecode.");
+      release || assert(isInvoke(op), "The PC should be at an invoke bytecode.");
       this.pc += (op === Bytecodes.INVOKEINTERFACE ? 5 : 3);
     }
 
     get frame(): FrameView {
-      this.view.set(this.fp, this.sp, this.pc);
+      this.view.set(this, this.fp, this.sp, this.pc);
       return this.view;
     }
 
@@ -540,6 +544,7 @@ module J2ME {
     // HEAD
 
     while (true) {
+      opPC = pc, op = code[pc], pc = pc + 1 | 0;
 
       if (!release) {
         assert(code === mi.codeAttribute.code, "Bad Code.");
@@ -549,12 +554,11 @@ module J2ME {
         bytecodeCount++;
 
         if (traceStackWriter) {
-          frame.set(fp, sp, opPC); frame.trace(traceStackWriter);
+          frame.set(thread, fp, sp, opPC); frame.trace(traceStackWriter);
           traceStackWriter.writeLn();
           traceStackWriter.greenLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
         }
       }
-      opPC = pc, op = code[pc], pc = pc + 1 | 0;
 
       try {
         switch (op) {
@@ -1565,6 +1569,7 @@ module J2ME {
           case Bytecodes.RETURN:
             var lastSP = sp;
             var lastMI = mi;
+            var lastOP = op;
             if (lastMI.isSynchronized) {
               monitor = ref[fp + FrameLayout.MonitorOffset];
               $.ctx.monitorExit(monitor);
@@ -1586,21 +1591,30 @@ module J2ME {
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
-            // Calculate the PC based on the size of the caller's invoke bytecode.
-            pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
-            // Push return value.
-            switch (op) {
-              case Bytecodes.LRETURN:
-              case Bytecodes.DRETURN:
-                i32[sp++] = i32[lastSP - 2]; // Low Bits
+            var op = code[opPC];
+            if (op >= Bytecodes.FIRST_INVOKE && op <= Bytecodes.LAST_INVOKE) {
+              // Calculate the PC based on the size of the caller's invoke bytecode.
+              pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
+              // Push return value.
+              switch (lastOP) {
+                case Bytecodes.LRETURN:
+                case Bytecodes.DRETURN:
+                  i32[sp++] = i32[lastSP - 2]; // Low Bits
                 // Fallthrough
-              case Bytecodes.IRETURN:
-              case Bytecodes.FRETURN:
-                i32[sp++] = i32[lastSP - 1];
-                continue;
-              case Bytecodes.ARETURN:
-                ref[sp++] = ref[lastSP - 1];
-                continue;
+                case Bytecodes.IRETURN:
+                case Bytecodes.FRETURN:
+                  i32[sp++] = i32[lastSP - 1];
+                  continue;
+                case Bytecodes.ARETURN:
+                  ref[sp++] = ref[lastSP - 1];
+                  continue;
+              }
+            } else {
+              // We are returning to a bytecode that trapped.
+              // REDUX: I need to think through this some more, why do we need to subtract the CallerSaveSize? Is it
+              // because of the the null frame? This frame should have been spliced out, ... is this a coincidence?
+              sp -= FrameLayout.CallerSaveSize;
+              pc = opPC;
             }
             continue;
           case Bytecodes.INVOKEVIRTUAL:
