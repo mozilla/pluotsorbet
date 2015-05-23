@@ -12,7 +12,7 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestUtils;
 
 public class TestNokiaImageProcessingServer implements Testlet {
-    public int getExpectedPass() { return 49; }
+    public int getExpectedPass() { return 59; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
 
@@ -131,8 +131,10 @@ public class TestNokiaImageProcessingServer implements Testlet {
             testScaleImage(th, 10000, 0, 0, "file:////test.jpg", "test.jpg");
             testScaleImage(th, 10000, 101, 101, "file:////test.jpg", "test.jpg");
             testScaleImage(th, 10000, 10000, 10000, "file:////test.jpg", "test.jpg");
+            testScaleImage(th, 0, 100, 100, "file:////test.jpg", "/test.jpg");
             testScaleImage(th, 0, 100, 100, "file:////test.jpg", "file:////test.jpg");
             testScaleImage(th, 0, 100, 100, "file:///MemoryCard/test.jpg", "MemoryCard/test.jpg");
+            testScaleImage(th, 0, 100, 100, "file:///MemoryCard/test.jpg", "/MemoryCard/test.jpg");
             testScaleImage(th, 0, 100, 100, "file:///MemoryCard/test.jpg", "file:///MemoryCard/test.jpg");
 
             client.close();
