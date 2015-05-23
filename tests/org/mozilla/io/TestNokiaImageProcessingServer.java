@@ -12,9 +12,10 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestUtils;
 
 public class TestNokiaImageProcessingServer implements Testlet {
-    public int getExpectedPass() { return 34; }
+    public int getExpectedPass() { return 59; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
+
     LocalMessageProtocolConnection client;
     static final String PROTO_NAME = "nokia.image-processing";
 
@@ -48,9 +49,9 @@ public class TestNokiaImageProcessingServer implements Testlet {
         th.check(string.substring(string.indexOf(58) + 1).length() > 0);
     }
 
-    public void testScaleImage(TestHarness th, int maxKb, int maxHres, int maxVres) throws IOException {
+    public void testScaleImage(TestHarness th, int maxKb, int maxHres, int maxVres, String fileURL, String filenameParam) throws IOException {
         // Store an image in the fs
-        FileConnection originalImage = (FileConnection)Connector.open("file:////test.jpg", Connector.READ_WRITE);
+        FileConnection originalImage = (FileConnection)Connector.open(fileURL, Connector.READ_WRITE);
         if (!originalImage.exists()) {
             originalImage.create();
         }
@@ -66,7 +67,7 @@ public class TestNokiaImageProcessingServer implements Testlet {
         dataEncoder.putStart(14, "event");
         dataEncoder.put(13, "name", "Scale");
         dataEncoder.put(2, "trans_id", 42);
-        dataEncoder.put(11, "filename", "test.jpg");
+        dataEncoder.put(11, "filename", filenameParam);
         dataEncoder.putStart(15, "limits");
         if (maxVres > 0) {
             dataEncoder.put(5, "max_vres", maxVres);
@@ -125,11 +126,16 @@ public class TestNokiaImageProcessingServer implements Testlet {
             client = (LocalMessageProtocolConnection)Connector.open("localmsg://" + PROTO_NAME);
 
             testProtocolVersion(th);
-            testScaleImage(th, 0, 100, 100);
-            testScaleImage(th, 1, 0, 0);
-            testScaleImage(th, 10000, 0, 0);
-            testScaleImage(th, 10000, 101, 101);
-            testScaleImage(th, 10000, 10000, 10000);
+            testScaleImage(th, 0, 100, 100, "file:////test.jpg", "test.jpg");
+            testScaleImage(th, 1, 0, 0, "file:////test.jpg", "test.jpg");
+            testScaleImage(th, 10000, 0, 0, "file:////test.jpg", "test.jpg");
+            testScaleImage(th, 10000, 101, 101, "file:////test.jpg", "test.jpg");
+            testScaleImage(th, 10000, 10000, 10000, "file:////test.jpg", "test.jpg");
+            testScaleImage(th, 0, 100, 100, "file:////test.jpg", "/test.jpg");
+            testScaleImage(th, 0, 100, 100, "file:////test.jpg", "file:////test.jpg");
+            testScaleImage(th, 0, 100, 100, "file:///MemoryCard/test.jpg", "MemoryCard/test.jpg");
+            testScaleImage(th, 0, 100, 100, "file:///MemoryCard/test.jpg", "/MemoryCard/test.jpg");
+            testScaleImage(th, 0, 100, 100, "file:///MemoryCard/test.jpg", "file:///MemoryCard/test.jpg");
 
             client.close();
        } catch (IOException ioe) {
