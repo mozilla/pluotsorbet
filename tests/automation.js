@@ -16,7 +16,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 80000;
+casper.options.waitTimeout = 100000;
 casper.options.verbose = true;
 casper.options.viewportSize = { width: 240, height: 320 };
 casper.options.clientScripts = [
