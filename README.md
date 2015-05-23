@@ -288,9 +288,9 @@ If you need implement a native method with async JS calls, the following steps a
 
 e.g:
 
-    Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
+    Native["java/lang/Thread.sleep.(J)V"] = function(delayL, delayH) {
         asyncImpl("V", new Promise(function(resolve, reject) {
-            window.setTimeout(resolve, delay.toNumber());
+            window.setTimeout(resolve, J2ME.longToNumber(delayL, delayH));
         }));
     };
 
@@ -298,7 +298,8 @@ The `asyncImpl` call is optional if part of the code doesn't make async calls. T
 
 e.g:
 
-    Native["java/lang/Thread.newSleep.(J)Z"] = function(delay) {
+    Native["java/lang/Thread.newSleep.(J)Z"] = function(delayL, delayH) {
+        var delay = J2ME.longToNumber(delayL, delayH);
         if (delay < 0) {
           // Return false synchronously. Note: we use 1 and 0 in JavaScript to
           // represent true and false in Java.
@@ -306,7 +307,7 @@ e.g:
         }
         // Return true asynchronously with `asyncImpl`.
         asyncImpl("Z", new Promise(function(resolve, reject) {
-            window.setTimeout(resolve.bind(null, 1), delay.toNumber());
+            window.setTimeout(resolve.bind(null, 1), delay);
         }));
     };
 
