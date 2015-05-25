@@ -549,7 +549,7 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
         casper.waitFor(function() {
             return !!alertText;
         }, function() {
-            test.assertEquals(alertText, "Update completed!");
+            test.assertEquals(alertText, "Update completed!", "Update alert shown");
             syncFS();
         });
     });
