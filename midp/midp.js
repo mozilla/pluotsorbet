@@ -691,10 +691,18 @@ var MIDP = (function() {
     destroyedForRestart = val;
   }
 
+  var destroyedListener = null;
+  function registerDestroyedListener(func) {
+    destroyedListener = func;
+  }
+
   var pendingMIDletUpdate = null;
   Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     if (destroyedForRestart) {
       destroyedForRestart = false;
+      if (destroyedListener) {
+        destroyedListener();
+      }
       FG.reset();
       return;
     }
@@ -1265,6 +1273,7 @@ var MIDP = (function() {
     sendKeyRelease: sendKeyRelease,
     sendDestroyMIDletEvent: sendDestroyMIDletEvent,
     setDestroyedForRestart: setDestroyedForRestart,
+    registerDestroyedListener: registerDestroyedListener,
     sendExecuteMIDletEvent: sendExecuteMIDletEvent,
     deviceContext: deviceContext,
     updatePhysicalScreenSize: updatePhysicalScreenSize,

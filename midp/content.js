@@ -104,6 +104,15 @@ var Content = (function() {
   DumbPipe.open("mozActivityHandler", {}, function(message) {
     var uniqueFileName = fs.createUniqueFile("/Private/j2meshare", message.fileName, new Blob([ message.data ]));
     addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
+
+    // TODO: Only if MIDlet is already running!
+    MIDP.setDestroyedForRestart(true);
+    MIDP.sendDestroyMIDletEvent(J2ME.newString(chRegisteredClassName));
+    MIDP.registerDestroyedListener(function() {
+      MIDP.registerDestroyedListener(null);
+      addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
+      MIDP.sendExecuteMIDletEvent();
+    });
   });
 
   Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] = function(invoc, suiteId, className, mode, shouldBlock) {
