@@ -256,3 +256,18 @@ Native["tests/background/DestroyMIDlet.maybePrintDone.()V"] = function() {
 Native["javax/microedition/content/TestContentHandler.addInvocation.(Ljava/lang/String;Ljava/lang/String;)V"] = function(argument, action) {
   Content.addInvocation(J2ME.fromJavaString(argument), J2ME.fromJavaString(action));
 };
+
+var ContentHandlerMIDletStarted = 0;
+
+Native["midlets/ContentHandlerMIDlet.sendShareMessage.()V"] =
+Native["midlets/BackgroundContentHandlerRegisterMIDlet.sendShareMessage.()V"] = function() {
+  DumbPipe.close(DumbPipe.open("callShareActivityMessageHandler", { num: ContentHandlerMIDletStarted }));
+};
+
+Native["midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function() {
+  if (++ContentHandlerMIDletStarted === 3) {
+    return 1;
+  }
+
+  return 0;
+};

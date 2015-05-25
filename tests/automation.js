@@ -177,7 +177,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 28 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -354,6 +354,19 @@ casper.test.begin("unit tests", 28 + gfxTests.length, function(test) {
             test.assertEquals(content.match(/startApp1/g).length, 2, "Two startApp1");
             test.assertEquals(content.match(/destroyApp/g).length, 1, "One destroyApp");
           });
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.BackgroundContentHandlerRegisterMIDlet&jad=tests/midlets/ContentHandlerMIDlet/contenthandler.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("Test finished", function() {
+            var content = this.getPageContent();
+            test.assertEquals(content.match(/Hello World from background MIDlet/g).length, 1, "ContentHandlerMIDlet test 1");
+            test.assertEquals(content.match(/Invocation action: share/g).length, 2, "ContentHandlerMIDlet test 2");
+            test.assertEquals(content.match(/Invocation args\[0\]: url=file:\/\/\/Private\/j2meshare\/j2mesharetestimage0\.jpg/g).length, 1, "ContentHandlerMIDlet test 3");
+            test.assertEquals(content.match(/Invocation args\[0\]: url=file:\/\/\/Private\/j2meshare\/j2mesharetestimage1\.jpg/g).length, 1, "ContentHandlerMIDlet test 4");
+            test.assertEquals(content.match(/Image exists/g).length, 2, "ContentHandlerMIDlet test 5");
         });
     });
 

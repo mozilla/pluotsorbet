@@ -31,3 +31,24 @@ function MozActivity(obj) {
     throw new Error("MozActivity " + obj.name + " not supported");
   }
 }
+
+var messageHandlers = {};
+navigator.mozSetMessageHandler = function(name, func) {
+  messageHandlers[name] = func;
+}
+
+DumbPipe.registerOpener("callShareActivityMessageHandler", function(message, sender) {
+  var activity = {
+    source: {
+      name: "share",
+      data: {
+        "type": "image/*",
+        "number": 1,
+        "blobs": [ new Blob([]) ],
+        "filenames": ["j2mesharetestimage" + message.num + ".jpg"],
+        "filepaths": ["/sdcard/DCIM/100MZLLA/j2mesharetestimage" + message.num + ".jpg"]
+      },
+    },
+  };
+  messageHandlers["activity"](activity);
+});
