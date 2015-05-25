@@ -753,3 +753,34 @@ DumbPipe.registerOpener("mozActivity", function(message, sender) {
 
   activity.onerror = sender.bind(null, { type: "onerror" });
 });
+
+DumbPipe.registerOpener("mozActivityHandler", function(message, sender) {
+  navigator.mozSetMessageHandler('activity', function(activityRequest) {
+    if (activityRequest.source.name !== 'share') {
+      return;
+    }
+
+    /* The data attribute looks like this:
+         {
+           "type":"image/*",
+           "number":1,
+           "blobs":[{}],
+           "filenames":["IMG_0001.jpg"],
+           "filepaths":["/sdcard/DCIM/100MZLLA/IMG_0001.jpg"]
+         }
+    */
+
+    var blob = activityRequest.source.data.blobs[0];
+
+    var fileReader = new FileReader();
+
+    fileReader.onload = function(data) {
+      sender({
+        fileName: activityRequest.source.data.filenames[0],
+        data: fileReader.result
+      });
+    }
+
+    fileReader.readAsArrayBuffer(blob);
+  });
+});
