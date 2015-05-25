@@ -4,10 +4,12 @@
 'use strict';
 
 var Content = (function() {
-  var chRegisteredClassName = null;
-  var chRegisteredStorageID = -1;
-  var chRegisteredID = null;
-  var chRegisteredRegistrationMethod = -1;
+  // Allow configuring these values for MIDlets that don't register
+  // the content handler in time.
+  var chRegisteredID = config.chRegisteredID || null;
+  var chRegisteredClassName = config.chRegisteredClassName || null;
+  var chRegisteredStorageID = config.chRegisteredStorageID || -1;
+  var chRegisteredRegistrationMethod = config.chRegisteredRegistrationMethod || -1;
 
   function serializeString(parts) {
     return parts.reduce(function(prev, current) {
@@ -35,8 +37,26 @@ var Content = (function() {
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
 
   Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] = function(storageId, className, handlerData) {
-    chRegisteredID = J2ME.fromJavaString(handlerData.ID);
-    chRegisteredClassName = J2ME.fromJavaString(className);
+    var registerID = J2ME.fromJavaString(handlerData.ID);
+    if (chRegisteredID && chRegisteredID != registerID) {
+      console.warn("Dynamic registration ID doesn't match the configuration");
+    }
+
+    var registerClassName = J2ME.fromJavaString(className);
+    if (chRegisteredClassName && chRegisteredClassName != registerClassName) {
+      console.warn("Dynamic registration class name doesn't match the configuration");
+    }
+
+    if (chRegisteredStorageID != -1 && chRegisteredStorageID != storageId) {
+      console.warn("Dynamic registration storage ID doesn't match the configuration");
+    }
+
+    if (chRegisteredRegistrationMethod != -1 && chRegisteredRegistrationMethod != handlerData.registrationMethod) {
+      console.warn("Dynamic registration registration method doesn't match the configuration");
+    }
+
+    chRegisteredID = registerID;
+    chRegisteredClassName = registerClassName;
     chRegisteredStorageID = storageId;
     chRegisteredRegistrationMethod = handlerData.registrationMethod;
 
