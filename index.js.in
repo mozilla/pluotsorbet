@@ -8,7 +8,8 @@
  */
 (function() {
   var loadingPromises = [];
-  if (config.midletClassName == "RunTests" || config.jars.indexOf("tests.jar") != -1) {
+  if (config.midletClassName === "RunTests" ||
+      config.midletClassName === "midlets.BackgroundContentHandlerRegisterMIDlet") {
     loadingPromises.push(loadScript("tests/contacts.js"),
                          loadScript("tests/index.js"),
                          loadScript("tests/mozactivitymock.js"));
