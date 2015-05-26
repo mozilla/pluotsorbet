@@ -1084,9 +1084,9 @@ Native["com/sun/mmedia/MediaDownload.nNeedMoreDataImmediatelly.(I)Z"] = function
     return 1;
 };
 
-Native["com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V"] = function(handle, contentSize) {
+Native["com/sun/mmedia/MediaDownload.nSetWholeContentSize.(IJ)V"] = function(handle, contentSizeLow, contentSizeHigh) {
     var player = Media.PlayerCache[handle];
-    player.wholeContentSize = contentSize.toNumber();
+    player.wholeContentSize = J2ME.longToNumber(contentSizeLow, contentSizeHigh);
 };
 
 Native["com/sun/mmedia/DirectPlayer.nIsToneControlSupported.(I)Z"] = function(handle) {
@@ -1162,9 +1162,9 @@ Native["com/sun/mmedia/DirectPlayer.nGetMediaTime.(I)I"] = function(handle) {
     }
 };
 
-Native["com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I"] = function(handle, ms) {
+Native["com/sun/mmedia/DirectPlayer.nSetMediaTime.(IJ)I"] = function(handle, msLow, msHigh) {
     var container = Media.PlayerCache[handle];
-    return container.player.setMediaTime(ms.toInt());
+    return container.player.setMediaTime(J2ME.longToNumber(msLow, msHigh));
 };
 
 Native["com/sun/mmedia/DirectPlayer.nStart.(I)Z"] = function(handle) {

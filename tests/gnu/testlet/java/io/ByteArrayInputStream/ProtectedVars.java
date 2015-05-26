@@ -30,9 +30,9 @@ import java.io.*;
 public class ProtectedVars extends ByteArrayInputStream
        implements Testlet
 {
-  public int getExpectedPass() { return 0; }
+  public int getExpectedPass() { return 4; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 4; }
+  public int getExpectedKnownFail() { return 0; }
 
 public
 ProtectedVars(byte[] b)
@@ -65,19 +65,18 @@ test(TestHarness harness)
       bais.read(read_buf);
       bais.mark(0);
     
-      harness.todo(bais.mark, read_buf.length, "mark");
+      harness.check(bais.mark, read_buf.length, "mark");
     
       bais.read(read_buf);
-      harness.todo(bais.pos, (read_buf.length * 2), "pos");
-      harness.todo(bais.count, str_bytes.length, "count");
-      harness.todo(bais.buf, str_bytes, "buf");
+      harness.check(bais.pos, (read_buf.length * 2), "pos");
+      harness.check(bais.count, str_bytes.length, "count");
+      harness.check(bais.buf, str_bytes, "buf");
     }
   catch (IOException e)
     {
-      harness.debug("" + e);
-      harness.check(false);
+      harness.fail("Unexpected exception: " + e);
     } catch (Exception e) {
-      harness.todo(false);
+      harness.fail("Unexpected exception: " + e);
     }
 }
 

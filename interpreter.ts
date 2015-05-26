@@ -1,6 +1,5 @@
 module J2ME {
   declare var util, config;
-  declare var Promise;
 
   import BytecodeStream = Bytecode.BytecodeStream;
   import BlockMap = Bytecode.BlockMap;
@@ -87,16 +86,6 @@ module J2ME {
       assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got " + returnValue + " in " + methodInfo.implKey);
     }
   }
-
-  /**
-   * The number of opcodes executed thus far.
-   */
-  export var bytecodeCount = 0;
-
-  /**
-   * The number of times the interpreter method was called thus far.
-   */
-  export var interpreterCount = 0;
 
   export var onStackReplacementCount = 0;
 
@@ -191,7 +180,7 @@ module J2ME {
     }
   }
 
-  export function interpret() {
+  export function interpret2() {
     var ctx = $.ctx;
 
     // These must always be kept up to date with the current frame.
@@ -236,70 +225,71 @@ module J2ME {
 
     interpreterCount ++;
 
+    O = null;
     while (true) {
-      bytecodeCount ++;
-      mi.stats.bytecodeCount ++;
-
-      // TODO: Make sure this works even if we JIT everything. At the moment it fails
-      // for synthetic method frames which have bad max_local counts.
-
-      // Inline heuristics that trigger JIT compilation here.
-      if ((enableRuntimeCompilation &&
-           mi.state < MethodState.Compiled && // Give up if we're at this state.
-           mi.stats.backwardsBranchCount + mi.stats.interpreterCallCount > 10) ||
-          config.forceRuntimeCompilation) {
-        compileAndLinkMethod(mi);
-      }
+      //bytecodeCount ++;
+      //mi.stats.bytecodeCount ++;
+      //
+      //// TODO: Make sure this works even if we JIT everything. At the moment it fails
+      //// for synthetic method frames which have bad max_local counts.
+      //
+      //// Inline heuristics that trigger JIT compilation here.
+      //if ((enableRuntimeCompilation &&
+      //     mi.state < MethodState.Compiled && // Give up if we're at this state.
+      //     mi.stats.backwardsBranchCount + mi.stats.interpreterCallCount > 10) ||
+      //    config.forceRuntimeCompilation) {
+      //  compileAndLinkMethod(mi);
+      //}
 
       try {
-        if (frame.pc < lastPC) {
-          mi.stats.backwardsBranchCount ++;
-          if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
-            // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
-            // at the beggining of a basic block. This is a really cheap test and a convenient place to perform an
-            // on stack replacement.
-
-            if (mi.onStackReplacementEntryPoints.indexOf(frame.pc) > -1) {
-              onStackReplacementCount++;
-
-              // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.
-              ctx.popFrame();
-
-              // Remember the return kind since we'll need it later.
-              var returnKind = mi.returnKind;
-
-              // Set the global OSR frame to the current frame.
-              O = frame;
-
-              // Set the current frame before doing the OSR in case an exception is thrown.
-              frame = ctx.current();
-
-              // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
-              returnValue = O.methodInfo.fn();
-              if (U) {
-                return;
-              }
-
-              // Usual code to return from the interpreter or push the return value.
-              if (Frame.isMarker(frame)) {
-                return returnValue;
-              }
-              mi = frame.methodInfo;
-              ci = mi.classInfo;
-              rp = ci.constantPool.resolved;
-              stack = frame.stack;
-              lastPC = -1;
-
-              if (returnKind !== Kind.Void) {
-                if (isTwoSlot(returnKind)) {
-                  stack.push2(returnValue);
-                } else {
-                  stack.push(returnValue);
-                }
-              }
-            }
-          }
-        }
+        //if (frame.pc < lastPC) {
+        //  mi.stats.backwardsBranchCount ++;
+        //  if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
+        //    // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
+        //    // at the beggining of a basic block. This is a really cheap test and a convenient place to perform an
+        //    // on stack replacement.
+        //
+        //    if (mi.onStackReplacementEntryPoints.indexOf(frame.pc) > -1) {
+        //      onStackReplacementCount++;
+        //
+        //      // The current frame will be swapped out for a JIT frame, so pop it off the interpreter stack.
+        //      ctx.popFrame();
+        //
+        //      // Remember the return kind since we'll need it later.
+        //      var returnKind = mi.returnKind;
+        //
+        //      // Set the global OSR frame to the current frame.
+        //      O = frame;
+        //
+        //      // Set the current frame before doing the OSR in case an exception is thrown.
+        //      frame = ctx.current();
+        //
+        //      // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
+        //      returnValue = O.methodInfo.fn();
+        //      if (U) {
+        //        return;
+        //      }
+        //
+        //      // Usual code to return from the interpreter or push the return value.
+        //      if (Frame.isMarker(frame)) {
+        //        return returnValue;
+        //      }
+        //      mi = frame.methodInfo;
+        //      ci = mi.classInfo;
+        //      rp = ci.constantPool.resolved;
+        //      stack = frame.stack;
+        //      lastPC = -1;
+        //
+        //      if (returnKind !== Kind.Void) {
+        //        if (isTwoSlot(returnKind)) {
+        //          stack.push2(returnValue);
+        //        } else {
+        //          stack.push(returnValue);
+        //        }
+        //      }
+        //    }
+        //  }
+        //}
 
         lastPC = frame.opPC = frame.pc;
         var op: Bytecodes = frame.read8();
@@ -1066,7 +1056,7 @@ module J2ME {
                 !calleeTargetMethodInfo.isNative &&
                 calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
-              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
+              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.argumentSlots, calleeFrame.local);
               ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
@@ -1174,7 +1164,7 @@ module J2ME {
             // Call method directly in the interpreter if we can.
             if (calleeTargetMethodInfo && !calleeTargetMethodInfo.isNative && calleeTargetMethodInfo.state !== MethodState.Compiled) {
               var calleeFrame = Frame.create(calleeTargetMethodInfo, []);
-              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.consumeArgumentSlots, calleeFrame.local);
+              ArrayUtilities.popManyInto(stack, calleeTargetMethodInfo.argumentSlots, calleeFrame.local);
               ctx.pushFrame(calleeFrame);
               frame = calleeFrame;
               mi = frame.methodInfo;
@@ -1312,7 +1302,7 @@ module J2ME {
   }
 
   export class VM {
-    static execute = interpret;
+    static execute = J2ME.interpret;
     static Yield = {toString: function () { return "YIELD" }};
     static Pause = {toString: function () { return "PAUSE" }};
     static DEBUG_PRINT_ALL_EXCEPTIONS = false;

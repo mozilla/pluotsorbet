@@ -211,7 +211,7 @@ Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/S
     model.availabilityPush = m.availabilityPush;
     model.conditionPush = m.conditionPush;
     model.channelCount = m.channelCount;
-    model.errorCodes = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.I.klass, 0);
+    model.errorCodes = J2ME.newArray(J2ME.PrimitiveClassInfo.I.klass, 0);
     model.errorMsgs = J2ME.newStringArray(0);
 
     var n = m.properties.length;
@@ -240,9 +240,11 @@ Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/s
     model.mrangeCount = c.mrangeArray.length;
 
     var n = c.mrangeArray.length;
-    var array = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.J.klass, n);
+    var array = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, n);
+    debugger;
     for (var i = 0; i < n; i++) {
-        array[i] = c.mrangeArray[i];
+        array.value[i * 2] = c.mrangeArray[i].low_;
+        array.value[i * 2 + 1] = c.mrangeArray[i].high_;
     }
     model.mrageArray = array;
 };
@@ -275,7 +277,7 @@ Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(se
         } else {
             console.error("Invalid channel number: " + channelNumber);
         }
-        return J2ME.newArray(J2ME.PrimitiveArrayClassInfo.B.klass, 0);
+        return J2ME.newArray(J2ME.PrimitiveClassInfo.B.klass, 0);
     }
 
     asyncImpl("[B", new Promise(function(resolve, reject) {
