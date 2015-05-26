@@ -115,7 +115,7 @@ public class ResourceInputStream extends InputStream {
         String fixedName = fixResourceName(name);
         fileDecoder = open(fixedName);
         if (fileDecoder == null) {
-            throw new IOException();
+            throw new IOException(name + " not found");
         }
      }
 

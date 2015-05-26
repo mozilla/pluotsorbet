@@ -317,6 +317,12 @@ module J2ME {
 
     id: number;
 
+    /**
+     * Whether or not the context is currently paused.  The profiler uses this
+     * to distinguish execution time from paused time in an async method.
+     */
+    paused: boolean = true;
+
     /*
      * Contains method frames separated by special frame instances called marker frames. These
      * mark the position in the frame stack where the interpreter starts execution.
@@ -356,7 +362,7 @@ module J2ME {
         console.log(s);
       });
       if (profile && typeof Shumway !== "undefined") {
-        this.methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Thread: " + this.runtime.id + ":" + this.id);
+        this.methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Thread " + this.runtime.id + ":" + this.id);
         methodTimelines.push(this.methodTimeline);
       }
     }
@@ -502,6 +508,7 @@ module J2ME {
 
     execute() {
       this.setAsCurrentContext();
+      profile && this.resumeMethodTimeline();
       do {
         VM.execute();
         if (U) {
@@ -645,6 +652,26 @@ module J2ME {
       this.bailoutFrames.unshift(frame);
     }
 
+    pauseMethodTimeline() {
+      release || assert(!this.paused, "context is not paused");
+
+      if (profiling) {
+        this.methodTimeline.enter("<pause>", MethodType.Interpreted);
+      }
+
+      this.paused = true;
+    }
+
+    resumeMethodTimeline() {
+      release || assert(this.paused, "context is paused");
+
+      if (profiling) {
+        this.methodTimeline.leave("<pause>", MethodType.Interpreted);
+      }
+
+      this.paused = false;
+    }
+
     /**
      * Re-enters all the frames that are currently on the stack so the full stack
      * trace shows up in the profiler.
@@ -656,6 +683,10 @@ module J2ME {
           continue;
         }
         this.methodTimeline.enter(frame.methodInfo.implKey, MethodType.Interpreted);
+      }
+
+      if (this.paused) {
+        this.methodTimeline.enter("<pause>", MethodType.Interpreted);
       }
     }
 
