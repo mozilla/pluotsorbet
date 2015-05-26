@@ -4,7 +4,7 @@ var DEBUG_FS = false;
 
 var fs = (function() {
   var reportRequestError = function(type, request) {
-    console.error(type + " error " + request.error);
+    console.error(type + " error " + request.error.name);
   }
 
   var Store = function() {
