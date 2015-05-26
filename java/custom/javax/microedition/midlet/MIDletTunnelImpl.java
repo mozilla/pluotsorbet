@@ -59,7 +59,6 @@ class MIDletTunnelImpl implements MIDletTunnel {
      */
     public void callStartApp(MIDlet m) 
         throws MIDletStateChangeException {
-        BGUtils.maybeWarmStartupIsStarting(m.getClass().getName());
         m.startApp();
     }
 

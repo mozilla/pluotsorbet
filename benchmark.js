@@ -503,7 +503,7 @@ var Benchmark = (function() {
         }
 
         if (storage.warmBench) {
-          var startFGImplKey = "com/nokia/mid/s40/bg/BGUtils.maybeWarmStartupIsStarting.(Ljava/lang/String;)V";
+          var startFGImplKey = "com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V";
           var startFGOriginalImpl = Native[startFGImplKey];
           Native[startFGImplKey] = function(midletClassName) {
             if (J2ME.fromJavaString(midletClassName) !== fgMidletClass) {
