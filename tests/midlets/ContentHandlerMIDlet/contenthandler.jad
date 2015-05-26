@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
-MIDlet-1: ContentHandlerMIDlet,,midlets.ContentHandlerMIDlet
-MIDlet-2: BackgroundContentHandlerRegisterMIDlet,,midlets.BackgroundContentHandlerRegisterMIDlet
+MIDlet-1: ContentHandlerMIDlet,,tests.midlets.ContentHandlerMIDlet
+MIDlet-2: BackgroundContentHandlerRegisterMIDlet,,tests.midlets.BackgroundContentHandlerRegisterMIDlet
 MIDlet-Vendor: Mozilla
 Nokia-MIDlet-bg-memory-size: 350
 Nokia-MIDlet-Background-Exit-Confirm-en: DO NOT EXIT!

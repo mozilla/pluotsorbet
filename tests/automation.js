@@ -358,7 +358,7 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.BackgroundContentHandlerRegisterMIDlet&jad=tests/midlets/ContentHandlerMIDlet/contenthandler.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.BackgroundContentHandlerRegisterMIDlet&jad=tests/midlets/ContentHandlerMIDlet/contenthandler.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Test finished", function() {
             var content = this.getPageContent();

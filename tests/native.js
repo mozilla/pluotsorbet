@@ -259,18 +259,18 @@ Native["javax/microedition/content/TestContentHandler.addInvocation.(Ljava/lang/
 
 var ContentHandlerMIDletStarted = 0;
 
-Native["midlets/ContentHandlerMIDlet.sendShareMessage.()V"] =
-Native["midlets/BackgroundContentHandlerRegisterMIDlet.sendShareMessage.()V"] = function() {
+Native["tests/midlets/ContentHandlerMIDlet.sendShareMessage.()V"] =
+Native["tests/midlets/BackgroundContentHandlerRegisterMIDlet.sendShareMessage.()V"] = function() {
   DumbPipe.close(DumbPipe.open("callShareActivityMessageHandler", { num: ContentHandlerMIDletStarted }));
 };
 
-Native["midlets/BackgroundContentHandlerRegisterMIDlet.startMIDlet.()V"] = function() {
+Native["tests/midlets/BackgroundContentHandlerRegisterMIDlet.startMIDlet.()V"] = function() {
   setTimeout(function() {
     MIDP.sendExecuteMIDletEvent();
   }, 0);
 };
 
-Native["midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function() {
+Native["tests/midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function() {
   if (++ContentHandlerMIDletStarted === 3) {
     return 1;
   }

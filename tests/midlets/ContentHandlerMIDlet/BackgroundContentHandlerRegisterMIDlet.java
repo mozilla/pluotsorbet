@@ -1,4 +1,4 @@
-package midlets;
+package tests.midlets;
 
 import java.io.IOException;
 import javax.microedition.midlet.MIDlet;
@@ -13,7 +13,7 @@ public class BackgroundContentHandlerRegisterMIDlet extends MIDlet {
             System.out.println("Hello World from background MIDlet");
 
             Registry.getRegistry(getClass().getName())
-                    .register("midlets.ContentHandlerMIDlet",
+                    .register("tests.midlets.ContentHandlerMIDlet",
                               new String[] { "image/jpeg", "image/png", "image/gif", "audio/amr", "audio/mp3", "video/3gpp", "video/mp4" },
                               null,
                               new String[] { "share" },

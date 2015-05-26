@@ -9,7 +9,7 @@
 (function() {
   var loadingPromises = [];
   if (config.midletClassName === "RunTests" ||
-      config.midletClassName === "midlets.BackgroundContentHandlerRegisterMIDlet") {
+      config.midletClassName.startsWith("tests.midlets")) {
     loadingPromises.push(loadScript("tests/contacts.js"),
                          loadScript("tests/index.js"),
                          loadScript("tests/mozactivitymock.js"));
