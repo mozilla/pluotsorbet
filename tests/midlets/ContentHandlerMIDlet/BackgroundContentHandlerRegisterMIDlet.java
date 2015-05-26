@@ -3,10 +3,10 @@ package midlets;
 import java.io.IOException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.content.Registry;
-import com.nokia.mid.s40.bg.BGUtils;
 
 public class BackgroundContentHandlerRegisterMIDlet extends MIDlet {
     static native void sendShareMessage();
+    static native void startMIDlet();
 
     public void startApp() {
         try {
@@ -24,7 +24,7 @@ public class BackgroundContentHandlerRegisterMIDlet extends MIDlet {
             // Test that sharing works if the FG MIDlet isn't running yet.
             sendShareMessage();
 
-            BGUtils.setBGMIDletResident(true);
+            startMIDlet();
         } catch (Exception e) {
             System.out.println("Unexpected exception: " + e);
         }

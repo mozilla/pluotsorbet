@@ -264,6 +264,12 @@ Native["midlets/BackgroundContentHandlerRegisterMIDlet.sendShareMessage.()V"] = 
   DumbPipe.close(DumbPipe.open("callShareActivityMessageHandler", { num: ContentHandlerMIDletStarted }));
 };
 
+Native["midlets/BackgroundContentHandlerRegisterMIDlet.startMIDlet.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendExecuteMIDletEvent();
+  }, 0);
+};
+
 Native["midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function() {
   if (++ContentHandlerMIDletStarted === 3) {
     return 1;
