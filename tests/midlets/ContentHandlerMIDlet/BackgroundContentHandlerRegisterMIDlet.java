@@ -5,8 +5,6 @@ import javax.microedition.midlet.MIDlet;
 import javax.microedition.content.Registry;
 import com.nokia.mid.s40.bg.BGUtils;
 
-// Test executing the Foreground MIDlet before starting the localmsg server.
-
 public class BackgroundContentHandlerRegisterMIDlet extends MIDlet {
     static native void sendShareMessage();
 
