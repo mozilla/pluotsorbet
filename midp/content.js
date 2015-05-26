@@ -63,7 +63,7 @@ var Content = (function() {
     return 1;
   };
 
-  Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(callerId, ID, mode) {
+  Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(callerId, id, mode) {
     if (!chRegisteredClassName) {
       return null;
     }
