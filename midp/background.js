@@ -37,13 +37,6 @@ function hideDownloadScreen() {
   }
 }
 
-function showBackgroundScreen() {
-  document.getElementById("background-screen").style.display = "block";
-}
-function hideBackgroundScreen() {
-  document.getElementById("background-screen").style.display = "none";
-}
-
 // The exit screen is hidden by default, and we only ever show it,
 // so we don't need a hideExitScreen function.
 function showExitScreen() {
@@ -54,7 +47,6 @@ function backgroundCheck() {
   var bgServer = MIDP.manifest["Nokia-MIDlet-bg-server"];
   if (!bgServer) {
     showSplashScreen();
-    hideBackgroundScreen();
     return;
   }
 
@@ -92,7 +84,6 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
   // If the page is visible, just start the FG MIDlet
   if (!document.hidden) {
     showSplashScreen();
-    hideBackgroundScreen();
 
     if (profile === 3) {
       // Start the "warm startup" profiler after a timeout to better imitate
@@ -118,13 +109,6 @@ Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String
     }, false);
   }).then(function() {
     showSplashScreen();
-    hideBackgroundScreen();
     profile === 3 && startTimeline();
   }));
 };
-
-// If the document is hidden, then we've been started by an alarm and are in
-// the background, so we show the background screen.
-if (document.hidden) {
-  showBackgroundScreen();
-}
