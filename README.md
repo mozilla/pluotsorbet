@@ -7,13 +7,13 @@ The current goals of j2me.js are:
 1. Run MIDlets in a way that emulates the reference implementation of phone ME Feature MR4 (b01)
 1. Keep j2me.js simple and small: Leverage the phoneME JDK/infrastructure and existing Java code as much as we can, and implement as little as possible in JavaScript
 
-## Install, Cold, and Warm runs
+## Install vs Hot runs
 
-J2ME.js launches MIDlets under three different circumstances. We are working to make the most common scenario the fastest, sometimes at the expense of making the least frequent scenarios a little slower.
+J2ME.js launches MIDlets under two different circumstances.
 
 * Install run only happens once per device. It spends extra time downloading, optimizing, and precompiling so that subsequent runs will be faster.
 * Cold runs require starting up both foreground and background MIDlets, if needed
-* Warm runs only require starting up a foreground MIDlet; the interpreter should already be warm, thanks to being awoken once a minute for background MIDlet to run
+* Hot runs only require switching to the active app
 
 ![](https://cloud.githubusercontent.com/assets/812428/7572315/0a3a174e-f7d2-11e4-811d-5e1a38caa439.png)
 
@@ -190,7 +190,7 @@ To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view 
   }
   ```
 
-The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2|3]`. Then wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
+The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2]`. Then wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
 
 Java methods are automatically wrapped with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed trace of the application's execution. Note that this instrumentation has some overhead, and timing information of very short lived events may not be accurate and can lead to the entire application slowing down.
 
@@ -227,9 +227,9 @@ The tooltip displays:
 - `all total` and `all self`: cumulative total and self times for all events with this name.
 - the remaining fields show the custom data specified in the `details` object.
 
-If you build with `PROFILE=2` or `PROFILE=3`, then the timeline will be saved to a text file instead of being shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt`, which you can later pull with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
+If you build with `PROFILE=2`, then the timeline will be saved to a text file instead of being shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt`, which you can later pull with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
 
-`PROFILE=1` and `PROFILE=2` automatically profile (most of) cold startup, from *JVM.startIsolate0* to *DisplayDevice.gainedForeground0*; while `PROFILE=3` profiles warm startup, from *BGUtils.maybeWaitUserInteraction* to *DisplayDevice.gainedForeground0*.
+`PROFILE=1` and `PROFILE=2` automatically profile (most of) cold startup, from *JVM.startIsolate0* to *DisplayDevice.gainedForeground0*.
 
 ## Benchmarks
 
