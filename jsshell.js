@@ -227,6 +227,9 @@ try {
   if (options.writers.value.indexOf("h") >= 0) {
     writers |= J2ME.WriterFlags.Thread;
   }
+  if (options.writers.value.indexOf("l") >= 0) {
+    writers |= J2ME.WriterFlags.Link;
+  }
   J2ME.writers = writers;
 
   J2ME.enableRuntimeCompilation = false;

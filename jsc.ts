@@ -12,6 +12,10 @@ if (!jsGlobal.performance.now) {
 
 declare var load: (string) => void;
 
+// Overwrite the shell's |quit| method because emscripten generated code calls it prematurely and we
+// don't want to exit.
+function quit() {}
+
 load("libs/relooper.js"); // Load before we polyfill the window object.
 load("libs/native.js"); // Load before we polyfill the window object.
 
