@@ -63,6 +63,12 @@ var Content = (function() {
     return 1;
   };
 
+  // When we have a BG and a FG MIDlet, we're statically registering the FG MIDlet (because the
+  // BG MIDlet doesn't register the FG MIDlet in time).
+  // So, when the BG MIDlet tries to register the content handler, it finds another one already
+  // registered and unregisters it.
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.unregister0.(Ljava/lang/String;)Z", 1);
+
   Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(callerId, id, mode) {
     if (!chRegisteredClassName) {
       return null;
