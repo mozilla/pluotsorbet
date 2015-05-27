@@ -792,13 +792,41 @@ module J2ME {
       this.blockEmitter.writeLn("return " + this.pop(kind) + ";");
     }
 
+    getField(object: string, field: FieldInfo) {
+      var base = object + "._address";
+      switch (field.kind) {
+        case Kind.Reference:
+          return "ref[" + base + "+" + field.byteOffset + ">>2]";
+        case Kind.Byte:
+        case Kind.Short:
+        case Kind.Boolean:
+        case Kind.Int:
+          return "i32[" + base + "+" + field.byteOffset + ">>2]";
+          break;
+        case Kind.Float:
+          return "f32[" + base + "+" + field.byteOffset + ">>2]";
+          break;
+        //case Kind.Long:
+        //  setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value); i32[this._address + 4 + " + field.byteOffset + " >> 2] = tempReturn0;");
+        //  getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2], i32[this._address + 4 + " + field.byteOffset + " >> 2]);");
+        //  break;
+        //case Kind.Double:
+        //  setter = new Function("value", "aliasedF64[0] = value; i32[this._address + " + field.byteOffset + " >> 2] = aliasedI32[0]; i32[this._address + 4 + " + field.byteOffset + " >> 2] = aliasedI32[1];");
+        //  getter = new Function("aliasedI32[0] = i32[this._address + " + field.byteOffset + " >> 2];  aliasedI32[1] = i32[this._address + 4 + " + field.byteOffset + " >> 2]; return aliasedF64[0];");
+        //  break;
+        default:
+          Debug.assert(false, Kind[field.kind]);
+          break;
+      }
+    }
+
     emitGetField(fieldInfo: FieldInfo, isStatic: boolean) {
       if (isStatic) {
         this.emitClassInitializationCheck(fieldInfo.classInfo);
       }
       var kind = getSignatureKind(fieldInfo.utf8Signature);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.emitPush(kind, object + "." + fieldInfo.mangledName, Precedence.Member);
+      this.emitPush(kind, this.getField(object, fieldInfo), Precedence.Member);
     }
 
     emitPutField(fieldInfo: FieldInfo, isStatic: boolean) {
@@ -808,7 +836,7 @@ module J2ME {
       var kind = getSignatureKind(fieldInfo.utf8Signature);
       var value = this.pop(kind, Precedence.Sequence);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.blockEmitter.writeLn(object + "." + fieldInfo.mangledName + "=" + value + ";");
+      this.blockEmitter.writeLn(this.getField(object, fieldInfo) + "=" + value + ";");
     }
 
     setBlockStackHeight(pc: number, height: number) {
