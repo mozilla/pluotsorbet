@@ -238,30 +238,32 @@ casper.test.begin("unit tests", 28 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
           var output = this.fetchText('#raw-console');
-          var expectedOutput = ["I 0: m",
-            "I 3 0 a ma",
+          var expectedOutput = [
+            "I 0: m",
+            "I 2 0 a ma",
             "I 1: ma",
-            "I 2: 3",
+            "I 2: 2",
             "I 3: 1 isolate",
             "I 4: Isolate ID correct",
-            "I 5: 5",
-            "I 6: 6",
+            "I 5: 4",
+            "I 6: 5",
             "I 7: 1 isolate",
             "I 8: ma",
             "I 9: ma",
             "I 10: 3 isolates",
-            "I 6 0 2 m2",
-            "I 5 0 1 m1",
+            "I 5 0 2 m2",
+            "I 4 0 1 m1",
             "I 11: ma",
             "I 12: 1 isolate",
             "I 13: Isolates terminated",
-            "I 3 1 r mar",
+            "I 2 1 r mar",
             "I 14: mar",
-            "I 3 2 c marc",
+            "I 2 2 c marc",
             "I 15: marc",
             "I 16: Main isolate still running",
             "I DONE",
-            ""];
+            "",
+          ];
           output = output.split("\n").sort();
           expectedOutput.sort();
           test.assert(expectedOutput.length === output.length, "Same number of lines output.");
