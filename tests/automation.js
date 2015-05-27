@@ -358,11 +358,11 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.BackgroundContentHandlerRegisterMIDlet&jad=tests/midlets/ContentHandlerMIDlet/contenthandler.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.ContentHandlerStarterMIDlet&jad=tests/midlets/ContentHandlerMIDlet/contenthandler.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Test finished", function() {
             var content = this.getPageContent();
-            test.assertEquals(content.match(/Hello World from background MIDlet/g).length, 1, "ContentHandlerMIDlet test 1");
+            test.assertEquals(content.match(/Hello World from starter MIDlet/g).length, 1, "ContentHandlerMIDlet test 1");
             test.assertEquals(content.match(/Invocation action: share/g).length, 2, "ContentHandlerMIDlet test 2");
             test.assertEquals(content.match(/Invocation args\[0\]: url=file:\/\/\/Private\/j2meshare\/j2mesharetestimage0\.jpg/g).length, 1, "ContentHandlerMIDlet test 3");
             test.assertEquals(content.match(/Invocation args\[0\]: url=file:\/\/\/Private\/j2meshare\/j2mesharetestimage1\.jpg/g).length, 1, "ContentHandlerMIDlet test 4");

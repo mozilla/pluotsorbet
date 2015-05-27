@@ -4,13 +4,13 @@ import java.io.IOException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.content.Registry;
 
-public class BackgroundContentHandlerRegisterMIDlet extends MIDlet {
+public class ContentHandlerStarterMIDlet extends MIDlet {
     static native void sendShareMessage();
     static native void startMIDlet();
 
     public void startApp() {
         try {
-            System.out.println("Hello World from background MIDlet");
+            System.out.println("Hello World from starter MIDlet");
 
             Registry.getRegistry(getClass().getName())
                     .register("tests.midlets.ContentHandlerMIDlet",

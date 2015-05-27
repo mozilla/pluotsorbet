@@ -46,8 +46,8 @@ public class BGUtils implements EventListener {
 
         switch (nativeEvent.getType()) {
             case EventTypes.NATIVE_MIDLET_EXECUTE_REQUEST:
-              AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, BGUtils.getFGMIDletNumber(),
-                                      BGUtils.getFGMIDletClass(), null, null, null, null, -1, -1, Isolate.MAX_PRIORITY,
+              AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, nativeEvent.intParam1,
+                                      nativeEvent.stringParam1, null, null, null, null, -1, -1, Isolate.MAX_PRIORITY,
                                       null, false);
             break;
         }

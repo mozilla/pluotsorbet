@@ -796,9 +796,11 @@ var MIDP = (function() {
     }, false);
   }
 
-  function sendExecuteMIDletEvent() {
+  function sendExecuteMIDletEvent(midletNumber, midletClassName) {
     sendNativeEvent({
       type: NATIVE_MIDLET_EXECUTE_REQUEST,
+      intParam1: midletNumber || fgMidletNumber,
+      stringParam1: midletClassName || J2ME.newString(fgMidletClass),
     }, AMSIsolateId);
   }
 

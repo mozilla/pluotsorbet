@@ -116,7 +116,7 @@ var Content = (function() {
       MIDP.registerDestroyedListener(function() {
         MIDP.registerDestroyedListener(null);
         addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
-        MIDP.sendExecuteMIDletEvent();
+        MIDP.sendExecuteMIDletEvent(chRegisteredStorageID, J2ME.newString(chRegisteredClassName));
       });
     }
   });
