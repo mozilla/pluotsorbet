@@ -252,3 +252,7 @@ Native["tests/background/DestroyMIDlet.maybePrintDone.()V"] = function() {
     console.log("DONE");
   }
 };
+
+Native["javax/microedition/content/TestContentHandler.addInvocation.(Ljava/lang/String;Ljava/lang/String;)V"] = function(argument, action) {
+  Content.addInvocation(J2ME.fromJavaString(argument), J2ME.fromJavaString(action));
+};

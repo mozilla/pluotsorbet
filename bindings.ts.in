@@ -286,6 +286,24 @@ module J2ME {
         }
       }
     },
+    "com/sun/j2me/content/ContentHandlerRegData": {
+      fields: {
+        instanceSymbols: {
+          "ID": "Ljava/lang/String;",
+          "registrationMethod": "I",
+        }
+      }
+    },
+    "com/sun/j2me/content/InvocationImpl": {
+      fields: {
+        instanceSymbols: {
+          "action": "Ljava/lang/String;",
+          "arguments": "[Ljava/lang/String;",
+          "argsLen": "I",
+          "status": "I",
+        }
+      }
+    },
   };
 
   export var BindingsMap = new TypedArrayHashtable(50);

@@ -175,6 +175,7 @@ try {
     "libs/jarstore.js",
     "libs/long.js",
     "native.js",
+    "midp/content.js",
     "midp/midp.js",
     "midp/frameanimator.js",
     "midp/fs.js",

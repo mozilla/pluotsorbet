@@ -741,7 +741,15 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         return;
       }
 
-      var imgData = fs.getBlob("/" + fileName);
+      if (fileName.startsWith("file:///")) {
+        fileName = fileName.substring("file:///".length);
+      }
+
+      if (!fileName.startsWith("/")) {
+        fileName = "/" + fileName;
+      }
+
+      var imgData = fs.getBlob(fileName);
       var img = new Image();
       img.src = URL.createObjectURL(imgData);
 

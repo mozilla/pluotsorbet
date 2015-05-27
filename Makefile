@@ -122,6 +122,7 @@ MAIN_JS_SRCS = \
   midp/device_control.js \
   midp/background.js \
   midp/media.js \
+  midp/content.js \
   game-ui.js \
   $(NULL)
 
