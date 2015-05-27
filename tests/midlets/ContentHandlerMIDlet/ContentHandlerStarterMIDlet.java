@@ -3,6 +3,7 @@ package tests.midlets;
 import java.io.IOException;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.content.Registry;
+import com.nokia.mid.s40.bg.BGUtils;
 
 public class ContentHandlerStarterMIDlet extends MIDlet {
     static native void sendShareMessage();
@@ -11,6 +12,8 @@ public class ContentHandlerStarterMIDlet extends MIDlet {
     public void startApp() {
         try {
             System.out.println("Hello World from starter MIDlet");
+
+            BGUtils bgUtils = BGUtils.getBGUtilsInstance();
 
             Registry.getRegistry(getClass().getName())
                     .register("tests.midlets.ContentHandlerMIDlet",

@@ -29,7 +29,7 @@ public class BGUtils implements EventListener {
                                          BGUtils.getBGUtilsInstance());
     }
     private static BGUtils bgUtils = null;
-    private static BGUtils getBGUtilsInstance() {
+    public static BGUtils getBGUtilsInstance() {
         if (bgUtils == null) {
             bgUtils = new BGUtils();
         }
