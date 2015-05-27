@@ -237,6 +237,13 @@ build_tools/closure.jar: build_tools/.closure_compiler_version
 	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
 
+build_tools/emsdk-portable.tar.gz:
+	wget -P build_tools https://s3.amazonaws.com/mozilla-games/emscripten/releases/emsdk-portable.tar.gz
+
+build_tools/emsdk_portable: build_tools/emsdk-portable.tar.gz
+	tar x -C build_tools -f build_tools/emsdk-portable.tar.gz
+	cd build_tools/emsdk_portable && ./emsdk update && ./emsdk install latest && ./emsdk activate latest
+
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
 
@@ -265,8 +272,8 @@ bug: j2me
 	cp jsshell.js bug/jsshell.js
 	tar -zcvf bug.tar.gz bug/
 
-libs/native.js: vm/native/Makefile vm/native/native.cpp
-	make -C vm/native/
+libs/native.js: vm/native/Makefile vm/native/native.cpp build_tools/emsdk_portable
+	cd build_tools/emsdk_portable && source ./emsdk_env.sh && cd ../.. && make -C vm/native/
 
 bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) libs/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
@@ -368,3 +375,4 @@ clean:
 	make -C bench clean
 	rm -f img/icon-128.png img/icon-512.png
 	rm -f package.zip
+	rm -f libs/native.js
