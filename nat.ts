@@ -92,7 +92,7 @@ module J2ME {
 
   Native["java/lang/Thread.sleep.(J)V"] = function(delayL: number, delayH: number) {
     asyncImpl(Kind.Void, new Promise(function(resolve, reject) {
-      window.setTimeout(resolve, delayL);
+      window.setTimeout(resolve, longToNumber(delayL, delayH));
     }));
   };
 

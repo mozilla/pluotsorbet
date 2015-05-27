@@ -364,7 +364,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(b
 
     // TODO: If the file is open, flush it first.
 
-    fs.truncate(pathname, byteOffsetL); // REDUX: Is byteOffsetL precise enough?
+    fs.truncate(pathname, J2ME.longToNumber(byteOffsetL, byteOffsetH));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() {
@@ -602,7 +602,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(l, h)
         return -1;
     }
 
-    var toSkip = l;
+    var toSkip = J2ME.longToNumber(l, h);
 
     if (toSkip < 0) {
         return J2ME.returnLongValue(0);
@@ -616,7 +616,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(l, h)
         return J2ME.returnLongValue(size - pos);
     } else {
         fs.setpos(fd, pos + toSkip);
-        return l;
+        return J2ME.returnLong(l, h);
     }
 };
 
@@ -642,7 +642,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = fu
     }
 
     var fd = this.nativeDescriptor;
-    fs.setpos(fd, Long.fromBits(offsetLow, offsetHigh).toNumber());
+    fs.setpos(fd, J2ME.longToNumber(offsetLow, offsetHigh));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
@@ -701,12 +701,12 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openDir.()J"] = function() {
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeDir.(J)V"] = function(dirHandleLow, dirHandleHigh) {
-    MIDP.openDirs.delete(dirHandleLow);
+    MIDP.openDirs.delete(J2ME.longToNumber(dirHandleLow, dirHandleHigh));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.dirGetNextFile.(JZ)Ljava/lang/String;"] =
 function(dirHandleLow, dirHandleHigh, includeHidden) {
-    var iterator = MIDP.openDirs.get(dirHandleLow);
+    var iterator = MIDP.openDirs.get(J2ME.longToNumber(dirHandleLow, dirHandleHigh));
     var nextFile = iterator.files[++iterator.index];
 DEBUG_FS && console.log(iterator.index + " " + nextFile);
     return nextFile ? J2ME.newString(nextFile) : null;
