@@ -1581,8 +1581,22 @@ module J2ME {
             if (mi === null) {
               thread.set(fp, sp, opPC);
               thread.popFrame(null);
-              // REDUX: What do we do about the return value here?
-              return;
+              switch (lastOP) {
+                case Bytecodes.IRETURN:
+                  return i32[lastSP - 1];
+                case Bytecodes.FRETURN:
+                  return f32[lastSP - 1];
+                case Bytecodes.LRETURN:
+                  return returnLong(i32[lastSP - 2], i32[lastSP - 1]);
+                case Bytecodes.DRETURN:
+                  aliasedI32[0] = i32[lastSP - 2];
+                  aliasedI32[1] = i32[lastSP - 1];
+                  return aliasedF64[0];
+                case Bytecodes.ARETURN:
+                  return ref[lastSP - 1];
+                case Bytecodes.RETURN:
+                  return;
+              }
             }
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
