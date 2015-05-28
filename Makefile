@@ -195,7 +195,7 @@ $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] &
 # The emsdk version to install.  Note that this is different from the package
 # version, since the emsdk package has a built-in package manager that installs
 # any version of the emsdk.
-EMSDK_VERSION=latest
+EMSDK_VERSION=x
 OLD_EMSDK_VERSION := $(shell [ -f build_tools/.emsdk_version ] && cat build_tools/.emsdk_version)
 $(shell [ "$(EMSDK_VERSION)" != "$(OLD_EMSDK_VERSION)" ] && echo $(EMSDK_VERSION) > build_tools/.emsdk_version)
 
@@ -259,7 +259,7 @@ build_tools/emsdk-portable.tar.gz: build_tools/.emsdk_pkg_version
 build_tools/emsdk_portable: build_tools/.emsdk_version build_tools/emsdk-portable.tar.gz
 	rm -rf build_tools/emsdk_portable
 	tar x -C build_tools -f build_tools/emsdk-portable.tar.gz
-	cd build_tools && git clone --depth 1 https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk &&  ./emsdk activate $(EMSDK_VERSION)
+	cd build_tools && git clone --depth 1 https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk &&  ./emsdk activate latest
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
