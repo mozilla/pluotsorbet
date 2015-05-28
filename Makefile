@@ -192,13 +192,6 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
-# The emsdk version to install.  Note that this is different from the package
-# version, since the emsdk package has a built-in package manager that installs
-# any version of the emsdk.
-EMSDK_VERSION=x
-OLD_EMSDK_VERSION := $(shell [ -f build_tools/.emsdk_version ] && cat build_tools/.emsdk_version)
-$(shell [ "$(EMSDK_VERSION)" != "$(OLD_EMSDK_VERSION)" ] && echo $(EMSDK_VERSION) > build_tools/.emsdk_version)
-
 PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
@@ -244,9 +237,6 @@ build_tools/closure.jar: build_tools/.closure_compiler_version
 	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
 
-build_tools/emsdk_portable: build_tools/.emsdk_version
-	cd build_tools && git clone --depth 1 https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk &&  ./emsdk activate latest
-
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
 
@@ -275,8 +265,8 @@ bug: j2me
 	cp jsshell.js bug/jsshell.js
 	tar -zcvf bug.tar.gz bug/
 
-libs/native.js: vm/native/Makefile vm/native/native.cpp build_tools/emsdk_portable
-	cd build_tools/emscripten-sdk && . ./emsdk_env.sh && cd ../.. && make -C vm/native/
+libs/native.js: vm/native/Makefile vm/native/native.cpp
+	make -C vm/native/
 
 bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) libs/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
