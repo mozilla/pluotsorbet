@@ -3,6 +3,7 @@ node_js:
   - "0.10"
 env:
   - DISPLAY=:99.0
+addons: { apt: { sources: [kubuntu-backports], packages: [cmake] } }
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs

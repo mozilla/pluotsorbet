@@ -1,7 +1,7 @@
 // Tags: JDK1.0
 
-// Copyright (C) 1999 Cygnus Solutions
-// Copyright (C) 2002, 2003 Free Software Foundation, Inc.
+// Copyright (C) 2002 Free Software Foundation, Inc.
+// Written by Mark Wielaard (mark@klomp.org)
 
 // This file is part of Mauve.
 
@@ -20,42 +20,28 @@
 // the Free Software Foundation, 59 Temple Place - Suite 330,
 // Boston, MA 02111-1307, USA.  */
 
-package gnu.testlet.java.lang.String;
+
+package gnu.testlet.java.lang.Thread;
+
 import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
-import java.io.UnsupportedEncodingException;
+import com.sun.cldchi.jvm.JVM;
+import org.mozilla.internal.Sys;
 
-public class getBytes implements Testlet
+public class yield extends Thread implements Testlet
 {
-  public int getExpectedPass() { return 5; }
+  public int getExpectedPass() { return 1; }
   public int getExpectedFail() { return 0; }
   public int getExpectedKnownFail() { return 0; }
 
   public void test (TestHarness harness)
   {
-    String s = new String ("test me");
-    try
-      {
-	byte[] b = s.getBytes("ISO-8859-1");
-	harness.check (b.length, s.length());
-
-	b = s.substring(0, 4).getBytes("ISO-8859-1");
-	harness.check (b.length, 4);
-
-	b = s.substring(5, 7).getBytes("ISO-8859-1");
-	harness.check (b.length, 2);
-
-	s = new StringBuffer("abcdefghijklmnopqrstuvwxyz")
-		.append(Integer.toString(123456789))
-		.toString().substring(10,30);
-	b = s.getBytes("ISO-8859-1");
-	harness.check (b.length, 20);
-	b = s.getBytes("UTF-8");
-	harness.check (b.length, 20);
-      }
-    catch (UnsupportedEncodingException e)
-      {
-	harness.todo(false, "Unexpected exception: " + e);
-      }
+    long start = Sys.getUnwindCount();
+    for (int i = 0; i < 100; i++) {
+      Thread.yield();
+    }
+    harness.check((Sys.getUnwindCount() - start) == 100, "Not enough unwinds.");
+    System.out.println("Unwinds: " + (Sys.getUnwindCount() - start));
   }
 }
+

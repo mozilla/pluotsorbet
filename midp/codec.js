@@ -147,8 +147,8 @@ Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/S
   this.encoder.put(tag, J2ME.fromJavaString(name), J2ME.fromJavaString(value));
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(tag, name, value) {
-  this.encoder.put(tag, J2ME.fromJavaString(name), value.toNumber());
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(tag, name, valueLow, valueHigh) {
+  this.encoder.put(tag, J2ME.fromJavaString(name), J2ME.longToNumber(valueLow, valueHigh));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(tag, name, value) {
@@ -205,7 +205,7 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(tag) {
   if (num === undefined) {
     throw $.newIOException("tag (" + tag + ") invalid");
   }
-  return Long.fromNumber(num);
+  return J2ME.returnLongValue(num);
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z"] = function() {

@@ -92,7 +92,6 @@ MAIN_JS_SRCS = \
   timer.js \
   util.js \
   native.js \
-  string.js \
   libs/load.js \
   libs/zipfile.js \
   libs/jarstore.js \
@@ -193,6 +192,20 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
+# The emsdk version to install.  Note that this is different from the package
+# version, since the emsdk package has a built-in package manager that installs
+# any version of the emsdk.
+EMSDK_VERSION=sdk-1.30.0-64bit
+OLD_EMSDK_VERSION := $(shell [ -f build_tools/.emsdk_version ] && cat build_tools/.emsdk_version)
+$(shell [ "$(EMSDK_VERSION)" != "$(OLD_EMSDK_VERSION)" ] && echo $(EMSDK_VERSION) > build_tools/.emsdk_version)
+
+# The emsdk package isn't explicitly versioned, but we track a fake version
+# number for it anyway, just in case it ever changes in an incompatible
+# or valuable way, so we can update existing installs by revving this number.
+EMSDK_PKG_VERSION=1
+OLD_EMSDK_PKG_VERSION := $(shell [ -f build_tools/.emsdk_pkg_version ] && cat build_tools/.emsdk_pkg_version)
+$(shell [ "$(EMSDK_PKG_VERSION)" != "$(OLD_EMSDK_PKG_VERSION)" ] && echo $(EMSDK_PKG_VERSION) > build_tools/.emsdk_pkg_version)
+
 PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
@@ -238,6 +251,16 @@ build_tools/closure.jar: build_tools/.closure_compiler_version
 	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
 
+build_tools/emsdk-portable.tar.gz: build_tools/.emsdk_pkg_version
+	rm -f build_tools/emsdk-portable.tar.gz
+	wget -P build_tools https://s3.amazonaws.com/mozilla-games/emscripten/releases/emsdk-portable.tar.gz
+	touch build_tools/emsdk-portable.tar.gz
+
+build_tools/emsdk_portable: build_tools/.emsdk_version build_tools/emsdk-portable.tar.gz
+	rm -rf build_tools/emsdk_portable
+	tar x -C build_tools -f build_tools/emsdk-portable.tar.gz
+	cd build_tools/emsdk_portable && ./emsdk update && ./emsdk install $(EMSDK_VERSION) && ./emsdk activate $(EMSDK_VERSION)
+
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
 
@@ -247,11 +270,33 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
+# Creates a stand alone shell build of j2me that you can use to file bug reports.
+bug: j2me
+	mkdir -p bug
+	mkdir -p bug/java
+	mkdir -p bug/tests
+	mkdir -p bug/bench
+	cp -r libs bug/
+	cp -r bld bug/
+	cp -r polyfill bug/
+	cp -r midp bug/
+	cp java/classes.jar bug/java/classes.jar
+	cp tests/tests.jar bug/tests/tests.jar
+	cp bench/benchmark.jar bug/bench/benchmark.jar
+	cp blackBox.js bug/blackBox.js
+	cp util.js bug/util.js
+	cp native.js bug/native.js
+	cp jsshell.js bug/jsshell.js
+	tar -zcvf bug.tar.gz bug/
+
+libs/native.js: vm/native/Makefile vm/native/native.cpp build_tools/emsdk_portable
+	cd build_tools/emsdk_portable && source ./emsdk_env.sh && cd ../.. && make -C vm/native/
+
+bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) libs/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 ifeq ($(RELEASE),1)
-	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
+	java -jar build_tools/closure.jar --formatting PRETTY_PRINT --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 endif
 
@@ -347,3 +392,4 @@ clean:
 	make -C bench clean
 	rm -f img/icon-128.png img/icon-512.png
 	rm -f package.zip
+	rm -f libs/native.js

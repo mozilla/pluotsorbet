@@ -27,9 +27,9 @@ import gnu.testlet.TestHarness;
 
 public class getBytes14 extends getBytes13 implements Testlet
 {
-  public int getExpectedPass() { return 3; }
+  public int getExpectedPass() { return 5; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 5; }
+  public int getExpectedKnownFail() { return 3; }
 
   public void test (TestHarness harness)
   {

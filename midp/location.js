@@ -108,7 +108,7 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILco
     var provider = Location.Providers[providerId];
     var pos = provider.position;
     locationInfo.isValid = 1;
-    locationInfo.timestamp = Long.fromNumber(pos.timestamp);
+    locationInfo.timestamp = pos.timestamp;
     locationInfo.latitude = pos.latitude;
     locationInfo.longitude = pos.longitude;
     locationInfo.altitude = Math.fround(pos.altitude);
@@ -125,16 +125,16 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getStateImpl.(I)I"] = fun
     return provider.state;
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z"] = function(providerId, timeout) {
+Native["com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z"] = function(providerId, timeoutLow, timeoutHigh) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
         var provider = Location.Providers[providerId];
         provider.requestData().then(resolve.bind(null, 1));
-        setTimeout(resolve.bind(null, 0), timeout);
+        setTimeout(resolve.bind(null, 0), J2ME.longToNumber(timeoutLow, timeoutHigh));
     }));
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.receiveNewLocationImpl.(IJ)Z"] = function(providerId, timestamp) {
+Native["com/sun/j2me/location/PlatformLocationProvider.receiveNewLocationImpl.(IJ)Z"] = function(providerId, timestampLow, timestampHigh) {
     var provider = Location.Providers[providerId];
-    var result = Math.abs(timestamp.toNumber() - provider.position.timestamp) < 10000;
+    var result = Math.abs(J2ME.longToNumber(timestampLow, timestampHigh) - provider.position.timestamp) < 10000;
     return result ? 1 : 0;
 };

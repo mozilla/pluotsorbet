@@ -13,6 +13,7 @@ if (!jsGlobal.performance.now) {
 declare var load: (string) => void;
 
 load("libs/relooper.js"); // Load before we polyfill the window object.
+load("libs/native.js"); // Load before we polyfill the window object.
 
 var CC = {};
 
@@ -70,8 +71,6 @@ jsGlobal.config = {
 
 jsGlobal.Promise = function() {
 }
-
-var Native = {};
 
 module J2ME {
   declare var process, require, global, quit, help, scriptArgs, arguments, snarf, ZipFile, JARStore;
