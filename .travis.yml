@@ -3,7 +3,7 @@ node_js:
   - "0.10"
 env:
   - DISPLAY=:99.0
-{apt: {sources: [george-edison55-precise-backports, kubuntu-backports, ubuntu-toolchain-r-test], packages: [cmake, doxygen, graphviz, g++-4.9, libasound2-dev]}}
+addons: {apt: {sources: [george-edison55-precise-backports, kubuntu-backports, ubuntu-toolchain-r-test], packages: [cmake, doxygen, graphviz, g++-4.9, libasound2-dev]}}
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
