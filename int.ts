@@ -1666,48 +1666,63 @@ module J2ME {
             // Call Native or Compiled Method.
             if (calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled) {
               var kind = Kind.Void;
-              args.length = 0;
               var signatureKinds = calleeTargetMethodInfo.signatureKinds;
-              for (var i = signatureKinds.length - 1; i > 0; i--) {
-                kind = signatureKinds[i];
-                switch (kind) {
-                  case Kind.Double: // Doubles are passed in as a number value.
-                    aliasedI32[1] = i32[--sp];
-                    aliasedI32[0] = i32[--sp];
-                    args.unshift(aliasedF64[0]);
-                    break;
-                  case Kind.Float:
-                    args.unshift(f32[--sp]);
-                    break;
-                  case Kind.Long:
-                    args.unshift(i32[--sp]); // High Bits
-                    // Fallthrough
-                  case Kind.Int:
-                  case Kind.Byte:
-                  case Kind.Char:
-                  case Kind.Short:
-                  case Kind.Boolean:
-                    args.unshift(i32[--sp]);
-                    break;
-                  case Kind.Reference:
-                    args.unshift(ref[--sp]);
-                    break;
-                  default:
-                    release || assert(false, "Invalid Kind: " + Kind[kind]);
-                }
-              }
-              if (!isStatic) {
-                --sp; // Pop Reference
-              }
-              thread.set(fp, sp, opPC);
               callee = calleeTargetMethodInfo.fn || getLinkedMethod(calleeTargetMethodInfo);
-              if (!release) {
-                // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
+              var returnValue;
+
+              // Fast path for the no-argument case.
+              if (signatureKinds.length === 1) {
+                if (!isStatic) {
+                  --sp; // Pop Reference
+                }
+
+                thread.set(fp, sp, opPC);
+
+                returnValue = callee.call(object);
+              } else {
+                args.length = 0;
+
+                for (var i = signatureKinds.length - 1; i > 0; i--) {
+                  kind = signatureKinds[i];
+                  switch (kind) {
+                    case Kind.Double: // Doubles are passed in as a number value.
+                      aliasedI32[1] = i32[--sp];
+                      aliasedI32[0] = i32[--sp];
+                      args.unshift(aliasedF64[0]);
+                      break;
+                    case Kind.Float:
+                      args.unshift(f32[--sp]);
+                      break;
+                    case Kind.Long:
+                      args.unshift(i32[--sp]); // High Bits
+                      // Fallthrough
+                    case Kind.Int:
+                    case Kind.Byte:
+                    case Kind.Char:
+                    case Kind.Short:
+                    case Kind.Boolean:
+                      args.unshift(i32[--sp]);
+                      break;
+                    case Kind.Reference:
+                      args.unshift(ref[--sp]);
+                      break;
+                    default:
+                      release || assert(false, "Invalid Kind: " + Kind[kind]);
+                  }
+                }
+
+                if (!isStatic) {
+                  --sp; // Pop Reference
+                }
+
+                thread.set(fp, sp, opPC);
+
+                if (!release) {
+                  // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
+                }
+
+                returnValue = callee.apply(object, args);
               }
-
-              var frameHash = 0;
-
-              var returnValue = callee.apply(object, args);
 
               if (!release) {
                 checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
