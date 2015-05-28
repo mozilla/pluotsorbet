@@ -14,11 +14,6 @@ before_script:
 script:
   - make test
 sudo: false
-cache:
-  directories:
-    - node_modules
-    - /tmp/j2me.js
-    - build_tools
 notifications:
   irc:
     channels:
