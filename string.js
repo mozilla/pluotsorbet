@@ -301,8 +301,8 @@
 //  return J2ME.newString(n.toString());
 //};
 //
-//Native["java/lang/String.valueOf.(J)Ljava/lang/String;"] = function(n) {
-//  return J2ME.newString(n.toString());
+//Native["java/lang/String.valueOf.(J)Ljava/lang/String;"] = function(l, h) {
+//  return J2ME.newString(J2ME.longToNumber(l, h).toString());
 //};
 //
 //
@@ -491,7 +491,7 @@
 //};
 //
 //Native["java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;"] = function(l, h) {
-//  return stringBufferAppend.call(this, Long.fromBits(l, h).toString());
+//  return stringBufferAppend.call(this, J2ME.longToNumber(l, h).toString());
 //};
 //
 //// StringBuffer.append(float) left in Java (see String.valueOf(float) above).
@@ -586,8 +586,8 @@
 //  return stringBufferInsert.call(this, offset, n + "");
 //};
 //
-//Native["java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;"] = function(offset, n) {
-//  return stringBufferInsert.call(this, offset, n + "");
+//Native["java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;"] = function(offset, l, h) {
+//  return stringBufferInsert.call(this, offset, J2ME.longToNumber(l, h) + "");
 //};
 //
 //// StringBuffer.insert(float) left in Java.

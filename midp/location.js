@@ -125,11 +125,11 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getStateImpl.(I)I"] = fun
     return provider.state;
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z"] = function(providerId, timeout) {
+Native["com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z"] = function(providerId, timeoutLow, timeoutHigh) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
         var provider = Location.Providers[providerId];
         provider.requestData().then(resolve.bind(null, 1));
-        setTimeout(resolve.bind(null, 0), timeout);
+        setTimeout(resolve.bind(null, 0), J2ME.longToNumber(timeoutLow, timeoutHigh));
     }));
 };
 
