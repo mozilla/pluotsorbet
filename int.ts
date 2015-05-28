@@ -163,6 +163,10 @@ module J2ME {
           ref[this.fp + this.parameterOffset + i] = v;
           break;
         case Kind.Int:
+        case Kind.Byte:
+        case Kind.Char:
+        case Kind.Short:
+        case Kind.Boolean:
           i32[this.fp + this.parameterOffset + i] = v;
           break;
         default:
