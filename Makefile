@@ -242,7 +242,7 @@ build_tools/emsdk-portable.tar.gz:
 
 build_tools/emsdk_portable: build_tools/emsdk-portable.tar.gz
 	tar x -C build_tools -f build_tools/emsdk-portable.tar.gz
-	cd build_tools/emsdk_portable && ./emsdk update && ./emsdk install latest && ./emsdk activate latest
+	cd build_tools/emsdk_portable && ./emsdk update && ./emsdk install sdk-1.30.0-64bit && ./emsdk activate sdk-1.30.0-64bit
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
