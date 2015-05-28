@@ -12,7 +12,9 @@ before_script:
   - unzip -d /tmp/js /tmp/j2me.js/jsshell-linux-x86_64.zip
   - export PATH=$PATH:/tmp/js
 script:
-  - git clone --depth 1 https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk &&  ./emsdk activate latest && source ./emsdk_env.sh && cd .. && make test
+  - git clone --depth 1 https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk && ./emsdk activate latest && source ./emsdk_env.sh && cd ..
+  - . emscripten-sdk/emsdk_set_env.sh
+  - make test
 sudo: false
 notifications:
   irc:
