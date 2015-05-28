@@ -797,10 +797,11 @@ module J2ME {
       switch (field.kind) {
         case Kind.Reference:
           return "ref[" + base + "+" + field.byteOffset + ">>2]";
+        case Kind.Int:
         case Kind.Byte:
+        case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
-        case Kind.Int:
           return "i32[" + base + "+" + field.byteOffset + ">>2]";
           break;
         case Kind.Float:
