@@ -1253,6 +1253,36 @@ var MIDP = (function() {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");
   };
 
+  var runningSuites = new Map();
+  Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(suiteId, className) {
+    var suite = runningSuites.get(suiteId);
+    if (!suite) {
+      suite = new Set();
+      runningSuites.set(suiteId, suite);
+    }
+
+    suite.add(className);
+  };
+
+  Native["com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V"] = function(suiteId, className) {
+    var suite = runningSuites.get(suiteId);
+    if (suite) {
+      suite.delete(className);
+      if (suite.size === 0) {
+        runningSuites.delete(suiteId);
+      }
+    }
+  }
+
+  Native["com/sun/j2me/content/AppProxy.isMidletRunning.(ILjava/lang/String;)V"] = function(suiteId, className) {
+    var suite = runningSuites.get(suiteId);
+    return suite && suite.has(className);
+  }
+
+  Native["com/sun/j2me/content/AppProxy.isSuiteRunning.(I)V"] = function(suiteId) {
+    return runningSuites.has(suiteId);
+  }
+
   addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V");
   addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
 

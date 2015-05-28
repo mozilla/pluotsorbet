@@ -69,7 +69,6 @@ var Content = (function() {
     return 0;
   };
 
-  addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
   addUnimplementedNative("com/sun/j2me/content/AppProxy.platformFinish0.(I)Z", 0);
 
   var invocation = null;
