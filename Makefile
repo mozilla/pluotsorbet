@@ -259,7 +259,7 @@ build_tools/emsdk-portable.tar.gz: build_tools/.emsdk_pkg_version
 build_tools/emsdk_portable: build_tools/.emsdk_version build_tools/emsdk-portable.tar.gz
 	rm -rf build_tools/emsdk_portable
 	tar x -C build_tools -f build_tools/emsdk-portable.tar.gz
-	cd build_tools/emsdk_portable && ./emsdk update && ./emsdk install $(EMSDK_VERSION) && ./emsdk activate $(EMSDK_VERSION)
+	cd build_tools && git clone --depth 1 https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk &&  ./emsdk activate $(EMSDK_VERSION)
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
