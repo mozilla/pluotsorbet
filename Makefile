@@ -290,7 +290,7 @@ bug: j2me
 	tar -zcvf bug.tar.gz bug/
 
 libs/native.js: vm/native/Makefile vm/native/native.cpp build_tools/emsdk_portable
-	cd build_tools/emscripten-sdk && source ./emsdk_env.sh && cd ../.. && make -C vm/native/
+	cd build_tools && . emscripten-sdk/emsdk_env.sh && cd .. && make -C vm/native/
 
 bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) libs/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
