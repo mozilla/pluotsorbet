@@ -192,6 +192,20 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
+# The emsdk version to install.  Note that this is different from the package
+# version, since the emsdk package has a built-in package manager that installs
+# any version of the emsdk.
+EMSDK_VERSION=sdk-1.30.0-64bit
+OLD_EMSDK_VERSION := $(shell [ -f build_tools/.emsdk_version ] && cat build_tools/.emsdk_version)
+$(shell [ "$(EMSDK_VERSION)" != "$(OLD_EMSDK_VERSION)" ] && echo $(EMSDK_VERSION) > build_tools/.emsdk_version)
+
+# The emsdk package isn't explicitly versioned, but we track a fake version
+# number for it anyway, just in case it ever changes in an incompatible
+# or valuable way, so we can update existing installs by revving this number.
+EMSDK_PKG_VERSION=1
+OLD_EMSDK_PKG_VERSION := $(shell [ -f build_tools/.emsdk_pkg_version ] && cat build_tools/.emsdk_pkg_version)
+$(shell [ "$(EMSDK_PKG_VERSION)" != "$(OLD_EMSDK_PKG_VERSION)" ] && echo $(EMSDK_PKG_VERSION) > build_tools/.emsdk_pkg_version)
+
 PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
@@ -237,12 +251,15 @@ build_tools/closure.jar: build_tools/.closure_compiler_version
 	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
 
-build_tools/emsdk-portable.tar.gz:
+build_tools/emsdk-portable.tar.gz: build_tools/.emsdk_pkg_version
+	rm -f build_tools/emsdk-portable.tar.gz
 	wget -P build_tools https://s3.amazonaws.com/mozilla-games/emscripten/releases/emsdk-portable.tar.gz
+	touch build_tools/emsdk-portable.tar.gz
 
-build_tools/emsdk_portable: build_tools/emsdk-portable.tar.gz
+build_tools/emsdk_portable: build_tools/.emsdk_version build_tools/emsdk-portable.tar.gz
+	rm -rf build_tools/emsdk_portable
 	tar x -C build_tools -f build_tools/emsdk-portable.tar.gz
-	cd build_tools/emsdk_portable && ./emsdk update && ./emsdk install sdk-1.30.0-64bit && ./emsdk activate sdk-1.30.0-64bit
+	cd build_tools/emsdk_portable && ./emsdk update && ./emsdk install $(EMSDK_VERSION) && ./emsdk activate $(EMSDK_VERSION)
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
