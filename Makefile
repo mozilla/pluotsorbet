@@ -195,7 +195,7 @@ $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] &
 # The emsdk version to install.  Note that this is different from the package
 # version, since the emsdk package has a built-in package manager that installs
 # any version of the emsdk.
-EMSDK_VERSION=sdk-1.32.4-64bit
+EMSDK_VERSION=latest
 OLD_EMSDK_VERSION := $(shell [ -f build_tools/.emsdk_version ] && cat build_tools/.emsdk_version)
 $(shell [ "$(EMSDK_VERSION)" != "$(OLD_EMSDK_VERSION)" ] && echo $(EMSDK_VERSION) > build_tools/.emsdk_version)
 
