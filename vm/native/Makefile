@@ -15,9 +15,6 @@ ifneq (,$(findstring CYGWIN,$(uname_S)))
 	BOEHM_LIB=libgc.dll
 endif
 
-Boehm.js/.libs/$(BOEHM_LIB):
-	cd Boehm.js && emconfigure ./configure --without-threads --disable-threads __EMSCRIPTEN__=1 && emmake make && cd ..
-
 all: native.cpp Boehm.js/.libs/$(BOEHM_LIB)
 	emcc -IBoehm.js/include/ Boehm.js/.libs/$(BOEHM_LIB) -Oz native.cpp -DNDEBUG -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=16384 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
 	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc"]' \
@@ -28,3 +25,6 @@ all: native.cpp Boehm.js/.libs/$(BOEHM_LIB)
 	echo "  return Module;" >> native.js
 	echo "})(ASM);" >> native.js
 	mv native.js ../../libs/native.js
+
+Boehm.js/.libs/$(BOEHM_LIB):
+	cd Boehm.js && emconfigure ./configure --without-threads --disable-threads __EMSCRIPTEN__=1 && emmake make && cd ..
