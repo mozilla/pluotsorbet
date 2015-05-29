@@ -15,6 +15,7 @@ before_script:
 script:
   - echo $PATH
   - ls -al /home/travis/build/mozilla/j2me.js/emscripten-sdk/emscripten/master
+  - ls -al vm/native/Boehm.js
   - make test
 sudo: false
 notifications:
