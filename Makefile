@@ -368,3 +368,4 @@ clean:
 	make -C bench clean
 	rm -f img/icon-128.png img/icon-512.png
 	rm -f package.zip
+	rm -f libs/native.js
