@@ -112,7 +112,7 @@ module J2ME {
    *             +--------------------------------+
    *             | Caller FP                      |
    *             +--------------------------------+
-   *             | Callee Method Info             |
+   *             | Callee Method Info | Marker    |
    *             +--------------------------------+
    *             | Monitor                        |
    *             +--------------------------------+
@@ -124,8 +124,15 @@ module J2ME {
    *   SP  --->  +--------------------------------+
    */
 
+  export enum FrameType {
+    Interpreter = 0,
+    Skip = 1,
+    PushPendingFrames = 2
+  }
+
   enum FrameLayout {
     CalleeMethodInfoOffset      = 2,
+    FrameTypeOffset             = 2,
     CallerFPOffset              = 1,
     CallerRAOffset              = 0,
     MonitorOffset               = 3,
@@ -339,7 +346,11 @@ module J2ME {
       return this.view;
     }
 
-    pushFrame(methodInfo: MethodInfo, sp: number = 0, pc: number = 0) {
+    pushMarkerFrame(frameType: FrameType) {
+      this.pushFrame(null, 0, 0, frameType);
+    }
+
+    pushFrame(methodInfo: MethodInfo, sp: number = 0, pc: number = 0, frameType: FrameType = FrameType.Interpreter) {
       var fp = this.fp;
       if (methodInfo) {
         this.fp = this.sp + methodInfo.codeAttribute.max_locals;
@@ -349,6 +360,7 @@ module J2ME {
       i32[this.fp + FrameLayout.CallerRAOffset] = this.pc;    // Caller RA
       i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo; // Callee
+      i32[this.fp + FrameLayout.FrameTypeOffset] = frameType; // Frame Type
       ref[this.fp + FrameLayout.MonitorOffset] = null; // Monitor
       this.sp = this.fp + FrameLayout.CallerSaveSize + sp;
       this.pc = pc;
@@ -439,7 +451,7 @@ module J2ME {
       var callerFP = thread.fp;
       var callerPC = thread.pc;
       // release || traceWriter && traceWriter.writeLn(">> I");
-      thread.pushFrame(null);
+      thread.pushMarkerFrame(FrameType.Skip);
       thread.pushFrame(methodInfo);
       var calleeFP = thread.fp;
       var frame = thread.frame;
@@ -1793,6 +1805,7 @@ module J2ME {
             // Caller saved values.
             i32[fp + FrameLayout.CallerRAOffset] = opPC;
             i32[fp + FrameLayout.CallerFPOffset] = callerFPOffset;
+            i32[fp + FrameLayout.FrameTypeOffset] = FrameType.Interpreter;
             ref[fp + FrameLayout.CalleeMethodInfoOffset] = mi;
             ref[fp + FrameLayout.MonitorOffset] = null; // Monitor
 
