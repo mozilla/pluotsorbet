@@ -27,4 +27,4 @@ all: native.cpp Boehm.js/.libs/$(BOEHM_LIB)
 	mv native.js ../../libs/native.js
 
 Boehm.js/.libs/$(BOEHM_LIB):
-	cd Boehm.js && emconfigure ./configure --without-threads --disable-threads __EMSCRIPTEN__=1 && emmake make && cd ..
+	cd Boehm.js && emconfigure ./configure --without-threads --disable-threads __EMSCRIPTEN__=1 && emmake make
