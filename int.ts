@@ -198,23 +198,22 @@ module J2ME {
       return FrameLayout.CallerSaveSize;
     }
 
-    traceStack(writer: IndentingWriter) {
+    traceStack(writer: IndentingWriter, details: boolean = false) {
       var fp = this.fp;
       var sp = this.sp;
       var pc = this.pc;
       while (this.fp > this.thread.tp) {
-        writer.writeLn((this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
+        this.trace(writer, details);
         this.set(this.thread, i32[this.fp + FrameLayout.CallerFPOffset],
                  this.fp + this.parameterOffset,
                  i32[this.fp + FrameLayout.CallerRAOffset]);
-
       }
       this.fp = fp;
       this.sp = sp;
       this.pc = pc;
     }
 
-    trace(writer: IndentingWriter) {
+    trace(writer: IndentingWriter, details: boolean = true) {
       function toNumber(v) {
         if (v < 0) {
           return String(v);
@@ -232,27 +231,35 @@ module J2ME {
         return v;
       }
 
-      writer.writeLn("Frame: " + this.methodInfo.implKey + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
-      for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
-        var prefix = "    ";
-        if (i >= this.fp + this.stackOffset) {
-          prefix = "S" + (i - (this.fp + this.stackOffset)) + ": ";
-        } else if (i === this.fp + FrameLayout.CalleeMethodInfoOffset) {
-          prefix = "MI: ";
-        } else if (i === this.fp + FrameLayout.CallerFPOffset) {
-          prefix = "CF: ";
-        } else if (i === this.fp + FrameLayout.CallerRAOffset) {
-          prefix = "RA: ";
-        } else if (i >= this.fp + this.parameterOffset) {
-          prefix = "L" + (i - (this.fp + this.parameterOffset)) + ": ";
+      var op = -1;
+      if (this.methodInfo) {
+        op = this.methodInfo.codeAttribute.code[this.pc];
+      }
+      writer.writeLn("Frame: " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecodes[op] : ""));
+      if (details) {
+        for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
+          var prefix = "    ";
+          if (i >= this.fp + this.stackOffset) {
+            prefix = "S" + (i - (this.fp + this.stackOffset)) + ": ";
+          } else if (i === this.fp + FrameLayout.CalleeMethodInfoOffset) {
+            prefix = "MI: ";
+          } else if (i === this.fp + FrameLayout.CallerFPOffset) {
+            prefix = "CF: ";
+          } else if (i === this.fp + FrameLayout.CallerRAOffset) {
+            prefix = "RA: ";
+          } else if (i === this.fp + FrameLayout.MonitorOffset) {
+            prefix = "MO: ";
+          } else if (i >= this.fp + this.parameterOffset) {
+            prefix = "L" + (i - (this.fp + this.parameterOffset)) + ": ";
+          }
+          writer.writeLn(" " + prefix.padRight(' ', 5) + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2) + ": " +
+            String(i32[i]).padLeft(' ', 12) + " " +
+            toHEX(i32[i]) + " " +
+            ((i32[i] >= 32 && i32[i] < 1024) ? String.fromCharCode(i32[i]) : "?") + " " +
+            clampString(String(f32[i]), 12).padLeft(' ', 12) + " " +
+            clampString(String(wordsToDouble(i32[i], i32[i + 1])), 12).padLeft(' ', 12) + " " +
+            toName(ref[i]));
         }
-        writer.writeLn(" " + prefix.padRight(' ', 5) + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2)  + ": " +
-          String(i32[i]).padLeft(' ', 12) + " " +
-          toHEX(i32[i]) + " " +
-          ((i32[i] >= 32 && i32[i] < 1024) ? String.fromCharCode(i32[i]) : "?") + " " +
-          clampString(String(f32[i]), 12).padLeft(' ', 12) + " " +
-          clampString(String(wordsToDouble(i32[i], i32[i + 1])), 12).padLeft(' ', 12) + " " +
-          toName(ref[i]));
       }
     }
   }
