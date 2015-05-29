@@ -14,6 +14,7 @@ before_script:
   - git clone --depth 1 https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk && ./emsdk activate latest && source ./emsdk_env.sh && cd ..
 script:
   - echo $PATH
+  - ls -al /home/travis/build/mozilla/j2me.js/emscripten-sdk/emscripten/master
   - make test
 sudo: false
 notifications:
