@@ -3,6 +3,7 @@ node_js:
   - "0.10"
 env:
   - DISPLAY=:99.0
+addons: {apt: {sources: [ubuntu-toolchain-r-test], packages: [g++-4.9]}}
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
