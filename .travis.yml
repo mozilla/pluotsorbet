@@ -3,7 +3,6 @@ node_js:
   - "0.10"
 env:
   - DISPLAY=:99.0
-addons: {apt: {sources: [george-edison55-precise-backports, kubuntu-backports, ubuntu-toolchain-r-test], packages: [cmake, doxygen, graphviz, g++-4.9, libasound2-dev]}}
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
@@ -13,9 +12,6 @@ before_script:
   - export PATH=$PATH:/tmp/js
   - git clone --recursive https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk && ./emsdk activate latest && source ./emsdk_env.sh && cd ..
 script:
-  - echo $PATH
-  - ls -al /home/travis/build/mozilla/j2me.js/emscripten-sdk/emscripten/master
-  - ls -al vm/native/Boehm.js
   - make test
 sudo: false
 notifications:
