@@ -339,7 +339,7 @@ module J2ME {
       return this.view;
     }
 
-    pushFrame(methodInfo: MethodInfo) {
+    pushFrame(methodInfo: MethodInfo, sp: number = 0, pc: number = 0) {
       var fp = this.fp;
       if (methodInfo) {
         this.fp = this.sp + methodInfo.codeAttribute.max_locals;
@@ -350,8 +350,8 @@ module J2ME {
       i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo; // Callee
       ref[this.fp + FrameLayout.MonitorOffset] = null; // Monitor
-      this.sp = this.fp + FrameLayout.CallerSaveSize;
-      this.pc = 0;
+      this.sp = this.fp + FrameLayout.CallerSaveSize + sp;
+      this.pc = pc;
     }
 
     popFrame(methodInfo: MethodInfo): MethodInfo {
