@@ -169,11 +169,10 @@ var MIDP = (function() {
   Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(state) {
     var suiteId = (config.midletClassName === "internal") ? -1 : 1;
     state.suiteId = suiteId;
-    state.midletClassName = J2ME.newString(config.midletClassName);
-    var args = config.args;
-    state.arg0 = J2ME.newString((args.length > 0) ? args[0] : "");
-    state.arg1 = J2ME.newString((args.length > 1) ? args[1] : "");
-    state.arg2 = J2ME.newString((args.length > 2) ? args[2] : "");
+    state.midletClassName = J2ME.newString("org.mozilla.ams.AmsMIDlet");
+    state.arg0 = J2ME.newString("");
+    state.arg1 = J2ME.newString("");
+    state.arg2 = J2ME.newString("");
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {
@@ -830,17 +829,24 @@ var MIDP = (function() {
     }, false);
   }
 
-  function sendExecuteMIDletEvent() {
+  function sendExecuteMIDletEvent(suiteId, className, displayName, arg0, arg1, arg2) {
     AMS.sendNativeEventToAMSIsolate({
       type: NATIVE_MIDLET_EXECUTE_REQUEST,
+      intParam1: suiteId,
+      stringParam1: J2ME.newString(className),
+      stringParam2: J2ME.newString(displayName),
+      stringParam3: J2ME.newString(arg0),
+      stringParam4: J2ME.newString(arg1),
+      stringParam5: J2ME.newString(arg2),
     });
   }
 
-  function sendDestroyMIDletEvent(midletClassName) {
-    FG.sendNativeEventToForeground({
-      type: DESTROY_MIDLET_EVENT,
-      stringParam1: midletClassName,
-    }, false);
+  function sendDestroyMIDletEvent(suiteId, className) {
+    AMS.sendNativeEventToAMSIsolate({
+      type: NATIVE_MIDLET_DESTROY_REQUEST,
+      intParam1: suiteId,
+      stringParam1: J2ME.newString(className),
+    });
   }
 
   var KEY_EVENT = 1;
@@ -850,7 +856,7 @@ var MIDP = (function() {
   var DRAGGED = 3;
   var COMMAND_EVENT = 3;
   var NATIVE_MIDLET_EXECUTE_REQUEST = 36;
-  var DESTROY_MIDLET_EVENT = 14;
+  var NATIVE_MIDLET_DESTROY_REQUEST = 39;
   var EVENT_QUEUE_SHUTDOWN = 31;
   var ROTATION_EVENT = 43;
   var MMAPI_EVENT = 45;
