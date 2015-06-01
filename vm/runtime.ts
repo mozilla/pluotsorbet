@@ -807,7 +807,8 @@ module J2ME {
     // isRuntimeKlass: boolean;
 
     constructor(templateKlass: Klass) {
-      this._address = ASM._gcMalloc(templateKlass.classInfo.sizeOfStaticFields);
+      this._address = ASM._gcMalloc(templateKlass.classInfo.sizeOfFields +
+                                    templateKlass.classInfo.sizeOfStaticFields);
       this.templateKlass = templateKlass;
     }
   }
