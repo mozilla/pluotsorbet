@@ -280,6 +280,7 @@ module J2ME {
         throw e;
       }
       if (U) {
+        this.nativeThread.endUnwind();
         switch (U) {
           case VMState.Yielding:
             this.resume();
@@ -409,8 +410,8 @@ module J2ME {
     }
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      traceWriter && $.ctx.nativeThread.frame.traceStack(traceWriter);
       traceWriter && traceWriter.writeLn("Bailout: " + methodInfo.implKey);
+      this.nativeThread.unwoundNativeFrames.push({methodInfo: methodInfo, pc: pc, nextPC: nextPC, local: local, stack: stack});
     }
 
     pauseMethodTimeline() {

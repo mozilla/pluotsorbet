@@ -696,6 +696,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
       profile && $.ctx.pauseMethodTimeline();
+      $.ctx.nativeThread.beginUnwind();
     }
 
     pause(reason: string) {
@@ -704,6 +705,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
       profile && $.ctx.pauseMethodTimeline();
+      $.ctx.nativeThread.beginUnwind();
     }
 
     stop() {

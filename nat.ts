@@ -45,7 +45,7 @@ module J2ME {
       var thread = ctx.nativeThread;
 
       // The caller's |pc| is currently at the invoke bytecode, we need to skip over the invoke when resuming.
-      thread.advancePastInvokeBytecode();
+      // thread.advancePastInvokeBytecode();
 
       // Push return value.
       var sp = thread.sp;
@@ -102,12 +102,12 @@ module J2ME {
 
   Native["java/lang/Thread.yield.()V"] = function() {
     $.yield("Thread.yield");
-    $.ctx.nativeThread.advancePastInvokeBytecode();
+    // $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
     $.ctx.wait(this, longToNumber(timeoutL, timeoutH));
-    $.ctx.nativeThread.advancePastInvokeBytecode();
+    // $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
   Native["java/lang/Object.notify.()V"] = function() {

@@ -193,6 +193,23 @@ module J2ME {
       }
     }
 
+    setStackSlot(kind: Kind, i: number, v: any) {
+      switch (kind) {
+        case Kind.Reference:
+          ref[this.fp + FrameLayout.CallerSaveSize + i] = v;
+          break;
+        case Kind.Int:
+        case Kind.Byte:
+        case Kind.Char:
+        case Kind.Short:
+        case Kind.Boolean:
+          i32[this.fp + FrameLayout.CallerSaveSize + i] = v;
+          break;
+        default:
+          release || assert(false, "Cannot set stack slot of kind: " + Kind[kind]);
+      }
+    }
+
     get methodInfo(): MethodInfo {
       return ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
     }
@@ -324,6 +341,17 @@ module J2ME {
 
     view: FrameView;
 
+    /**
+     * Stack of native frames seen during unwinding. These appear in reverse order. If a marker frame
+     * is seen during unwinding, a null value is also pushed on this stack to mark native frame ranges.
+     */
+    unwoundNativeFrames: any [];
+
+    /**
+     * Stack of native frames to push on the stack.
+     */
+    pendingNativeFrames: any [];
+
     constructor(ctx: Context) {
       this.tp = ASM._gcMalloc(1024 * 128);
       this.bp = this.tp;
@@ -332,6 +360,8 @@ module J2ME {
       this.pc = -1;
       this.view = new FrameView();
       this.ctx = ctx;
+      this.unwoundNativeFrames = [];
+      this.pendingNativeFrames = [];
       release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp << 2) + " " + toHEX(i32.byteLength));
     }
 
@@ -465,11 +495,96 @@ module J2ME {
           break;
       }
     }
+
+    pushPendingNativeFrames() {
+      this.popMarkerFrame(FrameType.PushPendingFrames);
+      traceWriter && this.frame.traceStack(traceWriter);
+      this.pendingNativeFrames.forEach(function (x) {
+        if (x) {
+          traceWriter && traceWriter.writeLn(x.methodInfo.implKey);
+        } else {
+          traceWriter && traceWriter.writeLn("null");
+        }
+      });
+
+
+      return;
+
+      var kind;
+      var value;
+      var savedFrames = this.unwoundNativeFrames;
+      var savedFrameIndex = savedFrames.indexOf(null);
+      if (savedFrameIndex < 0) {
+        savedFrameIndex = savedFrames.length;
+      }
+      if (savedFrameIndex > 0) {
+        traceWriter && traceWriter.writeLn("Restoring Frames, Stack Before:");
+        traceWriter && this.frame.traceStack(traceWriter);
+        for (var i = savedFrameIndex - 1; i >= 0; i--) {
+          var savedFrame = savedFrames[i];
+          this.pushFrame(savedFrame.methodInfo, savedFrame.stack.length, savedFrame.pc);
+          var frame = this.frame;
+          //release || traceWriter && frame.trace(traceWriter);
+          for (var j = 0; j < savedFrame.local.length; j++) {
+            value = savedFrame.local[j];
+            traceWriter && traceWriter.writeLn("Local Value: " + value);
+            kind = typeof value === "object" ? Kind.Reference : Kind.Int;
+            frame.setParameter(kind, j, value);
+          }
+          for (var j = 0; j < savedFrame.stack.length; j++) {
+            value = savedFrame.stack[j];
+            kind = typeof value === "object" ? Kind.Reference : Kind.Int;
+            traceWriter && traceWriter.writeLn("Stack Value: " + value);
+            frame.setStackSlot(kind, j, value);
+          }
+          //release || traceWriter && frame.trace(traceWriter);
+          traceWriter && traceWriter.enter("+ I " + savedFrame.methodInfo.implKey);
+        }
+        while (savedFrameIndex--) savedFrames.shift();
+        traceWriter && traceWriter.writeLn("Restoring Frames, Stack After:");
+        traceWriter && this.frame.traceStack(traceWriter, true);
+      }
+    }
+
+    beginUnwind() {
+      release || assert(this.unwoundNativeFrames.length === 0);
+    }
+
+    endUnwind() {
+      var unwound = this.unwoundNativeFrames;
+      var pending = this.pendingNativeFrames;
+
+      traceWriter && traceWriter.writeLn("UNWOUND");
+      unwound.forEach(function (x) {
+        if (x) {
+          traceWriter && traceWriter.writeLn(x.methodInfo.implKey);
+        } else {
+          traceWriter && traceWriter.writeLn("null");
+        }
+      });
+
+      while (unwound.length) {
+        pending.push(unwound.pop());
+      }
+
+      traceWriter && traceWriter.writeLn("PENDING");
+      pending.forEach(function (x) {
+        if (x) {
+          traceWriter && traceWriter.writeLn(x.methodInfo.implKey);
+        } else {
+          traceWriter && traceWriter.writeLn("null");
+        }
+      });
+
+      traceWriter && this.frame.traceStack(traceWriter, true);
+
+    }
   }
 
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
     var method = function fastInterpreterFrameAdapter() {
-      var thread = $.ctx.nativeThread;
+      var ctx = $.ctx;
+      var thread = ctx.nativeThread;
       var callerFP = thread.fp;
       var callerPC = thread.pc;
       // release || traceWriter && traceWriter.writeLn(">> I");
@@ -561,7 +676,11 @@ module J2ME {
    */
   export function interpret(thread: Thread) {
     var frame = thread.frame;
-
+    if (frame.type === FrameType.PushPendingFrames) {
+      release || traceWriter && traceWriter.writeLn("HERE");
+      thread.pushPendingNativeFrames();
+      frame = thread.frame;
+    }
     var mi = frame.methodInfo;
     var maxLocals = mi.codeAttribute.max_locals;
     var ci = mi.classInfo;
@@ -1725,7 +1844,15 @@ module J2ME {
             }
 
             // Call Native or Compiled Method.
-            if (calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled) {
+            var callMethod = calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled;
+            if (false && callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
+              var calleeStats = calleeTargetMethodInfo.stats;
+              if (calleeStats.callCount ++ > 10) {
+                calleeTargetMethodInfo.state = MethodState.Compiled;
+                callMethod = true;
+              }
+            }
+            if (callMethod) {
               var kind = Kind.Void;
               args.length = 0;
               var signatureKinds = calleeTargetMethodInfo.signatureKinds;
@@ -1766,16 +1893,24 @@ module J2ME {
                 // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
               }
 
-              var frameHash = 0;
-
               var returnValue = callee.apply(object, args);
-
               if (!release) {
                 checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
               }
 
               if (U) {
-                release || traceWriter && traceWriter.writeLn("<< U Unwind: " + VMState[U]);
+                if (thread.fp === fp) { // We're the last interpreter frame on the stack.
+                  if (thread.unwoundNativeFrames.length) {
+                    // There must have been some native frames past this point.
+                    traceWriter && traceWriter.writeLn("Pushing pending marker.");
+                    thread.pushMarkerFrame(FrameType.PushPendingFrames);
+                  } else {
+                    // We must have called directly something that yielded, so let's advance the PC
+                    // so we don't yield again.
+                    thread.advancePastInvokeBytecode();
+                  }
+                }
+                traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
                 return;
               }
 
