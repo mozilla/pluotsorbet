@@ -38,7 +38,7 @@
   <!-- Load relooper.js separately because adding it to main-all.js
      - throws an "asm.js type error". -->
   <script type="text/javascript" src="libs/relooper.js" defer></script>
-  <script type="text/javascript" src="libs/native.js" defer></script>
+  <script type="text/javascript" src="bld/native.js" defer></script>
 
   <!-- Load j2me.js separately because classes.jar.js depends on it (it adds
      - members to the AOTMD hash that j2me.js defines); and also so its source

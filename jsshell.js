@@ -167,7 +167,7 @@ try {
   if (profileTimeline) {
     load("bld/shumway.js");
   }
-  load("polyfill/promise.js", "libs/relooper.js", "libs/native.js", "bld/j2me.js",
+  load("polyfill/promise.js", "libs/relooper.js", "bld/native.js", "bld/j2me.js",
     "libs/zipfile.js",
     "blackBox.js",
     "libs/encoding.js",
