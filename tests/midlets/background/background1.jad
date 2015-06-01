@@ -7,7 +7,7 @@ Nokia-MIDlet-bg-memory-size: 350
 Nokia-MIDlet-Background-Exit-Confirm-en: DO NOT EXIT!
 Nokia-MIDlet-Save-Location: Root
 Nokia-MIDlet-bg-server: 2
-MIDlet-Name: BackgroundMIDlet
+MIDlet-Name: Background1
 Nokia-MIDlet-Dual-SIM-Compliant: true
 MIDlet-Version: 2.12.25
 MicroEdition-Configuration: CLDC-1.1
