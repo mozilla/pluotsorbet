@@ -265,8 +265,34 @@ bug: j2me
 	cp jsshell.js bug/jsshell.js
 	tar -zcvf bug.tar.gz bug/
 
-libs/native.js: vm/native/Makefile vm/native/native.cpp
-	make -C vm/native/
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+ifeq ($(UNAME_S),Linux)
+	BOEHM_LIB=libgc.so
+endif
+ifeq ($(UNAME_S),Darwin)
+	BOEHM_LIB=libgc.dylib
+endif
+ifneq (,$(findstring MINGW,$(uname_S)))
+	BOEHM_LIB=libgc.dll
+endif
+ifneq (,$(findstring CYGWIN,$(uname_S)))
+	BOEHM_LIB=libgc.dll
+endif
+
+libs/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
+	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -DNDEBUG -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=16384 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
+	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc"]' \
+	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts", "setjmp", "longjmp"]'
+	echo "var ASM = (function(Module) {" >> libs/native.js
+	cat native.raw.js >> libs/native.js
+	echo "" >> libs/native.js
+	echo "  return Module;" >> libs/native.js
+	echo "})(ASM);" >> libs/native.js
+	rm native.raw.js
+
+vm/native/Boehm.js/.libs/$(BOEHM_LIB):
+	cd vm/native/Boehm.js && emconfigure ./configure --without-threads --disable-threads __EMSCRIPTEN__=1 && emmake make
 
 bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) libs/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
