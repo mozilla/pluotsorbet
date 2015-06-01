@@ -125,8 +125,20 @@ module J2ME {
    */
 
   export enum FrameType {
+    /**
+     * Normal interpreter frame.
+     */
     Interpreter = 0,
+
+    /**
+     * Marks the beggining of a sequence of interpreter frames. If we see this
+     * frame when returning we need to exit the interpreter loop.
+     */
     Skip = 1,
+
+    /**
+     * Native frames are pending and need to be pushed on the stack.
+     */
     PushPendingFrames = 2
   }
 
@@ -183,6 +195,10 @@ module J2ME {
 
     get methodInfo(): MethodInfo {
       return ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
+    }
+
+    get type(): FrameType {
+      return i32[this.fp + FrameLayout.FrameTypeOffset];
     }
 
     set methodInfo(methodInfo: MethodInfo) {
@@ -242,7 +258,8 @@ module J2ME {
       if (this.methodInfo) {
         op = this.methodInfo.codeAttribute.code[this.pc];
       }
-      writer.writeLn("Frame: " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecodes[op] : ""));
+      var type  = i32[this.fp + FrameLayout.FrameTypeOffset];
+      writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecodes[op] : ""));
       if (details) {
         for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
           var prefix = "    ";
@@ -366,9 +383,14 @@ module J2ME {
       this.pc = pc;
     }
 
-    popFrame(methodInfo: MethodInfo): MethodInfo {
+    popMarkerFrame(frameType: FrameType): MethodInfo {
+      return this.popFrame(null, frameType);
+    }
+
+    popFrame(methodInfo: MethodInfo, frameType: FrameType = FrameType.Interpreter): MethodInfo {
       var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-      release || assert(mi === methodInfo);
+      var type = i32[this.fp + FrameLayout.FrameTypeOffset];
+      release || assert(mi === methodInfo && type === frameType);
       this.pc = i32[this.fp + FrameLayout.CallerRAOffset];
       var maxLocals = mi ? mi.codeAttribute.max_locals : 0;
       this.sp = this.fp - maxLocals;
@@ -1601,9 +1623,10 @@ module J2ME {
             sp = fp - maxLocals;
             fp = i32[fp + FrameLayout.CallerFPOffset];
             mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
-            if (mi === null) {
+            type = i32[fp + FrameLayout.FrameTypeOffset];
+            if (type === FrameType.Skip) {
               thread.set(fp, sp, opPC);
-              thread.popFrame(null);
+              thread.popMarkerFrame(FrameType.Skip);
               switch (lastOP) {
                 case Bytecodes.IRETURN:
                   return i32[lastSP - 1];
@@ -1621,6 +1644,7 @@ module J2ME {
                   return;
               }
             }
+            release || assert(type === FrameType.Interpreter, "Cannot resume in frame type: " + FrameType[type]);
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
             release || traceWriter && traceWriter.outdent();
