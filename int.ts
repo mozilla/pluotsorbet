@@ -1265,9 +1265,9 @@ module J2ME {
             }
             continue;
           case Bytecodes.F2L:
-            var F2L_fa = f32[--sp];
-            i32[sp++] = returnLongValue(F2L_fa);
-            i32[sp++] = tempReturn0;
+            i32[sp - 1] = returnLongValue(f32[sp - 1]);
+            i32[sp] = tempReturn0;
+            sp++;
             continue;
           case Bytecodes.F2D:
             aliasedF64[0] = f32[--sp];
