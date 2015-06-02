@@ -34,11 +34,23 @@ public class yield extends Thread implements Testlet
   public int getExpectedFail() { return 0; }
   public int getExpectedKnownFail() { return 0; }
 
+  public void car() {
+    Thread.yield();
+  }
+
+  public void bar() {
+    car();
+  }
+
+  public void foo() {
+    bar();
+  }
+
   public void test (TestHarness harness)
   {
     long start = Sys.getUnwindCount();
     for (int i = 0; i < 100; i++) {
-      Thread.yield();
+      foo();
     }
     harness.check((Sys.getUnwindCount() - start) == 100, "Not enough unwinds.");
     System.out.println("Unwinds: " + (Sys.getUnwindCount() - start));
