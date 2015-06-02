@@ -604,9 +604,7 @@ module J2ME {
             case TAGS.CONSTANT_Long:
               var high = s.readS4();
               var low = s.readS4();
-              // REDUX
-              //r = this.resolved[i] = Long.fromBits(low, high);
-              Debug.error("TODO constant pool longs");
+              r = this.resolved[i] = Long.fromBits(low, high);
               break;
             case TAGS.CONSTANT_Double:
               r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readS4(), s.readS4());

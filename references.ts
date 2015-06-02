@@ -16,7 +16,6 @@
 ///<reference path='bindings.ts' />
 ///<reference path='nat.ts' />
 ///<reference path='int.ts' />
-///<reference path='long.ts' />
 ///<reference path='scheduler.ts' />
 ///<reference path='vm/runtime.ts' />
 // ///<reference path='interpreter.ts' />
