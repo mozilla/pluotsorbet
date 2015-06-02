@@ -10,17 +10,6 @@ var tempReturn0 = 0;
 interface Math {
   fround(value: number): number;
 }
-interface Long {
-  isZero(): boolean;
-  toNumber(): number;
-}
-declare var Long: {
-  new (low: number, high: number): Long;
-  ZERO: Long;
-  fromBits(lowBits: number, highBits: number): Long;
-  fromInt(value: number);
-  fromNumber(value: number);
-}
 
 interface CompiledMethodCache {
   get(key: string): { key: string; source: string; referencedClasses: string[]; };
@@ -43,11 +32,6 @@ module J2ME {
   export function returnLong(l: number, h: number) {
     tempReturn0 = h;
     return l;
-  }
-
-  export function returnLongValue(v: number) {
-    var value = Long.fromNumber(v);
-    return returnLong(value.low_, value.high_);
   }
 
   declare var Native, config;
@@ -1263,7 +1247,7 @@ module J2ME {
               getter = new Function("return f32[this._address + " + field.byteOffset + " >> 2];");
               break;
             case Kind.Long:
-              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value); i32[this._address + 4 + " + field.byteOffset + " >> 2] = tempReturn0;");
+              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.returnLongValue(value); i32[this._address + 4 + " + field.byteOffset + " >> 2] = tempReturn0;");
               getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2], i32[this._address + 4 + " + field.byteOffset + " >> 2]);");
               break;
             case Kind.Double:
@@ -1913,8 +1897,8 @@ module J2ME {
     }
   }
 
-  export function checkDivideByZeroLong(value: Long) {
-    if (value.isZero()) {
+  export function checkDivideByZeroLong(low: number, high: number) {
+    if (low === 0 && high === 0) {
       throwArithmeticException();
     }
   }
@@ -1970,7 +1954,8 @@ module J2ME {
     LONG_MIN_HIGH = 0x80000000,
 
 
-    TWO_PWR_32_DBL = 4294967296
+    TWO_PWR_32_DBL = 4294967296,
+    TWO_PWR_63_DBL = 9223372036854776000
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
