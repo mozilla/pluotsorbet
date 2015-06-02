@@ -1265,7 +1265,6 @@ module J2ME {
             }
             continue;
           case Bytecodes.F2L:
-            console.log("did");
             i32[sp - 1] = returnLongValue(f32[sp - 1]);
             i32[sp] = tempReturn0;
             sp++;
@@ -1299,7 +1298,6 @@ module J2ME {
               i32[sp - 2] = Constants.LONG_MIN_LOW;
               i32[sp - 1] = Constants.LONG_MIN_HIGH;
             } else {
-              console.log("did2");
               i32[sp - 2] = returnLongValue(D2L_fa);
               i32[sp - 1] = tempReturn0;
             }

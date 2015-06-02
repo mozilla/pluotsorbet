@@ -21,7 +21,6 @@ module J2ME {
   }
 
   export function returnLongValue(v: number) {
-    console.log("yo " + v);
     if (isNaN(v) || !isFinite(v)) {
       tempReturn0 = 0;
       return 0;
