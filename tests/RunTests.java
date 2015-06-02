@@ -162,6 +162,9 @@ public class RunTests extends MIDlet {
                 String name = Testlets.list[n];
                 if (name == null)
                     break;
+                if (!name.equals("javax/microedition/lcdui/TestGraphicsClipping")) {
+                    continue;
+                }
                 runTest(name);
             }
         }
