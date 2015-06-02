@@ -44,9 +44,6 @@ module J2ME {
       release || J2ME.Debug.assert(!(l instanceof Long.constructor), "Long objects are no longer supported, use low / high pairs.");
       var thread = ctx.nativeThread;
 
-      // The caller's |pc| is currently at the invoke bytecode, we need to skip over the invoke when resuming.
-      // thread.advancePastInvokeBytecode();
-
       // Push return value.
       var sp = thread.sp;
       switch (returnKind) {
@@ -102,12 +99,10 @@ module J2ME {
 
   Native["java/lang/Thread.yield.()V"] = function() {
     $.yield("Thread.yield");
-    // $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
     $.ctx.wait(this, longToNumber(timeoutL, timeoutH));
-    // $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
   Native["java/lang/Object.notify.()V"] = function() {

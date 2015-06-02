@@ -429,6 +429,7 @@ module J2ME {
     }
 
     run() {
+      release || traceWriter && traceWriter.writeLn("Thread.run");
       return interpret(this);
     }
 
@@ -497,87 +498,85 @@ module J2ME {
     }
 
     pushPendingNativeFrames() {
+      traceWriter && traceWriter.writeLn("Pushing pending native frames.");
+
+      // We should have a |PushPendingFrames| marker frame on the stack at this point.
       this.popMarkerFrame(FrameType.PushPendingFrames);
+
+      traceWriter && traceWriter.writeLn("Stack before:");
       traceWriter && this.frame.traceStack(traceWriter);
-      this.pendingNativeFrames.forEach(function (x) {
-        if (x) {
-          traceWriter && traceWriter.writeLn(x.methodInfo.implKey);
-        } else {
-          traceWriter && traceWriter.writeLn("null");
+
+      var pendingNativeFrame = null;
+      // TODO: Shifting frmaes from |pendingNativeFrames| is technically broken, look at the comment in |endUnwind|.
+      while (pendingNativeFrame = this.pendingNativeFrames.shift()) {
+        traceWriter && traceWriter.writeLn("Pushing frame: " + pendingNativeFrame.methodInfo.implKey);
+        this.pushFrame(pendingNativeFrame.methodInfo, pendingNativeFrame.stack.length, pendingNativeFrame.pc);
+        // TODO: Figure out how to copy floats and doubles.
+        var frame = this.frame;
+        for (var j = 0; j < pendingNativeFrame.local.length; j++) {
+          var value = pendingNativeFrame.local[j];
+          var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
+          frame.setParameter(kind, j, value);
         }
-      });
-
-
-      return;
-
-      var kind;
-      var value;
-      var savedFrames = this.unwoundNativeFrames;
-      var savedFrameIndex = savedFrames.indexOf(null);
-      if (savedFrameIndex < 0) {
-        savedFrameIndex = savedFrames.length;
-      }
-      if (savedFrameIndex > 0) {
-        traceWriter && traceWriter.writeLn("Restoring Frames, Stack Before:");
-        traceWriter && this.frame.traceStack(traceWriter);
-        for (var i = savedFrameIndex - 1; i >= 0; i--) {
-          var savedFrame = savedFrames[i];
-          this.pushFrame(savedFrame.methodInfo, savedFrame.stack.length, savedFrame.pc);
-          var frame = this.frame;
-          //release || traceWriter && frame.trace(traceWriter);
-          for (var j = 0; j < savedFrame.local.length; j++) {
-            value = savedFrame.local[j];
-            traceWriter && traceWriter.writeLn("Local Value: " + value);
-            kind = typeof value === "object" ? Kind.Reference : Kind.Int;
-            frame.setParameter(kind, j, value);
-          }
-          for (var j = 0; j < savedFrame.stack.length; j++) {
-            value = savedFrame.stack[j];
-            kind = typeof value === "object" ? Kind.Reference : Kind.Int;
-            traceWriter && traceWriter.writeLn("Stack Value: " + value);
-            frame.setStackSlot(kind, j, value);
-          }
-          //release || traceWriter && frame.trace(traceWriter);
-          traceWriter && traceWriter.enter("+ I " + savedFrame.methodInfo.implKey);
+        for (var j = 0; j < pendingNativeFrame.stack.length; j++) {
+          var value = pendingNativeFrame.stack[j];
+          var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
+          frame.setStackSlot(kind, j, value);
         }
-        while (savedFrameIndex--) savedFrames.shift();
-        traceWriter && traceWriter.writeLn("Restoring Frames, Stack After:");
-        traceWriter && this.frame.traceStack(traceWriter, true);
       }
+
+      this.advancePastInvokeBytecode();
+
+      traceWriter && traceWriter.writeLn("Stack after:");
+      traceWriter && this.frame.traceStack(traceWriter);
     }
 
+    /**
+     * Called when unwinding begins.
+     */
     beginUnwind() {
+      // The |unwoundNativeFrames| stack should be empty at this point.
       release || assert(this.unwoundNativeFrames.length === 0);
     }
 
+    /*
+     * Called when unwinding ends.
+     *
+     *  x: Interpreter Frame
+     * x': Compiler Frame
+     *  -: Skip Frame
+     *  +: Push Pending Frames
+     *  /: null
+     *
+     *
+     * Suppose you have the following logical call stack: a, b, c, d', e', -, f, g, h', i', -, j, k. The physical call
+     * stack doesn't have any of the native frames on it: a, b, c, -, f, g, -, j, k, so when we resume we need to
+     * make sure that native frames are accounted for. During unwinding, we save the state of native frames in the
+     * |unwoundNativeFrames| array. In order to keep track of how native frames interleave with interpreter frames we
+     * insert null markers in the |unwoundNativeFrames| array. So in this example, the array will be: /, i', h', /,
+     * e', d'. When we resume in the interpreter, our call stack is: a, b, c, +, f, g, +, j, k. During unwinding, the
+     * skip marker frames have been converted to push pending frames. These indicate to the interpreter that some native
+     * frames should be pushed on the stack. When we return from j, we need to push h and i. Similarly, when we return
+     * from f, we need to push d and e. After unwiding is complete, all elements in |unwoundNativeFrames| are poped and
+     * pushed into the |pendingNativeFrames| which keeps track of the native frames that need to be pushed once a
+     * push pending prame marker is observed. In this case |pendingNativeFrames| is: d', e', /, h', i', /. When we return
+     * from j and see the first push pending frames marker, we look for the last set of frames in the |pendingNativeFrames|
+     * list and push those on the stack.
+     *
+     *
+     * Before every unwind, the |unwoundNativeFrames| list must be empty. However, the |pendingNativeFrames| list may
+     * have unprocessed frames in it. This can happen if after resuming and returning from j, we call some native code
+     * that unwinds. Luckily, all new native frames must be further down on the stack than the current frames in the
+     * |pendingNativeFrames| list, so we can just push them at the end.
+     *
+     * TODO: Do a better job explaining all this.
+     */
     endUnwind() {
       var unwound = this.unwoundNativeFrames;
       var pending = this.pendingNativeFrames;
-
-      traceWriter && traceWriter.writeLn("UNWOUND");
-      unwound.forEach(function (x) {
-        if (x) {
-          traceWriter && traceWriter.writeLn(x.methodInfo.implKey);
-        } else {
-          traceWriter && traceWriter.writeLn("null");
-        }
-      });
-
       while (unwound.length) {
         pending.push(unwound.pop());
       }
-
-      traceWriter && traceWriter.writeLn("PENDING");
-      pending.forEach(function (x) {
-        if (x) {
-          traceWriter && traceWriter.writeLn(x.methodInfo.implKey);
-        } else {
-          traceWriter && traceWriter.writeLn("null");
-        }
-      });
-
-      traceWriter && this.frame.traceStack(traceWriter, true);
-
     }
   }
 
@@ -613,6 +612,7 @@ module J2ME {
       }
       var v = interpret(thread);
       if (U) {
+        // thread.unwoundNativeFrames.push(null);
         release || assert(v === undefined, "Return value must be undefined.");
         // Splice out the marker frame so the interpreter doesn't return early when execution is resumed.
         i32[calleeFP + FrameLayout.CallerFPOffset] = callerFP;
@@ -676,8 +676,9 @@ module J2ME {
    */
   export function interpret(thread: Thread) {
     var frame = thread.frame;
+    // Special case where a |PushPendingFrames| marker is on top of the stack. This happens when
+    // native code is on top of the stack.
     if (frame.type === FrameType.PushPendingFrames) {
-      release || traceWriter && traceWriter.writeLn("HERE");
       thread.pushPendingNativeFrames();
       frame = thread.frame;
     }
@@ -1762,6 +1763,9 @@ module J2ME {
                 case Bytecodes.RETURN:
                   return;
               }
+            } else if (type === FrameType.PushPendingFrames) {
+              // TODO:
+              // thread.pushPendingNativeFrames();
             }
             release || assert(type === FrameType.Interpreter, "Cannot resume in frame type: " + FrameType[type]);
             maxLocals = mi.codeAttribute.max_locals;
@@ -1793,6 +1797,7 @@ module J2ME {
               // We are returning to a bytecode that trapped.
               // REDUX: I need to think through this some more, why do we need to subtract the CallerSaveSize? Is it
               // because of the the null frame? This frame should have been spliced out, ... is this a coincidence?
+              traceWriter && traceWriter.writeLn("CRAP " + Bytecodes[op]);
               sp -= FrameLayout.CallerSaveSize;
               pc = opPC;
             }
@@ -1845,7 +1850,7 @@ module J2ME {
 
             // Call Native or Compiled Method.
             var callMethod = calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled;
-            if (false && callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
+            if (callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
               var calleeStats = calleeTargetMethodInfo.stats;
               if (calleeStats.callCount ++ > 10) {
                 calleeTargetMethodInfo.state = MethodState.Compiled;
@@ -1902,7 +1907,6 @@ module J2ME {
                 if (thread.fp === fp) { // We're the last interpreter frame on the stack.
                   if (thread.unwoundNativeFrames.length) {
                     // There must have been some native frames past this point.
-                    traceWriter && traceWriter.writeLn("Pushing pending marker.");
                     thread.pushMarkerFrame(FrameType.PushPendingFrames);
                   } else {
                     // We must have called directly something that yielded, so let's advance the PC
