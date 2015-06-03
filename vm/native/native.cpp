@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <inttypes.h>
 
-uintptr_t heap = 0, bump = 0;
-
 // Formatting: Printing longs.
 // printf("L: %" PRId64 ", R: %" PRId64, *l, *r);
 
@@ -46,8 +44,6 @@ extern "C" {
       *result = 0;
     }
   }
-
-  int allocation = 0;
 
   uintptr_t gcMalloc(int32_t size) {
     return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
