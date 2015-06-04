@@ -180,17 +180,53 @@ var MIDP = (function() {
     return $.ctx.runtime.isolate.id;
   };
 
-  var AMSIsolateId;
+  var AMS = (function() {
+    var isolateId = -1;
+
+    function set(id) {
+      isolateId = id;
+    }
+
+    function reset() {
+      isolateId = -1;
+    }
+
+    function get() {
+      return isolateId;
+    }
+
+    function isAMSIsolate(id) {
+      return (id === isolateId);
+    }
+
+    function sendNativeEventToAMSIsolate(e) {
+      if (-1 === isolateId) {
+        console.warn("Dropping native event sent to AMS isolate");
+        return;
+      }
+
+      sendNativeEvent(e, isolateId);
+    }
+
+    return {
+      set: set,
+      get: get,
+      reset: reset,
+      isAMSIsolate: isAMSIsolate,
+      sendNativeEventToAMSIsolate: sendNativeEventToAMSIsolate,
+    }
+  })();
+
   Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function() {
-    AMSIsolateId = $.ctx.runtime.isolate.id;
+    AMS.set($.ctx.runtime.isolate.id);
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function() {
-    return AMSIsolateId;
+    return AMS.get();
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function() {
-    return AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
+    return AMS.isAMSIsolate($.ctx.runtime.isolate.id) ? 1 : 0;
   };
 
   // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
@@ -691,15 +727,29 @@ var MIDP = (function() {
     destroyedForRestart = val;
   }
 
+  var destroyedListener = null;
+  function registerDestroyedListener(func) {
+    destroyedListener = func;
+  }
+
   var pendingMIDletUpdate = null;
   Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     if (destroyedForRestart) {
       destroyedForRestart = false;
+      if (destroyedListener) {
+        destroyedListener();
+      }
       FG.reset();
       return;
     }
 
-    console.info("Isolate stops with code " + code + " and reason " + reason);
+    var isolateId = $.ctx.runtime.isolate.id;
+    console.info("Isolate " + isolateId + " stops with code " + code + " and reason " + reason);
+
+    if (AMS.isAMSIsolate(isolateId)) {
+      AMS.reset();
+    }
+
     if (!pendingMIDletUpdate) {
       exit();
       return;
@@ -788,10 +838,12 @@ var MIDP = (function() {
     }, false);
   }
 
-  function sendExecuteMIDletEvent() {
-    sendNativeEvent({
+  function sendExecuteMIDletEvent(midletNumber, midletClassName) {
+    AMS.sendNativeEventToAMSIsolate({
       type: NATIVE_MIDLET_EXECUTE_REQUEST,
-    }, AMSIsolateId);
+      intParam1: midletNumber || fgMidletNumber,
+      stringParam1: midletClassName || J2ME.newString(fgMidletClass),
+    });
   }
 
   function sendDestroyMIDletEvent(midletClassName) {
@@ -1265,6 +1317,7 @@ var MIDP = (function() {
     sendKeyRelease: sendKeyRelease,
     sendDestroyMIDletEvent: sendDestroyMIDletEvent,
     setDestroyedForRestart: setDestroyedForRestart,
+    registerDestroyedListener: registerDestroyedListener,
     sendExecuteMIDletEvent: sendExecuteMIDletEvent,
     deviceContext: deviceContext,
     updatePhysicalScreenSize: updatePhysicalScreenSize,

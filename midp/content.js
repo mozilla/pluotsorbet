@@ -4,10 +4,12 @@
 'use strict';
 
 var Content = (function() {
-  var chRegisteredClassName = null;
-  var chRegisteredStorageID = -1;
-  var chRegisteredID = null;
-  var chRegisteredRegistrationMethod = -1;
+  // Allow configuring these values for MIDlets that don't register
+  // the content handler in time.
+  var chRegisteredID = config.chRegisteredID || null;
+  var chRegisteredClassName = config.chRegisteredClassName || null;
+  var chRegisteredStorageID = config.chRegisteredStorageID || -1;
+  var chRegisteredRegistrationMethod = config.chRegisteredRegistrationMethod || -1;
 
   function serializeString(parts) {
     return parts.reduce(function(prev, current) {
@@ -35,13 +37,37 @@ var Content = (function() {
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
 
   Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] = function(storageId, className, handlerData) {
-    chRegisteredID = J2ME.fromJavaString(handlerData.ID);
-    chRegisteredClassName = J2ME.fromJavaString(className);
+    var registerID = J2ME.fromJavaString(handlerData.ID);
+    if (chRegisteredID && chRegisteredID != registerID) {
+      console.warn("Dynamic registration ID doesn't match the configuration");
+    }
+
+    var registerClassName = J2ME.fromJavaString(className);
+    if (chRegisteredClassName && chRegisteredClassName != registerClassName) {
+      console.warn("Dynamic registration class name doesn't match the configuration");
+    }
+
+    if (chRegisteredStorageID != -1 && chRegisteredStorageID != storageId) {
+      console.warn("Dynamic registration storage ID doesn't match the configuration");
+    }
+
+    if (chRegisteredRegistrationMethod != -1 && chRegisteredRegistrationMethod != handlerData.registrationMethod) {
+      console.warn("Dynamic registration registration method doesn't match the configuration");
+    }
+
+    chRegisteredID = registerID;
+    chRegisteredClassName = registerClassName;
     chRegisteredStorageID = storageId;
     chRegisteredRegistrationMethod = handlerData.registrationMethod;
 
     return 1;
   };
+
+  // When we have a BG and a FG MIDlet, we're statically registering the FG MIDlet (because the
+  // BG MIDlet doesn't register the FG MIDlet in time).
+  // So, when the BG MIDlet tries to register the content handler, it finds another one already
+  // registered and unregisters it.
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.unregister0.(Ljava/lang/String;)Z", 1);
 
   Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(callerId, id, mode) {
     if (!chRegisteredClassName) {
@@ -81,7 +107,29 @@ var Content = (function() {
     };
   }
 
+  var getInvocationCalled = false;
+
+  DumbPipe.open("mozActivityHandler", {}, function(message) {
+    var uniqueFileName = fs.createUniqueFile("/Private/j2meshare", message.fileName, new Blob([ message.data ]));
+    // If ContentHandlerServer::.getRequest has already been called, we need
+    // to destroy the MIDlet and restart it (because many MIDlets only check
+    // on startup if they've been invoked to handle some content).
+    if (!getInvocationCalled) {
+      addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
+    } else {
+      MIDP.setDestroyedForRestart(true);
+      MIDP.sendDestroyMIDletEvent(J2ME.newString(chRegisteredClassName));
+      MIDP.registerDestroyedListener(function() {
+        MIDP.registerDestroyedListener(null);
+        addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
+        MIDP.sendExecuteMIDletEvent(chRegisteredStorageID, J2ME.newString(chRegisteredClassName));
+      });
+    }
+  });
+
   Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] = function(invoc, suiteId, className, mode, shouldBlock) {
+    getInvocationCalled = true;
+
     if (!invocation) {
       return 0;
     }
