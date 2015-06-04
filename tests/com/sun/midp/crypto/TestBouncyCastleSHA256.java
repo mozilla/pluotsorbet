@@ -16,7 +16,7 @@ public class TestBouncyCastleSHA256 implements Testlet {
         byte[] retValue = new byte[md.getDigestSize()];
         md.update((byte)0x61);
         md.update((byte)0x62);
-        md.update((byte) 0x63);
+        md.update((byte)0x63);
         md.doFinal(retValue, 0);
         th.check(Util.hexEncode(retValue).toUpperCase(), DIGEST0);
     }
