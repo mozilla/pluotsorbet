@@ -1,5 +1,5 @@
 *.jar
-*.jad
+/*.jad
 *.class
 .DS_Store
 certs/j2se_main.ks

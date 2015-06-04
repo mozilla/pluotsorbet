@@ -180,17 +180,53 @@ var MIDP = (function() {
     return $.ctx.runtime.isolate.id;
   };
 
-  var AMSIsolateId;
+  var AMS = (function() {
+    var isolateId = -1;
+
+    function set(id) {
+      isolateId = id;
+    }
+
+    function reset() {
+      isolateId = -1;
+    }
+
+    function get() {
+      return isolateId;
+    }
+
+    function isAMSIsolate(id) {
+      return (id === isolateId);
+    }
+
+    function sendNativeEventToAMSIsolate(e) {
+      if (-1 === isolateId) {
+        console.warn("Dropping native event sent to AMS isolate");
+        return;
+      }
+
+      sendNativeEvent(e, isolateId);
+    }
+
+    return {
+      set: set,
+      get: get,
+      reset: reset,
+      isAMSIsolate: isAMSIsolate,
+      sendNativeEventToAMSIsolate: sendNativeEventToAMSIsolate,
+    }
+  })();
+
   Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function() {
-    AMSIsolateId = $.ctx.runtime.isolate.id;
+    AMS.set($.ctx.runtime.isolate.id);
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function() {
-    return AMSIsolateId;
+    return AMS.get();
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function() {
-    return AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
+    return AMS.isAMSIsolate($.ctx.runtime.isolate.id) ? 1 : 0;
   };
 
   // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
@@ -683,10 +719,37 @@ var MIDP = (function() {
     showExitScreen();
   }
 
-  var pendingMIDletUpdate = null;
+  // If the user kills the app willingly, we will close it.
+  // In some cases instead we want to kill the FG MIDlet only
+  // to restart it.
+  var destroyedForRestart = false;
+  function setDestroyedForRestart(val) {
+    destroyedForRestart = val;
+  }
 
+  var destroyedListener = null;
+  function registerDestroyedListener(func) {
+    destroyedListener = func;
+  }
+
+  var pendingMIDletUpdate = null;
   Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
-    console.info("Isolate stops with code " + code + " and reason " + reason);
+    if (destroyedForRestart) {
+      destroyedForRestart = false;
+      if (destroyedListener) {
+        destroyedListener();
+      }
+      FG.reset();
+      return;
+    }
+
+    var isolateId = $.ctx.runtime.isolate.id;
+    console.info("Isolate " + isolateId + " stops with code " + code + " and reason " + reason);
+
+    if (AMS.isAMSIsolate(isolateId)) {
+      AMS.reset();
+    }
+
     if (!pendingMIDletUpdate) {
       exit();
       return;
@@ -775,12 +838,29 @@ var MIDP = (function() {
     }, false);
   }
 
+  function sendExecuteMIDletEvent(midletNumber, midletClassName) {
+    AMS.sendNativeEventToAMSIsolate({
+      type: NATIVE_MIDLET_EXECUTE_REQUEST,
+      intParam1: midletNumber || fgMidletNumber,
+      stringParam1: midletClassName || J2ME.newString(fgMidletClass),
+    });
+  }
+
+  function sendDestroyMIDletEvent(midletClassName) {
+    FG.sendNativeEventToForeground({
+      type: DESTROY_MIDLET_EVENT,
+      stringParam1: midletClassName,
+    }, false);
+  }
+
   var KEY_EVENT = 1;
   var PEN_EVENT = 2;
   var PRESSED = 1;
   var RELEASED = 2;
   var DRAGGED = 3;
   var COMMAND_EVENT = 3;
+  var NATIVE_MIDLET_EXECUTE_REQUEST = 36;
+  var DESTROY_MIDLET_EVENT = 14;
   var EVENT_QUEUE_SHUTDOWN = 31;
   var ROTATION_EVENT = 43;
   var MMAPI_EVENT = 45;
@@ -1183,32 +1263,6 @@ var MIDP = (function() {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");
   };
 
-  Native["com/sun/j2me/content/RegistryStore.init.()Z"] = function() {
-    console.warn("com/sun/j2me/content/RegistryStore.init.()Z not implemented");
-    return 1;
-  };
-
-  Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
-    console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
-    return J2ME.newString("");
-  };
-
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
-
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z", 0);
-
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", null);
-
-  Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
-    // We are in MVM mode (multiple MIDlets running concurrently)
-    return 0;
-  };
-
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
-  addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
   addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V");
   addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
 
@@ -1261,6 +1315,10 @@ var MIDP = (function() {
     sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
     sendKeyPress: sendKeyPress,
     sendKeyRelease: sendKeyRelease,
+    sendDestroyMIDletEvent: sendDestroyMIDletEvent,
+    setDestroyedForRestart: setDestroyedForRestart,
+    registerDestroyedListener: registerDestroyedListener,
+    sendExecuteMIDletEvent: sendExecuteMIDletEvent,
     deviceContext: deviceContext,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
     updateCanvas: updateCanvas,

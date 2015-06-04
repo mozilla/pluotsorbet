@@ -19,15 +19,12 @@ public class LocalMsgConnection implements LocalMessageProtocolConnection, Local
         init(name);
     }
 
-    public native void closeConnection();
-
     public void close() throws IOException {
-      closeConnection();
     }
 
-    public native int receiveData(byte[] message);
+    public native int receiveData(byte[] message) throws IOException;
 
-    public int receive(byte[] message) {
+    public int receive(byte[] message) throws IOException {
         receiveData(message);
         return 0;
     }

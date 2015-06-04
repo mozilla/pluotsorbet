@@ -4,6 +4,7 @@ JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 PROFILE ?= 0
+PROFILE_FORMAT ?= PLAIN
 BENCHMARK ?= 0
 CONSOLE ?= 1
 
@@ -52,6 +53,10 @@ export JSR_082
 # Location service support
 JSR_179 ?= 1
 export JSR_179
+
+# Content handler support
+CONTENT_HANDLER_SUPPORT ?= 1
+export CONTENT_HANDLER_SUPPORT
 
 ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
@@ -122,6 +127,7 @@ MAIN_JS_SRCS = \
   midp/device_control.js \
   midp/background.js \
   midp/media.js \
+  midp/content.js \
   game-ui.js \
   $(NULL)
 
@@ -148,7 +154,7 @@ MAIN_JS_SRCS += main.js
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(CONFIG)$(NAME)$(DESCRIPTION)$(ORIGIN)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(PROFILE_FORMAT)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(CONFIG)$(NAME)$(DESCRIPTION)$(ORIGIN)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -156,10 +162,12 @@ toBool = $(if $(findstring 1,$(1)),true,false)
 PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(PROFILE) \
+             -D PROFILE_FORMAT=$(PROFILE_FORMAT) \
              -D BENCHMARK=$(call toBool,$(BENCHMARK)) \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
+             -D CONTENT_HANDLER_SUPPORT=$(CONTENT_HANDLER_SUPPORT) \
              -D CONFIG=$(CONFIG) \
              -D NAME="$(NAME)" \
              -D MIDLET_NAME="$(MIDLET_NAME)" \

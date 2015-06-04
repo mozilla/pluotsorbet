@@ -18,6 +18,20 @@ var LocalMsgConnection = function() {
     this.clientMessages = [];
 }
 
+LocalMsgConnection.prototype.reset = function() {
+    var ctx = $.ctx;
+
+    this.clientConnected = false;
+    this.clientWaiting = [];
+    this.clientMessages = [];
+    while (this.serverWaiting.length > 0) {
+        this.serverWaiting.shift()(false);
+    }
+    this.serverMessages = [];
+
+    ctx.setAsCurrentContext();
+}
+
 LocalMsgConnection.prototype.notifyConnection = function() {
     this.clientConnected = true;
 
@@ -69,7 +83,7 @@ LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length
     this.serverMessages.push(new LocalMsgConnectionMessage(data, offset, length));
 
     if (this.serverWaiting.length > 0) {
-        this.serverWaiting.shift()();
+        this.serverWaiting.shift()(true);
     }
 }
 
@@ -78,9 +92,16 @@ LocalMsgConnection.prototype.getServerMessage = function(data) {
 }
 
 LocalMsgConnection.prototype.waitServerMessage = function(data) {
+    var ctx = $.ctx;
+
     asyncImpl("I", new Promise((function(resolve, reject) {
-        this.serverWaiting.push(function() {
-            resolve(this.getServerMessage(data));
+        this.serverWaiting.push(function(successful) {
+            if (successful) {
+                resolve(this.getServerMessage(data));
+            } else {
+                ctx.setAsCurrentContext();
+                reject($.newIOException("Client disconnected"));
+            }
         }.bind(this));
     }).bind(this)));
 }
@@ -720,7 +741,15 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         return;
       }
 
-      var imgData = fs.getBlob("/" + fileName);
+      if (fileName.startsWith("file:///")) {
+        fileName = fileName.substring("file:///".length);
+      }
+
+      if (!fileName.startsWith("/")) {
+        fileName = "/" + fileName;
+      }
+
+      var imgData = fs.getBlob(fileName);
       var img = new Image();
       img.src = URL.createObjectURL(imgData);
 
@@ -1041,6 +1070,9 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 
     this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
         new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
+
+    this.connection.reset();
+
     this.connection.notifyConnection();
 };
 
@@ -1083,11 +1115,4 @@ Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
     }
 
     this.connection.waitClientMessage(data);
-};
-
-Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function() {
-    if (this.server) {
-        delete MIDP.LocalMsgConnections[this.protocolName];
-    }
-    delete this.connection;
 };
