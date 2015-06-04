@@ -190,7 +190,7 @@ To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view 
   }
   ```
 
-The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2]`. Then wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
+The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2|4]`. Then wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
 
 Java methods are automatically wrapped with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed trace of the application's execution. Note that this instrumentation has some overhead, and timing information of very short lived events may not be accurate and can lead to the entire application slowing down.
 
