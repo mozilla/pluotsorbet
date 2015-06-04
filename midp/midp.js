@@ -727,10 +727,18 @@ var MIDP = (function() {
     destroyedForRestart = val;
   }
 
+  var destroyedListener = null;
+  function registerDestroyedListener(func) {
+    destroyedListener = func;
+  }
+
   var pendingMIDletUpdate = null;
   Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
     if (destroyedForRestart) {
       destroyedForRestart = false;
+      if (destroyedListener) {
+        destroyedListener();
+      }
       FG.reset();
       return;
     }
@@ -830,9 +838,11 @@ var MIDP = (function() {
     }, false);
   }
 
-  function sendExecuteMIDletEvent() {
+  function sendExecuteMIDletEvent(midletNumber, midletClassName) {
     AMS.sendNativeEventToAMSIsolate({
       type: NATIVE_MIDLET_EXECUTE_REQUEST,
+      intParam1: midletNumber || fgMidletNumber,
+      stringParam1: midletClassName || J2ME.newString(fgMidletClass),
     });
   }
 
@@ -1307,6 +1317,7 @@ var MIDP = (function() {
     sendKeyRelease: sendKeyRelease,
     sendDestroyMIDletEvent: sendDestroyMIDletEvent,
     setDestroyedForRestart: setDestroyedForRestart,
+    registerDestroyedListener: registerDestroyedListener,
     sendExecuteMIDletEvent: sendExecuteMIDletEvent,
     deviceContext: deviceContext,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
