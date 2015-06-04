@@ -229,6 +229,8 @@ The tooltip displays:
 
 If you build with `PROFILE=2`, then the timeline will be saved to a text file instead of being shown in the flame chart. On desktop, you will be prompted to save the file. On the phone, the file will automatically be saved to `/sdcard/downloads/profile.txt`, which you can later pull with `adb pull`. Note that no timeline events under 0.1 ms are written to the file output. You can change this in `main.js` if you'd like.
 
+`PROFILE=4` works like `PROFILE=2`, but allows you to profile a custom "range" of the execution by adding calls to org.mozilla.internal.Sys::startProfile and org.mozilla.internal.Sys::stopProfile.
+
 `PROFILE=1` and `PROFILE=2` automatically profile (most of) cold startup, from *JVM.startIsolate0* to *DisplayDevice.gainedForeground0*.
 
 ## Benchmarks
