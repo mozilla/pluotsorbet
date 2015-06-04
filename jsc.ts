@@ -17,7 +17,7 @@ declare var load: (string) => void;
 function quit() {}
 
 load("libs/relooper.js"); // Load before we polyfill the window object.
-load("libs/native.js"); // Load before we polyfill the window object.
+load("bld/native.js"); // Load before we polyfill the window object.
 
 var CC = {};
 

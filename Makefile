@@ -54,6 +54,10 @@ export JSR_082
 JSR_179 ?= 1
 export JSR_179
 
+# Content handler support
+CONTENT_HANDLER_SUPPORT ?= 1
+export CONTENT_HANDLER_SUPPORT
+
 ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
 else
@@ -162,6 +166,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
+             -D CONTENT_HANDLER_SUPPORT=$(CONTENT_HANDLER_SUPPORT) \
              -D CONFIG=$(CONFIG) \
              -D NAME="$(NAME)" \
              -D MIDLET_NAME="$(MIDLET_NAME)" \
@@ -265,10 +270,38 @@ bug: j2me
 	cp jsshell.js bug/jsshell.js
 	tar -zcvf bug.tar.gz bug/
 
-libs/native.js: vm/native/Makefile vm/native/native.cpp
-	make -C vm/native/
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+ifeq ($(UNAME_S),Linux)
+	BOEHM_LIB=libgc.so
+endif
+ifeq ($(UNAME_S),Darwin)
+	BOEHM_LIB=libgc.dylib
+endif
+ifneq (,$(findstring MINGW,$(uname_S)))
+	BOEHM_LIB=libgc.dll
+endif
+ifneq (,$(findstring CYGWIN,$(uname_S)))
+	BOEHM_LIB=libgc.dll
+endif
 
-bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) libs/native.js build_tools/closure.jar .checksum
+bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
+	mkdir -p bld
+	rm -f bld/native.js
+	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -DNDEBUG -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=16384 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
+	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc"]' \
+	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts", "setjmp", "longjmp"]'
+	echo "var ASM = (function(Module) {" >> bld/native.js
+	cat native.raw.js >> bld/native.js
+	echo "" >> bld/native.js
+	echo "  return Module;" >> bld/native.js
+	echo "})(ASM);" >> bld/native.js
+	rm native.raw.js
+
+vm/native/Boehm.js/.libs/$(BOEHM_LIB):
+	cd vm/native/Boehm.js && emconfigure ./configure --without-threads --disable-threads __EMSCRIPTEN__=1 && emmake make
+
+bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) bld/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 ifeq ($(RELEASE),1)
