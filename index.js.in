@@ -756,6 +756,10 @@ DumbPipe.registerOpener("mozActivity", function(message, sender) {
 });
 
 DumbPipe.registerOpener("mozActivityHandler", function(message, sender) {
+  if (!navigator.mozSetMessageHandler) {
+    return;
+  }
+
   navigator.mozSetMessageHandler('activity', function(activityRequest) {
     if (activityRequest.source.name !== 'share') {
       return;
