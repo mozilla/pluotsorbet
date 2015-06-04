@@ -1,7 +1,8 @@
 Manifest-Version: 1.0
-MIDlet-1: ContentHandlerMIDlet,,midlets.ContentHandlerMIDlet
+MIDlet-1: ContentHandlerMIDlet,,tests.midlets.ContentHandlerMIDlet
+MIDlet-2: ContentHandlerStarterMIDlet,,tests.midlets.ContentHandlerStarterMIDlet
 MIDlet-Vendor: Mozilla
 MIDlet-Name: ContentHandlerMIDlet
-MIDlet-Version: 1.0
+MIDlet-Version: 2.12.25
 MicroEdition-Configuration: CLDC-1.1
 MicroEdition-Profile: MIDP-2.1
