@@ -4,7 +4,7 @@ import gnu.java.security.hash.Sha256;
 import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
-public class Sha256Test implements Testlet {
+public class TestClasspathSHA256 implements Testlet {
     public int getExpectedPass() { return 7; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
