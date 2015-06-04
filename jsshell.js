@@ -161,6 +161,11 @@ var config = {
   args: "",
 };
 
+var DumbPipe = {
+  open: function() {
+  },
+};
+
 var profileTimeline = false;
 
 try {

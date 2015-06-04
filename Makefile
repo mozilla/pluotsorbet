@@ -54,6 +54,10 @@ export JSR_082
 JSR_179 ?= 1
 export JSR_179
 
+# Content handler support
+CONTENT_HANDLER_SUPPORT ?= 1
+export CONTENT_HANDLER_SUPPORT
+
 ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
 else
@@ -162,6 +166,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
+             -D CONTENT_HANDLER_SUPPORT=$(CONTENT_HANDLER_SUPPORT) \
              -D CONFIG=$(CONFIG) \
              -D NAME="$(NAME)" \
              -D MIDLET_NAME="$(MIDLET_NAME)" \
