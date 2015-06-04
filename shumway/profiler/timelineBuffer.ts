@@ -76,8 +76,10 @@ module Shumway.Tools.Profiler {
       this._data = [];
       this._kinds = [];
       this._kindNameMap = Object.create(null);
-      this._marks = TimelineBuffer.preAllocInt32ArrayBuffers.pop() || new Shumway.CircularBuffer(Int32Array, BUFFER_SIZE);
-      this._times = TimelineBuffer.preAllocFloat64ArrayBuffers.pop() || new Shumway.CircularBuffer(Float64Array, BUFFER_SIZE);
+      this._marks = TimelineBuffer.preAllocInt32ArrayBuffers.pop() ||
+                    new Shumway.CircularBuffer(Int32Array, TimelineBuffer.BUFFER_SIZE);
+      this._times = TimelineBuffer.preAllocFloat64ArrayBuffers.pop() ||
+                    new Shumway.CircularBuffer(Float64Array, TimelineBuffer.BUFFER_SIZE);
     }
 
     private _getKindId(name: string):number {
@@ -304,7 +306,7 @@ module Shumway.Tools.Profiler {
 
   // Pre-allocate some circular buffers to avoid expensive allocations during profiling.
   for (var i = 0; i < 64; i++) {
-    TimelineBuffer.preAllocInt32ArrayBuffers.push(new Shumway.CircularBuffer(Int32Array, BUFFER_SIZE));
-    TimelineBuffer.preAllocFloat64ArrayBuffers.push(new Shumway.CircularBuffer(Float64Array, BUFFER_SIZE));
+    TimelineBuffer.preAllocInt32ArrayBuffers.push(new Shumway.CircularBuffer(Int32Array, TimelineBuffer.BUFFER_SIZE));
+    TimelineBuffer.preAllocFloat64ArrayBuffers.push(new Shumway.CircularBuffer(Float64Array, TimelineBuffer.BUFFER_SIZE));
   }
 }
