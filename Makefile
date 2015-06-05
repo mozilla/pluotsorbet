@@ -197,24 +197,28 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
-PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
+SPIDERMONKEY_VERSION=37.0b7
+OLD_SPIDERMONKEY_VERSION := $(shell [ -f build_tools/.spidermonkey_version ] && cat build_tools/.spidermonkey_version)
+$(shell [ "$(SPIDERMONKEY_VERSION)" != "$(OLD_SPIDERMONKEY_VERSION)" ] && echo $(SPIDERMONKEY_VERSION) > build_tools/.spidermonkey_version)
+
+PATH := build_tools/spidermonkey:build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_S),Linux)
-	XULRUNNER_PLATFORM=linux-$(UNAME_M)
+	PLATFORM=linux-$(UNAME_M)
 	XULRUNNER_PATH=xulrunner/xulrunner
 endif
 ifeq ($(UNAME_S),Darwin)
-	XULRUNNER_PLATFORM=mac
+	PLATFORM=mac
 	XULRUNNER_PATH=XUL.framework/Versions/Current/xulrunner
 endif
 ifneq (,$(findstring MINGW,$(uname_S)))
-	XULRUNNER_PLATFORM=win32
+	PLATFORM=win32
 	XULRUNNER_PATH=xulrunner/xulrunner
 endif
 ifneq (,$(findstring CYGWIN,$(uname_S)))
-	XULRUNNER_PLATFORM=win32
+	PLATFORM=win32
 	XULRUNNER_PATH=xulrunner/xulrunner
 endif
 
@@ -229,18 +233,26 @@ build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 
 build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	rm -rf build_tools/XUL* build_tools/xul*
-	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2
-	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2 -m
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).tar.bz2
+	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).tar.bz2 -m
 
 build_tools/soot-trunk.jar: build_tools/.soot_version
 	rm -f build_tools/soot-trunk.jar
-	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
+	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-$(SOOT_VERSION)/soot-trunk.jar
 	touch build_tools/soot-trunk.jar
 
 build_tools/closure.jar: build_tools/.closure_compiler_version
 	rm -f build_tools/closure.jar
 	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
+
+JS=build_tools/spidermonkey/js
+
+$(JS): build_tools/.spidermonkey_version
+	rm -rf build_tools/spidermonkey build_tools/jsshell*
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/$(SPIDERMONKEY_VERSION)-candidates/build1/jsshell-$(PLATFORM).zip
+	unzip -o -d build_tools/spidermonkey build_tools/jsshell-$(PLATFORM).zip
+	touch $(JS)
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
@@ -328,7 +340,7 @@ bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
 j2me: bld/j2me.js bld/jsc.js
 
 aot: bld/classes.jar.js
-bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar .checksum
+bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar $(JS) .checksum
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
 ifeq ($(RELEASE),1)
@@ -336,10 +348,10 @@ ifeq ($(RELEASE),1)
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 endif
 
-bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
+bld/tests.jar.js: tests/tests.jar bld/jsc.js $(JS) aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 
-bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
+bld/program.jar.js: program.jar bld/jsc.js $(JS) aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
 
 shumway: bld/shumway.js

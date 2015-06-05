@@ -35,6 +35,13 @@ module Shumway.Tools.Profiler {
     static MAX_KINDID = 0xffff;
     static MAX_DATAID = 0x7fff;
 
+    // The size of the circular buffers.  If you've had timelines overflow,
+    // then try changing this to 23.
+    static BUFFER_SIZE = 20;
+
+    static preAllocInt32ArrayBuffers: Shumway.CircularBuffer [] = [];
+    static preAllocFloat64ArrayBuffers: Shumway.CircularBuffer [] = [];
+
     private _depth: number;
     private _data: any [];
     private _kinds: TimelineItemKind [];
@@ -69,8 +76,10 @@ module Shumway.Tools.Profiler {
       this._data = [];
       this._kinds = [];
       this._kindNameMap = Object.create(null);
-      this._marks = new Shumway.CircularBuffer(Int32Array, 20);
-      this._times = new Shumway.CircularBuffer(Float64Array, 20);
+      this._marks = TimelineBuffer.preAllocInt32ArrayBuffers.pop() ||
+                    new Shumway.CircularBuffer(Int32Array, TimelineBuffer.BUFFER_SIZE);
+      this._times = TimelineBuffer.preAllocFloat64ArrayBuffers.pop() ||
+                    new Shumway.CircularBuffer(Float64Array, TimelineBuffer.BUFFER_SIZE);
     }
 
     private _getKindId(name: string):number {
@@ -295,4 +304,9 @@ module Shumway.Tools.Profiler {
     }
   }
 
+  // Pre-allocate some circular buffers to avoid expensive allocations during profiling.
+  for (var i = 0; i < 64; i++) {
+    TimelineBuffer.preAllocInt32ArrayBuffers.push(new Shumway.CircularBuffer(Int32Array, TimelineBuffer.BUFFER_SIZE));
+    TimelineBuffer.preAllocFloat64ArrayBuffers.push(new Shumway.CircularBuffer(Float64Array, TimelineBuffer.BUFFER_SIZE));
+  }
 }
