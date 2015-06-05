@@ -239,7 +239,7 @@ build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 
 build_tools/soot-trunk.jar: build_tools/.soot_version
 	rm -f build_tools/soot-trunk.jar
-	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
+	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-$(SOOT_VERSION)/soot-trunk.jar
 	touch build_tools/soot-trunk.jar
 
 build_tools/closure.jar: build_tools/.closure_compiler_version
