@@ -102,7 +102,7 @@
 <localized_string Key="SR_SUSPEND_ALERT_TITLE"
                 Value="Sospensione di Java..."/>
 <localized_string Key="SR_SUSPEND_ALERT_MSG"
-                Value="Java VM è sospeso da una richiesta di sistema. Le applicazioni possono essere in pausa o distrutte."
+                Value="Java VM è sospeso da una richiesta di sistema. Le applicazioni possono essere in pausa o distrutte."/>
 
 <localized_string Key="JSR75_ENUM_LISTS"
                 Value="enumera le liste"/>
