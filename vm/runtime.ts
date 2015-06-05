@@ -2079,6 +2079,61 @@ module J2ME {
   export function throwUnwind7(pc: number, nextPC: number = pc + 3) {
     throwUnwind(pc, nextPC, 7);
   }
+
+  export function fadd(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = aliasedF32[0] + aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fsub(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = aliasedF32[0] - aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fmul(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = aliasedF32[0] * aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fdiv(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = Math.fround(aliasedF32[0] / aliasedF32[1]);
+    return aliasedI32[2];
+  }
+
+  export function frem(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = Math.fround(aliasedF32[0] % aliasedF32[1]);
+    return aliasedI32[2];
+  }
+
+  export function f2i(a: number) {
+    if (a > Constants.INT_MAX) {
+      return Constants.INT_MAX;
+    } else if (a < Constants.INT_MIN) {
+      return Constants.INT_MIN;
+    } else {
+      return a | 0;
+    }
+  }
+
+  export function f2l(a: number) {
+    if (a > Constants.INT_MAX) {
+      return Constants.INT_MAX;
+    } else if (a < Constants.INT_MIN) {
+      return Constants.INT_MIN;
+    } else {
+      return a | 0;
+    }
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -2139,37 +2194,10 @@ var TN = J2ME.throwNegativeArraySizeException;
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
 
-function fadd(a: number, b: number): number {
-  aliasedI32[0] = a;
-  aliasedI32[1] = b;
-  aliasedF32[2] = aliasedF32[0] + aliasedF32[1];
-  return aliasedI32[2];
-}
+var fadd = J2ME.fadd;
+var fsub = J2ME.fsub;
+var fmul = J2ME.fmul;
+var fdiv = J2ME.fdiv;
+var frem = J2ME.frem;
 
-function fsub(a: number, b: number): number {
-  aliasedI32[0] = a;
-  aliasedI32[1] = b;
-  aliasedF32[2] = aliasedF32[0] - aliasedF32[1];
-  return aliasedI32[2];
-}
-
-function fmul(a: number, b: number): number {
-  aliasedI32[0] = a;
-  aliasedI32[1] = b;
-  aliasedF32[2] = aliasedF32[0] * aliasedF32[1];
-  return aliasedI32[2];
-}
-
-function fdiv(a: number, b: number): number {
-  aliasedI32[0] = a;
-  aliasedI32[1] = b;
-  aliasedF32[2] = Math.fround(aliasedF32[0] / aliasedF32[1]);
-  return aliasedI32[2];
-}
-
-function frem(a: number, b: number): number {
-  aliasedI32[0] = a;
-  aliasedI32[1] = b;
-  aliasedF32[2] = Math.fround(aliasedF32[0] % aliasedF32[1]);
-  return aliasedI32[2];
-}
+var f2i = J2ME.f2i;
