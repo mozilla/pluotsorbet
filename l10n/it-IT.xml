@@ -98,7 +98,7 @@
 <localized_string Key="SR_ALL_KILLED_ALERT_TITLE"
                 Value="Applicazioni Java fermate"/>
 <localized_string Key="SR_ALL_KILLED_ALERT_MSG"
-                Value="Tutte le MIDlet sono stati distrutti durante l'ultima operazione di pausa del sistema."/>
+                Value="Tutte le MIDlet sono state distrutte durante l'ultima operazione di pausa del sistema."/>
 <localized_string Key="SR_SUSPEND_ALERT_TITLE"
                 Value="Sospensione di Java..."/>
 <localized_string Key="SR_SUSPEND_ALERT_MSG"
