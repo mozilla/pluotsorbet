@@ -198,6 +198,10 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
+SPIDERMONKEY_VERSION=37.0b7
+OLD_SPIDERMONKEY_VERSION := $(shell [ -f build_tools/.spidermonkey_version ] && cat build_tools/.spidermonkey_version)
+$(shell [ "$(SPIDERMONKEY_VERSION)" != "$(OLD_SPIDERMONKEY_VERSION)" ] && echo $(SPIDERMONKEY_VERSION) > build_tools/.spidermonkey_version)
+
 PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
@@ -243,6 +247,14 @@ build_tools/closure.jar: build_tools/.closure_compiler_version
 	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
 
+JS=build_tools/spidermonkey/js
+
+$(JS): build_tools/.spidermonkey_version
+	rm -rf build_tools/spidermonkey build_tools/jsshell*
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/37.0b7-candidates/build1/jsshell-linux-x86_64.zip
+	unzip -o -d build_tools/spidermonkey build_tools/jsshell-linux-x86_64.zip
+	touch $(JS)
+
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
 
@@ -279,19 +291,19 @@ bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
 j2me: bld/j2me.js bld/jsc.js
 
 aot: bld/classes.jar.js
-bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar .checksum
+bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar $(JS) .checksum
 	@echo "Compiling ..."
-	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
+	$(JS) bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
 ifeq ($(RELEASE),1)
 	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 endif
 
-bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
-	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
+bld/tests.jar.js: tests/tests.jar bld/jsc.js $(JS) aot-methods.txt
+	$(JS) bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 
-bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
-	js bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
+bld/program.jar.js: program.jar bld/jsc.js $(JS) aot-methods.txt
+	$(JS) bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
 
 shumway: bld/shumway.js
 bld/shumway.js: $(SHUMWAY_SRCS)
