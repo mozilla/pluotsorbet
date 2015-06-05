@@ -207,19 +207,19 @@ PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_S),Linux)
-	XULRUNNER_PLATFORM=linux-$(UNAME_M)
+	PLATFORM=linux-$(UNAME_M)
 	XULRUNNER_PATH=xulrunner/xulrunner
 endif
 ifeq ($(UNAME_S),Darwin)
-	XULRUNNER_PLATFORM=mac
+	PLATFORM=mac
 	XULRUNNER_PATH=XUL.framework/Versions/Current/xulrunner
 endif
 ifneq (,$(findstring MINGW,$(uname_S)))
-	XULRUNNER_PLATFORM=win32
+	PLATFORM=win32
 	XULRUNNER_PATH=xulrunner/xulrunner
 endif
 ifneq (,$(findstring CYGWIN,$(uname_S)))
-	XULRUNNER_PLATFORM=win32
+	PLATFORM=win32
 	XULRUNNER_PATH=xulrunner/xulrunner
 endif
 
@@ -234,8 +234,8 @@ build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 
 build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	rm -rf build_tools/XUL* build_tools/xul*
-	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2
-	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2 -m
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).tar.bz2
+	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).tar.bz2 -m
 
 build_tools/soot-trunk.jar: build_tools/.soot_version
 	rm -f build_tools/soot-trunk.jar
@@ -251,8 +251,8 @@ JS=build_tools/spidermonkey/js
 
 $(JS): build_tools/.spidermonkey_version
 	rm -rf build_tools/spidermonkey build_tools/jsshell*
-	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/37.0b7-candidates/build1/jsshell-linux-x86_64.zip
-	unzip -o -d build_tools/spidermonkey build_tools/jsshell-linux-x86_64.zip
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/$(SPIDERMONKEY_VERSION)-candidates/build1/jsshell-$(PLATFORM).zip
+	unzip -o -d build_tools/spidermonkey build_tools/jsshell-$(PLATFORM).zip
 	touch $(JS)
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
