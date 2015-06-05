@@ -19,7 +19,7 @@ J2ME.js launches MIDlets under two different circumstances.
 
 ## Building j2me.js
 
-Make sure you have a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
+Make sure you have [wget](https://www.gnu.org/software/wget/) and a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
 
 You need to install the TypeScript compiler, the easiest way is via NPM: `npm install -g typescript`.
 
