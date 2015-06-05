@@ -89,7 +89,7 @@ module J2ME {
     }
   }
 
-  loadFiles("libs/long.js", "blackBox.js", "bld/j2me-jsc.js", "libs/zipfile.js", "libs/jarstore.js", "libs/encoding.js", "util.js");
+  loadFiles("blackBox.js", "bld/j2me-jsc.js", "libs/zipfile.js", "libs/jarstore.js", "libs/encoding.js", "util.js");
 
   phase = ExecutionPhase.Compiler;
 

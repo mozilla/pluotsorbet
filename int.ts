@@ -53,20 +53,6 @@ module J2ME {
 
   export var onStackReplacementCount = 0;
 
-  /**
-   * The closest floating-point representation to this long value.
-   */
-  export function longToNumber(l: number, h: number): number {
-    return h * Constants.TWO_PWR_32_DBL + ((l >= 0) ? l : Constants.TWO_PWR_32_DBL + l);
-  }
-
-  export function numberToLong(v: number): number {
-    // TODO Extract logic from Long so we don't allocate here.
-    var long = Long.fromNumber(v);
-    tempReturn0 = long.high_;
-    return long.low_;
-  }
-
   function wordsToDouble(l: number, h: number): number {
     aliasedI32[0] = l;
     aliasedI32[1] = h;
@@ -1444,9 +1430,9 @@ module J2ME {
             }
             continue;
           case Bytecodes.F2L:
-            i32[sp - 1] = returnLongValue(f32[sp - 1]);
-            i32[sp] = tempReturn0;
-            sp++;
+            var F2L_fa = f32[--sp];
+            i32[sp++] = returnLongValue(F2L_fa);
+            i32[sp++] = tempReturn0;
             continue;
           case Bytecodes.F2D:
             aliasedF64[0] = f32[--sp];
@@ -1477,9 +1463,8 @@ module J2ME {
               i32[sp - 2] = Constants.LONG_MIN_LOW;
               i32[sp - 1] = Constants.LONG_MIN_HIGH;
             } else {
-              value = Long.fromNumber(D2L_fa);
-              i32[sp - 2] = value.low_;
-              i32[sp - 1] = value.high_;
+              i32[sp - 2] = returnLongValue(D2L_fa);
+              i32[sp - 1] = tempReturn0;
             }
             continue;
           case Bytecodes.D2F:

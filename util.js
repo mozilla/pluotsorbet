@@ -31,6 +31,7 @@ var util = (function () {
   var INT_MAX = Math.pow(2, 31) - 1;
   var INT_MIN = -INT_MAX - 1;
 
+  // TODO REMOVE THIS
   function double2int(d) {
     if (d > INT_MAX)
       return INT_MAX;
@@ -39,6 +40,7 @@ var util = (function () {
     return d|0;
   }
 
+  // TODO REMOVE THIS
   function double2long(d) {
     if (d === Number.POSITIVE_INFINITY)
       return Long.MAX_VALUE;

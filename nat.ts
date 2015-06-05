@@ -41,7 +41,6 @@ module J2ME {
     var ctx = $.ctx;
 
     promise.then(function onFulfilled(l: any, h?: number) {
-      release || J2ME.Debug.assert(!(l instanceof Long.constructor), "Long objects are no longer supported, use low / high pairs.");
       var thread = ctx.nativeThread;
 
       // Push return value.

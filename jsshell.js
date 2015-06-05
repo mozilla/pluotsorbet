@@ -178,7 +178,6 @@ try {
     "libs/encoding.js",
     "util.js",
     "libs/jarstore.js",
-    "libs/long.js",
     "native.js",
     "midp/content.js",
     "midp/midp.js",
