@@ -214,11 +214,11 @@ ifeq ($(UNAME_S),Darwin)
 	PLATFORM=mac
 	XULRUNNER_PATH=XUL.framework/Versions/Current/xulrunner
 endif
-ifneq (,$(findstring MINGW,$(uname_S)))
+ifneq (,$(findstring MINGW,$(UNAME_S)))
 	PLATFORM=win32
 	XULRUNNER_PATH=xulrunner/xulrunner
 endif
-ifneq (,$(findstring CYGWIN,$(uname_S)))
+ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	PLATFORM=win32
 	XULRUNNER_PATH=xulrunner/xulrunner
 endif
