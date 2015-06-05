@@ -67,21 +67,21 @@
 <localized_string Key="PERMISSION_SECURITY_WARNING_ERROR_MESSAGE"
                 Value="Non è sicuro quando %1 e %2 sono permessi simultaneamente. Procedere comunque?"/>
 <localized_string Key="PERMISSION_AUTO_START_DIALOG_TITLE"
-                Value="Va bene avviate l'applicazione automaticamente?"/>
+                Value="Va bene avviare l'applicazione automaticamente?"/>
 <localized_string Key="PERMISSION_AUTO_START_QUE"
                 Value="%1 vuole registrarsi da sola per essere avviata automaticamente.&#010;&#010;Va bene registrarla per essere avviata automaticamente?"/>
 <localized_string Key="AMS_MIDLETSUITEIMPL_CURR_APP"
                 Value="L'attuale applicazione"/>
 <localized_string Key="AMS_MIDLETSUITEIMPL_INTRPT_QUE"
-                Value="Può %1 interrompersi?"/>
+                Value="Può %1 interrompere?"/>
 <localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_DIALOG_TITLE"
                 Value="Va bene avviare automaticamente?"/>
 <localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_QUESTION"
-                Value="Le informazioni stanno arrivando a %1. Va bene che %1 si avvii e ricevi queste informazioni? L'applicazione attualmente avviata si chiuderà.&#010;&#010;Va bene avviarla?"/>
+                Value="Le informazioni stanno arrivando a %1. Va bene che %1 si avvii e riceva queste informazioni? L'applicazione attualmente avviata si chiuderà.&#010;&#010;Va bene avviarla?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_NOTFOUND"
                 Value="La suite di MIDlet non è stata trovata."/>
 <localized_string Key="AMS_MIDLETSUITELDR_PUSH_INTERRUPT_QUESTION"
-                Value="Le informazioni stanno arrivando a %1.&#010;&#010;Va bene che %1 si avvii e ricevi queste informazioni?"/>
+                Value="Le informazioni stanno arrivando a %1.&#010;&#010;Va bene che %1 si avvii e riceva queste informazioni?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_MISSING_CLASS"
                 Value="L'applicazione non può essere avviata. Sembra che manchi una delle classi dell'applicazione. Questo può succedere a causa di una classe dal nome errato. Contattare il fornitore dell'applicazione per risolvere il problema."/>
 <localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_ILL_OPERATION"
@@ -91,18 +91,18 @@
 <localized_string Key="AMS_MIDLETSUITELDR_UNEXPECTEDLY_QUIT"
                 Value="L'applicazione si è chiusa inaspettatamente. Contattare il fornitore dell'applicazione per risolvere il problema."/>
 <localized_string Key="AMS_MIDLETSUITELDR_RESOURCE_LIMIT_ERROR"
-                Value="Non sono più permesse applicazioni concorrenti."/>
+                Value="Non sono permesse altre applicazioni concorrenti."/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_DISABLED"
                 Value="La suite di MIDlet è disabilitata."/>
 
 <localized_string Key="SR_ALL_KILLED_ALERT_TITLE"
                 Value="Applicazioni Java fermate"/>
 <localized_string Key="SR_ALL_KILLED_ALERT_MSG"
-                Value="Tutti i MIDlets sono stati distrutti durante l'ultima operazione di pausa del sistema."/>
+                Value="Tutte le MIDlet sono stati distrutti durante l'ultima operazione di pausa del sistema."/>
 <localized_string Key="SR_SUSPEND_ALERT_TITLE"
                 Value="Sospensione di Java..."/>
 <localized_string Key="SR_SUSPEND_ALERT_MSG"
-                Value="Java VM è sospeso da una richiesta di sistema. Le applicazioni possono essere in pausa o distrutte."/>
+                Value="La Java VM è sospesa da una richiesta di sistema. Le applicazioni possono essere in pausa o distrutte."/>
 
 <localized_string Key="JSR75_ENUM_LISTS"
                 Value="enumera le liste"/>
@@ -130,9 +130,9 @@
                 Value="elimina una categoria"/>
 
 <localized_string Key="ABSTRACTIONS_PIM_CONTACTS"
-                Value="Lista dei contatti PIM"/>
+                Value="Lista dei contatti"/>
 <localized_string Key="ABSTRACTIONS_PIM_EVENTS"
-                Value="Lista degli eventi PIM"/>
+                Value="Lista degli eventi"/>
 <localized_string Key="ABSTRACTIONS_PIM_TODO"
                 Value="Lista delle cose da fare"/>
 </localized_strings>
