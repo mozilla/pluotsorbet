@@ -1444,9 +1444,9 @@ module J2ME {
             }
             continue;
           case Bytecodes.F2L:
-            value = Long.fromNumber(f32[--sp]);
-            i32[sp++] = value.low_;
-            i32[sp++] = value.high_;
+            i32[sp - 1] = returnLongValue(f32[sp - 1]);
+            i32[sp] = tempReturn0;
+            sp++;
             continue;
           case Bytecodes.F2D:
             aliasedF64[0] = f32[--sp];
