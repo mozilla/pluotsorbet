@@ -202,7 +202,7 @@ SPIDERMONKEY_VERSION=37.0b7
 OLD_SPIDERMONKEY_VERSION := $(shell [ -f build_tools/.spidermonkey_version ] && cat build_tools/.spidermonkey_version)
 $(shell [ "$(SPIDERMONKEY_VERSION)" != "$(OLD_SPIDERMONKEY_VERSION)" ] && echo $(SPIDERMONKEY_VERSION) > build_tools/.spidermonkey_version)
 
-PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
+PATH := build_tools/spidermonkey:build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
@@ -293,17 +293,17 @@ j2me: bld/j2me.js bld/jsc.js
 aot: bld/classes.jar.js
 bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar $(JS) .checksum
 	@echo "Compiling ..."
-	$(JS) bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
+	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
 ifeq ($(RELEASE),1)
 	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 endif
 
 bld/tests.jar.js: tests/tests.jar bld/jsc.js $(JS) aot-methods.txt
-	$(JS) bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
+	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 
 bld/program.jar.js: program.jar bld/jsc.js $(JS) aot-methods.txt
-	$(JS) bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
+	js bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
 
 shumway: bld/shumway.js
 bld/shumway.js: $(SHUMWAY_SRCS)
