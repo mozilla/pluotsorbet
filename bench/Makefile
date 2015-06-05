@@ -3,7 +3,7 @@ SRCS=$(shell find . -name "*.java")
 benchmark.jar: $(SRCS) ../java/classes.jar ../tests/tests.jar
 	rm -rf build
 	mkdir build
-	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath ../java/classes.jar:../tests/tests.jar -extdirs "" -d ./build $(SRCS) > /dev/null
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath "../java/classes.jar;../tests/tests.jar" -extdirs "" -d ./build $(SRCS) > /dev/null
 	cd build && jar cf0 ../benchmark.jar *
 	rm -rf build
 
