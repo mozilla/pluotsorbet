@@ -51,6 +51,7 @@ extern "C" {
 }
 
 int main() {
+  GC_set_all_interior_pointers(0);
   GC_INIT();
   GC_set_max_heap_size(1024 * 1024 * 16);
 }
