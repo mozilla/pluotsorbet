@@ -209,18 +209,22 @@ UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_S),Linux)
 	PLATFORM=linux-$(UNAME_M)
 	XULRUNNER_PATH=xulrunner/xulrunner
+	XULRUNNER_EXT=tar.bz2
 endif
 ifeq ($(UNAME_S),Darwin)
 	PLATFORM=mac
 	XULRUNNER_PATH=XUL.framework/Versions/Current/xulrunner
+	XULRUNNER_EXT=tar.bz2
 endif
 ifneq (,$(findstring MINGW,$(UNAME_S)))
 	PLATFORM=win32
-	XULRUNNER_PATH=xulrunner/xulrunner
+	XULRUNNER_PATH=xulrunner
+	XULRUNNER_EXT=zip
 endif
 ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	PLATFORM=win32
-	XULRUNNER_PATH=xulrunner/xulrunner
+	XULRUNNER_PATH=xulrunner
+	XULRUNNER_EXT=zip
 endif
 
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
@@ -234,8 +238,12 @@ build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 
 build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	rm -rf build_tools/XUL* build_tools/xul*
-	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).tar.bz2
-	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).tar.bz2 -m
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT)
+ifeq ($(XULRUNNER_EXT),tar.bz2)
+	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT) -m
+else
+	unzip -o -d build_tools build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT)
+endif
 
 build_tools/soot-trunk.jar: build_tools/.soot_version
 	rm -f build_tools/soot-trunk.jar
