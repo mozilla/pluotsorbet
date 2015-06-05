@@ -288,7 +288,7 @@ endif
 bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
 	mkdir -p bld
 	rm -f bld/native.js
-	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -DNDEBUG -DNO_DEBUGGING -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=16384 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
+	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=16384 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
 	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc"]' \
 	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts", "setjmp", "longjmp"]'
 	echo "var ASM = (function(Module) {" >> bld/native.js
@@ -299,7 +299,7 @@ bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
 	rm native.raw.js
 
 vm/native/Boehm.js/.libs/$(BOEHM_LIB):
-	cd vm/native/Boehm.js && emconfigure ./configure --without-threads --disable-threads __EMSCRIPTEN__=1 && emmake make
+	cd vm/native/Boehm.js && emconfigure ./configure --without-threads --disable-threads --enable-gc-debug=no __EMSCRIPTEN__=1 && emmake make
 
 bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) bld/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
