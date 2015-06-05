@@ -54,6 +54,10 @@ export JSR_082
 JSR_179 ?= 1
 export JSR_179
 
+# Content handler support
+CONTENT_HANDLER_SUPPORT ?= 1
+export CONTENT_HANDLER_SUPPORT
+
 ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
 else
@@ -162,6 +166,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
+             -D CONTENT_HANDLER_SUPPORT=$(CONTENT_HANDLER_SUPPORT) \
              -D CONFIG=$(CONFIG) \
              -D NAME="$(NAME)" \
              -D MIDLET_NAME="$(MIDLET_NAME)" \
@@ -283,7 +288,7 @@ endif
 bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
 	mkdir -p bld
 	rm -f bld/native.js
-	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -DNDEBUG -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
+	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -DNDEBUG -DNO_DEBUGGING -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
 	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc"]' \
 	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts", "setjmp", "longjmp"]'
 	echo "var ASM = (function(Module) {" >> bld/native.js
