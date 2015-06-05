@@ -58,7 +58,7 @@
 <localized_string Key="AMS_MGR_INTRUPT"
                 Value="Interrompi"/>
 <localized_string Key="AMS_MGR_INTRUPT_QUE"
-                Value="Quanto spesso dovrebbe %1 chiedere il permesso di interrompersi? L'applicazione interrotta verrà chiusa."/>
+                Value="Quanto spesso dovrebbe %1 chiedere il permesso di interrompere? L'applicazione interrotta verrà chiusa."/>
 <localized_string Key="AMS_MGR_INTRUPT_QUE_DONT"
                 Value="Non interrompere e non chiedere più"/>
 
