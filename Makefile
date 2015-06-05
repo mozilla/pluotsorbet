@@ -1,4 +1,4 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks package
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build package
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
@@ -178,7 +178,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
+all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -210,21 +210,25 @@ ifeq ($(UNAME_S),Linux)
 	PLATFORM=linux-$(UNAME_M)
 	XULRUNNER_PATH=xulrunner/xulrunner
 	XULRUNNER_EXT=tar.bz2
+	BOOTCLASSPATH_SEPARATOR=:
 endif
 ifeq ($(UNAME_S),Darwin)
 	PLATFORM=mac
 	XULRUNNER_PATH=XUL.framework/Versions/Current/xulrunner
 	XULRUNNER_EXT=tar.bz2
+	BOOTCLASSPATH_SEPARATOR=:
 endif
 ifneq (,$(findstring MINGW,$(UNAME_S)))
 	PLATFORM=win32
 	XULRUNNER_PATH=xulrunner
 	XULRUNNER_EXT=zip
+	BOOTCLASSPATH_SEPARATOR=;
 endif
 ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	PLATFORM=win32
 	XULRUNNER_PATH=xulrunner
 	XULRUNNER_EXT=zip
+	BOOTCLASSPATH_SEPARATOR=;
 endif
 
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
@@ -359,8 +363,14 @@ package: app
 	rm -f '$(NAME)-$(VERSION).zip'
 	cd $(PACKAGE_DIR) && zip -r '../$(NAME)-$(VERSION).zip' *
 
-benchmarks: java tests
-	make -C bench
+BENCHMARK_SRCS=$(shell find bench -name "*.java")
+
+bench/benchmark.jar: $(BENCHMARK_SRCS) java/classes.jar tests/tests.jar
+	rm -rf bench/build
+	mkdir bench/build
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath "java/classes.jar$(BOOTCLASSPATH_SEPARATOR)tests/tests.jar" -extdirs "" -d bench/build $(BENCHMARK_SRCS) > /dev/null
+	cd bench/build && jar cf0 ../benchmark.jar *
+	rm -rf bench/build
 
 clean:
 	rm -rf bld $(PACKAGE_DIR)
@@ -370,6 +380,6 @@ clean:
 	make -C java clean
 	rm -rf java/l10n/
 	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
-	make -C bench clean
+	rm -f bench/benchmark.jar
 	rm -f img/icon-128.png img/icon-512.png
 	rm -f package.zip
