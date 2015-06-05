@@ -253,6 +253,7 @@ $(JS): build_tools/.spidermonkey_version
 	rm -rf build_tools/spidermonkey build_tools/jsshell*
 	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/$(SPIDERMONKEY_VERSION)-candidates/build1/jsshell-$(PLATFORM).zip
 	unzip -o -d build_tools/spidermonkey build_tools/jsshell-$(PLATFORM).zip
+	chmod +x $(JS)
 	touch $(JS)
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
