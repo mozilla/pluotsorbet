@@ -219,6 +219,10 @@ module J2ME {
     }
   }
 
+  function floatConstant(v): string {
+    return aliasedF32[0] = v, String(aliasedI32[0]);
+  }
+
   function doubleConstant(v): string {
     // Check for -0 floats.
     if ((1 / v) < 0) {
@@ -1246,11 +1250,11 @@ module J2ME {
         case Bytecodes.IDIV: v = x + "/" + y + "|0"; break;
         case Bytecodes.IREM: v = x + "%" + y; break;
 
-        case Bytecodes.FADD: v = "Math.fround(" + x + "+" + y + ")"; break;
-        case Bytecodes.FSUB: v = "Math.fround(" + x + "-" + y + ")"; break;
-        case Bytecodes.FMUL: v = "Math.fround(" + x + "*" + y + ")"; break;
-        case Bytecodes.FDIV: v = "Math.fround(" + x + "/" + y + ")"; break;
-        case Bytecodes.FREM: v = "Math.fround(" + x + "%" + y + ")"; break;
+        case Bytecodes.FADD: v = "fadd(" + x + "," + y + ")"; break;
+        case Bytecodes.FSUB: v = "fsub(" + x + "," + y + ")"; break;
+        case Bytecodes.FMUL: v = "fmul(" + x + "," + y + ")"; break;
+        case Bytecodes.FDIV: v = "fdiv(" + x + "," + y + ")"; break;
+        case Bytecodes.FREM: v = "frem(" + x + "," + y + ")"; break;
 
         case Bytecodes.LADD: v = x + ".add(" + y + ")"; break;
         case Bytecodes.LSUB: v = y + ".negate().add(" + x + ")"; break;
@@ -1337,9 +1341,9 @@ module J2ME {
         case Bytecodes.L2F: v = "Math.fround(" + x + ".toNumber())"; break;
         case Bytecodes.L2D: v = x + ".toNumber()"; break;
         case Bytecodes.D2I:
-        case Bytecodes.F2I: v = "util.double2int(" + x + ")"; break;
-        case Bytecodes.F2L: v = "Long.fromNumber(" + x + ")"; break;
-        case Bytecodes.F2D: v = x; break;
+        case Bytecodes.F2I: v = "f2i(" + x + ")"; break;
+        case Bytecodes.F2L: v = "f2l(" + x + ")"; break;
+        case Bytecodes.F2D: v = "f2d(" + x + ")"; break;
         case Bytecodes.D2L: v = "util.double2long(" + x + ")"; break;
         case Bytecodes.D2F: v = "Math.fround(" + x + ")"; break;
       }
@@ -1452,7 +1456,7 @@ module J2ME {
         case Bytecodes.ICONST_5       : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0, Precedence.Primary); break;
         case Bytecodes.FCONST_0       :
         case Bytecodes.FCONST_1       :
-        case Bytecodes.FCONST_2       : this.emitPush(Kind.Float, opcode - Bytecodes.FCONST_0, Precedence.Primary); break;
+        case Bytecodes.FCONST_2       : this.emitPush(Kind.Float, floatConstant(opcode - Bytecodes.FCONST_0), Precedence.Primary); break;
         case Bytecodes.DCONST_0       :
         case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0, Precedence.Primary); break;
         case Bytecodes.LCONST_0       :

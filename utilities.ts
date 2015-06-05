@@ -347,7 +347,7 @@ module J2ME {
   }
 
   export module IntegerUtilities {
-    var sharedBuffer = new ArrayBuffer(8);
+    var sharedBuffer = new ArrayBuffer(24);
     export var i32 = new Int32Array(sharedBuffer);
     export var f32 = new Float32Array(sharedBuffer);
     export var f64 = new Float64Array(sharedBuffer);

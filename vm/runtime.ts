@@ -2138,3 +2138,38 @@ var TN = J2ME.throwNegativeArraySizeException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
+
+function fadd(a: number, b: number): number {
+  aliasedI32[0] = a;
+  aliasedI32[1] = b;
+  aliasedF32[2] = aliasedF32[0] + aliasedF32[1];
+  return aliasedI32[2];
+}
+
+function fsub(a: number, b: number): number {
+  aliasedI32[0] = a;
+  aliasedI32[1] = b;
+  aliasedF32[2] = aliasedF32[0] - aliasedF32[1];
+  return aliasedI32[2];
+}
+
+function fmul(a: number, b: number): number {
+  aliasedI32[0] = a;
+  aliasedI32[1] = b;
+  aliasedF32[2] = aliasedF32[0] * aliasedF32[1];
+  return aliasedI32[2];
+}
+
+function fdiv(a: number, b: number): number {
+  aliasedI32[0] = a;
+  aliasedI32[1] = b;
+  aliasedF32[2] = Math.fround(aliasedF32[0] / aliasedF32[1]);
+  return aliasedI32[2];
+}
+
+function frem(a: number, b: number): number {
+  aliasedI32[0] = a;
+  aliasedI32[1] = b;
+  aliasedF32[2] = Math.fround(aliasedF32[0] % aliasedF32[1]);
+  return aliasedI32[2];
+}
