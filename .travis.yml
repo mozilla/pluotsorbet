@@ -7,7 +7,6 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
   - npm install typescript
-  - export PATH=$PATH:/tmp/js
 script:
   - make test
 sudo: false
