@@ -765,6 +765,11 @@ module J2ME {
         this.emitPush(Kind.Int, v, Precedence.Primary);
       }
     }
+
+    emitPushLong(l, h) {
+      this.emitPush(Kind.Int, l, Precedence.Primary);
+      this.emitPush(Kind.Int, h, Precedence.Primary);
+    }
     
     emitPush(kind: Kind, v, precedence: Precedence) {
       writer && writer.writeLn("push: sp: " + this.sp + " " + Kind[kind] + " " + v);
@@ -1021,28 +1026,26 @@ module J2ME {
       Relooper.addBranch(block.relooperBlockID, targetBlock.relooperBlockID);
     }
 
-    emitLoadConstant(cpi: number) {
+    emitLoadConstant(index: number) {
       var cp = this.methodInfo.classInfo.constantPool;
-      var tag = cp.getConstantTag(cpi);
+      var tag = cp.getConstantTag(index);
+      var offset = cp.entries[index];
+      var buffer = cp.buffer;
 
       switch (tag) {
         case TAGS.CONSTANT_Integer:
-          this.emitPushInteger(cp.resolve(cpi, tag));
-          return;
         case TAGS.CONSTANT_Float:
-          var value = cp.resolve(cpi, tag);
-          this.emitPush(Kind.Float, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
+          var value = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
+          this.emitPushInteger(value);
           return;
         case TAGS.CONSTANT_Double:
-          var value = cp.resolve(cpi, tag);
-          this.emitPush(Kind.Double, doubleConstant(value), (1 / value) < 0 ? Precedence.UnaryNegation : Precedence.Primary);
-          return;
         case TAGS.CONSTANT_Long:
-          var long = cp.resolve(cpi, tag);
-          this.emitPush(Kind.Long, "Long.fromBits(" + long.getLowBits() + "," + long.getHighBits() + ")", Precedence.Primary);
+          var h = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
+          var l = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
+          this.emitPushLong(l, h);
           return;
         case TAGS.CONSTANT_String:
-          this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".c(" + cpi + ")", Precedence.Primary);
+          this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".c(" + index + ")", Precedence.Primary);
           return;
         default:
           throw "Not done for: " + TAGS[tag];
@@ -1365,16 +1368,11 @@ module J2ME {
         this.blockEmitter.leaveAndEnter("}else{");
         this.blockEmitter.writeLn(s + "=0");
         this.blockEmitter.leave("}");
-      } else {
-        this.blockEmitter.enter("if(isNaN(" + x + ")||isNaN(" + y + ")){");
-        this.blockEmitter.writeLn(s + "=" + (isLessThan ? "-1" : "1"));
-        this.blockEmitter.leaveAndEnter("}else if(" + x + ">" + y + ") {");
-        this.blockEmitter.writeLn(s + "=1");
-        this.blockEmitter.leaveAndEnter("}else if(" + x + "<" + y + "){");
-        this.blockEmitter.writeLn(s + "=-1");
-        this.blockEmitter.leaveAndEnter("}else{");
-        this.blockEmitter.writeLn(s + "=0");
-        this.blockEmitter.leave("}");
+      } else if (kind === Kind.Float) {
+        this.blockEmitter.writeLn(s + "=fcmp(" + x + "," + y + "," + isLessThan + ")");
+      } else if (kind === Kind.Double) {
+        assert(false, "NOT DONE YET");
+        // this.blockEmitter.writeLn(s + "=dcmp(" + x + "," + y + "," + isLessThan + ")");
       }
     }
 
@@ -1460,7 +1458,7 @@ module J2ME {
         case Bytecodes.DCONST_0       :
         case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0, Precedence.Primary); break;
         case Bytecodes.LCONST_0       :
-        case Bytecodes.LCONST_1       : this.emitPush(Kind.Long, longConstant(opcode - Bytecodes.LCONST_0), Precedence.Primary); break;
+        case Bytecodes.LCONST_1       : this.emitPushLong(opcode - Bytecodes.LCONST_0, 0); break;
         case Bytecodes.BIPUSH         : this.emitPushInteger(stream.readByte()); break;
         case Bytecodes.SIPUSH         : this.emitPushInteger(stream.readShort()); break;
         case Bytecodes.LDC            :

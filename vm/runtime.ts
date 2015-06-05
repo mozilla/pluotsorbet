@@ -2065,52 +2065,57 @@ module J2ME {
     throwUnwind(pc, nextPC, 7);
   }
 
-  export function fadd(a: number, b: number): number {
-    aliasedI32[0] = a;
-    aliasedI32[1] = b;
+  export function fadd(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
     aliasedF32[2] = aliasedF32[0] + aliasedF32[1];
     return aliasedI32[2];
   }
 
-  export function fsub(a: number, b: number): number {
-    aliasedI32[0] = a;
-    aliasedI32[1] = b;
+  export function fsub(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
     aliasedF32[2] = aliasedF32[0] - aliasedF32[1];
     return aliasedI32[2];
   }
 
-  export function fmul(a: number, b: number): number {
-    aliasedI32[0] = a;
-    aliasedI32[1] = b;
+  export function fmul(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
     aliasedF32[2] = aliasedF32[0] * aliasedF32[1];
     return aliasedI32[2];
   }
 
-  export function fdiv(a: number, b: number): number {
-    aliasedI32[0] = a;
-    aliasedI32[1] = b;
+  export function fdiv(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
     aliasedF32[2] = Math.fround(aliasedF32[0] / aliasedF32[1]);
     return aliasedI32[2];
   }
 
-  export function frem(a: number, b: number): number {
-    aliasedI32[0] = a;
-    aliasedI32[1] = b;
+  export function frem(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
     aliasedF32[2] = Math.fround(aliasedF32[0] % aliasedF32[1]);
     return aliasedI32[2];
   }
 
-  export function f2i(a: number) {
-    if (a > Constants.INT_MAX) {
-      return Constants.INT_MAX;
-    } else if (a < Constants.INT_MIN) {
-      return Constants.INT_MIN;
+  export function fcmp(i32A: number, i32B: number, isLessThan: boolean): number {
+    var a = (aliasedI32[0] = i32A, aliasedF32[0]);
+    var b = (aliasedI32[0] = i32B, aliasedF32[0]);
+    if (isNaN(a) || isNaN(b)) {
+      return isLessThan ? -1 : 1;
+    } else if (a > b) {
+      return 1;
+    } else if (b < b) {
+      return -1;
     } else {
-      return a | 0;
+      return 0;
     }
   }
 
-  export function f2l(a: number) {
+  export function f2i(i32A: number) {
+    var a = aliasedI32[0] = i32A, aliasedF32[0];
     if (a > Constants.INT_MAX) {
       return Constants.INT_MAX;
     } else if (a < Constants.INT_MIN) {
@@ -2186,3 +2191,4 @@ var fdiv = J2ME.fdiv;
 var frem = J2ME.frem;
 
 var f2i = J2ME.f2i;
+var fcmp = J2ME.fcmp;
