@@ -190,7 +190,7 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = 
     if (size > sharedHeader.headerDataSize) {
         size = sharedHeader.headerDataSize;
     }
-    sharedHeader.headerData = headerData.buffer.slice(0, size);
+    sharedHeader.headerData = headerData.subarray(0, size);
     ++sharedHeader.headerVersion;
 
     return sharedHeader.headerVersion;
@@ -212,7 +212,7 @@ function(lookupId, headerData, headerDataSize, headerVersion) {
         if (size > headerDataSize) {
             size = headerDataSize;
         }
-        var sharedHeaderData = new Int8Array(sharedHeader.headerData);
+        var sharedHeaderData = sharedHeader.headerData;
         for (var i = 0; i < size; i++) {
             headerData[i] = sharedHeaderData[i];
         }
