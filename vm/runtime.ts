@@ -1862,11 +1862,11 @@ module J2ME {
     return newArray(Klasses.java.lang.String, size);
   }
 
-  export function newByteArray(size: number): number[]  {
+  export function newByteArray(size: number): Int8Array  {
     return newArray(Klasses.byte, size);
   }
 
-  export function newIntArray(size: number): number[]  {
+  export function newIntArray(size: number): Int32Array  {
     return newArray(Klasses.int, size);
   }
 
