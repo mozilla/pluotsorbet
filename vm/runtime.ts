@@ -1827,7 +1827,7 @@ module J2ME {
 
     if (klass.classInfo instanceof PrimitiveClassInfo) {
       return new constructor(ASM.buffer,
-                             ASM._gcMalloc(size * constructor.BYTES_PER_ELEMENT),
+                             ASM._gcMallocAtomic(size * constructor.BYTES_PER_ELEMENT),
                              size);
     }
 
