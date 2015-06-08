@@ -52,5 +52,5 @@ extern "C" {
 
 int main() {
   GC_INIT();
-  GC_set_max_heap_size(1024 * 1024 * 16);
+  GC_set_max_heap_size(1024 * 1024 * 256);
 }
