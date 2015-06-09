@@ -253,7 +253,7 @@ function start() {
 }
 
 // If we're not running a MIDlet, we need to wait everything to be loaded.
-if (!config.midletClassName || config.midletClassName == "RunTestsMIDlet") {
+if (!config.midletClassName) {
   loadingPromises = loadingPromises.concat(loadingMIDletPromises);
 }
 
