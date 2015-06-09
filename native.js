@@ -500,7 +500,7 @@ Native["java/lang/Thread.start0.()V"] = function() {
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
-    newCtx.nativeThread.pushMarkerFrame(J2ME.FrameType.Skip);
+    newCtx.nativeThread.pushMarkerFrame(J2ME.FrameType.ExitInterpreter);
     newCtx.nativeThread.pushFrame(run);
     newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, this);
     newCtx.start();

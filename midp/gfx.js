@@ -102,9 +102,6 @@ var currentlyFocusedTextEditor;
     function gotNewFrame(timestamp) {
         if (ctxs.length > 0) {
             var ctx = ctxs.pop();
-            var thread = ctx.nativeThread;
-            // The caller's |pc| is currently at the invoke bytecode, we need to skip over the invoke when resuming.
-            thread.advancePastInvokeBytecode();
             window.requestAnimationFrame(gotNewFrame);
             J2ME.Scheduler.enqueue(ctx, true);
         } else {

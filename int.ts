@@ -131,15 +131,20 @@ module J2ME {
     Interpreter = 0,
 
     /**
-     * Marks the beggining of a sequence of interpreter frames. If we see this
+     * Marks the beginning of a sequence of interpreter frames. If we see this
      * frame when returning we need to exit the interpreter loop.
      */
-    Skip = 1,
+    ExitInterpreter = 1,
 
     /**
      * Native frames are pending and need to be pushed on the stack.
      */
-    PushPendingFrames = 2
+    PushPendingFrames = 2,
+
+    /**
+     * Marks the beginning of frames that were not invoked by the previous frame.
+     */
+    Interrupt = 3
   }
 
   enum FrameLayout {
@@ -242,8 +247,15 @@ module J2ME {
       var fp = this.fp;
       var sp = this.sp;
       var pc = this.pc;
-      while (this.fp > this.thread.tp) {
+      while (true) {
+        if (this.fp < this.thread.tp) {
+          writer.writeLn("Bad frame pointer FP: " + this.fp + " TOP: " + this.thread.tp);
+          break;
+        }
         this.trace(writer, details);
+        if (this.fp === this.thread.tp) {
+          break;
+        }
         this.set(this.thread, i32[this.fp + FrameLayout.CallerFPOffset],
                  this.fp + this.parameterOffset,
                  i32[this.fp + FrameLayout.CallerRAOffset]);
@@ -377,17 +389,6 @@ module J2ME {
       return HashUtilities.hashBytesTo32BitsAdler(u8, fp, sp);
     }
 
-    /**
-     * Advances the |pc| to the next |pc| after the current invoke bytecode.
-     */
-    advancePastInvokeBytecode() {
-      var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-      var code = mi.codeAttribute.code;
-      var op = code[this.pc];
-      release || assert(isInvoke(op), "The PC should be at an invoke bytecode.");
-      this.pc += (op === Bytecodes.INVOKEINTERFACE ? 5 : 3);
-    }
-
     get frame(): FrameView {
       this.view.set(this, this.fp, this.sp, this.pc);
       return this.view;
@@ -425,6 +426,7 @@ module J2ME {
       var maxLocals = mi ? mi.codeAttribute.max_locals : 0;
       this.sp = this.fp - maxLocals;
       this.fp = i32[this.fp + FrameLayout.CallerFPOffset];
+      release || assert(this.fp >= this.tp, "Valid frame pointer after pop.");
       return ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
     }
 
@@ -438,6 +440,7 @@ module J2ME {
       var pc = -1;
       var classInfo;
       var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
+      var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
       while (mi) {
         release || traceWriter && traceWriter.writeLn("Looking for handler in: " + mi.implKey);
         for (var i = 0; i < mi.exception_table_length; i++) {
@@ -467,6 +470,15 @@ module J2ME {
           this.ctx.monitorExit(ref[this.fp + FrameLayout.MonitorOffset]);
         }
         mi = this.popFrame(mi);
+        frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
+        if (frameType === FrameType.ExitInterpreter) {
+          throw e;
+        } else if (frameType === FrameType.PushPendingFrames) {
+          this.frame.thread.pushPendingNativeFrames();
+          mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
+        } else if (frameType === FrameType.Interrupt) {
+          mi = this.popMarkerFrame(FrameType.Interrupt);
+        }
         release || traceWriter && traceWriter.outdent();
         release || traceWriter && traceWriter.writeLn("<< I Unwind");
       }
@@ -500,15 +512,26 @@ module J2ME {
     pushPendingNativeFrames() {
       traceWriter && traceWriter.writeLn("Pushing pending native frames.");
 
-      // We should have a |PushPendingFrames| marker frame on the stack at this point.
-      this.popMarkerFrame(FrameType.PushPendingFrames);
+
+      traceWriter && traceWriter.writeLn("Pending native frames before:");
+      if (traceWriter) {
+        for (var i = 0; i < this.pendingNativeFrames.length; i++) {
+          traceWriter.writeLn(this.pendingNativeFrames[i] ? this.pendingNativeFrames[i].methodInfo.implKey: "marker");
+        }
+      }
 
       traceWriter && traceWriter.writeLn("Stack before:");
       traceWriter && this.frame.traceStack(traceWriter);
 
+      // We should have a |PushPendingFrames| marker frame on the stack at this point.
+      this.popMarkerFrame(FrameType.PushPendingFrames);
+
       var pendingNativeFrame = null;
-      // TODO: Shifting frmaes from |pendingNativeFrames| is technically broken, look at the comment in |endUnwind|.
-      while (pendingNativeFrame = this.pendingNativeFrames.shift()) {
+      var frames = [];
+      while (pendingNativeFrame = this.pendingNativeFrames.pop()) {
+        frames.push(pendingNativeFrame);
+      }
+      while (pendingNativeFrame = frames.pop()) {
         traceWriter && traceWriter.writeLn("Pushing frame: " + pendingNativeFrame.methodInfo.implKey);
         this.pushFrame(pendingNativeFrame.methodInfo, pendingNativeFrame.stack.length, pendingNativeFrame.pc);
         // TODO: Figure out how to copy floats and doubles.
@@ -525,7 +548,23 @@ module J2ME {
         }
       }
 
-      this.advancePastInvokeBytecode();
+      traceWriter && traceWriter.writeLn("Pending native frames after:");
+      if (traceWriter) {
+        for (var i = 0; i < this.pendingNativeFrames.length; i++) {
+          traceWriter.writeLn(this.pendingNativeFrames[i] ? this.pendingNativeFrames[i].methodInfo.implKey : "marker");
+        }
+      }
+
+      var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
+      if (frameType === FrameType.Interrupt) {
+        this.popMarkerFrame(FrameType.Interrupt);
+      } else {
+        var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
+        var code = mi.codeAttribute.code;
+        var op = code[this.pc];
+        release || assert(isInvoke(op), "Must be invoke");
+        this.pc += (op === Bytecodes.INVOKEINTERFACE ? 5 : 3);
+      }
 
       traceWriter && traceWriter.writeLn("Stack after:");
       traceWriter && this.frame.traceStack(traceWriter);
@@ -587,7 +626,8 @@ module J2ME {
       var callerFP = thread.fp;
       var callerPC = thread.pc;
       // release || traceWriter && traceWriter.writeLn(">> I");
-      thread.pushMarkerFrame(FrameType.Skip);
+      thread.pushMarkerFrame(FrameType.ExitInterpreter);
+      var frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
       thread.pushFrame(methodInfo);
       var calleeFP = thread.fp;
       var frame = thread.frame;
@@ -612,11 +652,10 @@ module J2ME {
       }
       var v = interpret(thread);
       if (U) {
-        // thread.unwoundNativeFrames.push(null);
+        i32[frameTypeOffset] = FrameType.PushPendingFrames;
+
+        thread.unwoundNativeFrames.push(null);
         release || assert(v === undefined, "Return value must be undefined.");
-        // Splice out the marker frame so the interpreter doesn't return early when execution is resumed.
-        i32[calleeFP + FrameLayout.CallerFPOffset] = callerFP;
-        i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
         return;
       }
       release || assert(callerFP === thread.fp);
@@ -1742,11 +1781,13 @@ module J2ME {
             opPC = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - maxLocals;
             fp = i32[fp + FrameLayout.CallerFPOffset];
+            release || assert(fp >= thread.tp, "Valid frame pointer after return.");
             mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
             type = i32[fp + FrameLayout.FrameTypeOffset];
-            if (type === FrameType.Skip) {
+            release || assert(type === FrameType.Interpreter && mi !== null || type !== FrameType.Interpreter && mi === null, "Is valid frame type and method info after return.");
+            if (type === FrameType.ExitInterpreter) {
               thread.set(fp, sp, opPC);
-              thread.popMarkerFrame(FrameType.Skip);
+              thread.popMarkerFrame(FrameType.ExitInterpreter);
               switch (lastOP) {
                 case Bytecodes.IRETURN:
                   return i32[lastSP - 1];
@@ -1763,9 +1804,25 @@ module J2ME {
                 case Bytecodes.RETURN:
                   return;
               }
-            } else if (type === FrameType.PushPendingFrames) {
-              // TODO:
-              // thread.pushPendingNativeFrames();
+            } else if (type === FrameType.PushPendingFrames ||
+                       type === FrameType.Interrupt) {
+              thread.set(fp, sp, opPC);
+              if (type === FrameType.PushPendingFrames) {
+                thread.pushPendingNativeFrames();
+              } else {
+                thread.popMarkerFrame(FrameType.Interrupt);
+              }
+              fp = thread.fp;
+              sp = thread.sp;
+              pc = thread.pc;
+
+              mi = thread.frame.methodInfo;
+              maxLocals = mi.codeAttribute.max_locals;
+              lp = fp - maxLocals;
+              ci = mi.classInfo;
+              cp = ci.constantPool;
+              code = mi.codeAttribute.code;
+              continue;
             }
             release || assert(type === FrameType.Interpreter, "Cannot resume in frame type: " + FrameType[type]);
             maxLocals = mi.codeAttribute.max_locals;
@@ -1923,14 +1980,7 @@ module J2ME {
 
               if (U) {
                 if (thread.fp === fp) { // We're the last interpreter frame on the stack.
-                  if (thread.unwoundNativeFrames.length) {
-                    // There must have been some native frames past this point.
-                    thread.pushMarkerFrame(FrameType.PushPendingFrames);
-                  } else {
-                    // We must have called directly something that yielded, so let's advance the PC
-                    // so we don't yield again.
-                    thread.advancePastInvokeBytecode();
-                  }
+                  thread.pushMarkerFrame(FrameType.PushPendingFrames);
                 }
                 traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
                 return;

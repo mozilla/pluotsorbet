@@ -103,7 +103,7 @@ module J2ME {
       for (var n = 0; n < args.length; ++n)
         array[n] = args[n] ? J2ME.newString(args[n]) : null;
 
-      ctx.nativeThread.pushMarkerFrame(FrameType.Skip);
+      ctx.nativeThread.pushMarkerFrame(FrameType.ExitInterpreter);
       ctx.nativeThread.pushFrame(sys.getMethodByNameString("isolate0Entry", "(Ljava/lang/String;[Ljava/lang/String;)V"));
       ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newString(className.replace(/\./g, "/")));
       ctx.nativeThread.frame.setParameter(Kind.Reference, 1, array);
@@ -126,7 +126,7 @@ module J2ME {
       if (!entryPoint)
         throw new Error("Could not find isolate entry point.");
 
-      ctx.nativeThread.pushMarkerFrame(FrameType.Skip);
+      ctx.nativeThread.pushMarkerFrame(FrameType.ExitInterpreter);
       ctx.nativeThread.pushFrame(entryPoint);
       ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
       ctx.start();
