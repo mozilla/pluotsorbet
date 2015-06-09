@@ -70,7 +70,7 @@ def run_test(script_path):
   global exit_code
 
   args = ['casperjs', '--engine=slimerjs']
-  if os.environ['VERBOSE'] != '0':
+  if 'VERBOSE' in os.environ and os.environ['VERBOSE'] != '0':
     args.append('--log-level=debug')
   args.extend(['test', script_path])
 
