@@ -1,9 +1,9 @@
 package javax.microedition.content;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 
-public class TestContentHandler implements Testlet {
+public class TestContentHandler implements MIDletTestlet {
     public int getExpectedPass() { return 11; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
@@ -11,7 +11,7 @@ public class TestContentHandler implements Testlet {
     native static void addInvocation(String argument, String action);
 
     void testInvocation(TestHarness th) throws ContentHandlerException {
-        ContentHandlerServer chServer = Registry.getServer("RunTests");
+        ContentHandlerServer chServer = Registry.getServer("RunTestsMIDlet");
 
         Invocation invoc = chServer.getRequest(false);
         th.check(invoc, null, "Invocation is null");
@@ -30,8 +30,8 @@ public class TestContentHandler implements Testlet {
 
     public void test(TestHarness th) {
         try {
-            Registry.getRegistry("RunTests")
-                    .register("RunTests",
+            Registry.getRegistry("RunTestsMIDlet")
+                    .register("RunTestsMIDlet",
                               new String[] { "image/jpeg", "image/png", "image/gif", "audio/amr", "audio/mp3", "video/3gpp", "video/mp4" },
                               null,
                               new String[] { "share" },
@@ -42,8 +42,8 @@ public class TestContentHandler implements Testlet {
             testInvocation(th);
 
             // Test registering again
-            Registry.getRegistry("RunTests")
-                    .register("RunTests",
+            Registry.getRegistry("RunTestsMIDlet")
+                    .register("RunTestsMIDlet",
                               new String[] { "image/jpeg", "image/png", "image/gif", "audio/amr", "audio/mp3", "video/3gpp", "video/mp4" },
                               null,
                               new String[] { "share" },
@@ -54,7 +54,7 @@ public class TestContentHandler implements Testlet {
             testInvocation(th);
 
             // Test unregistering
-            Registry.getRegistry("RunTests").unregister("RunTests");
+            Registry.getRegistry("RunTestsMIDlet").unregister("RunTestsMIDlet");
 
             try {
                 testInvocation(th);

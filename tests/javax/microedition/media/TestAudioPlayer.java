@@ -1,13 +1,13 @@
 package javax.microedition.media;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import gnu.testlet.TestUtils;
 import javax.microedition.io.*;
 import javax.microedition.io.file.*;
 import java.io.*;
 
-public class TestAudioPlayer implements Testlet, PlayerListener {
+public class TestAudioPlayer implements MIDletTestlet, PlayerListener {
     public int getExpectedPass() { return 21; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
