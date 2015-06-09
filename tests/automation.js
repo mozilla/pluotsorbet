@@ -12,7 +12,7 @@ var uri = Services.io.newURI("http://localhost:8000", null, null);
 var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
 Services.perms.addFromPrincipal(principal, "tcp-socket", Services.perms.ALLOW_ACTION);
 
-Services.prefs.setIntPref("dom.max_script_run_time", 100);
+Services.prefs.setIntPref("dom.max_script_run_time", 70000);
 
 casper.on('remote.message', function(message) {
     this.echo(message);
