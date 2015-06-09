@@ -56,6 +56,10 @@ extern "C" {
     bump += (size + 3) & ~0x03;
     return curr;
   }
+
+  void forceCollection(void) {
+    GC_gcollect();
+  }
 }
 
 int main() {

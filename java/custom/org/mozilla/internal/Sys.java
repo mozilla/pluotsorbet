@@ -111,4 +111,6 @@ public final class Sys {
     // Execute main.
     executeMain(main);
   }
+
+  public static native void forceCollection();
 }
