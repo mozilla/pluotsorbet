@@ -3,10 +3,13 @@
 import gnu.testlet.*;
 
 import com.sun.cldchi.jvm.JVM;
+import javax.microedition.lcdui.Display;
+import javax.microedition.lcdui.Form;
+import javax.microedition.midlet.*;
 import java.lang.Exception;
 import java.util.Vector;
 
-public class RunTests {
+public class RunTestsMIDlet extends MIDlet {
     int classPass = 0, classFail = 0, pass = 0, fail = 0, knownFail = 0, unknownPass = 0;
 
     void runTest(String name) {
@@ -14,7 +17,10 @@ public class RunTests {
 
         System.out.println("Running " + name);
 
-        Harness harness = new Harness(name, null);
+        Form form = new Form(name);
+        Display display = Display.getDisplay(this);
+        Harness harness = new Harness(name, display);
+        harness.setScreenAndWait(form);
 
         Class c = null;
         try {
@@ -63,27 +69,40 @@ public class RunTests {
         unknownPass += harness.unknownPassed();
     }
 
-    public void go(String[] args) {
+    public void startApp() {
+        String arg = getAppProperty("arg-0").replace('.', '/');
+
+        // Join Testlets and MIDletTestlets because we want to run them both
+        // in RunTestsMIDlet.
+        String[] testlets = new String[Testlets.list.length + MIDletTestlets.list.length];
+        for (int i = 0; i < Testlets.list.length; i++) {
+            testlets[i] = Testlets.list[i];
+        }
+        for (int i = 0; i < MIDletTestlets.list.length; i++) {
+            testlets[i + Testlets.list.length] = MIDletTestlets.list[i];
+        }
+
         long then = JVM.monotonicTimeMillis();
 
-        if (args.length > 0 && args[0] != null) {
+        if (arg != null && arg.length() > 0) {
             Vector v = new Vector();
-            for (int n = 0; n < Testlets.list.length; ++n) {
-                v.addElement(Testlets.list[n]);
+            for (int n = 0; n < testlets.length; ++n) {
+                v.addElement(testlets[n]);
             }
 
-            for (int i = 0; i < args.length; i++) {
-                String arg = args[i].replace('.', '/');
-
+            int i = 0;
+            while (arg != null && arg.length() > 0) {
                 if (v.contains(arg)) {
                     runTest(arg);
                 } else {
                     System.err.println("can't find test " + arg);
                 }
+
+                arg = getAppProperty("arg-" + ++i).replace('.', '/');
             }
         } else {
-            for (int n = 0; n < Testlets.list.length; ++n) {
-                String name = Testlets.list[n];
+            for (int n = 0; n < testlets.length; ++n) {
+                String name = testlets[n];
                 if (name == null)
                     break;
                 runTest(name);
@@ -94,7 +113,9 @@ public class RunTests {
         System.out.println("DONE: " + classPass + " class pass, " + classFail + " class fail, "  + (JVM.monotonicTimeMillis() - then) + "ms");
     }
 
-    public static void main(String[] args) {
-        new RunTests().go(args);
+    public void pauseApp() {
+    }
+
+    public void destroyApp(boolean unconditional) {
     }
 };
