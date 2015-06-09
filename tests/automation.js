@@ -12,6 +12,8 @@ var uri = Services.io.newURI("http://localhost:8000", null, null);
 var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
 Services.perms.addFromPrincipal(principal, "tcp-socket", Services.perms.ALLOW_ACTION);
 
+Services.prefs.setIntPref("dom.max_script_run_time", 100);
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
@@ -181,9 +183,8 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
-        // TODO: Temporarily disabled to make tests pass.
-        //casper.echo("FAIL unresponsive " + message, "ERROR");
-        //casper.page.stopJavaScript();
+        casper.echo("FAIL unresponsive " + message, "ERROR");
+        casper.page.stopJavaScript();
     };
 
     // Run the Init midlet, which does nothing by itself but ensures that any
