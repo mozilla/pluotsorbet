@@ -1,4 +1,4 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks package
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build package
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
@@ -177,7 +177,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
+all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -208,18 +208,26 @@ UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_S),Linux)
 	PLATFORM=linux-$(UNAME_M)
 	XULRUNNER_PATH=xulrunner/xulrunner
+	XULRUNNER_EXT=tar.bz2
+	BOOTCLASSPATH_SEPARATOR=:
 endif
 ifeq ($(UNAME_S),Darwin)
 	PLATFORM=mac
 	XULRUNNER_PATH=XUL.framework/Versions/Current/xulrunner
+	XULRUNNER_EXT=tar.bz2
+	BOOTCLASSPATH_SEPARATOR=:
 endif
-ifneq (,$(findstring MINGW,$(uname_S)))
+ifneq (,$(findstring MINGW,$(UNAME_S)))
 	PLATFORM=win32
-	XULRUNNER_PATH=xulrunner/xulrunner
+	XULRUNNER_PATH=xulrunner
+	XULRUNNER_EXT=zip
+	BOOTCLASSPATH_SEPARATOR=;
 endif
-ifneq (,$(findstring CYGWIN,$(uname_S)))
+ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	PLATFORM=win32
-	XULRUNNER_PATH=xulrunner/xulrunner
+	XULRUNNER_PATH=xulrunner
+	XULRUNNER_EXT=zip
+	BOOTCLASSPATH_SEPARATOR=;
 endif
 
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
@@ -233,8 +241,12 @@ build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 
 build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	rm -rf build_tools/XUL* build_tools/xul*
-	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).tar.bz2
-	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).tar.bz2 -m
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT)
+ifeq ($(XULRUNNER_EXT),tar.bz2)
+	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT) -m
+else
+	unzip -o -d build_tools build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT)
+endif
 
 build_tools/soot-trunk.jar: build_tools/.soot_version
 	rm -f build_tools/soot-trunk.jar
@@ -252,6 +264,7 @@ $(JS): build_tools/.spidermonkey_version
 	rm -rf build_tools/spidermonkey build_tools/jsshell*
 	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/$(SPIDERMONKEY_VERSION)-candidates/build1/jsshell-$(PLATFORM).zip
 	unzip -o -d build_tools/spidermonkey build_tools/jsshell-$(PLATFORM).zip
+	chmod +x build_tools/spidermonkey/*
 	touch $(JS)
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
@@ -399,8 +412,14 @@ package: app
 	rm -f '$(NAME)-$(VERSION).zip'
 	cd $(PACKAGE_DIR) && zip -r '../$(NAME)-$(VERSION).zip' *
 
-benchmarks: java tests
-	make -C bench
+BENCHMARK_SRCS=$(shell find bench -name "*.java")
+
+bench/benchmark.jar: $(BENCHMARK_SRCS) java/classes.jar tests/tests.jar
+	rm -rf bench/build
+	mkdir bench/build
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath "java/classes.jar$(BOOTCLASSPATH_SEPARATOR)tests/tests.jar" -extdirs "" -d bench/build $(BENCHMARK_SRCS) > /dev/null
+	cd bench/build && jar cf0 ../benchmark.jar *
+	rm -rf bench/build
 
 clean:
 	rm -rf bld $(PACKAGE_DIR)
@@ -410,6 +429,6 @@ clean:
 	make -C java clean
 	rm -rf java/l10n/
 	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
-	make -C bench clean
+	rm -f bench/benchmark.jar
 	rm -f img/icon-128.png img/icon-512.png
 	rm -f package.zip
