@@ -111,4 +111,7 @@ public final class Sys {
     // Execute main.
     executeMain(main);
   }
+
+  public native static void startProfile();
+  public native static void stopProfile();
 }
