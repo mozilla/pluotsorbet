@@ -713,3 +713,29 @@ Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
   internedStrings.put(this.value.subarray(this.offset, this.offset + this.count), this);
   return this;
 };
+
+var profileStarted = false;
+Native["org/mozilla/internal/Sys.startProfile.()V"] = function() {
+    if (profile === 4) {
+        if (!profileStarted) {
+            profileStarted = true;
+
+            console.log("Start profile at: " + performance.now());
+            startTimeline();
+        }
+    }
+};
+
+var profileSaved = false;
+Native["org/mozilla/internal/Sys.stopProfile.()V"] = function() {
+    if (profile === 4) {
+        if (!profileSaved) {
+            profileSaved = true;
+
+            console.log("Stop profile at: " + performance.now());
+            setZeroTimeout(function() {
+                stopAndSaveTimeline();
+            });
+        }
+    }
+};
