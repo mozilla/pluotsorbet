@@ -25,7 +25,7 @@ var initialFiles = [
 var initFS = new Promise(function(resolve, reject) {
   fs.init(resolve);
 }).then(function() {
-  if (typeof config !== "undefined" && config.midletClassName == "RunTests") {
+  if (typeof config !== "undefined" && config.midletClassName == "RunTestsMIDlet") {
     initialDirs.push("/tcktestdir");
   }
 
@@ -35,7 +35,7 @@ var initFS = new Promise(function(resolve, reject) {
 }).then(function() {
   var filePromises = [];
 
-  if (typeof config !== "undefined" && config.midletClassName == "RunTests") {
+  if (typeof config !== "undefined" && config.midletClassName == "RunTestsMIDlet") {
     initialFiles.push({ sourcePath: "certs/_test.ks", targetPath: "/_test.ks" });
   }
 
