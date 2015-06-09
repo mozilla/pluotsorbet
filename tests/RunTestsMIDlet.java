@@ -26,22 +26,19 @@ public class RunTestsMIDlet extends MIDlet {
         try {
             c = Class.forName(name);
         } catch (Exception e) {
-            System.err.println(e);
-            harness.fail("Can't load test");
+            harness.fail("Can't load test: " + e);
         }
         Object obj = null;
         try {
             obj = c.newInstance();
         } catch (Exception e) {
-            System.err.println(e);
-            harness.fail("Can't instantiate test");
+            harness.fail("Can't instantiate test: " + e);
         }
         Testlet t = (Testlet) obj;
         try {
             t.test(harness);
         } catch (Exception e) {
-            System.err.println(e);
-            harness.fail("Test threw an unexpected exception");
+            harness.fail("Test threw an unexpected exception: " + e);
         }
         harness.report();
         boolean classPassed = true;
