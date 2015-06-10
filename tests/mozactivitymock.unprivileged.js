@@ -18,3 +18,21 @@ Native["javax/wireless/messaging/SendSMSTest.getBody.()Ljava/lang/String;"] = fu
     });
   }));
 };
+
+Native["com/sun/midp/midlet/AddContactTest.getNumber.()Ljava/lang/String;"] = function() {
+  asyncImpl("Ljava/lang/String;", new Promise(function(resolve, reject) {
+    var sender = DumbPipe.open("lastAddContactParams", {}, function(lastAddContactParams) {
+      DumbPipe.close(sender);
+      resolve(J2ME.newString(lastAddContactParams.tel));
+    });
+  }));
+};
+
+Native["com/sun/midp/midlet/AddContactTest.hasNumber.()Z"] = function() {
+  asyncImpl("Z", new Promise(function(resolve, reject) {
+    var sender = DumbPipe.open("lastAddContactParams", {}, function(lastAddContactParams) {
+      DumbPipe.close(sender);
+      resolve(lastAddContactParams.tel ? 1 : 0);
+    });
+  }));
+};
