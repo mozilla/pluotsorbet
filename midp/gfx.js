@@ -8,12 +8,15 @@ var currentlyFocusedTextEditor;
     var offscreenCanvas = document.createElement("canvas");
     offscreenCanvas.width = MIDP.deviceContext.canvas.width;
     offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+    scaleCanvas(MIDP.deviceCanvas);
+    scaleCanvas(offscreenCanvas);
     var offscreenContext2D = offscreenCanvas.getContext("2d");
     var screenContextInfo = new ContextInfo(offscreenContext2D);
 
     MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
         offscreenCanvas.width = MIDP.deviceContext.canvas.width;
         offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+        // scaleCanvas(MIDP.deviceContext) && scaleCanvas(offscreenCanvas) ?
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
