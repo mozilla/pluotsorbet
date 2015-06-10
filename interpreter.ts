@@ -1315,7 +1315,7 @@ module J2ME {
     static execute = interpret;
     static Yield = {toString: function () { return "YIELD" }};
     static Pause = {toString: function () { return "PAUSE" }};
-    static DEBUG_PRINT_ALL_EXCEPTIONS = false;
+    static DEBUG_PRINT_ALL_EXCEPTIONS = !release;
   }
 }
 
