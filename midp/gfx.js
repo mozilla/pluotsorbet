@@ -5,11 +5,41 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+    function scaleCanvas(canvas) {
+      var devicePixelRatio = window.devicePixelRatio || 1;
+      var backingStoreRatio = 1;
+      if (devicePixelRatio !== backingStoreRatio) {
+        var context = canvas.getContext("2d");
+        var ratio = devicePixelRatio / backingStoreRatio;
+
+        var oldWidth = canvas.width;
+        var oldHeight = canvas.height;
+
+        canvas.width = oldWidth * ratio;
+        canvas.height = oldHeight * ratio;
+
+        canvas.style.width = oldWidth + 'px';
+        canvas.style.height = oldHeight + 'px';
+
+        // now scale the context to counter
+        // the fact that we've manually scaled
+        // our canvas element
+        context.scale(ratio, ratio);
+        context.width = oldWidth * ratio;
+        context.height = oldHeight * ratio;
+      }
+    }
+
     var offscreenCanvas = document.createElement("canvas");
+
+    // First resize the offscreen canvas to the original width/height
+    // of the onscreen canvas, then scale both of them relative to device
+    // pixel ratio.
     offscreenCanvas.width = MIDP.deviceContext.canvas.width;
     offscreenCanvas.height = MIDP.deviceContext.canvas.height;
     scaleCanvas(MIDP.deviceCanvas);
     scaleCanvas(offscreenCanvas);
+
     var offscreenContext2D = offscreenCanvas.getContext("2d");
     var screenContextInfo = new ContextInfo(offscreenContext2D);
 
@@ -349,7 +379,7 @@ var currentlyFocusedTextEditor;
     var SIZE_LARGE = 16;
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
-        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (offscreenCanvas.height / 35) | 0);
+        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (offscreenCanvas.height / window.devicePixelRatio / 35) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
