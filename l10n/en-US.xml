@@ -35,10 +35,6 @@
                 Value="Exit"/>
 <localized_string Key="OK"
                 Value="OK"/>
-<localized_string Key="ERROR"
-                Value="Error"/>
-<localized_string Key="CLASS_VERIFIER_APPLICATION"
-                Value="Class Verifier Application"/>
 
 <localized_string Key="LCDUI_DF_SUN"
                 Value="Sun"/>
@@ -80,27 +76,11 @@
                 Value="Dec"/>
 <localized_string Key="LCDUI_DISPLAY_HEADLESS"
                 Value="This application does not use the screen and runs in the background."/>
-<localized_string Key="AMS_MGR_INTRUPT"
-                Value="Interrupt"/>
-<localized_string Key="AMS_MGR_INTRUPT_QUE"
-                Value="How often should %1 ask for permission to interrupt? The interrupted application will exit."/>
-<localized_string Key="AMS_MGR_INTRUPT_QUE_DONT"
-                Value="Don't interrupt and don't ask"/>
 
-<localized_string Key="PERMISSION_MUTUALLY_EXCLUSIVE_ERROR_MESSAGE"
-                Value="%1 can't be set to not ask because it is not secure when %2 is set to not ask."/>
-<localized_string Key="PERMISSION_SECURITY_WARNING_ERROR_MESSAGE"
-                Value="It is not secure when %1 and %2 are allowed simultaneously. Proceed anyway?"/>
-<localized_string Key="PERMISSION_AUTO_START_DIALOG_TITLE"
-                Value="Is it OK to automatically start the application?"/>
-<localized_string Key="PERMISSION_AUTO_START_QUE"
-                Value="%1 wants to register itself to be automatically started.&#010;&#010;Is it OK to register to be automatically started?"/>
 <localized_string Key="AMS_MIDLETSUITEIMPL_CURR_APP"
                 Value="The current application"/>
 <localized_string Key="AMS_MIDLETSUITEIMPL_INTRPT_QUE"
                 Value="Can %1 Interrupt?"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_DIALOG_TITLE"
-                Value="Is it OK to Automatically Start?"/>
 <localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_QUESTION"
                 Value="Information is arriving for %1. Is it OK for %1 to start up and receive this information? The currently running application will exit.&#010;&#010;Is it OK to start up?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_NOTFOUND"
@@ -115,8 +95,6 @@
                 Value="The application has unexpectedly quit because it ran out of memory."/>
 <localized_string Key="AMS_MIDLETSUITELDR_UNEXPECTEDLY_QUIT"
                 Value="The application has unexpectedly quit. Contact the application provider to resolve the issue."/>
-<localized_string Key="AMS_MIDLETSUITELDR_RESOURCE_LIMIT_ERROR"
-                Value="No more concurrent applications allowed."/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_DISABLED"
                 Value="The MIDlet suite is disabled."/>
 
