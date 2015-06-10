@@ -1971,6 +1971,8 @@ module J2ME {
     LONG_MIN_LOW = 0,
     LONG_MIN_HIGH = 0x80000000,
 
+    MAX_STACK_SIZE = 1024 * 128,
+
 
     TWO_PWR_32_DBL = 4294967296
   }
@@ -2001,6 +2003,7 @@ module J2ME {
     if (!initializeMethodInfo) {
       initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
     }
+    $.ctx.nativeThread.pushMarkerFrame(FrameType.Interrupt);
     runtimeKlass.classObject[initializeMethodInfo.virtualName]();
   }
 

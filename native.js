@@ -23,6 +23,9 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
 
     if (!srcKlass.isArrayKlass || !dstKlass.isArrayKlass)
         throw $.newArrayStoreException("Can only copy to/from array types.");
+
+    release || J2ME.Debug.assert((src.klass.classInfo !== J2ME.PrimitiveArrayClassInfo.J && dst.klass.classInfo !== J2ME.PrimitiveArrayClassInfo.J), "Long arrays cannot currently be copied.");
+
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
         throw $.newArrayIndexOutOfBoundsException("Invalid index.");
     var srcIsPrimitive = !(src instanceof Array);

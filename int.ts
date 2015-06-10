@@ -36,7 +36,7 @@ module J2ME {
       return "[" + getObjectInfo(o) + "] " + o.runtimeKlass.templateKlass.classInfo.getClassNameSlow();
     }
     if (o && o.klass === Klasses.java.lang.String) {
-      return "[" + getObjectInfo(o) + "] \"" + fromJavaString(o) + "\"";
+      return "[" + getObjectInfo(o) + "] \"" + fromJavaString(o) + "\" offset: " + o.offset + " count: " + o.count + " length: " + (o.value ? o.value.length : "null");
     }
     return o ? ("[" + getObjectInfo(o) + "]") : "null";
   }
@@ -172,6 +172,8 @@ module J2ME {
       this.pc = pc;
 
       if (!release) {
+        assert(fp >= thread.tp, "Frame pointer is not less than than the top of the stack.");
+        assert(fp < thread.tp + (Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
         var callee = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
         assert(
           callee === null ||
@@ -288,7 +290,7 @@ module J2ME {
         op = this.methodInfo.codeAttribute.code[this.pc];
       }
       var type  = i32[this.fp + FrameLayout.FrameTypeOffset];
-      writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecodes[op] : ""));
+      writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + "(" + (this.fp - this.thread.tp) + "), SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecodes[op] : ""));
       if (details) {
         for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
           var prefix = "    ";
@@ -365,7 +367,7 @@ module J2ME {
     pendingNativeFrames: any [];
 
     constructor(ctx: Context) {
-      this.tp = ASM._gcMalloc(1024 * 128);
+      this.tp = ASM._gcMalloc(Constants.MAX_STACK_SIZE) >> 2;
       this.bp = this.tp;
       this.fp = this.bp;
       this.sp = this.fp;
@@ -374,7 +376,7 @@ module J2ME {
       this.ctx = ctx;
       this.unwoundNativeFrames = [];
       this.pendingNativeFrames = [];
-      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp << 2) + " " + toHEX(i32.byteLength));
+      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp) + " " + toHEX(this.tp + (Constants.MAX_STACK_SIZE >> 2)));
     }
 
     set(fp: number, sp: number, pc: number) {
@@ -405,6 +407,7 @@ module J2ME {
       } else {
         this.fp = this.sp;
       }
+      release || assert(fp < this.tp + (Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
       i32[this.fp + FrameLayout.CallerRAOffset] = this.pc;    // Caller RA
       i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo; // Callee
@@ -624,12 +627,10 @@ module J2ME {
       var ctx = $.ctx;
       var thread = ctx.nativeThread;
       var callerFP = thread.fp;
-      var callerPC = thread.pc;
       // release || traceWriter && traceWriter.writeLn(">> I");
       thread.pushMarkerFrame(FrameType.ExitInterpreter);
       var frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
       thread.pushFrame(methodInfo);
-      var calleeFP = thread.fp;
       var frame = thread.frame;
       var kinds = methodInfo.signatureKinds;
       var index = 0;
@@ -655,6 +656,7 @@ module J2ME {
         i32[frameTypeOffset] = FrameType.PushPendingFrames;
 
         thread.unwoundNativeFrames.push(null);
+        release || assert(methodInfo.returnKind === Kind.Void, "Non void returns are currently not supported here.");
         release || assert(v === undefined, "Return value must be undefined.");
         return;
       }
@@ -721,7 +723,9 @@ module J2ME {
       thread.pushPendingNativeFrames();
       frame = thread.frame;
     }
+    release || assert(frame.type === FrameType.Interpreter, "Must begin with interpreter frame.");
     var mi = frame.methodInfo;
+    release || assert(mi, "Must have method info.");
     var maxLocals = mi.codeAttribute.max_locals;
     var ci = mi.classInfo;
     var cp = ci.constantPool;
@@ -755,6 +759,8 @@ module J2ME {
         assert(ci === mi.classInfo, "Bad Class Info.");
         assert(cp === ci.constantPool, "Bad Constant Pool.");
         assert(lp === fp - mi.codeAttribute.max_locals, "Bad lp.");
+        assert(fp >= thread.tp, "Frame pointer is not less than than the top of the stack.");
+        assert(fp < thread.tp + (Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
         bytecodeCount++;
 
         if (traceStackWriter) {
