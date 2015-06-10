@@ -2115,7 +2115,7 @@ module J2ME {
   }
 
   export function f2i(i32A: number) {
-    var a = aliasedI32[0] = i32A, aliasedF32[0];
+    var a = (aliasedI32[0] = i32A, aliasedF32[0]);
     if (a > Constants.INT_MAX) {
       return Constants.INT_MAX;
     } else if (a < Constants.INT_MIN) {
