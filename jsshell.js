@@ -234,6 +234,12 @@ try {
   if (options.writers.value.indexOf("l") >= 0) {
     writers |= J2ME.WriterFlags.Link;
   }
+  if (options.writers.value.indexOf("j") >= 0) {
+    writers |= J2ME.WriterFlags.JIT;
+  }
+  if (options.writers.value.indexOf("c") >= 0) {
+    writers |= J2ME.WriterFlags.Code;
+  }
   J2ME.writers = writers;
 
   J2ME.enableRuntimeCompilation = false;

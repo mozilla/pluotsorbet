@@ -106,7 +106,7 @@ module J2ME {
   /**
    * Emits preemption checks for methods that already yield.
    */
-  export var emitCheckPreemption = true;
+  export var emitCheckPreemption = false;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;
@@ -231,15 +231,6 @@ module J2ME {
     return String(v);
   }
 
-  function longConstant(v): string {
-    if (v === 0) {
-      return "Long.ZERO";
-    } else if (v === 1) {
-      return "Long.ONE";
-    }
-    return "Long.fromInt(" + v + ")";
-  }
-
   function classConstant(classInfo: ClassInfo): string {
     // PrimitiveArrayClassInfo have custom mangledNames;
     if (classInfo instanceof PrimitiveArrayClassInfo) {
@@ -282,6 +273,10 @@ module J2ME {
       return true;
     }
     return false;
+  }
+
+  function throwCompilerError(message: string) {
+    throw new Error(message);
   }
 
   export enum Precedence {
@@ -925,6 +920,9 @@ module J2ME {
       var signatureKinds = methodInfo.signatureKinds;
       var args: string [] = [];
       for (var i = signatureKinds.length - 1; i > 0; i--) {
+        if (isTwoSlot(signatureKinds[i]) || (signatureKinds[i] === Kind.Float)) {
+          throwCompilerError("NOT DONE YET");
+        }
         args.unshift(this.pop(signatureKinds[i]));
       }
       var object = null, call;
@@ -1324,21 +1322,23 @@ module J2ME {
       var x = this.pop(from);
       var v;
       switch (opcode) {
-        case Bytecodes.I2L: v = "Long.fromInt(" + x + ")"; break;
+        //case Bytecodes.I2L: break;
         case Bytecodes.I2F:
         case Bytecodes.I2D: v = x; break;
         case Bytecodes.I2B: v = "(" + x + "<<24)>>24"; break;
         case Bytecodes.I2C: v = x + "&0xffff"; break;
         case Bytecodes.I2S: v = "(" + x + "<<16)>>16"; break;
-        case Bytecodes.L2I: v = x + ".toInt()"; break;
-        case Bytecodes.L2F: v = "Math.fround(" + x + ".toNumber())"; break;
-        case Bytecodes.L2D: v = x + ".toNumber()"; break;
+        //case Bytecodes.L2I: break;
+        //case Bytecodes.L2F: break;
+        //case Bytecodes.L2D: break;
         case Bytecodes.D2I:
         case Bytecodes.F2I: v = "f2i(" + x + ")"; break;
-        case Bytecodes.F2L: v = "f2l(" + x + ")"; break;
-        case Bytecodes.F2D: v = "f2d(" + x + ")"; break;
-        case Bytecodes.D2L: v = "util.double2long(" + x + ")"; break;
-        case Bytecodes.D2F: v = "Math.fround(" + x + ")"; break;
+        //case Bytecodes.F2L: break;
+        //case Bytecodes.F2D: v = "f2d(" + x + ")"; break;
+        //case Bytecodes.D2L: break;
+        //case Bytecodes.D2F: break;
+        default:
+          throwCompilerError(Bytecodes[opcode]);
       }
       this.emitPush(to, v, Precedence.Sequence); // TODO: Restrict precedence.
     }

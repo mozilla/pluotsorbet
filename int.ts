@@ -1902,11 +1902,11 @@ module J2ME {
 
             // Call Native or Compiled Method.
             var callMethod = calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled;
-            if (false && callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
+            if (callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
               var calleeStats = calleeTargetMethodInfo.stats;
               if (calleeStats.callCount ++ > 10) {
-                calleeTargetMethodInfo.state = MethodState.Compiled;
-                callMethod = true;
+                compileAndLinkMethod(calleeTargetMethodInfo);
+                callMethod = calleeTargetMethodInfo.state === MethodState.Compiled;
               }
             }
             if (callMethod) {
@@ -2062,7 +2062,7 @@ module J2ME {
         }
       } catch (e) {
         release || traceWriter && traceWriter.redLn("XXX I Caught: " + e + ", details: " + toName(e));
-        // release || traceWriter && traceWriter.writeLns(e.stack);
+        release || traceWriter && traceWriter.writeLn(e.stack);
         // release || traceWriter && traceWriter.writeLn(jsGlobal.getBacktrace());
 
         thread.set(fp, sp, opPC);
