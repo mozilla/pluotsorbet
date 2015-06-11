@@ -7,24 +7,22 @@ var currentlyFocusedTextEditor;
 (function(Native) {
     function scaleCanvas(canvas) {
       var devicePixelRatio = window.devicePixelRatio || 1;
-      var backingStoreRatio = 1;
-      if (devicePixelRatio !== backingStoreRatio) {
-        var context = canvas.getContext("2d");
-        var ratio = devicePixelRatio / backingStoreRatio;
-
+      if (devicePixelRatio !== 1) {
         var oldWidth = canvas.width;
         var oldHeight = canvas.height;
 
-        canvas.width = oldWidth * ratio;
-        canvas.height = oldHeight * ratio;
+        canvas.width *= devicePixelRatio;
+        canvas.height *= devicePixelRatio;
 
         canvas.style.width = oldWidth + 'px';
         canvas.style.height = oldHeight + 'px';
+      }
+    }
 
-        // now scale the context to counter
-        // the fact that we've manually scaled
-        // our canvas element
-        // context.scale(ratio, ratio);
+    function scaleContext(context) {
+      var devicePixelRatio = window.devicePixelRatio || 1;
+      if (devicePixelRatio !== 1) {
+        context.scale(devicePixelRatio, devicePixelRatio);
       }
     }
 
@@ -37,8 +35,11 @@ var currentlyFocusedTextEditor;
     offscreenCanvas.height = MIDP.deviceContext.canvas.height;
     scaleCanvas(MIDP.deviceCanvas);
     scaleCanvas(offscreenCanvas);
+    scaleContext(MIDP.deviceContext);
 
     var offscreenContext2D = offscreenCanvas.getContext("2d");
+    scaleContext(offscreenContext2D);
+
     var screenContextInfo = new ContextInfo(offscreenContext2D);
 
     MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
@@ -46,6 +47,8 @@ var currentlyFocusedTextEditor;
         offscreenCanvas.height = MIDP.deviceContext.canvas.height;
         scaleCanvas(MIDP.deviceCanvas);
         scaleCanvas(offscreenCanvas);
+        // scaleContext(MIDP.deviceContext);
+        // scaleContext(offscreenContext2D);
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
@@ -53,6 +56,8 @@ var currentlyFocusedTextEditor;
     var tempContext = document.createElement("canvas").getContext("2d");
     tempContext.canvas.width = 0;
     tempContext.canvas.height = 0;
+    scaleCanvas(tempContext.canvas);
+    scaleContext(tempContext);
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = J2ME.newIntArray( 1);
@@ -261,11 +266,14 @@ var currentlyFocusedTextEditor;
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
+        scaleCanvas(canvas);
+        var context = canvas.getContext("2d");
+        scaleContext(context);
 
-        imageData.contextInfo = new ContextInfo(canvas.getContext("2d"));
+        imageData.contextInfo = new ContextInfo(context);
 
-        imageData.width = width;
-        imageData.height = height;
+        imageData.width = canvas.width;
+        imageData.height = canvas.height;
 
         imageData.isMutable = isMutable;
 
@@ -303,7 +311,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
         var srcCanvas = source.contextInfo.context.canvas;
-        var context = initImageData(dest, srcCanvas.width, srcCanvas.height, 0);
+        var context = initImageData(dest, srcCanvas.width / window.devicePixelRatio, srcCanvas.height / window.devicePixelRatio, 0);
         context.drawImage(srcCanvas, 0, 0);
     };
 
@@ -402,11 +410,14 @@ var currentlyFocusedTextEditor;
             face = "Arial,Helvetica,sans-serif";
 
         this.baseline = size | 0;
-        this.height = (size * 1.3) | 0;
+        this.height = (size * window.devicePixelRatio * 1.3) | 0;
 
         this.context = document.createElement("canvas").getContext("2d");
         this.context.canvas.width = 0;
         this.context.canvas.height = 0;
+        scaleCanvas(this.context.canvas);
+        scaleContext(this.context);
+
         this.context.font = style + size + "px " + face;
         this.size = size;
         this.style = style;
@@ -419,9 +430,9 @@ var currentlyFocusedTextEditor;
         var len = font.context.measureText(str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
-        })).width | 0;
+        })).width * window.devicePixelRatio | 0;
 
-        return len + emojiLen;
+        return (len + emojiLen  /* * window.devicePixelRatio ? */);
     }
 
     var defaultFont;
@@ -468,7 +479,7 @@ var currentlyFocusedTextEditor;
 
     function withTextAnchor(c, font, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = calcStringWidth(font, str);
+            var w = calcStringWidth(font, str) * window.devicePixelRatio;
 
             if (anchor & RIGHT) {
                 x -= w;
@@ -760,6 +771,8 @@ var currentlyFocusedTextEditor;
 
         tempContext.canvas.width = width;
         tempContext.canvas.height = height;
+        scaleCanvas(tempContext.canvas);
+        // scaleContext(tempContext);
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
@@ -1263,6 +1276,8 @@ var currentlyFocusedTextEditor;
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         tempContext.canvas.height = height;
         tempContext.canvas.width = width;
+        scaleCanvas(tempContext.canvas);
+        // scaleContext(tempContext);
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
