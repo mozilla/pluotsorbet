@@ -179,7 +179,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 31 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
