@@ -35,7 +35,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 package com.jcraft.jzlib;
 import java.io.*;
 
-public class ZInputStream extends FilterInputStream {
+public class ZInputStream extends com.sun.midp.io.FilterInputStream {
 
   protected ZStream z=new ZStream();
   protected int bufsize=512;
