@@ -12,11 +12,13 @@ var uri = Services.io.newURI("http://localhost:8000", null, null);
 var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
 Services.perms.addFromPrincipal(principal, "tcp-socket", Services.perms.ALLOW_ACTION);
 
+Services.prefs.setIntPref("dom.max_script_run_time", 70000);
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 180000;
+casper.options.waitTimeout = 600000;
 casper.options.verbose = true;
 casper.options.viewportSize = { width: 240, height: 320 };
 casper.options.clientScripts = [
@@ -177,14 +179,13 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 31 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
-    // TODO: Temporarily disabled to make tests pass.
-    /*casper.page.onLongRunningScript = function(message) {
+    casper.page.onLongRunningScript = function(message) {
         casper.echo("FAIL unresponsive " + message, "ERROR");
         casper.page.stopJavaScript();
-    };*/
+    };
 
     // Run the Init midlet, which does nothing by itself but ensures that any
     // initialization code gets run before we start a test that depends on it.
@@ -224,15 +225,17 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
     .withFrame(0, basicUnitTests);
 
+    // TODO: Re-enable rerunning tests once we re-enable the JIT.
+
     // Run the same unit tests again to test the compiled method cache.
-    casper
+    /*casper
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
     .withFrame(0, basicUnitTests);
 
     // Run the same unit tests again with baseline JIT enabled for all methods.
     casper
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log&forceRuntimeCompilation=1")
-    .withFrame(0, basicUnitTests);
+    .withFrame(0, basicUnitTests);*/
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
