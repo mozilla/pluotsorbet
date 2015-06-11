@@ -371,22 +371,27 @@ Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(obj) {
 };
 
 Native["java/lang/Float.floatToIntBits.(F)I"] = function(f) {
-    return aliasedF32[0] = f, aliasedI32[0];
+    aliasedI32[0] = f;
+    aliasedF32[0] = aliasedF32[0];
+    return aliasedI32[0];
 }
 
 Native["java/lang/Float.intBitsToFloat.(I)F"] = function (i) {
-    return aliasedI32[0] = i, aliasedF32[0];
+    return i;
 }
 
-Native["java/lang/Double.doubleToLongBits.(D)J"] = function (d) {
-    aliasedF64[0] = d;
+Native["java/lang/Double.doubleToLongBits.(D)J"] = function (l, h) {
+    aliasedI32[0] = l;
+    aliasedI32[1] = h;
+    // Canonicalize the value.
+    aliasedF64[0] = aliasedF64[0];
     return J2ME.returnLong(aliasedI32[0], aliasedI32[1]);
 }
 
 Native["java/lang/Double.longBitsToDouble.(J)D"] = function (l, h) {
     aliasedI32[0] = l;
     aliasedI32[1] = h;
-    return aliasedF64[0];
+    return J2ME.returnDoubleValue(aliasedF64[0]);
 }
 
 Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
@@ -439,48 +444,74 @@ Native["java/lang/Runtime.totalMemory.()J"] = function() {
 Native["java/lang/Runtime.gc.()V"] = function() {
 };
 
-Native["java/lang/Math.floor.(D)D"] = function(val) {
-    return Math.floor(val);
+Native["java/lang/Math.floor.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.floor(aliasedF64[0]));
 };
 
-Native["java/lang/Math.asin.(D)D"] = function(val) {
-    return Math.asin(val);
+Native["java/lang/Math.asin.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.asin(aliasedF64[0]));
 };
 
-Native["java/lang/Math.acos.(D)D"] = function(val) {
-    return Math.acos(val);
+Native["java/lang/Math.acos.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.acos(aliasedF64[0]));
 };
 
-Native["java/lang/Math.atan.(D)D"] = function(val) {
-    return Math.atan(val);
+Native["java/lang/Math.atan.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.atan(aliasedF64[0]));
 };
 
-Native["java/lang/Math.atan2.(DD)D"] = function(x, y) {
-    return Math.atan2(x, y);
+Native["java/lang/Math.atan2.(DD)D"] = function(xLow, xHigh, yLow, yHigh) {
+    aliasedI32[0] = xLow;
+    aliasedI32[1] = xHigh;
+    var x = aliasedF64[0];
+    aliasedI32[0] = yLow;
+    aliasedI32[1] = yHigh;
+    var y = aliasedF64[0];
+    return J2ME.returnDoubleValue(Math.atan2(x, y));
 };
 
-Native["java/lang/Math.sin.(D)D"] = function(val) {
-    return Math.sin(val);
+Native["java/lang/Math.sin.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.sin(aliasedF64[0]));
 };
 
-Native["java/lang/Math.cos.(D)D"] = function(val) {
-    return Math.cos(val);
+Native["java/lang/Math.cos.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.cos(aliasedF64[0]));
 };
 
-Native["java/lang/Math.tan.(D)D"] = function(val) {
-    return Math.tan(val);
+Native["java/lang/Math.tan.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.tan(aliasedF64[0]));
 };
 
-Native["java/lang/Math.sqrt.(D)D"] = function(val) {
-    return Math.sqrt(val);
+Native["java/lang/Math.sqrt.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.sqrt(aliasedF64[0]));
 };
 
-Native["java/lang/Math.ceil.(D)D"] = function(val) {
-    return Math.ceil(val);
+Native["java/lang/Math.ceil.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.ceil(aliasedF64[0]));
 };
 
-Native["java/lang/Math.floor.(D)D"] = function(val) {
-    return Math.floor(val);
+Native["java/lang/Math.floor.(D)D"] = function(valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.floor(aliasedF64[0]));
 };
 
 Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function() {

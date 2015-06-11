@@ -34,6 +34,16 @@ module J2ME {
     return l;
   }
 
+  export function returnDouble(l: number, h: number) {
+    tempReturn0 = h;
+    return l;
+  }
+
+  export function returnDoubleValue(v: number) {
+    aliasedF64[0] = v;
+    return returnDouble(aliasedI32[0], aliasedI32[1]);
+  }
+
   declare var Native, config;
   declare var VM;
   declare var CompiledMethodCache;
