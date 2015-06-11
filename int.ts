@@ -516,15 +516,17 @@ module J2ME {
       traceWriter && traceWriter.writeLn("Pushing pending native frames.");
 
 
-      traceWriter && traceWriter.writeLn("Pending native frames before:");
       if (traceWriter) {
+        traceWriter.enter("Pending native frames before:");
         for (var i = 0; i < this.pendingNativeFrames.length; i++) {
           traceWriter.writeLn(this.pendingNativeFrames[i] ? this.pendingNativeFrames[i].methodInfo.implKey: "marker");
         }
+        traceWriter.leave("");
       }
 
-      traceWriter && traceWriter.writeLn("Stack before:");
+      traceWriter && traceWriter.enter("Stack before:");
       traceWriter && this.frame.traceStack(traceWriter);
+      traceWriter && traceWriter.leave("");
 
       // We should have a |PushPendingFrames| marker frame on the stack at this point.
       this.popMarkerFrame(FrameType.PushPendingFrames);
@@ -551,11 +553,12 @@ module J2ME {
         }
       }
 
-      traceWriter && traceWriter.writeLn("Pending native frames after:");
       if (traceWriter) {
+        traceWriter.enter("Pending native frames after:");
         for (var i = 0; i < this.pendingNativeFrames.length; i++) {
           traceWriter.writeLn(this.pendingNativeFrames[i] ? this.pendingNativeFrames[i].methodInfo.implKey : "marker");
         }
+        traceWriter.leave("");
       }
 
       var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
@@ -565,12 +568,13 @@ module J2ME {
         var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
         var code = mi.codeAttribute.code;
         var op = code[this.pc];
-        release || assert(isInvoke(op), "Must be invoke");
+        release || assert(isInvoke(op), "Must be invoke, found: " + Bytecodes[op] + " PC: " + this.pc + " for " + mi.implKey);
         this.pc += (op === Bytecodes.INVOKEINTERFACE ? 5 : 3);
       }
 
-      traceWriter && traceWriter.writeLn("Stack after:");
+      traceWriter && traceWriter.enter("Stack after:");
       traceWriter && this.frame.traceStack(traceWriter);
+      traceWriter && traceWriter.leave("");
     }
 
     /**
