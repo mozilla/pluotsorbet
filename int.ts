@@ -684,7 +684,7 @@ module J2ME {
       return;
     }
     if (!(getKindCheck(methodInfo.returnKind)(l, h))) {
-      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got " + l + " in " + methodInfo.implKey);
+      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got low: " + l + " high: " + h + " in " + methodInfo.implKey);
     }
   }
   
@@ -1785,15 +1785,12 @@ module J2ME {
               thread.popMarkerFrame(FrameType.ExitInterpreter);
               switch (lastOP) {
                 case Bytecodes.IRETURN:
-                  return i32[lastSP - 1];
                 case Bytecodes.FRETURN:
-                  return f32[lastSP - 1];
+                  return i32[lastSP - 1];
                 case Bytecodes.LRETURN:
                   return returnLong(i32[lastSP - 2], i32[lastSP - 1]);
                 case Bytecodes.DRETURN:
-                  aliasedI32[0] = i32[lastSP - 2];
-                  aliasedI32[1] = i32[lastSP - 1];
-                  return aliasedF64[0];
+                  return returnDouble(i32[lastSP - 2], i32[lastSP - 1]);
                 case Bytecodes.ARETURN:
                   return ref[lastSP - 1];
                 case Bytecodes.RETURN:
@@ -1902,7 +1899,7 @@ module J2ME {
 
             // Call Native or Compiled Method.
             var callMethod = calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled;
-            if (callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
+            if (false && callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
               var calleeStats = calleeTargetMethodInfo.stats;
               if (calleeStats.callCount ++ > 10) {
                 compileAndLinkMethod(calleeTargetMethodInfo);
@@ -1930,20 +1927,14 @@ module J2ME {
                 for (var i = signatureKinds.length - 1; i > 0; i--) {
                   kind = signatureKinds[i];
                   switch (kind) {
-                    case Kind.Double: // Doubles are passed in as a number value.
-                      aliasedI32[1] = i32[--sp];
-                      aliasedI32[0] = i32[--sp];
-                      args.unshift(aliasedF64[0]);
-                      break;
-                    case Kind.Float:
-                      args.unshift(f32[--sp]);
-                      break;
                     case Kind.Long:
+                    case Kind.Double:
                       args.unshift(i32[--sp]); // High Bits
                       // Fallthrough
                     case Kind.Int:
                     case Kind.Byte:
                     case Kind.Char:
+                    case Kind.Float:
                     case Kind.Short:
                     case Kind.Boolean:
                       args.unshift(i32[--sp]);
@@ -1985,21 +1976,15 @@ module J2ME {
 
               // Push return value.
               switch (kind) {
-                case Kind.Double: // Doubles are passed in as a number value.
-                  aliasedF64[0] = returnValue;
-                  i32[sp++] = aliasedI32[0];
-                  i32[sp++] = aliasedI32[1];
-                  continue;
-                case Kind.Float:
-                  f32[sp++] = returnValue;
-                  continue;
                 case Kind.Long:
+                case Kind.Double:
                   i32[sp++] = returnValue;
                   i32[sp++] = tempReturn0;
                   continue;
                 case Kind.Int:
                 case Kind.Byte:
                 case Kind.Char:
+                case Kind.Float:
                 case Kind.Short:
                 case Kind.Boolean:
                   i32[sp++] = returnValue;
