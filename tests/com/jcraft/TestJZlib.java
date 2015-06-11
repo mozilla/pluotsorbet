@@ -8,7 +8,9 @@ import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import com.jcraft.jzlib.*;
+import com.jcraft.jzlib.JZlib;
+import com.jcraft.jzlib.ZOutputStream;
+import com.jcraft.jzlib.ZInputStream;
 
 public class TestJZlib implements Testlet {
     public int getExpectedPass() { return 1; }
