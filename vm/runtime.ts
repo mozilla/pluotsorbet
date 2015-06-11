@@ -1604,6 +1604,11 @@ module J2ME {
   export var compiledMethodCount = 0;
 
   /**
+   * Maximum number of methods to compile.
+   */
+  export var maxCompiledMethodCount = -1;
+
+  /**
    * Number of methods that have not been compiled thus far.
    */
   export var notCompiledMethodCount = 0;
@@ -1632,6 +1637,10 @@ module J2ME {
       return;
     }
 
+    // Don't compile if we've compiled too many methods.
+    if (maxCompiledMethodCount > 0 && compiledMethodCount >= maxCompiledMethodCount) {
+      return;
+    }
     // Don't compile methods that are too large.
     if (methodInfo.codeAttribute.code.length > 4000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
@@ -1651,7 +1660,7 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
-    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
+    jitWriter && jitWriter.enter("Compiling: " + compiledMethodCount + " " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
     var s = performance.now();
 
     var compiledMethod;
