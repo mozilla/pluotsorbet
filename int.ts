@@ -1899,7 +1899,7 @@ module J2ME {
 
             // Call Native or Compiled Method.
             var callMethod = calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled;
-            if (false && callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
+            if (callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
               var calleeStats = calleeTargetMethodInfo.stats;
               if (calleeStats.callCount ++ > 10) {
                 compileAndLinkMethod(calleeTargetMethodInfo);

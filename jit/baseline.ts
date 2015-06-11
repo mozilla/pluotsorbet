@@ -549,8 +549,10 @@ module J2ME {
       // Skip the first typeDescriptor since it is the return type.
       for (var i = 1; i < signatureKinds.length; i++) {
         var kind = signatureKinds[i];
-        this.parameters.push(this.getLocalName(parameterLocalIndex));
-        parameterLocalIndex += isTwoSlot(kind) ? 2 : 1;
+        this.parameters.push(this.getLocalName(parameterLocalIndex++));
+        if (isTwoSlot(kind)) {
+          this.parameters.push(this.getLocalName(parameterLocalIndex++));
+        }
       }
 
       var maxLocals = this.methodInfo.codeAttribute.max_locals;
@@ -767,6 +769,9 @@ module J2ME {
     }
     
     emitPush(kind: Kind, v, precedence: Precedence) {
+      if (isTwoSlot(kind)) {
+        throwCompilerError("PUSH: " + Kind[kind]);
+      }
       writer && writer.writeLn("push: sp: " + this.sp + " " + Kind[kind] + " " + v);
       // this.blockEmitter.writeLn(this.getStack(this.sp) + " = " + v + ";");
       this.blockStack[this.sp] = v;
@@ -829,7 +834,8 @@ module J2ME {
       } else {
         this.blockEmitter.writeLn("i32[" + address + ">>2]=" + l + ";");
         if (isTwoSlot(fieldInfo.kind)) {
-          this.blockEmitter.writeLn("i32[" + address + "+$>>2]=" + h + ";");
+          throwCompilerError("XXX");
+          this.blockEmitter.writeLn("i32[" + address + "+4>>2]=" + h + ";");
         }
       }
     }
@@ -921,7 +927,7 @@ module J2ME {
       var args: string [] = [];
       for (var i = signatureKinds.length - 1; i > 0; i--) {
         if (isTwoSlot(signatureKinds[i]) || (signatureKinds[i] === Kind.Float)) {
-          throwCompilerError("NOT DONE YET");
+          throwCompilerError("Invoke: " + Kind[signatureKinds[i]]);
         }
         args.unshift(this.pop(signatureKinds[i]));
       }
@@ -1016,18 +1022,18 @@ module J2ME {
 
     emitLoadConstant(index: number) {
       var cp = this.methodInfo.classInfo.constantPool;
-      var tag = cp.getConstantTag(index);
-      var offset = cp.entries[index];
+      var offset = cp.entries[index] + 1;
       var buffer = cp.buffer;
-
+      var tag = buffer[offset++];
       switch (tag) {
-        case TAGS.CONSTANT_Integer:
         case TAGS.CONSTANT_Float:
+        case TAGS.CONSTANT_Integer:
           var value = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
+          writer && writer.writeLn("XXX: " + value);
           this.emitPushInteger(value);
           return;
-        case TAGS.CONSTANT_Double:
         case TAGS.CONSTANT_Long:
+        case TAGS.CONSTANT_Double:
           var h = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
           var l = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
           this.emitPushLong(l, h);
@@ -1351,17 +1357,18 @@ module J2ME {
       // Get the top stack slot and make sure it is also it in the |blockStack|.
       var s = this.blockStack[sp] = this.getStackName(sp);
       if (kind === Kind.Long) {
-        this.blockEmitter.enter("if(" + x + ".greaterThan(" + y + ")){");
-        this.blockEmitter.writeLn(s + "=1");
-        this.blockEmitter.leaveAndEnter("}else if(" + x + ".lessThan(" + y + ")){");
-        this.blockEmitter.writeLn(s + "=-1");
-        this.blockEmitter.leaveAndEnter("}else{");
-        this.blockEmitter.writeLn(s + "=0");
-        this.blockEmitter.leave("}");
+        throwCompilerError(Kind[kind]);
+        //this.blockEmitter.enter("if(" + x + ".greaterThan(" + y + ")){");
+        //this.blockEmitter.writeLn(s + "=1");
+        //this.blockEmitter.leaveAndEnter("}else if(" + x + ".lessThan(" + y + ")){");
+        //this.blockEmitter.writeLn(s + "=-1");
+        //this.blockEmitter.leaveAndEnter("}else{");
+        //this.blockEmitter.writeLn(s + "=0");
+        //this.blockEmitter.leave("}");
       } else if (kind === Kind.Float) {
         this.blockEmitter.writeLn(s + "=fcmp(" + x + "," + y + "," + isLessThan + ")");
       } else if (kind === Kind.Double) {
-        assert(false, "NOT DONE YET");
+        throwCompilerError(Kind[kind]);
         // this.blockEmitter.writeLn(s + "=dcmp(" + x + "," + y + "," + isLessThan + ")");
       }
     }
