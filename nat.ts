@@ -42,6 +42,7 @@ module J2ME {
 
     promise.then(function onFulfilled(l: any, h?: number) {
       var thread = ctx.nativeThread;
+      thread.pushPendingNativeFrames();
 
       // Push return value.
       var sp = thread.sp;
@@ -76,10 +77,13 @@ module J2ME {
       thread.sp = sp;
       J2ME.Scheduler.enqueue(ctx);
     }, function onRejected(exception: java.lang.Exception) {
+      var thread = ctx.nativeThread;
+      thread.pushPendingNativeFrames();
       var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
       var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
-      ctx.nativeThread.pushFrame(methodInfo);
-      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception);
+      thread.pushMarkerFrame(FrameType.Interrupt);
+      thread.pushFrame(methodInfo);
+      thread.frame.setParameter(J2ME.Kind.Reference, 0, exception);
       Scheduler.enqueue(ctx);
     });
 

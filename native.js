@@ -23,6 +23,9 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
 
     if (!srcKlass.isArrayKlass || !dstKlass.isArrayKlass)
         throw $.newArrayStoreException("Can only copy to/from array types.");
+
+    release || J2ME.Debug.assert((src.klass.classInfo !== J2ME.PrimitiveArrayClassInfo.J && dst.klass.classInfo !== J2ME.PrimitiveArrayClassInfo.J), "Long arrays cannot currently be copied.");
+
     if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
         throw $.newArrayIndexOutOfBoundsException("Invalid index.");
     var srcIsPrimitive = !(src instanceof Array);
@@ -500,7 +503,7 @@ Native["java/lang/Thread.start0.()V"] = function() {
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
-    newCtx.nativeThread.pushMarkerFrame(J2ME.FrameType.Skip);
+    newCtx.nativeThread.pushMarkerFrame(J2ME.FrameType.ExitInterpreter);
     newCtx.nativeThread.pushFrame(run);
     newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, this);
     newCtx.start();
