@@ -431,8 +431,8 @@ var MIDP = (function() {
         (event.changedTouches && event.changedTouches[0]) || // touchend
         event); // mousedown, mouseup, mousemove
     return {
-      x: item.pageX - (canvasRect.left | 0),
-      y: item.pageY - (canvasRect.top | 0)
+      x: (item.pageX - (canvasRect.left | 0)) * window.devicePixelRatio | 0,
+      y: (item.pageY - (canvasRect.top | 0)) * window.devicePixelRatio | 0
     };
   }
 
