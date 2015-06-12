@@ -4,7 +4,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestResourceConstants implements Testlet {
-    public int getExpectedPass() { return 56; }
+    public int getExpectedPass() { return 52; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
 

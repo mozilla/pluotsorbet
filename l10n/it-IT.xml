@@ -52,16 +52,8 @@
 <localized_string Key="LCDUI_DISPLAY_HEADLESS"
                 Value="Questa applicazione non usa lo schermo e funziona in background."/>
 
-<localized_string Key="AMS_MIDLETSUITEIMPL_CURR_APP"
-                Value="L'attuale applicazione"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_INTRPT_QUE"
-                Value="Può %1 interrompere?"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_QUESTION"
-                Value="Le informazioni stanno arrivando a %1. Va bene che %1 si avvii e riceva queste informazioni? L'applicazione attualmente avviata si chiuderà.&#010;&#010;Va bene avviarla?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_NOTFOUND"
                 Value="La MIDlet suite non è stata trovata."/>
-<localized_string Key="AMS_MIDLETSUITELDR_PUSH_INTERRUPT_QUESTION"
-                Value="Le informazioni stanno arrivando a %1.&#010;&#010;Va bene che %1 si avvii e riceva queste informazioni?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_MISSING_CLASS"
                 Value="L'applicazione non può essere avviata. Sembra che manchi una delle classi dell'applicazione. Questo può succedere a causa di una classe dal nome errato. Contattare il fornitore dell'applicazione per risolvere il problema."/>
 <localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_ILL_OPERATION"

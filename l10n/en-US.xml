@@ -77,16 +77,8 @@
 <localized_string Key="LCDUI_DISPLAY_HEADLESS"
                 Value="This application does not use the screen and runs in the background."/>
 
-<localized_string Key="AMS_MIDLETSUITEIMPL_CURR_APP"
-                Value="The current application"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_INTRPT_QUE"
-                Value="Can %1 Interrupt?"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_QUESTION"
-                Value="Information is arriving for %1. Is it OK for %1 to start up and receive this information? The currently running application will exit.&#010;&#010;Is it OK to start up?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_NOTFOUND"
                 Value="The MIDlet suite was not found."/>
-<localized_string Key="AMS_MIDLETSUITELDR_PUSH_INTERRUPT_QUESTION"
-                Value="Information is arriving for %1.&#010;&#010;Is it OK for %1 to start up and receive this information?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_MISSING_CLASS"
                 Value="The application cannot be launched. One of the application classes appears to be missing. This could be due to a misnamed class. Contact the application provider to resolve the issue."/>
 <localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_ILL_OPERATION"
