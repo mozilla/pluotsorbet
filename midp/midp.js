@@ -149,14 +149,22 @@ var MIDP = (function() {
       } else {
         DumbPipe.close(DumbPipe.open("windowOpen", request));
       }
-    } else if (request.startsWith("x-contacts:add?number=")) {
+    } else if (request.startsWith("x-contacts:add?")) {
+      var params = {};
+
+      var args = request.substring(request.indexOf("?") + 1).split("&");
+      args.forEach(function(arg) {
+        var numberIdx = arg.indexOf("number=");
+        if (numberIdx != -1) {
+          params.tel = arg.substring(numberIdx + 7);
+        }
+      });
+
       DumbPipe.close(DumbPipe.open("mozActivity", {
         name: "new",
         data: {
           type: "webcontacts/contact",
-          params: {
-            tel: request.substring(22),
-          },
+          params: params,
         },
       }));
     } else {
