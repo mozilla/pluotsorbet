@@ -267,9 +267,9 @@ var currentlyFocusedTextEditor;
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        scaleCanvas(canvas);
+        // scaleCanvas(canvas);
         var context = canvas.getContext("2d");
-        scaleContext(context);
+        // scaleContext(context);
 
         imageData.contextInfo = new ContextInfo(context);
 
@@ -416,7 +416,8 @@ var currentlyFocusedTextEditor;
 
         // Scale the height by the device pixel ratio so it isn't too short
         // on HiDPI devices.
-        this.height = (size * MIDP.devicePixelRatio * 1.3) | 0;
+        // this.height = (size * MIDP.devicePixelRatio * 1.3) | 0;
+        this.height = (size * 1.3) | 0;
 
         this.context = document.createElement("canvas").getContext("2d");
         this.context.canvas.width = 0;
@@ -433,10 +434,15 @@ var currentlyFocusedTextEditor;
     function calcStringWidth(font, str) {
         var emojiLen = 0;
 
+        // var len = font.context.measureText(str.replace(emoji.regEx, function() {
+        //     emojiLen += font.size; // XXX multiple by MIDP.devicePixelRatio ?
+        //     return "";
+        // })).width * MIDP.devicePixelRatio | 0;
+
         var len = font.context.measureText(str.replace(emoji.regEx, function() {
             emojiLen += font.size; // XXX multiple by MIDP.devicePixelRatio ?
             return "";
-        })).width * MIDP.devicePixelRatio | 0;
+        })).width | 0;
 
         return (len + emojiLen);
     }
@@ -485,7 +491,8 @@ var currentlyFocusedTextEditor;
 
     function withTextAnchor(c, font, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = calcStringWidth(font, str) * MIDP.devicePixelRatio;
+            // var w = calcStringWidth(font, str) * MIDP.devicePixelRatio;
+            var w = calcStringWidth(font, str);
 
             if (anchor & RIGHT) {
                 x -= w;
@@ -777,7 +784,7 @@ var currentlyFocusedTextEditor;
 
         tempContext.canvas.width = width;
         tempContext.canvas.height = height;
-        scaleCanvas(tempContext.canvas);
+        // scaleCanvas(tempContext.canvas);
 
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
@@ -1282,7 +1289,7 @@ var currentlyFocusedTextEditor;
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         tempContext.canvas.height = height;
         tempContext.canvas.width = width;
-        scaleCanvas(tempContext.canvas);
+        // scaleCanvas(tempContext.canvas);
         // scaleContext(tempContext);
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
