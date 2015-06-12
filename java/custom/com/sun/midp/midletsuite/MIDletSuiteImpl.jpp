@@ -38,9 +38,6 @@ import javax.microedition.midlet.*;
 
 import com.sun.midp.io.*;
 
-import com.sun.midp.i18n.Resource;
-import com.sun.midp.i18n.ResourceConstants;
-
 import com.sun.midp.security.*;
 
 import com.sun.midp.midlet.*;
@@ -65,9 +62,6 @@ public final class MIDletSuiteImpl implements MIDletSuite {
 
     /** Suite properties of the application descriptor and manifest. */
     private SuiteProperties suiteProperties;
-
-    /** Suite settings for this suite. */
-    private SuiteSettings suiteSettings;
 
     /** Installation information for this suite. */
     private InstallInfo installInfo;
@@ -103,8 +97,6 @@ public final class MIDletSuiteImpl implements MIDletSuite {
         locked = true;
 
         suiteProperties = new SuiteProperties(id);
-        suiteSettings = new SuiteSettings(id);
-        suiteSettings.load();
         installInfo = new InstallInfo(id);
 
         try {
@@ -382,9 +374,7 @@ public final class MIDletSuiteImpl implements MIDletSuite {
      * @return push options are defined in {@link PushRegistryImpl}
      */
     public int getPushOptions() {
-        guaranteeMIDletSuiteLocked("getPushOptions");
-
-        return suiteSettings.getPushOptions();
+        return 0;
     }
 
     /**

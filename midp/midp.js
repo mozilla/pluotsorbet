@@ -593,15 +593,6 @@ var MIDP = (function() {
     console.warn("MIDletSuiteImpl.unlockMIDletSuite.(I)V not implemented (" + suiteId + ")");
   };
 
-  Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function() {
-    this.pushInterruptSetting = 1;
-    console.warn("com/sun/midp/midletsuite/SuiteSettings.load.()V incomplete");
-  };
-
-  Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(suiteId, pushInterruptSetting, pushOptions, permissions) {
-    console.warn("SuiteSettings.save0.(IBI[B)V not implemented (" + suiteId + ", " + pushInterruptSetting + ", " + pushOptions + ", " + permissions + ")");
-  };
-
   Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function() {
     // The MIDlet has to be trusted for opening SSL connections using port 443.
     this.trusted = 1;
