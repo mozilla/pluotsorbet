@@ -55,13 +55,13 @@
   "messages": [
     { "alarm": "/index.html" }
   ],
-  // #if CONTENT_HANDLER_SUPPORT == 1
+  // #ifdef CONTENT_HANDLER_FILTER
   "activities": {
     "share": {
       "href": "/index.html",
       "disposition": "window",
       "filters": {
-        "type": "image/*"
+        "type": @CONTENT_HANDLER_FILTER@
       }
     }
   },
