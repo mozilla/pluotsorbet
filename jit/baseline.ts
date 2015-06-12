@@ -1022,7 +1022,7 @@ module J2ME {
 
     emitLoadConstant(index: number) {
       var cp = this.methodInfo.classInfo.constantPool;
-      var offset = cp.entries[index] + 1;
+      var offset = cp.entries[index];
       var buffer = cp.buffer;
       var tag = buffer[offset++];
       switch (tag) {
