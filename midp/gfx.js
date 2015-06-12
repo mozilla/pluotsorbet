@@ -25,13 +25,13 @@ var currentlyFocusedTextEditor;
     offscreenCanvas.height = MIDP.deviceCanvas.height;
     var offscreenContext2D = offscreenCanvas.getContext("2d");
 
-    scaleCanvas(MIDP.deviceCanvas);
-    scaleCanvas(offscreenCanvas);
+    // scaleCanvas(MIDP.deviceCanvas);
+    // scaleCanvas(offscreenCanvas);
 
     // Scale the offscreen context to counter the effect of scaling its canvas.
     // We don't have to do this for the device context, because the data we copy
     // from the offscreen context is already scaled appropriately.
-    scaleContext(offscreenContext2D);
+    // scaleContext(offscreenContext2D);
 
     var screenContextInfo = new ContextInfo(offscreenContext2D);
 
@@ -57,8 +57,8 @@ var currentlyFocusedTextEditor;
     //
     // XXX Perhaps rename scaleCanvas to resizeCanvas.
     //
-    scaleCanvas(tempContext.canvas);
-    scaleContext(tempContext);
+    // scaleCanvas(tempContext.canvas);
+    // scaleContext(tempContext);
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = J2ME.newIntArray( 1);
@@ -275,8 +275,10 @@ var currentlyFocusedTextEditor;
 
         // Set the size of the image data to the scaled size of the canvas,
         // which could be different from the original width/height.
-        imageData.width = canvas.width;
-        imageData.height = canvas.height;
+        // imageData.width = canvas.width;
+        // imageData.height = canvas.height;
+        imageData.width = width;
+        imageData.height = height;
 
         imageData.isMutable = isMutable;
 
