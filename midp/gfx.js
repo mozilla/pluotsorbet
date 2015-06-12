@@ -7,14 +7,10 @@ var currentlyFocusedTextEditor;
 (function(Native) {
     function scaleCanvas(canvas) {
       if (MIDP.devicePixelRatio !== 1) {
-        var oldWidth = canvas.width;
-        var oldHeight = canvas.height;
-
+        canvas.style.width = canvas.width + 'px';
+        canvas.style.height = canvas.height + 'px';
         canvas.width *= MIDP.devicePixelRatio;
         canvas.height *= MIDP.devicePixelRatio;
-
-        canvas.style.width = oldWidth + 'px';
-        canvas.style.height = oldHeight + 'px';
       }
     }
 
