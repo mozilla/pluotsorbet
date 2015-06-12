@@ -21,17 +21,13 @@ var currentlyFocusedTextEditor;
     }
 
     var offscreenCanvas = document.createElement("canvas");
-
-    // First resize the offscreen canvas to the original width/height
-    // of the onscreen canvas, then scale both of them relative to device
-    // pixel ratio.
-    offscreenCanvas.width = MIDP.deviceContext.canvas.width;
-    offscreenCanvas.height = MIDP.deviceContext.canvas.height;
-    scaleCanvas(MIDP.deviceCanvas);
-    scaleCanvas(offscreenCanvas);
-    scaleContext(MIDP.deviceContext);
-
+    offscreenCanvas.width = MIDP.deviceCanvas.width;
+    offscreenCanvas.height = MIDP.deviceCanvas.height;
     var offscreenContext2D = offscreenCanvas.getContext("2d");
+
+    scaleCanvas(MIDP.deviceCanvas);
+    scaleContext(MIDP.deviceContext);
+    scaleCanvas(offscreenCanvas);
     scaleContext(offscreenContext2D);
 
     var screenContextInfo = new ContextInfo(offscreenContext2D);
