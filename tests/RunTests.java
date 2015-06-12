@@ -14,7 +14,7 @@ public class RunTests {
 
         System.out.println("Running " + name);
 
-        Harness harness = new Harness(name, null);
+        j2mejsTestHarness harness = new j2mejsTestHarness(name, null);
 
         Class c = null;
         try {

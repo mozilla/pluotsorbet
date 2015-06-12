@@ -9,7 +9,7 @@ import javax.microedition.midlet.*;
 import java.lang.Exception;
 import java.util.Vector;
 
-public class Harness extends TestHarness {
+public class j2mejsTestHarness extends TestHarness {
     private String testName;
     private int testNumber = 0;
     private String testNote = null;
@@ -18,7 +18,7 @@ public class Harness extends TestHarness {
     private int knownFail = 0;
     private int unknownPass = 0;
 
-    public Harness(String note, Display d) {
+    public j2mejsTestHarness(String note, Display d) {
         super(d);
         this.testName = note;
     }

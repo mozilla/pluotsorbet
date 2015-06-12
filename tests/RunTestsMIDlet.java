@@ -19,7 +19,7 @@ public class RunTestsMIDlet extends MIDlet {
 
         Form form = new Form(name);
         Display display = Display.getDisplay(this);
-        Harness harness = new Harness(name, display);
+        j2mejsTestHarness harness = new j2mejsTestHarness(name, display);
         harness.setScreenAndWait(form);
 
         Class c = null;
