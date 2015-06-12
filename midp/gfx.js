@@ -762,7 +762,7 @@ var currentlyFocusedTextEditor;
         tempContext.canvas.width = width;
         tempContext.canvas.height = height;
         scaleCanvas(tempContext.canvas);
-        // scaleContext(tempContext);
+
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
