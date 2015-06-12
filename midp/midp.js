@@ -131,14 +131,6 @@ var MIDP = (function() {
     console.info(J2ME.fromJavaString(message));
   };
 
-  Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    return 1;
-  };
-
-  Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    return 1;
-  };
-
   Native["com/sun/midp/midlet/MIDletPeer.platformRequest.(Ljava/lang/String;)Z"] = function(request) {
     request = J2ME.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
@@ -1258,14 +1250,6 @@ var MIDP = (function() {
   };
 
   addUnimplementedNative("com/nokia/mid/ui/gestures/GestureInteractiveZone.getGestures.()I", 0);
-
-  Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(suiteId, permission) {
-    return 1;
-  };
-
-  Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = function(suiteId, permission) {
-    return 1;
-  };
 
   Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function() {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");

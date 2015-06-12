@@ -176,7 +176,6 @@ java/lang/Integer.intValue.()I
 java/io/OutputStream.<init>.()V
 java/lang/Character.toString.()Ljava/lang/String;
 com/sun/midp/security/SecurityToken.checkIfPermissionAllowed.(I)V
-com/sun/midp/security/SecurityToken.checkIfPermissionAllowed.(ILjava/lang/String;)V
 com/sun/midp/events/EventQueue.registerEventListener.(ILcom/sun/midp/events/EventListener;)V
 com/sun/midp/midletsuite/MIDletSuiteImpl.getID.()I
 com/sun/midp/midlet/MIDletStateHandler.getMidletStateHandler.()Lcom/sun/midp/midlet/MIDletStateHandler;
@@ -258,8 +257,6 @@ javax/microedition/lcdui/ImageDataFactory.getImageDataFromStream.(Ljavax/microed
 javax/microedition/lcdui/CanvasLFImpl.uCallKeyReleased.(I)V
 javax/microedition/lcdui/Canvas.keyReleased.(I)V
 com/sun/midp/security/SecurityInitializer.requestToken.(Lcom/sun/midp/security/ImplicitlyTrustedClass;)Lcom/sun/midp/security/SecurityToken;
-com/sun/midp/security/SecurityInitializerImpl.requestToken.(Lcom/sun/midp/security/ImplicitlyTrustedClass;)Lcom/sun/midp/security/SecurityToken;
-com/sun/midp/security/SecurityInitializerImpl.isTrusted.(Ljava/lang/Object;)Z
 java/io/DataOutputStream.<init>.(Ljava/io/OutputStream;)V
 java/io/DataOutputStream.close.()V
 javax/microedition/lcdui/CanvasLFImpl.uCallKeyPressed.(I)V
@@ -276,7 +273,6 @@ com/sun/midp/midletsuite/MIDletSuiteImpl.getProperty.(Ljava/lang/String;)Ljava/l
 com/sun/midp/midletsuite/SuiteProperties.getProperty.(Ljava/lang/String;)Ljava/lang/String;
 com/sun/midp/util/Properties.getProperty.(Ljava/lang/String;)Ljava/lang/String;
 javax/microedition/lcdui/DisplayableLFImpl.lGetDisplayable.()Ljavax/microedition/lcdui/Displayable;
-com/sun/midp/security/SecurityInitializerImpl.<init>.(Lcom/sun/midp/security/SecurityToken;[Ljava/lang/String;)V
 com/sun/midp/midletsuite/SuiteProperties.loadProperties.()V
 com/sun/midp/rms/RecordStoreIndex.getRecordIDs.()[I
 java/io/DataInputStream.readLong.()J

@@ -56,28 +56,6 @@ public class SuiteSettings {
      */
     public SuiteSettings(int id) {
         suiteId = id;
-        permissions = Permissions.getEmptySet();
-    }
-
-    /**
-     * Gets list of permissions for this suite.
-     *
-     * @return array of permissions from {@link Permissions}
-     * @see #setPermissions
-     */
-    public byte[] getPermissions() {
-        return permissions;
-    }
-
-    /**
-     * Sets new permissions for the suite.
-     *
-     * @param newPermissions for the suite
-     * @see #getPermissions
-     *
-     */
-    public void setPermissions(byte[] newPermissions) {
-        permissions = newPermissions;
     }
 
     /**
