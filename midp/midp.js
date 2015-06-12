@@ -6,6 +6,7 @@
 var MIDP = (function() {
   var deviceCanvas = document.getElementById("canvas");
   var deviceContext = deviceCanvas.getContext("2d");
+  var devicePixelRatio = window.devicePixelRatio || 1;
 
   // The foreground isolate will get the user events (keypresses, etc.)
   var FG = (function() {
@@ -431,8 +432,8 @@ var MIDP = (function() {
         (event.changedTouches && event.changedTouches[0]) || // touchend
         event); // mousedown, mouseup, mousemove
     return {
-      x: (item.pageX - (canvasRect.left | 0)) * window.devicePixelRatio | 0,
-      y: (item.pageY - (canvasRect.top | 0)) * window.devicePixelRatio | 0
+      x: (item.pageX - (canvasRect.left | 0)) * devicePixelRatio | 0,
+      y: (item.pageY - (canvasRect.top | 0)) * devicePixelRatio | 0
     };
   }
 
@@ -1329,6 +1330,7 @@ var MIDP = (function() {
     sendExecuteMIDletEvent: sendExecuteMIDletEvent,
     deviceCanvas: deviceCanvas,
     deviceContext: deviceContext,
+    devicePixelRatio: devicePixelRatio,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
     updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,

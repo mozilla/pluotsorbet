@@ -6,13 +6,12 @@
 var currentlyFocusedTextEditor;
 (function(Native) {
     function scaleCanvas(canvas) {
-      var devicePixelRatio = window.devicePixelRatio || 1;
-      if (devicePixelRatio !== 1) {
+      if (MIDP.devicePixelRatio !== 1) {
         var oldWidth = canvas.width;
         var oldHeight = canvas.height;
 
-        canvas.width *= devicePixelRatio;
-        canvas.height *= devicePixelRatio;
+        canvas.width *= MIDP.devicePixelRatio;
+        canvas.height *= MIDP.devicePixelRatio;
 
         canvas.style.width = oldWidth + 'px';
         canvas.style.height = oldHeight + 'px';
@@ -20,9 +19,8 @@ var currentlyFocusedTextEditor;
     }
 
     function scaleContext(context) {
-      var devicePixelRatio = window.devicePixelRatio || 1;
-      if (devicePixelRatio !== 1) {
-        context.scale(devicePixelRatio, devicePixelRatio);
+      if (MIDP.devicePixelRatio !== 1) {
+        context.scale(MIDP.devicePixelRatio, MIDP.devicePixelRatio);
       }
     }
 
@@ -311,7 +309,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
         var srcCanvas = source.contextInfo.context.canvas;
-        var context = initImageData(dest, srcCanvas.width / window.devicePixelRatio, srcCanvas.height / window.devicePixelRatio, 0);
+        var context = initImageData(dest, srcCanvas.width / MIDP.devicePixelRatio, srcCanvas.height / MIDP.devicePixelRatio, 0);
         context.drawImage(srcCanvas, 0, 0);
     };
 
@@ -410,7 +408,7 @@ var currentlyFocusedTextEditor;
             face = "Arial,Helvetica,sans-serif";
 
         this.baseline = size | 0;
-        this.height = (size * window.devicePixelRatio * 1.3) | 0;
+        this.height = (size * MIDP.devicePixelRatio * 1.3) | 0;
 
         this.context = document.createElement("canvas").getContext("2d");
         this.context.canvas.width = 0;
@@ -430,9 +428,9 @@ var currentlyFocusedTextEditor;
         var len = font.context.measureText(str.replace(emoji.regEx, function() {
             emojiLen += font.size;
             return "";
-        })).width * window.devicePixelRatio | 0;
+        })).width * MIDP.devicePixelRatio | 0;
 
-        return (len + emojiLen  /* * window.devicePixelRatio ? */);
+        return (len + emojiLen  /* * MIDP.devicePixelRatio ? */);
     }
 
     var defaultFont;
@@ -479,7 +477,7 @@ var currentlyFocusedTextEditor;
 
     function withTextAnchor(c, font, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = calcStringWidth(font, str) * window.devicePixelRatio;
+            var w = calcStringWidth(font, str) * MIDP.devicePixelRatio;
 
             if (anchor & RIGHT) {
                 x -= w;
