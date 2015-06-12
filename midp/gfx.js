@@ -301,7 +301,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
         var srcCanvas = source.contextInfo.context.canvas;
-        var context = initImageData(dest, srcCanvas.width / MIDP.devicePixelRatio, srcCanvas.height / MIDP.devicePixelRatio, 0);
+        var context = initImageData(dest, srcCanvas.width, srcCanvas.height, 0);
         context.drawImage(srcCanvas, 0, 0);
     };
 
