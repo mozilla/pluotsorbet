@@ -37,8 +37,6 @@ var currentlyFocusedTextEditor;
         offscreenCanvas.height = MIDP.deviceContext.canvas.height;
         scaleCanvas(MIDP.deviceCanvas);
         scaleCanvas(offscreenCanvas);
-        // scaleContext(MIDP.deviceContext);
-        // scaleContext(offscreenContext2D);
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
@@ -46,6 +44,13 @@ var currentlyFocusedTextEditor;
     var tempContext = document.createElement("canvas").getContext("2d");
     tempContext.canvas.width = 0;
     tempContext.canvas.height = 0;
+    // There's no point in scaling the temp context's canvas here, since it
+    // would only affect the current width/height of the canvas, and it doesn't
+    // have any at the moment.  But we add a scaling transformation, which
+    // the context will apply to any future operations.
+    //
+    // XXX Perhaps rename scaleCanvas to resizeCanvas.
+    //
     scaleCanvas(tempContext.canvas);
     scaleContext(tempContext);
 
@@ -262,6 +267,8 @@ var currentlyFocusedTextEditor;
 
         imageData.contextInfo = new ContextInfo(context);
 
+        // Set the size of the image data to the scaled size of the canvas,
+        // which could be different from the original width/height.
         imageData.width = canvas.width;
         imageData.height = canvas.height;
 
@@ -400,13 +407,16 @@ var currentlyFocusedTextEditor;
             face = "Arial,Helvetica,sans-serif";
 
         this.baseline = size | 0;
+
+        // Scale the height by the device pixel ratio so it isn't too short
+        // on HiDPI devices.
         this.height = (size * MIDP.devicePixelRatio * 1.3) | 0;
 
         this.context = document.createElement("canvas").getContext("2d");
         this.context.canvas.width = 0;
         this.context.canvas.height = 0;
-        scaleCanvas(this.context.canvas);
-        scaleContext(this.context);
+        // XXX Figure out why we don't seem to need to scale this context.
+        // scaleContext(this.context);
 
         this.context.font = style + size + "px " + face;
         this.size = size;
@@ -418,11 +428,11 @@ var currentlyFocusedTextEditor;
         var emojiLen = 0;
 
         var len = font.context.measureText(str.replace(emoji.regEx, function() {
-            emojiLen += font.size;
+            emojiLen += font.size; // XXX multiple by MIDP.devicePixelRatio ?
             return "";
         })).width * MIDP.devicePixelRatio | 0;
 
-        return (len + emojiLen  /* * MIDP.devicePixelRatio ? */);
+        return (len + emojiLen);
     }
 
     var defaultFont;
