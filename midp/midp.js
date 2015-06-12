@@ -95,7 +95,10 @@ var MIDP = (function() {
     var newHeight = physicalScreenHeight - headerHeight;
     var newWidth = physicalScreenWidth;
 
-    if (newHeight != deviceCanvas.height || newWidth != deviceCanvas.width) {
+    // The canvas height/width have been scaled by the pixel ratio, so we have
+    // to scale the new height/width before comparing them.
+    // XXX Factor out scaling the canvas here and in scaleCanvas.
+    if ((newHeight * devicePixelRatio | 0) != deviceCanvas.height || (newWidth * devicePixelRatio | 0) != deviceCanvas.width) {
       deviceCanvas.height = newHeight;
       deviceCanvas.width = newWidth;
       deviceCanvas.style.height = deviceCanvas.height + "px";
