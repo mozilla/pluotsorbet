@@ -7,6 +7,7 @@ import java.io.*;
 class Game extends Canvas {
         public void paint(Graphics g) {
                 try {
+                        // XXX Figure out why this throws an IOException.
                         Image img = Image.createImage("test.png");
                         g.drawImage(img, 10, 10, 0);
                         g.drawRegion(img, 10, 5, 20, 30, Sprite.TRANS_MIRROR_ROT270, 100, 100, 0);
@@ -15,6 +16,7 @@ class Game extends Canvas {
                         g.drawRegion(img, 10, 0, 20, 10, Sprite.TRANS_ROT180, 150, 150, 0);
                         g.drawRegion(img, 10, 10, 20, 20, Sprite.TRANS_MIRROR, 120, 120, 0);
                 } catch (Exception e) {
+                        // XXX Report this exception.
                 }
                 g.drawLine(0, 0, 100, 100);
                 g.drawLine(20, 20, 20, 150);
