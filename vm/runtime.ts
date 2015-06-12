@@ -2009,6 +2009,9 @@ module J2ME {
     }
     $.ctx.nativeThread.pushMarkerFrame(FrameType.Interrupt);
     runtimeKlass.classObject[initializeMethodInfo.virtualName]();
+    if (!U) {
+      $.ctx.nativeThread.popMarkerFrame(FrameType.Interrupt);
+    }
   }
 
   export function preempt() {

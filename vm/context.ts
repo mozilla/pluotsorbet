@@ -280,6 +280,7 @@ module J2ME {
         throw e;
       }
       if (U) {
+        this.nativeThread.unwoundNativeFrames.push(null);
         this.nativeThread.endUnwind();
         switch (U) {
           case VMState.Yielding:
