@@ -26,8 +26,11 @@ var currentlyFocusedTextEditor;
     var offscreenContext2D = offscreenCanvas.getContext("2d");
 
     scaleCanvas(MIDP.deviceCanvas);
-    scaleContext(MIDP.deviceContext);
     scaleCanvas(offscreenCanvas);
+
+    // Scale the offscreen context to counter the effect of scaling its canvas.
+    // We don't have to do this for the device context, because the data we copy
+    // from the offscreen context is already scaled appropriately.
     scaleContext(offscreenContext2D);
 
     var screenContextInfo = new ContextInfo(offscreenContext2D);
@@ -37,6 +40,9 @@ var currentlyFocusedTextEditor;
         offscreenCanvas.height = MIDP.deviceContext.canvas.height;
         scaleCanvas(MIDP.deviceCanvas);
         scaleCanvas(offscreenCanvas);
+        // Resizing a canvas "resets" its existing contexts, so we need
+        // to rescale them.
+        scaleContext(offscreenContext2D);
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
