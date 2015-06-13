@@ -116,6 +116,7 @@ var currentlyFocusedTextEditor;
         } else {
             ctxs.unshift($.ctx);
             $.pause("Async");
+            $.nativeBailout("V");
         }
     }
 

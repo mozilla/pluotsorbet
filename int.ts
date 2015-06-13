@@ -550,12 +550,6 @@ module J2ME {
       var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
       if (frameType === FrameType.Interrupt) {
         this.popMarkerFrame(FrameType.Interrupt);
-      } else {
-        var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-        var code = mi.codeAttribute.code;
-        var op = code[this.pc];
-        release || assert(isInvoke(op), "Must be invoke, found: " + Bytecodes[op] + " PC: " + this.pc + " for " + mi.implKey);
-        this.pc += (op === Bytecodes.INVOKEINTERFACE ? 5 : 3);
       }
 
       traceWriter && traceWriter.enter("Stack after:");
@@ -650,6 +644,7 @@ module J2ME {
         release || assert(v === undefined, "Return value must be undefined.");
         return;
       }
+      thread.popMarkerFrame(FrameType.ExitInterpreter);
       release || assert(callerFP === thread.fp);
       // release || traceWriter && traceWriter.writeLn("<< I");
       return v;
@@ -1782,7 +1777,6 @@ module J2ME {
             release || assert(type === FrameType.Interpreter && mi !== null || type !== FrameType.Interpreter && mi === null, "Is valid frame type and method info after return.");
             if (type === FrameType.ExitInterpreter) {
               thread.set(fp, sp, opPC);
-              thread.popMarkerFrame(FrameType.ExitInterpreter);
               switch (lastOP) {
                 case Bytecodes.IRETURN:
                 case Bytecodes.FRETURN:

@@ -693,6 +693,12 @@ module J2ME {
       $.ctx.nativeThread.beginUnwind();
     }
 
+    nativeBailout(returnKind: Kind) {
+      var pc = returnKind === Kind.Void ? 0 : 1;
+      var methodInfo = CLASSES.getUnwindMethodInfo(returnKind);
+      $.ctx.bailout(methodInfo, pc, pc, [], [], null);
+    }
+
     pause(reason: string) {
       unwindCount ++;
       threadWriter && threadWriter.writeLn("pausing " + reason);

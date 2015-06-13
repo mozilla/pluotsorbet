@@ -114,4 +114,11 @@ public final class Sys {
 
   public native static void startProfile();
   public native static void stopProfile();
+
+  public static void unwind() {}
+  public static long unwind(long v) { return v; }
+  public static double unwind(double v) { return v; }
+  public static float unwind(float v) { return v; }
+  public static int unwind(int v) { return v; }
+  public static Object unwind(Object v) { return v; }
 }

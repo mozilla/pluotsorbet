@@ -88,6 +88,7 @@ module J2ME {
     });
 
     $.pause("Async");
+    $.nativeBailout(returnKind);
   }
 
   Native["java/lang/Thread.sleep.(J)V"] = function(delayL: number, delayH: number) {
@@ -102,10 +103,12 @@ module J2ME {
 
   Native["java/lang/Thread.yield.()V"] = function() {
     $.yield("Thread.yield");
+    $.nativeBailout(Kind.Void);
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
     $.ctx.wait(this, longToNumber(timeoutL, timeoutH));
+    $.nativeBailout(Kind.Void);
   };
 
   Native["java/lang/Object.notify.()V"] = function() {
@@ -123,6 +126,9 @@ module J2ME {
   Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function() {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
     getLinkedMethod(methodInfo).call($.mainThread, J2ME.newString("main"));
+    if (U) {
+      $.nativeBailout(J2ME.Kind.Void);
+    }
   };
 
   Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): java.lang.String {
@@ -134,5 +140,8 @@ module J2ME {
     if (!entryPoint)
       throw new Error("Could not find isolate main.");
     getLinkedMethod(entryPoint).call(null, $.isolate._mainArgs);
+    if (U) {
+      $.nativeBailout(J2ME.Kind.Void);
+    }
   };
 }

@@ -291,6 +291,9 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     J2ME.preemptionLockLevel++;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
         $.ctx.executeMethod(clinit);
+        if (U) {
+            $.nativeBailout(J2ME.Kind.Void);
+        }
     }
 };
 
@@ -350,6 +353,9 @@ Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
     throw $.newInstantiationException("Can't instantiate classes without a nullary constructor");
   }
   J2ME.getLinkedMethod(methodInfo).call(o);
+  if (U) {
+      $.nativeBailout(J2ME.Kind.Void);
+  }
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function() {

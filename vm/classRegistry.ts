@@ -20,6 +20,8 @@ module J2ME {
      */
     sourceFiles: Map<string, string []>;
 
+    unwindMethodInfos:Map<Kind, MethodInfo>;
+
     /**
      * List of classes whose sources files were not found. We keep track
      * of them so we don't have to search for them over and over.
@@ -42,6 +44,7 @@ module J2ME {
 
       this.classes = Object.create(null);
       this.preInitializedClasses = [];
+      this.unwindMethodInfos = Object.create(null);
     }
 
     initializeBuiltinClasses() {
@@ -230,6 +233,42 @@ module J2ME {
       return this.classes[typeName] = classInfo;
     }
 
+    getUnwindMethodInfo(returnKind:Kind):MethodInfo {
+      if (this.unwindMethodInfos[returnKind]) {
+        return this.unwindMethodInfos[returnKind];
+      }
+      var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
+      var methodInfo;
+      switch (returnKind) {
+        case Kind.Long:
+          methodInfo = classInfo.getMethodByNameString("unwind", "(J)J");
+          break;
+        case Kind.Double:
+          methodInfo = classInfo.getMethodByNameString("unwind", "(D)D");
+          break;
+        case Kind.Float:
+          methodInfo = classInfo.getMethodByNameString("unwind", "(F)F");
+          break;
+        case Kind.Int:
+        case Kind.Byte:
+        case Kind.Char:
+        case Kind.Short:
+        case Kind.Boolean:
+          methodInfo = classInfo.getMethodByNameString("unwind", "(I)I");
+          break;
+        case Kind.Reference:
+          methodInfo = classInfo.getMethodByNameString("unwind", "(Ljava/lang/Object;)Ljava/lang/Object;");
+          break;
+        case Kind.Void:
+          methodInfo = classInfo.getMethodByNameString("unwind", "()V");
+          break;
+        default:
+          release || Debug.assert(false, "Invalid Kind: " + Kind[returnKind]);
+      }
+      release || Debug.assert(methodInfo, "Must find unwind method");
+      this.unwindMethodInfos[returnKind] = methodInfo;
+      return methodInfo;
+    }
   }
 
   export var ClassNotFoundException = function(message) {
