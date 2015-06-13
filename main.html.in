@@ -242,6 +242,7 @@
           <option value="size-320x240">Display size: 320x240</option>
           <option value="size-320x480">Display size: 320x480</option>
           <option value="size-480x320">Display size: 480x320</option>
+          <option value="size-360x640">Display size: 360x640</option>
         </select>
         <button id="start">Start</button>
 

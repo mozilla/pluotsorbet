@@ -81,6 +81,23 @@ body {
 .size-480x320 #settings {
   height: calc(100% - 320px) !important;
 }
+
+.size-360x640 #display-container {
+  width: 360px !important;
+}
+
+.size-360x640 #pageContainer {
+  width: calc(100% - 360px) !important;
+}
+
+.size-360x640 #display {
+  height: 640px !important;
+}
+
+.size-360x640 #settings {
+  height: calc(100% - 640px) !important;
+}
+
 /* Float the back button to the bottom right corner */
 #back-button {
   position: absolute;
