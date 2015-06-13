@@ -37,14 +37,15 @@ var currentlyFocusedTextEditor;
     var screenContextInfo = new ContextInfo(offscreenContext2D);
 
     MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
-        offscreenCanvas.width = MIDP.deviceContext.canvas.width;
-        offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+        offscreenCanvas.width = MIDP.deviceCanvas.width;
+        offscreenCanvas.height = MIDP.deviceCanvas.height;
         scaleCanvas(MIDP.deviceCanvas);
         scaleCanvas(offscreenCanvas);
 
         // Resizing a canvas "resets" its existing contexts, so we need
         // to rescale them.
         // scaleContext(offscreenContext2D);
+
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
