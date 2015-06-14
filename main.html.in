@@ -237,13 +237,13 @@
         <button id="dumpCounters">Dump Counters</button>
         <button id="sampleCounters1">One sample for 1s</button>
         <button id="sampleCounters2">One sample for 100ms (2s)</button>
-        <select id="canvasSize">
-          <option value="" selected>Display size: 240x320</option>
-          <option value="size-320x240">Display size: 320x240</option>
-          <option value="size-320x480">Display size: 320x480</option>
-          <option value="size-480x320">Display size: 480x320</option>
-          <option value="size-360x640">Display size: 360x640</option>
-        </select>
+        <label>Display Size: <select id="canvasSize">
+          <option value="" selected>240x320</option>
+          <option value="size-320x240">320x240</option>
+          <option value="size-320x480">320x480</option>
+          <option value="size-480x320">480x320</option>
+          <option value="size-360x640">360x640</option>
+        </select></label>
         <button id="start">Start</button>
 
       </section>
