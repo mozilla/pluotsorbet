@@ -56,7 +56,14 @@ Testlets.java: $(SRCS) $(JASMIN_SRCS) Makefile
 	@echo "  null};" >> $@
 	@echo "};" >> $@
 
-tests.jar: $(SRCS) $(JASMIN_SRCS) Testlets.java
+MIDletTestlets.java: $(SRCS) Makefile
+	@echo "public class MIDletTestlets {" > $@
+	@echo "  static String[] list = {" >> $@
+	@grep "implements MIDletTestlet" $(SRCS) | sed -e "s/^.\///" -e "s/\.java.*//" -e "s/\(.*\)/\"\1\",/" >> $@
+	@echo "  null};" >> $@
+	@echo "};" >> $@
+
+tests.jar: $(SRCS) $(JASMIN_SRCS) Testlets.java MIDletTestlets.java
 	rm -rf build
 	mkdir build
 	# Build the buildtime support classes in-place, not in ./build, so they aren't available at runtime.

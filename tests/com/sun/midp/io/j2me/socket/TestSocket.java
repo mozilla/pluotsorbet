@@ -1,11 +1,11 @@
 package com.sun.midp.io.j2me.socket;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import java.io.*;
 import javax.microedition.io.*;
 
-public class TestSocket implements Testlet {
+public class TestSocket implements MIDletTestlet {
     public int getExpectedPass() { return 12; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

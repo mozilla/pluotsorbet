@@ -1,7 +1,7 @@
 package com.sun.midp.publickeystore;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
 import javax.microedition.io.*;
@@ -9,7 +9,7 @@ import javax.microedition.io.file.*;
 import java.io.*;
 import com.sun.midp.io.j2me.storage.RandomAccessStream;
 
-public class TestInputOutputStorage implements Testlet {
+public class TestInputOutputStorage implements MIDletTestlet {
     public int getExpectedPass() { return 13; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

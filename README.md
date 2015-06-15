@@ -41,7 +41,7 @@ index.html is a webapp that runs j2me.js. The URL parameters you pass to index.h
 You can specify URL parameters to override the configuration. See the full list of parameters at config/urlparams.js.
 
 * `main` - default is `com/sun/midp/main/MIDletSuiteLoader`
-* `midletClassName` - must be set to the main class to run. Only valid when default `main` parameter is used. Defaults to `RunTests`
+* `midletClassName` - must be set to the main class to run. Only valid when default `main` parameter is used. Defaults to `RunTestsMIDlet`
 * `autosize` - if set to `1`, j2me app will fill the page.
 * `gamepad` - if set to `1`, gamepad will be visible/available.
 
@@ -86,7 +86,7 @@ If you want to pass additional [casperJS command line options](http://docs.slime
 
 gfx tests use image comparison; a reference image is provided with the test and the output of the test must match the reference image. The output is allowed to differ from the reference image by a number of pixels specified in automation.js.
 
-The main set of unit tests that automation.js runs is the set covered by the RunTests MIDlet. The full list of RunTests tests available in the tests/Testlets.java generated file. RunTests runs a number of "Testlets" (Java classes that implement the `Testlet` interface).
+The main set of unit tests that automation.js runs is the set covered by the RunTests class. The full list of RunTests tests available in the tests/Testlets.java generated file. RunTests runs a number of "Testlets" (Java classes that implement the `Testlet` interface). Testlets that require to be executed in a MIDlet environment (classes that implement the `MIDletTestlet` interface) are run by RunTestsMIDlet. The full list of these tests is available in the tests/MIDletTestlets.java generated file.
 
 ### Running a single test
 

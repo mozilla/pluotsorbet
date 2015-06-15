@@ -18,7 +18,7 @@ VERBOSE ?= 0
 export VERBOSE
 
 # An extra configuration script to load.  Use this to configure the project
-# to run a particular midlet.  By default, it runs the test midlet RunTests.
+# to run a particular midlet.  By default, it runs the test midlet RunTestsMIDlet.
 CONFIG ?= config/runtests.js
 export CONFIG
 
