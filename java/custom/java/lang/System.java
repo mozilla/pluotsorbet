@@ -28,9 +28,6 @@ package java.lang;
 
 import java.io.*;
 import com.sun.cldchi.io.*;
-import java.security.*;
-import java.util.PropertyPermission;
-
 
 /**
  * The <code>System</code> class contains several useful class fields
@@ -241,8 +238,6 @@ public final class System {
 /* #endif */
             );
         }
-        Permission required_permission = new PropertyPermission(key, "read");
-        AccessController.checkPermission(required_permission);
         return getProperty0(key);
     }
 
