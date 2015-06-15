@@ -26,8 +26,6 @@
 
 package java.lang;
 
-import java.security.*;
-
 /**
  * A <i>thread</i> is a thread of execution in a program. The Java
  * Virtual Machine allows an application to have multiple threads of
@@ -277,7 +275,6 @@ class Thread implements Runnable {
      * @since JDK 1.0, CLDC 1.1
      */
     public void interrupt() {
-        checkAccess();
         interrupt0();
     }
 
@@ -306,7 +303,6 @@ class Thread implements Runnable {
         if (newPriority > MAX_PRIORITY || newPriority < MIN_PRIORITY) {
             throw new IllegalArgumentException();
         }
-        checkAccess();
         setPriority0(priority, newPriority);
         priority = newPriority;
     }
@@ -382,7 +378,6 @@ class Thread implements Runnable {
      * @see       AccessController.checkPermission(java.security.Permission), RuntimePermission  
      */
     public final void checkAccess() {
-      Permission required = new RuntimePermission("modifyThread");
-      AccessController.checkPermission(required);
+        // Removed for performance reasons.
     }
 }
