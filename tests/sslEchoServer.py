@@ -32,17 +32,18 @@ while True:
         # So we catch the more general exception SSLError.
         pass
 
-    try:
-        data = connstream.read()
-        while data:
-            connstream.write(data)
-            data = connstream.read()
-    finally:
+    if (connstream):
         try:
-            connstream.shutdown(socket.SHUT_RDWR)
-        except socket.error as e:
-            # On Mac, if the other side has already closed the connection,
-            # then socket.shutdown will fail, but we can ignore this failure.
-            pass
+            data = connstream.read()
+            while data:
+                connstream.write(data)
+                data = connstream.read()
+        finally:
+            try:
+                connstream.shutdown(socket.SHUT_RDWR)
+            except socket.error as e:
+                # On Mac, if the other side has already closed the connection,
+                # then socket.shutdown will fail, but we can ignore this failure.
+                pass
 
-        connstream.close()
+            connstream.close()
