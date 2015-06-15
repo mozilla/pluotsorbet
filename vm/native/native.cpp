@@ -48,6 +48,10 @@ extern "C" {
   uintptr_t gcMalloc(int32_t size) {
     return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
   }
+
+  void forceCollection(void) {
+    GC_gcollect();
+  }
 }
 
 int main() {

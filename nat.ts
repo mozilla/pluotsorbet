@@ -137,4 +137,8 @@ module J2ME {
       throw new Error("Could not find isolate main.");
     getLinkedMethod(entryPoint).call(null, $.isolate._mainArgs);
   };
+
+  Native["org/mozilla/internal/Sys.forceCollection.()V"] = function() {
+    ASM._forceCollection();
+  };
 }

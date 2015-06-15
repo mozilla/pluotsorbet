@@ -110,4 +110,6 @@ public final class Sys {
 
   public native static void startProfile();
   public native static void stopProfile();
+
+  public static native void forceCollection();
 }
