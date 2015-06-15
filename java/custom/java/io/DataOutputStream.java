@@ -105,7 +105,7 @@ class DataOutputStream extends OutputStream implements DataOutput {
      */
     public void close() throws IOException {
         try {
-            flush();
+            out.flush();
         } catch (IOException e) {
         }
         out.close();
@@ -121,7 +121,7 @@ class DataOutputStream extends OutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeBoolean(boolean v) throws IOException {
-        write(v ? 1 : 0);
+        out.write(v ? 1 : 0);
     }
 
     /**
@@ -132,7 +132,7 @@ class DataOutputStream extends OutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeByte(int v) throws IOException {
-        write(v);
+        out.write(v);
     }
 
     /**
@@ -143,8 +143,8 @@ class DataOutputStream extends OutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeShort(int v) throws IOException {
-        write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
+        out.write((v >>> 8) & 0xFF);
+        out.write((v >>> 0) & 0xFF);
     }
 
     /**
@@ -155,8 +155,8 @@ class DataOutputStream extends OutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeChar(int v) throws IOException {
-        write((v >>> 8) & 0xFF);
-        write((v >>> 0) & 0xFF);
+        out.write((v >>> 8) & 0xFF);
+        out.write((v >>> 0) & 0xFF);
     }
 
     /**
@@ -167,10 +167,10 @@ class DataOutputStream extends OutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeInt(int v) throws IOException {
-        write((v >>> 24) & 0xFF);
-        write((v >>> 16) & 0xFF);
-        write((v >>>  8) & 0xFF);
-        write((v >>>  0) & 0xFF);
+        out.write((v >>> 24) & 0xFF);
+        out.write((v >>> 16) & 0xFF);
+        out.write((v >>>  8) & 0xFF);
+        out.write((v >>>  0) & 0xFF);
     }
 
     /**
@@ -181,14 +181,14 @@ class DataOutputStream extends OutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      */
     public final void writeLong(long v) throws IOException {
-        write((int)(v >>> 56) & 0xFF);
-        write((int)(v >>> 48) & 0xFF);
-        write((int)(v >>> 40) & 0xFF);
-        write((int)(v >>> 32) & 0xFF);
-        write((int)(v >>> 24) & 0xFF);
-        write((int)(v >>> 16) & 0xFF);
-        write((int)(v >>>  8) & 0xFF);
-        write((int)(v >>>  0) & 0xFF);
+        out.write((int)(v >>> 56) & 0xFF);
+        out.write((int)(v >>> 48) & 0xFF);
+        out.write((int)(v >>> 40) & 0xFF);
+        out.write((int)(v >>> 32) & 0xFF);
+        out.write((int)(v >>> 24) & 0xFF);
+        out.write((int)(v >>> 16) & 0xFF);
+        out.write((int)(v >>>  8) & 0xFF);
+        out.write((int)(v >>>  0) & 0xFF);
     }
 
     /**
@@ -234,8 +234,8 @@ class DataOutputStream extends OutputStream implements DataOutput {
         int len = s.length();
         for (int i = 0 ; i < len ; i++) {
             int v = s.charAt(i);
-            write((v >>> 8) & 0xFF);
-            write((v >>> 0) & 0xFF);
+            out.write((v >>> 8) & 0xFF);
+            out.write((v >>> 0) & 0xFF);
         }
     }
 
@@ -274,8 +274,9 @@ class DataOutputStream extends OutputStream implements DataOutput {
      */
     static final int writeUTF(String str, DataOutput out) throws IOException {
         byte[] bytearr = UTFToBytes(str);
-        out.write(bytearr);
-        return bytearr.length;
+        int len = bytearr.length;
+        out.write(bytearr, 0, len);
+        return len;
     }
 
     static native byte[] UTFToBytes(String str);
