@@ -23,33 +23,37 @@
  * Clara, CA 95054 or visit www.sun.com if you need additional
  * information or have any questions.
  */
-package com.sun.j2me.security;
 
-import com.sun.midp.security.SecurityToken;
+package com.sun.midp.security;
 
-public final class Token {
-
-    private SecurityToken securityToken;
-
-    public Token(SecurityToken securityToken) {
-        this.securityToken = securityToken;
-    }
-
-    public SecurityToken getSecurityToken() {
-        return securityToken;
-    }
-
+/**
+ * Contains methods to get various security state information of the currently
+ * running MIDlet suite.
+ */
+public final class SecurityToken {
     /**
      * Check to see the suite has the ALLOW level for specific permission.
-     * This is used by internal APIs that only provide access to
+     * This is used for by internal APIs that only provide access to
      * trusted system applications.
      *
-     * @param permission permission to be checked
+     * @param permission permission ID from com.sun.midp.security.Permissions
      *
      * @exception SecurityException if the permission is not
      *            allowed by this token
      */
-    public void checkIfPermissionAllowed(Permission permission) {
-        securityToken.checkIfPermissionAllowed(permission.getName());
+    public void checkIfPermissionAllowed(int permission) {
+    }
+
+    /**
+     * Check to see the suite has the ALLOW level for specific permission.
+     * This is used for by internal APIs that only provide access to
+     * trusted system applications.
+     *
+     * @param permission permission String from com.sun.midp.security.Permissions
+     *
+     * @exception SecurityException if the permission is not
+     *            allowed by this token
+     */
+    public void checkIfPermissionAllowed(String permission) {
     }
 }

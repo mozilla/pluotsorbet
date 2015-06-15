@@ -1,10 +1,10 @@
 package javax.microedition.media;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import java.io.InputStream;
 
-public class TestPlayerListener implements Testlet, PlayerListener {
+public class TestPlayerListener implements MIDletTestlet, PlayerListener {
     public int getExpectedPass() { return 2; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

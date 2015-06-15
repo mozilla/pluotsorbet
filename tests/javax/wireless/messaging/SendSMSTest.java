@@ -1,12 +1,12 @@
 package javax.wireless.messaging;
 
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import gnu.testlet.TestHarness;
 import javax.microedition.io.Connector;
 import javax.wireless.messaging.MessageConnection;
 import javax.wireless.messaging.TextMessage;
 
-public class SendSMSTest implements Testlet {
+public class SendSMSTest implements MIDletTestlet {
     public int getExpectedPass() { return 3; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

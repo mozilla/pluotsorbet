@@ -26,10 +26,6 @@
 
 package org.mozilla.internal;
 
-import java.io.*;
-import com.sun.cldchi.io.*;
-import java.security.*;
-import java.util.PropertyPermission;
 import com.sun.cldc.isolate.Isolate;
 
 /**

@@ -1,7 +1,7 @@
 package com.sun.midp.publickeystore;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 
 import java.util.*;
 import java.io.IOException;
@@ -10,7 +10,7 @@ import com.sun.midp.pki.*;
 import com.sun.midp.security.*;
 import com.sun.midp.main.Configuration;
 
-public class TestWebPublicKeyStore implements Testlet {
+public class TestWebPublicKeyStore implements MIDletTestlet {
     public int getExpectedPass() { return 3; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

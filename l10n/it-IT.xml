@@ -10,10 +10,6 @@
                 Value="Esci"/>
 <localized_string Key="OK"
                 Value="Ok"/>
-<localized_string Key="ERROR"
-                Value="Errore"/>
-<localized_string Key="CLASS_VERIFIER_APPLICATION"
-                Value="Class Verifier Application"/>
 
 <localized_string Key="LCDUI_DF_SUN"
                 Value="Dom"/>
@@ -55,33 +51,9 @@
                 Value="Dic"/>
 <localized_string Key="LCDUI_DISPLAY_HEADLESS"
                 Value="Questa applicazione non usa lo schermo e funziona in background."/>
-<localized_string Key="AMS_MGR_INTRUPT"
-                Value="Interrompi"/>
-<localized_string Key="AMS_MGR_INTRUPT_QUE"
-                Value="Quanto spesso dovrebbe %1 chiedere il permesso di interrompere? L'applicazione interrotta verrà chiusa."/>
-<localized_string Key="AMS_MGR_INTRUPT_QUE_DONT"
-                Value="Non interrompere e non chiedere più"/>
 
-<localized_string Key="PERMISSION_MUTUALLY_EXCLUSIVE_ERROR_MESSAGE"
-                Value="%1 non può essere impostato per non chiedere poiché non è sicuro quando %2 è impostato su non chiedere."/>
-<localized_string Key="PERMISSION_SECURITY_WARNING_ERROR_MESSAGE"
-                Value="Non è sicuro quando %1 e %2 sono permessi simultaneamente. Procedere comunque?"/>
-<localized_string Key="PERMISSION_AUTO_START_DIALOG_TITLE"
-                Value="Va bene avviare l'applicazione automaticamente?"/>
-<localized_string Key="PERMISSION_AUTO_START_QUE"
-                Value="%1 vuole registrarsi da sola per essere avviata automaticamente.&#010;&#010;Va bene registrarla per essere avviata automaticamente?"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_CURR_APP"
-                Value="L'attuale applicazione"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_INTRPT_QUE"
-                Value="Può %1 interrompere?"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_DIALOG_TITLE"
-                Value="Va bene avviare automaticamente?"/>
-<localized_string Key="AMS_MIDLETSUITEIMPL_PUSH_INTERRUPT_QUESTION"
-                Value="Le informazioni stanno arrivando a %1. Va bene che %1 si avvii e riceva queste informazioni? L'applicazione attualmente avviata si chiuderà.&#010;&#010;Va bene avviarla?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_NOTFOUND"
                 Value="La MIDlet suite non è stata trovata."/>
-<localized_string Key="AMS_MIDLETSUITELDR_PUSH_INTERRUPT_QUESTION"
-                Value="Le informazioni stanno arrivando a %1.&#010;&#010;Va bene che %1 si avvii e riceva queste informazioni?"/>
 <localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_MISSING_CLASS"
                 Value="L'applicazione non può essere avviata. Sembra che manchi una delle classi dell'applicazione. Questo può succedere a causa di una classe dal nome errato. Contattare il fornitore dell'applicazione per risolvere il problema."/>
 <localized_string Key="AMS_MIDLETSUITELDR_CANT_LAUNCH_ILL_OPERATION"
@@ -90,8 +62,6 @@
                 Value="L'applicazione si è chiusa inaspettatamente poiché ha terminato la memoria."/>
 <localized_string Key="AMS_MIDLETSUITELDR_UNEXPECTEDLY_QUIT"
                 Value="L'applicazione si è chiusa inaspettatamente. Contattare il fornitore dell'applicazione per risolvere il problema."/>
-<localized_string Key="AMS_MIDLETSUITELDR_RESOURCE_LIMIT_ERROR"
-                Value="Non sono permesse altre applicazioni concorrenti."/>
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_DISABLED"
                 Value="La MIDlet suite è disabilitata."/>
 
