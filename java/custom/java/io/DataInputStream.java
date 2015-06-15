@@ -191,7 +191,7 @@ class DataInputStream extends InputStream implements DataInput {
      * @exception  IOException   if an I/O error occurs.
      */
     public final boolean readBoolean() throws IOException {
-        int ch = read();
+        int ch = in.read();
         if (ch < 0) {
             throw new EOFException();
         }
@@ -211,7 +211,7 @@ class DataInputStream extends InputStream implements DataInput {
      * @exception  IOException   if an I/O error occurs.
      */
     public final byte readByte() throws IOException {
-        int ch = read();
+        int ch = in.read();
         if (ch < 0) {
             throw new EOFException();
         }
@@ -231,7 +231,7 @@ class DataInputStream extends InputStream implements DataInput {
      * @exception  IOException   if an I/O error occurs.
      */
     public final int readUnsignedByte() throws IOException {
-        int ch = read();
+        int ch = in.read();
         if (ch < 0) {
             throw new EOFException();
         }
@@ -252,7 +252,12 @@ class DataInputStream extends InputStream implements DataInput {
      * @exception  IOException   if an I/O error occurs.
      */
     public final short readShort() throws IOException {
-        return (short)readUnsignedShort();
+        int ch1 = in.read();
+        int ch2 = in.read();
+        if ((ch1 | ch2) < 0) {
+             throw new EOFException();
+        }
+        return (short)((ch1 << 8) + (ch2 << 0));
     }
 
     /**
@@ -269,8 +274,8 @@ class DataInputStream extends InputStream implements DataInput {
      * @exception  IOException   if an I/O error occurs.
      */
     public final int readUnsignedShort() throws IOException {
-        int ch1 = read();
-        int ch2 = read();
+        int ch1 = in.read();
+        int ch2 = in.read();
         if ((ch1 | ch2) < 0) {
              throw new EOFException();
         }
@@ -308,10 +313,10 @@ class DataInputStream extends InputStream implements DataInput {
      * @exception  IOException   if an I/O error occurs.
      */
     public final int readInt() throws IOException {
-        int ch1 = read();
-        int ch2 = read();
-        int ch3 = read();
-        int ch4 = read();
+        int ch1 = in.read();
+        int ch2 = in.read();
+        int ch3 = in.read();
+        int ch4 = in.read();
         if ((ch1 | ch2 | ch3 | ch4) < 0) {
              throw new EOFException();
         }
