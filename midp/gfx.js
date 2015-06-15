@@ -28,10 +28,6 @@ var currentlyFocusedTextEditor;
     scaleCanvas(MIDP.deviceCanvas);
     scaleCanvas(offscreenCanvas);
 
-    // Scale the offscreen context to counter the effect of scaling its canvas.
-    // We don't have to do this for the device context, because the data we copy
-    // from the offscreen context is already scaled appropriately.
-    // scaleContext(offscreenContext2D);
     // scaleContext(MIDP.deviceContext);
 
     var screenContextInfo = new ContextInfo(offscreenContext2D);
@@ -44,7 +40,7 @@ var currentlyFocusedTextEditor;
 
         // Resizing a canvas "resets" its existing contexts, so we need
         // to rescale them.
-        // scaleContext(offscreenContext2D);
+        // scaleContext(MIDP.deviceContext);
 
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
@@ -53,15 +49,6 @@ var currentlyFocusedTextEditor;
     var tempContext = document.createElement("canvas").getContext("2d");
     tempContext.canvas.width = 0;
     tempContext.canvas.height = 0;
-    // There's no point in scaling the temp context's canvas here, since it
-    // would only affect the current width/height of the canvas, and it doesn't
-    // have any at the moment.  But we add a scaling transformation, which
-    // the context will apply to any future operations.
-    //
-    // XXX Perhaps rename scaleCanvas to resizeCanvas.
-    //
-    // scaleCanvas(tempContext.canvas);
-    // scaleContext(tempContext);
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = J2ME.newIntArray( 1);
@@ -270,16 +257,10 @@ var currentlyFocusedTextEditor;
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        // scaleCanvas(canvas);
         var context = canvas.getContext("2d");
-        // scaleContext(context);
 
         imageData.contextInfo = new ContextInfo(context);
 
-        // Set the size of the image data to the scaled size of the canvas,
-        // which could be different from the original width/height.
-        // imageData.width = canvas.width;
-        // imageData.height = canvas.height;
         imageData.width = width;
         imageData.height = height;
 
@@ -419,9 +400,6 @@ var currentlyFocusedTextEditor;
 
         this.baseline = size | 0;
 
-        // Scale the height by the device pixel ratio so it isn't too short
-        // on HiDPI devices.
-        // this.height = (size * MIDP.devicePixelRatio * 1.3) | 0;
         this.height = (size * 1.3) | 0;
 
         this.context = document.createElement("canvas").getContext("2d");
@@ -437,17 +415,12 @@ var currentlyFocusedTextEditor;
     function calcStringWidth(font, str) {
         var emojiLen = 0;
 
-        // var len = font.context.measureText(str.replace(emoji.regEx, function() {
-        //     emojiLen += font.size; // XXX multiple by MIDP.devicePixelRatio ?
-        //     return "";
-        // })).width * MIDP.devicePixelRatio | 0;
-
         var len = font.context.measureText(str.replace(emoji.regEx, function() {
-            emojiLen += font.size; // XXX multiple by MIDP.devicePixelRatio ?
+            emojiLen += font.size;
             return "";
         })).width | 0;
 
-        return (len + emojiLen);
+        return len + emojiLen;
     }
 
     var defaultFont;
@@ -494,7 +467,6 @@ var currentlyFocusedTextEditor;
 
     function withTextAnchor(c, font, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            // var w = calcStringWidth(font, str) * MIDP.devicePixelRatio;
             var w = calcStringWidth(font, str);
 
             if (anchor & RIGHT) {
@@ -787,7 +759,6 @@ var currentlyFocusedTextEditor;
 
         tempContext.canvas.width = width;
         tempContext.canvas.height = height;
-        // scaleCanvas(tempContext.canvas);
 
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
@@ -1292,8 +1263,6 @@ var currentlyFocusedTextEditor;
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         tempContext.canvas.height = height;
         tempContext.canvas.width = width;
-        // scaleCanvas(tempContext.canvas);
-        // scaleContext(tempContext);
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 

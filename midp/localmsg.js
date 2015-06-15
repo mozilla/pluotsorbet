@@ -798,9 +798,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         function _imageToBlob(aCanvas, aImage, aHeight, aWidth, aQuality) {
           aCanvas.width = aWidth;
           aCanvas.height = aHeight;
-          // scaleCanvas(aCanvas);
           var ctx = aCanvas.getContext("2d");
-          // scaleContext(ctx);
           ctx.drawImage(aImage, 0, 0, aWidth, aHeight);
 
           return new Promise(function(resolve, reject) {
