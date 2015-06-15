@@ -16,16 +16,20 @@ while True:
                                      certfile="cert.pem",
                                      keyfile="cert.pem",
                                      ssl_version=ssl.PROTOCOL_SSLv3)
-    except ssl.SSLEOFError as e:
+    except ssl.SSLError as e:
         # Catch occurrences of:
-        # ssl.SSLEOFError: EOF occurred in violation of protocol (_ssl.c:581)
+        #   ssl.SSLEOFError: EOF occurred in violation of protocol (_ssl.c:581)
         #
         # In theory, setting ssl_version to ssl.PROTOCOL_TLSv1 will resolve
         # the problem, but it didn't do so for me, and it caused the error:
-        # ssl.SSLError: [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:581)
+        #   ssl.SSLError: [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:581)
         #
         # Whereas the SSLEOFError doesn't prevent the server from working,
         # so we leave ssl_version at ssl.PROTOCOL_SSLv3 and ignore that error.
+        #
+        # If we catch SSLEOFError specifically, then Travis fails with:
+        #   AttributeError: 'module' object has no attribute 'SSLEOFError'
+        # So we catch the more general exception SSLError.
         pass
 
     try:
