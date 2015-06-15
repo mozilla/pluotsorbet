@@ -54,6 +54,10 @@ extern "C" {
     // return (uintptr_t)GC_MALLOC_ATOMIC(size);
     return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
   }
+
+  void forceCollection(void) {
+    GC_gcollect();
+  }
 }
 
 int main() {
