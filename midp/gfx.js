@@ -399,13 +399,11 @@ var currentlyFocusedTextEditor;
             face = "Arial,Helvetica,sans-serif";
 
         this.baseline = size | 0;
-
         this.height = (size * 1.3) | 0;
 
         this.context = document.createElement("canvas").getContext("2d");
         this.context.canvas.width = 0;
         this.context.canvas.height = 0;
-
         this.context.font = style + size + "px " + face;
         this.size = size;
         this.style = style;
