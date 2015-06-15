@@ -1,5 +1,4 @@
 java/util/Vector.indexOf.(Ljava/lang/Object;I)I
-java/util/PropertyPermission.getActions.(I)Ljava/lang/String;
 java/util/Vector.addElement.(Ljava/lang/Object;)V
 java/util/Vector.size.()I
 java/util/Vector.elementAt.(I)Ljava/lang/Object;
@@ -10,17 +9,10 @@ com/sun/cldc/i18n/uclc/DefaultCaseConverter.isDigit.(C)Z
 com/nokia/mid/ui/DirectUtils.getDirectGraphics.(Ljavax/microedition/lcdui/Graphics;)Lcom/nokia/mid/ui/DirectGraphics;
 com/nokia/mid/ui/DirectGraphicsImp.<init>.(Ljavax/microedition/lcdui/Graphics;)V
 javax/microedition/lcdui/Font.getHeight.()I
-java/security/Permission.<init>.(Ljava/lang/String;)V
-java/security/BasicPermission.init.(Ljava/lang/String;)V
 java/security/AccessController.checkPermission.(Ljava/security/Permission;)V
 java/lang/Character.digit.(CI)I
 com/sun/cldc/i18n/uclc/DefaultCaseConverter.digit.(CI)I
-java/util/PropertyPermission.getMask.(Ljava/lang/String;)I
 java/lang/System.getProperty.(Ljava/lang/String;)Ljava/lang/String;
-java/util/PropertyPermission.<init>.(Ljava/lang/String;Ljava/lang/String;)V
-java/security/BasicPermission.<init>.(Ljava/lang/String;Ljava/lang/String;)V
-java/util/PropertyPermission.init.(I)V
-java/security/Permission.getName.()Ljava/lang/String;
 java/util/Vector.<init>.(II)V
 java/util/Vector.<init>.(I)V
 java/util/Vector.<init>.()V
@@ -221,7 +213,6 @@ java/lang/Thread.getPriority.()I
 java/lang/Thread.setPriority.(I)V
 java/lang/Thread.checkAccess.()V
 java/lang/RuntimePermission.<init>.(Ljava/lang/String;)V
-java/security/BasicPermission.<init>.(Ljava/lang/String;)V
 java/util/Vector.setSize.(I)V
 java/io/ByteArrayOutputStream.size.()I
 java/lang/Thread.nextThreadNum.()I
