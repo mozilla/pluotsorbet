@@ -13,7 +13,7 @@ import javax.microedition.lcdui.Graphics;
 
 // This needs to be a midlet in order to have access to the J2ME socket API.
 
-public class StressBench extends MIDlet {
+public class SocketStressBench extends MIDlet {
 
   static class BouncyColors extends Canvas {
     int x = 0;
@@ -99,7 +99,7 @@ public class StressBench extends MIDlet {
   }
 
   public static void main(String args[]) {
-    System.out.println("Run the StressBench benchmark as a midlet: midletClassName=benchmark.StressBench");
+    System.out.println("Run the SocketStressBench benchmark as a midlet: midletClassName=benchmark.SocketStressBench");
   }
 
   public void startApp() {
