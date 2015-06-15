@@ -131,14 +131,6 @@ var MIDP = (function() {
     console.info(J2ME.fromJavaString(message));
   };
 
-  Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    return 1;
-  };
-
-  Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    return 1;
-  };
-
   Native["com/sun/midp/midlet/MIDletPeer.platformRequest.(Ljava/lang/String;)Z"] = function(request) {
     request = J2ME.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
@@ -599,15 +591,6 @@ var MIDP = (function() {
 
   Native["com/sun/midp/midletsuite/MIDletSuiteImpl.unlockMIDletSuite.(I)V"] = function(suiteId) {
     console.warn("MIDletSuiteImpl.unlockMIDletSuite.(I)V not implemented (" + suiteId + ")");
-  };
-
-  Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function() {
-    this.pushInterruptSetting = 1;
-    console.warn("com/sun/midp/midletsuite/SuiteSettings.load.()V incomplete");
-  };
-
-  Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(suiteId, pushInterruptSetting, pushOptions, permissions) {
-    console.warn("SuiteSettings.save0.(IBI[B)V not implemented (" + suiteId + ", " + pushInterruptSetting + ", " + pushOptions + ", " + permissions + ")");
   };
 
   Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function() {
@@ -1258,14 +1241,6 @@ var MIDP = (function() {
   };
 
   addUnimplementedNative("com/nokia/mid/ui/gestures/GestureInteractiveZone.getGestures.()I", 0);
-
-  Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(suiteId, permission) {
-    return 1;
-  };
-
-  Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = function(suiteId, permission) {
-    return 1;
-  };
 
   Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function() {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");

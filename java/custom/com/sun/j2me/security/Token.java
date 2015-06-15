@@ -1,5 +1,5 @@
 /*
- *
+ *   
  *
  * Copyright  1990-2009 Sun Microsystems, Inc. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER
@@ -23,26 +23,19 @@
  * Clara, CA 95054 or visit www.sun.com if you need additional
  * information or have any questions.
  */
+package com.sun.j2me.security;
 
-package com.sun.midp.security;
+import com.sun.midp.security.SecurityToken;
 
-/**
- * This class is a standard list of permissions that
- * a suite can do and is used by all internal security
- * features. This class also builds a list of permission for each
- * security domain. This only class that would need to be updated in order to
- * add a new security domain.
- */
-public final class Permissions {
-    /** Name of the MIDP permission. */
-    public static final String MIDP_PERMISSION_NAME = "com.sun.midp";
+public final class Token {
 
-    /** Name of the AMS permission. */
-    public static final String AMS_PERMISSION_NAME = "com.sun.midp.ams";
+    private SecurityToken securityToken;
 
-    /** com.sun.midp permission ID. */
-    public static final int MIDP = 0;
+    public Token(SecurityToken securityToken) {
+        this.securityToken = securityToken;
+    }
 
-    /** com.sun.midp.ams permission ID. */
-    public static final int AMS = 1;    
+    public SecurityToken getSecurityToken() {
+        return securityToken;
+    }
 }

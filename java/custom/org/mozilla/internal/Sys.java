@@ -26,11 +26,6 @@
 
 package org.mozilla.internal;
 
-import java.io.*;
-import com.sun.cldchi.io.*;
-import java.security.*;
-import java.util.PropertyPermission;
-
 /**
  * The <code>Sys</code> class contains several useful privileged functions.
  */

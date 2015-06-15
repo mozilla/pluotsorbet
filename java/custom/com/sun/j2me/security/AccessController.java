@@ -43,44 +43,10 @@ public final class AccessController {
     public static final String TRUSTED_APP_PERMISSION_NAME =
         "com.sun.j2me.trustedApp";
 
-    /** Access control context for the application running in this isolate. */
-    private static AccessControlContext context;
-
     /** 
      * Don't allow anyone to instantiate an AccessController
      */
     private AccessController() { }
-
-    /**
-     * Called to set the access control context for the application running
-     * in this isolate.
-     *
-     * @param accessControlContext access control context for the application
-     *       running in the isolate
-     *
-     * @exception SecurityException if the context is already set
-     */
-    public static void setAccessControlContext(
-        AccessControlContext accessControlContext) {
-
-        if (context != null) {
-            throw new SecurityException("context already set");
-        }
-
-        context = accessControlContext;
-    }
-
-    /**
-     * Returns the access control context for the running application.
-     *
-     * @exception SecurityException if context has not been set yet
-     */
-    public static AccessControlContext getAccessControlContext() {
-        if (context == null) {
-            throw new SecurityException("Context not set");
-        }
-        return context;
-    }
 
     /** 
      * Determines whether the access request indicated by the
@@ -100,8 +66,6 @@ public final class AccessController {
      */
     public static void checkPermission(String name)
         throws SecurityException {
-
-        checkPermission(name, null);
     }
 
     /**
@@ -123,8 +87,6 @@ public final class AccessController {
      */
     public static void checkPermission(String name, String resource)
         throws SecurityException {
-
-        checkPermission(name, resource, null);
     }
 
     /**
@@ -147,13 +109,7 @@ public final class AccessController {
      * @exception SecurityException if the specified permission
      * is not permitted, based on the current security policy
      */
-    public static synchronized void checkPermission(String name,
+    public static void checkPermission(String name,
             String resource, String extraValue) throws SecurityException {
-
-        if (context == null) {
-            throw new SecurityException("no security context set");
-        }
-
-        context.checkPermission(name, resource, extraValue);
     }
 }

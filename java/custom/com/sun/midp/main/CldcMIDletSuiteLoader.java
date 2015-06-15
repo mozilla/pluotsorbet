@@ -24,8 +24,6 @@
 
 package com.sun.midp.main;
 
-import com.sun.j2me.security.AccessController;
-
 import com.sun.midp.midlet.*;
 import com.sun.midp.security.*;
 import com.sun.midp.events.EventQueue;
@@ -227,10 +225,6 @@ abstract class CldcMIDletSuiteLoader implements MIDletSuiteExceptionListener {
      */
     protected void initSuiteEnvironment() {
         lcduiEnvironment.setTrustedState(midletSuite.isTrusted());
-
-        /* Set up permission checking for this suite. */
-        AccessController.setAccessControlContext(
-            new CldcAccessControlContext(midletSuite));
     }
 
     /**

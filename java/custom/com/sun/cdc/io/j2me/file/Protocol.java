@@ -47,10 +47,6 @@ import java.util.Vector;
  * for a File connection.
  */
 public class Protocol extends ConnectionBaseAdapter implements FileConnection {
-
-    /** Security token for using FileConnection API from PIM */
-    private Token classSecurityToken;
-
     /** Stores file connection mode */
     private int mode;
 
@@ -138,7 +134,6 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
      */
     public Connection openPrim(Token token, String name, int mode)
             throws IOException {
-        classSecurityToken = token;
         return openPrim(name, mode, false);
     }
 
@@ -1076,70 +1071,6 @@ public class Protocol extends ConnectionBaseAdapter implements FileConnection {
         if (mode == Connector.READ) {
             throw new IllegalModeException("Connection is read only");
         }
-    }
-
-    /**
-     * Checks that the application has permission to read.
-     * @param fileURL complete file URL
-     * @param mode access mode
-     * @throws InterruptedIOException if the permission dialog is
-     *                                terminated before completed
-     * @throws SecurityException if read is not allowed
-     * @throws IllegalModeException if connection is write only
-     */
-    private final void checkReadPermission(String filePath, int mode)
-            throws InterruptedIOException {
-
-        if (classSecurityToken == null) { // FC permission
-            checkPermission(FileConnectionPermission.READ.getName(),
-                filePath);
-        } else { // call from PIM
-            classSecurityToken.checkIfPermissionAllowed(
-                FileConnectionPermission.READ);
-        }
-    }
-
-    /**
-     * Checks that the application has permission to read.
-     * @throws InterruptedIOException if the permission dialog is
-     *                                terminated before completed
-     * @throws SecurityException if read is not allowed
-     * @throws IllegalModeException if connection is write only
-     */
-    protected final void checkReadPermission() throws InterruptedIOException {
-        checkReadPermission(nativePathName, mode);
-    }
-
-    /**
-     * Checks that the application has permission to write.
-     * @param fileURL complete file URL
-     * @param mode access mode
-     * @throws InterruptedIOException if the permission dialog is
-     * terminated before completed
-     * @throws SecurityException if write is not allowed
-     * @throws IllegalModeException if connection is read only
-     */
-    private final void checkWritePermission(String filePath, int mode)
-            throws InterruptedIOException {
-
-        if (classSecurityToken == null) { // FC permission
-            checkPermission(FileConnectionPermission.WRITE.getName(),
-                filePath);
-        } else { // call from PIM
-            classSecurityToken.checkIfPermissionAllowed(
-                FileConnectionPermission.WRITE);
-        }
-    }
-
-    /**
-     * Checks that the application has permission to write.
-     * @throws InterruptedIOException if the permission dialog is
-     *                                terminated before completed
-     * @throws SecurityException if write is not allowed
-     * @throws IllegalModeException if connection is read only
-     */
-    protected final void checkWritePermission() throws InterruptedIOException {
-        checkWritePermission(nativePathName, mode);
     }
 
     /**
