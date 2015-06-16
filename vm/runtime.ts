@@ -256,6 +256,7 @@ module J2ME {
       case Int8Array:
       case Int16Array:
       case Int32Array:
+      case Int64Array:
         return false;
       default:
         return true;
@@ -1827,7 +1828,7 @@ module J2ME {
 
     if (klass.classInfo instanceof PrimitiveClassInfo) {
       return new constructor(ASM.buffer,
-                             ASM._gcMallocAtomic(size * constructor.BYTES_PER_ELEMENT),
+                             ASM._gcMallocAtomic(size * constructor.prototype.BYTES_PER_ELEMENT),
                              size);
     }
 
