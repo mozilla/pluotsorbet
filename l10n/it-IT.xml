@@ -49,8 +49,6 @@
                 Value="Nov"/>
 <localized_string Key="LCDUI_DF_DEC_SHORT"
                 Value="Dic"/>
-<localized_string Key="LCDUI_DISPLAY_HEADLESS"
-                Value="Questa applicazione non usa lo schermo e funziona in background."/>
 
 <localized_string Key="AMS_MIDLETSUITELDR_MIDLETSUITE_NOTFOUND"
                 Value="La MIDlet suite non è stata trovata."/>
