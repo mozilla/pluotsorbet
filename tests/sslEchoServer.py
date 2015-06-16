@@ -24,26 +24,27 @@ while True:
         # the problem, but it didn't do so for me, and it caused the error:
         #   ssl.SSLError: [SSL: WRONG_VERSION_NUMBER] wrong version number (_ssl.c:581)
         #
-        # Whereas the SSLEOFError doesn't prevent the server from working,
+        # Whereas the SSLEOFError doesn't prevent the server from working
+        # (it seems to happen only when the server is first started, and it
+        # stops happening if we simply ignore it and try again a few times)
         # so we leave ssl_version at ssl.PROTOCOL_SSLv3 and ignore that error.
         #
         # If we catch SSLEOFError specifically, then Travis fails with:
         #   AttributeError: 'module' object has no attribute 'SSLEOFError'
         # So we catch the more general exception SSLError.
-        pass
+        continue
 
-    if (connstream):
-        try:
+    try:
+        data = connstream.read()
+        while data:
+            connstream.write(data)
             data = connstream.read()
-            while data:
-                connstream.write(data)
-                data = connstream.read()
-        finally:
-            try:
-                connstream.shutdown(socket.SHUT_RDWR)
-            except socket.error as e:
-                # On Mac, if the other side has already closed the connection,
-                # then socket.shutdown will fail, but we can ignore this failure.
-                pass
+    finally:
+        try:
+            connstream.shutdown(socket.SHUT_RDWR)
+        except socket.error as e:
+            # On Mac, if the other side has already closed the connection,
+            # then socket.shutdown will fail, but we can ignore this failure.
+            pass
 
-            connstream.close()
+        connstream.close()
