@@ -84,7 +84,10 @@ public class RunTestsMIDlet extends MIDlet {
         if (arg != null && arg.length() > 0) {
             Vector v = new Vector();
             for (int n = 0; n < testlets.length; ++n) {
-                v.addElement(testlets[n]);
+                String name = testlets[n];
+                if (name != null) {
+                    v.addElement(testlets[n]);
+                }
             }
 
             int i = 0;
@@ -100,9 +103,9 @@ public class RunTestsMIDlet extends MIDlet {
         } else {
             for (int n = 0; n < testlets.length; ++n) {
                 String name = testlets[n];
-                if (name == null)
-                    break;
-                runTest(name);
+                if (name != null) {
+                    runTest(name);
+                }
             }
         }
         System.out.println("TOTALS: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " +
