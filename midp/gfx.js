@@ -74,7 +74,6 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
-        hideBackgroundScreen();
         hideSplashScreen();
 
         if (!emoji.loaded) {

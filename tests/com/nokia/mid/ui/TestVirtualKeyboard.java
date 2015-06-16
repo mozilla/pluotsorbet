@@ -3,7 +3,7 @@
 package com.nokia.mid.ui;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
@@ -45,7 +45,7 @@ class TestKeyboardVisibilityListener implements com.nokia.mid.ui.KeyboardVisibil
     }
 }
 
-public class TestVirtualKeyboard extends Canvas implements Testlet {
+public class TestVirtualKeyboard extends Canvas implements MIDletTestlet {
     public int getExpectedPass() { return 9; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
