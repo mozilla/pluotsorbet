@@ -44,27 +44,8 @@ import com.sun.midp.log.LogChannels;
  * in the list of known suites.
  */
 public class MIDletSuiteStorage {
-
-    /** This class has a different security domain than the MIDlet suite. */
-    private static SecurityToken classSecurityToken;
-
     /** This is the master storage object to synchronize all accesses */
     private static MIDletSuiteStorage masterStorage;
-
-    /**
-     * Initializes the security token for this class, so it can
-     * perform actions that a normal MIDlet Suite cannot.
-     *
-     * @param token security token for this class.
-     */
-    public static void initSecurityToken(SecurityToken token) {
-        if (classSecurityToken != null) {
-            return;
-        }
-
-        classSecurityToken = token;
-        MIDletSuiteImpl.initSecurityToken(classSecurityToken);
-    }
 
     /**
      * Returns a reference to the singleton MIDlet suite storage object.
@@ -78,8 +59,6 @@ public class MIDletSuiteStorage {
      */
     public static MIDletSuiteStorage getMIDletSuiteStorage()
             throws SecurityException {
-        AccessController.checkPermission(Permissions.AMS_PERMISSION_NAME);
-
         return getMasterStorage();
     }
 
@@ -95,8 +74,6 @@ public class MIDletSuiteStorage {
      */
     public static MIDletSuiteStorage getMIDletSuiteStorage(
            SecurityToken securityToken) throws SecurityException {
-        securityToken.checkIfPermissionAllowed(Permissions.AMS);
-
         return getMasterStorage();
     }
 

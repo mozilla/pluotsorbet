@@ -4,13 +4,13 @@ package javax.microedition.lcdui;
 
 import com.nokia.mid.ui.TextEditor;
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Graphics;
 
-public class TestAlert extends Canvas implements Testlet {
+public class TestAlert extends Canvas implements MIDletTestlet {
     public int getExpectedPass() { return 8; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

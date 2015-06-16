@@ -3,9 +3,9 @@ package javax.microedition.pim;
 import java.io.ByteArrayOutputStream;
 import java.util.Enumeration;
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 
-public class TestPIM implements Testlet {
+public class TestPIM implements MIDletTestlet {
     public int getExpectedPass() { return 28; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

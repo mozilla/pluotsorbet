@@ -25,10 +25,9 @@
  */
 package com.sun.jsr211.security;
 
-import com.sun.midp.security.SecurityInitializerImpl;
-
 import com.sun.j2me.security.TrustedClass;
 import com.sun.j2me.security.Token;
+import com.sun.midp.security.SecurityToken;
 
 /**
  * A utility class that initializes internal security token for 
@@ -37,30 +36,13 @@ import com.sun.j2me.security.Token;
  * JSR 211 implementation class requires initializing security token.
  */
 public final class SecurityInitializer {
-
-    /** List of the trusted subsystem classes that can request for token */
-    final static private String[] trustedClasses = new String[] {
-        "com.sun.j2me.content.RegistryImpl$SecurityTrusted",
-        "javax.microedition.content.Registry$SecurityTrusted"
-    };
-
-    /**
-     * Inner class to request security token from SecurityInitializer.
-     * SecurityInitializer should be able to check this inner class name.
-     */
-    static private class SecurityTrusted
-        implements TrustedClass {};
-
     /**
      * Internal implementation of the JSR security initializer
      * redispatching security token requested from the core
      * security initializer
      */
-    private static SecurityInitializerImpl impl =
-        new SecurityInitializerImpl(
-            com.sun.midp.security.SecurityInitializer.
-            				requestToken(new SecurityTrusted()),
-            trustedClasses);
+    private static SecurityToken internalSecurityToken =
+        com.sun.midp.security.SecurityInitializer.requestToken(null);
 
     /**
      * Hand out internal security token to trusted requesters
@@ -69,6 +51,6 @@ public final class SecurityInitializer {
      * @return if the object is really trusted to requested
      */
     final public static Token requestToken(TrustedClass trusted) {
-        return new Token(impl.requestToken(trusted));
+        return new Token(internalSecurityToken);
     }
 }
