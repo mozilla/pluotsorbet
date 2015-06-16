@@ -13,7 +13,6 @@ import com.sun.midp.events.EventListener;
 public class BGUtils implements EventListener {
     private static native int getFGMIDletNumber();
     private static native String getFGMIDletClass();
-    public static native void maybeWaitUserInteraction(String midletClassName);
 
     public static void setBGMIDletResident(boolean param) {
         AmsUtil.executeWithArgs(MIDletSuiteStorage.getMIDletSuiteStorage(), 0, BGUtils.getFGMIDletNumber(),

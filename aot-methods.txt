@@ -1,5 +1,4 @@
 java/util/Vector.indexOf.(Ljava/lang/Object;I)I
-java/util/PropertyPermission.getActions.(I)Ljava/lang/String;
 java/util/Vector.addElement.(Ljava/lang/Object;)V
 java/util/Vector.size.()I
 java/util/Vector.elementAt.(I)Ljava/lang/Object;
@@ -10,17 +9,10 @@ com/sun/cldc/i18n/uclc/DefaultCaseConverter.isDigit.(C)Z
 com/nokia/mid/ui/DirectUtils.getDirectGraphics.(Ljavax/microedition/lcdui/Graphics;)Lcom/nokia/mid/ui/DirectGraphics;
 com/nokia/mid/ui/DirectGraphicsImp.<init>.(Ljavax/microedition/lcdui/Graphics;)V
 javax/microedition/lcdui/Font.getHeight.()I
-java/security/Permission.<init>.(Ljava/lang/String;)V
-java/security/BasicPermission.init.(Ljava/lang/String;)V
 java/security/AccessController.checkPermission.(Ljava/security/Permission;)V
 java/lang/Character.digit.(CI)I
 com/sun/cldc/i18n/uclc/DefaultCaseConverter.digit.(CI)I
-java/util/PropertyPermission.getMask.(Ljava/lang/String;)I
 java/lang/System.getProperty.(Ljava/lang/String;)Ljava/lang/String;
-java/util/PropertyPermission.<init>.(Ljava/lang/String;Ljava/lang/String;)V
-java/security/BasicPermission.<init>.(Ljava/lang/String;Ljava/lang/String;)V
-java/util/PropertyPermission.init.(I)V
-java/security/Permission.getName.()Ljava/lang/String;
 java/util/Vector.<init>.(II)V
 java/util/Vector.<init>.(I)V
 java/util/Vector.<init>.()V
@@ -176,7 +168,6 @@ java/lang/Integer.intValue.()I
 java/io/OutputStream.<init>.()V
 java/lang/Character.toString.()Ljava/lang/String;
 com/sun/midp/security/SecurityToken.checkIfPermissionAllowed.(I)V
-com/sun/midp/security/SecurityToken.checkIfPermissionAllowed.(ILjava/lang/String;)V
 com/sun/midp/events/EventQueue.registerEventListener.(ILcom/sun/midp/events/EventListener;)V
 com/sun/midp/midletsuite/MIDletSuiteImpl.getID.()I
 com/sun/midp/midlet/MIDletStateHandler.getMidletStateHandler.()Lcom/sun/midp/midlet/MIDletStateHandler;
@@ -222,7 +213,6 @@ java/lang/Thread.getPriority.()I
 java/lang/Thread.setPriority.(I)V
 java/lang/Thread.checkAccess.()V
 java/lang/RuntimePermission.<init>.(Ljava/lang/String;)V
-java/security/BasicPermission.<init>.(Ljava/lang/String;)V
 java/util/Vector.setSize.(I)V
 java/io/ByteArrayOutputStream.size.()I
 java/lang/Thread.nextThreadNum.()I
@@ -258,8 +248,6 @@ javax/microedition/lcdui/ImageDataFactory.getImageDataFromStream.(Ljavax/microed
 javax/microedition/lcdui/CanvasLFImpl.uCallKeyReleased.(I)V
 javax/microedition/lcdui/Canvas.keyReleased.(I)V
 com/sun/midp/security/SecurityInitializer.requestToken.(Lcom/sun/midp/security/ImplicitlyTrustedClass;)Lcom/sun/midp/security/SecurityToken;
-com/sun/midp/security/SecurityInitializerImpl.requestToken.(Lcom/sun/midp/security/ImplicitlyTrustedClass;)Lcom/sun/midp/security/SecurityToken;
-com/sun/midp/security/SecurityInitializerImpl.isTrusted.(Ljava/lang/Object;)Z
 java/io/DataOutputStream.<init>.(Ljava/io/OutputStream;)V
 java/io/DataOutputStream.close.()V
 javax/microedition/lcdui/CanvasLFImpl.uCallKeyPressed.(I)V
@@ -276,7 +264,6 @@ com/sun/midp/midletsuite/MIDletSuiteImpl.getProperty.(Ljava/lang/String;)Ljava/l
 com/sun/midp/midletsuite/SuiteProperties.getProperty.(Ljava/lang/String;)Ljava/lang/String;
 com/sun/midp/util/Properties.getProperty.(Ljava/lang/String;)Ljava/lang/String;
 javax/microedition/lcdui/DisplayableLFImpl.lGetDisplayable.()Ljavax/microedition/lcdui/Displayable;
-com/sun/midp/security/SecurityInitializerImpl.<init>.(Lcom/sun/midp/security/SecurityToken;[Ljava/lang/String;)V
 com/sun/midp/midletsuite/SuiteProperties.loadProperties.()V
 com/sun/midp/rms/RecordStoreIndex.getRecordIDs.()[I
 java/io/DataInputStream.readLong.()J

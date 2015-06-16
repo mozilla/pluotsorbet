@@ -29,7 +29,6 @@ package com.sun.midp.io.j2me.push;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 
-import com.sun.j2me.security.AccessControlContext;
 import com.sun.j2me.security.AccessController;
 import com.sun.j2me.security.InterruptedSecurityException;
 
@@ -73,83 +72,6 @@ public final class PushRegistryInternal {
     public static void startListening(SecurityToken token) {
         token.checkIfPermissionAllowed(Permissions.AMS);
         ConnectionRegistry.startListening();
-    }
-
-    /**
-     * Register a dynamic connection with the
-     * application management software. Once registered,
-     * the dynamic connection acts just like a
-     * connection preallocated from the descriptor file.
-     * The internal implementation includes the storage name
-     * that uniquely identifies the <code>MIDlet</code>.
-     * This method bypasses the class loader specific checks
-     * needed by the <code>Installer</code>.
-     * <p>
-     * Method requires com.sun.midp.ams permission.
-     *
-     * @param context Access control context the suite
-     * @param midletSuite MIDlet suite for the suite registering,
-     *                   the suite only has to implement isRegistered,
-     *                   and getID.
-     * @param connection generic connection <em>protocol</em>, <em>host</em>
-     *               and <em>port number</em>
-     *               (optional parameters may be included
-     *               separated with semi-colons (;))
-     * @param midlet  class name of the <code>MIDlet</code> to be launched,
-     *               when new external data is available
-     * @param filter a connection URL string indicating which senders
-     *               are allowed to cause the MIDlet to be launched
-     * @param bypassChecks if true, bypass the permission checks,
-     *         used by the installer when redo old connections during an
-     *         aborted update
-     *
-     * @exception  IllegalArgumentException if the connection string is not
-     *               valid
-     * @exception ConnectionNotFoundException if the runtime system does not
-     *              support push delivery for the requested
-     *              connection protocol
-     * @exception IOException if the connection is already
-     *              registered or if there are insufficient resources
-     *              to handle the registration request
-     * @exception ClassNotFoundException if the <code>MIDlet</code> class
-     *               name can not be found in the current
-     *               <code>MIDlet</code> suite
-     * @exception SecurityException if the <code>MIDlet</code> does not
-     *              have permission to register a connection
-     *
-     * @see #unregisterConnection
-     */
-    public static void registerConnectionInternal(AccessControlContext context,
-                                                  MIDletSuite midletSuite,
-                                                  String connection,
-                                                  String midlet,
-                                                  String filter,
-                                                  boolean bypassChecks)
-        throws ClassNotFoundException, IOException {
-
-        checkInvocationAllowed();
-
-        if (filter == null) {
-            throw new IllegalArgumentException("filter is null");
-        }
-
-        if (!bypassChecks) {
-            try {
-                context.checkPermission(PushRegistryImpl.PUSH_PERMISSION_NAME);
-            } catch (InterruptedSecurityException ise) {
-                throw new InterruptedIOException(
-                    "Interrupted while trying to ask the user permission");
-            }
-
-            PushRegistryImpl.checkMidletRegistered(midletSuite, midlet);
-
-            ConnectionRegistry.checkRegistration(connection, midlet, filter);
-        }
-
-        ConnectionRegistry.registerConnectionInternal(
-                midletSuite,
-                connection, midlet, filter,
-                !bypassChecks);
     }
 
     /**

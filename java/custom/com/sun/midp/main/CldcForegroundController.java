@@ -63,7 +63,7 @@ class CldcForegroundController implements ForegroundController {
         midletControllerEventProducer.
             sendDisplayCreateNotifyEvent(displayId, ownerClassName);
 
-        return new HeadlessAlert(displayId, midletControllerEventProducer);
+        return null;
     }
 
     /**

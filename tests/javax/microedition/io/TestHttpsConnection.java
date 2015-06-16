@@ -1,11 +1,11 @@
 package javax.microedition.io;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import java.io.InputStream;
 import java.io.IOException;
 
-public class TestHttpsConnection implements Testlet {
+public class TestHttpsConnection implements MIDletTestlet {
     public int getExpectedPass() { return 5; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
