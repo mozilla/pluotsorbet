@@ -17,7 +17,7 @@ cache:
 notifications:
   irc:
     channels:
-      - "irc.mozilla.org#j2me.js"
+      - "irc.mozilla.org#pluotsorbet"
     template:
       - "%{repository_slug} - %{commit_subject} - %{result} - %{build_url}"
     use_notice: true
