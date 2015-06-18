@@ -2149,6 +2149,12 @@ module J2ME {
     }
   }
 
+  export function fneg(i32A: number): number {
+    aliasedI32[0] = i32A;
+    aliasedF32[0] = - aliasedF32[0];
+    return aliasedI32[0];
+  }
+
   export function f2i(i32A: number) {
     var a = (aliasedI32[0] = i32A, aliasedF32[0]);
     if (a > Constants.INT_MAX) {
@@ -2224,6 +2230,7 @@ var fsub = J2ME.fsub;
 var fmul = J2ME.fmul;
 var fdiv = J2ME.fdiv;
 var frem = J2ME.frem;
+var fneg = J2ME.fneg;
 
 var f2i = J2ME.f2i;
 var fcmp = J2ME.fcmp;
