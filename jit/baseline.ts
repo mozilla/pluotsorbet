@@ -791,6 +791,9 @@ module J2ME {
     }
 
     emitReturn(kind: Kind) {
+      if (isTwoSlot(kind)) {
+        throwCompilerError("XXX Long Return");
+      }
       if (this.methodInfo.isSynchronized) {
         this.emitMonitorExit(this.blockEmitter, this.lockObject);
       }
