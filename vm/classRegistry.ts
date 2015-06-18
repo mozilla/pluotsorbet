@@ -233,40 +233,43 @@ module J2ME {
       return this.classes[typeName] = classInfo;
     }
 
-    getUnwindMethodInfo(returnKind:Kind):MethodInfo {
-      if (this.unwindMethodInfos[returnKind]) {
-        return this.unwindMethodInfos[returnKind];
+    getUnwindMethodInfo(returnKind: Kind, opCode?: Bytecode.Bytecodes):MethodInfo {
+      var key = "" + returnKind + opCode;
+
+      if (this.unwindMethodInfos[key]) {
+        return this.unwindMethodInfos[key];
       }
       var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
       var methodInfo;
+      var unwindMethodName = "unwind" + (opCode ? "FromInvoke" : "");
       switch (returnKind) {
         case Kind.Long:
-          methodInfo = classInfo.getMethodByNameString("unwind", "(J)J");
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(J)J");
           break;
         case Kind.Double:
-          methodInfo = classInfo.getMethodByNameString("unwind", "(D)D");
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(D)D");
           break;
         case Kind.Float:
-          methodInfo = classInfo.getMethodByNameString("unwind", "(F)F");
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(F)F");
           break;
         case Kind.Int:
         case Kind.Byte:
         case Kind.Char:
         case Kind.Short:
         case Kind.Boolean:
-          methodInfo = classInfo.getMethodByNameString("unwind", "(I)I");
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(I)I");
           break;
         case Kind.Reference:
-          methodInfo = classInfo.getMethodByNameString("unwind", "(Ljava/lang/Object;)Ljava/lang/Object;");
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(Ljava/lang/Object;)Ljava/lang/Object;");
           break;
         case Kind.Void:
-          methodInfo = classInfo.getMethodByNameString("unwind", "()V");
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "()V");
           break;
         default:
           release || Debug.assert(false, "Invalid Kind: " + Kind[returnKind]);
       }
       release || Debug.assert(methodInfo, "Must find unwind method");
-      this.unwindMethodInfos[returnKind] = methodInfo;
+      this.unwindMethodInfos[key] = methodInfo;
       return methodInfo;
     }
   }

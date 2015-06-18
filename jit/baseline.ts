@@ -886,10 +886,7 @@ module J2ME {
         classInfo = (<ArrayClassInfo>classInfo).elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
-        if (this.target === CompilationTarget.Runtime && $.initialized[classInfo.getClassNameSlow()]) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", is already initialized.";
-          baselineCounter && baselineCounter.count(message);
-        } else if (this.initializedClasses[classInfo.getClassNameSlow()]) {
+        if (this.initializedClasses[classInfo.getClassNameSlow()]) {
           var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", block redundant.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
@@ -903,9 +900,9 @@ module J2ME {
           baselineCounter && baselineCounter.count(message);
         } else {
           baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("if($.initialized[\"" + classInfo.getClassNameSlow() + "\"]===undefined)" + this.runtimeClassObject(classInfo) + ".initialize();");
+          this.blockEmitter.writeLn("if($.initialized[\"" + classInfo.getClassNameSlow() + "\"]===undefined) J2ME.classInitCheck(" + this.runtimeClass(classInfo) + ".templateKlass.classInfo);");
           if (canStaticInitializerYield(classInfo)) {
-            this.emitUnwind(this.blockEmitter, String(this.pc), String(this.pc));
+            this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
             emitCompilerAssertions && this.emitNoUnwindAssertion();
           }
@@ -957,7 +954,7 @@ module J2ME {
       this.flushBlockStack();
       this.blockEmitter.writeLn("re=" + call + ";");
       if (calleeCanYield) {
-        this.emitUnwind(this.blockEmitter, String(this.pc), String(nextPC));
+        this.emitUnwind(this.blockEmitter, String(this.pc));
       } else {
         emitCompilerAssertions && this.emitUndefinedReturnAssertion();
         emitCompilerAssertions && this.emitNoUnwindAssertion();
@@ -1120,21 +1117,17 @@ module J2ME {
       this.emitPush(Kind.Reference, "NM(" + this.localClassConstant(classInfo) + ",[" + dimensions.join(",") + "])", Precedence.Call);
     }
 
-    private emitUnwind(emitter: Emitter, pc: string, nextPC: string, forceInline: boolean = false) {
+    private emitUnwind(emitter: Emitter, pc: string, forceInline: boolean = false) {
       // Only emit unwind throws if it saves on code size.
       if (!forceInline && this.blockMap.invokeCount > 2 &&
           this.stack.length < 8) {
         this.flushBlockStack();
-        if (<any>nextPC - <any>pc === 3) {
-          emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
-        } else {
-          emitter.writeLn("U&&B" + this.sp + "(" + pc + "," + nextPC + ");");
-        }
+        emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
         this.hasUnwindThrow = true;
       } else {
         var local = this.local.join(",");
         var stack = this.blockStack.slice(0, this.sp).join(",");
-        emitter.writeLn("if(U){$.B(" + pc + "," + nextPC + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+        emitter.writeLn("if(U){$.B(" + pc + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
       }
       baselineCounter && baselineCounter.count("emitUnwind");
     }
@@ -1153,17 +1146,18 @@ module J2ME {
       this.needsVariable("lk");
       emitter.writeLn("lk=" + object + "._lock;");
       emitter.enter("if(lk&&lk.level===0){lk.thread=th;lk.level=1;}else{ME(" + object + ");");
-      this.emitUnwind(emitter, String(this.pc), String(nextPC), true);
+      this.emitUnwind(emitter, String(nextPC), true);
       emitter.leave("}");
     }
 
     private emitPreemptionCheck(emitter: Emitter, nextPC: string) {
+      // TODO REMOVE UNUSED ARG
       if (!emitCheckPreemption || this.methodInfo.implKey in noPreemptMap) {
         return;
       }
       emitter.writeLn("PS++;");
       emitter.writeLn("if((PS&" + preemptionSampleMask + ")===0)PE();");
-      this.emitUnwind(emitter, String(nextPC), String(nextPC), true);
+      this.emitUnwind(emitter, String(this.pc), true);
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {

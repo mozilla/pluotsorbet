@@ -668,10 +668,10 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+    B(pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
+      $.ctx.bailout(methodInfo, pc, local, stack, lockObject);
     }
 
     /**
@@ -681,7 +681,7 @@ module J2ME {
     T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
+      $.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
     }
 
     yield(reason: string) {
@@ -693,10 +693,10 @@ module J2ME {
       $.ctx.nativeThread.beginUnwind();
     }
 
-    nativeBailout(returnKind: Kind) {
+    nativeBailout(returnKind: Kind, opCode?: Bytecode.Bytecodes) {
       var pc = returnKind === Kind.Void ? 0 : 1;
-      var methodInfo = CLASSES.getUnwindMethodInfo(returnKind);
-      $.ctx.bailout(methodInfo, pc, pc, [], [], null);
+      var methodInfo = CLASSES.getUnwindMethodInfo(returnKind, opCode);
+      $.ctx.bailout(methodInfo, pc, [], [], null);
     }
 
     pause(reason: string) {
@@ -2013,11 +2013,18 @@ module J2ME {
     if (!initializeMethodInfo) {
       initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
     }
-    $.ctx.nativeThread.pushMarkerFrame(FrameType.Interrupt);
+    var thread = $.ctx.nativeThread;
+    thread.pushMarkerFrame(FrameType.Interrupt);
+    thread.pushMarkerFrame(FrameType.Native);
+    var frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
     runtimeKlass.classObject[initializeMethodInfo.virtualName]();
-    if (!U) {
-      $.ctx.nativeThread.popMarkerFrame(FrameType.Interrupt);
+    if (U) {
+      i32[frameTypeOffset] = FrameType.PushPendingFrames;
+      thread.unwoundNativeFrames.push(null);
+      return;
     }
+    thread.popMarkerFrame(FrameType.Native);
+    thread.popMarkerFrame(FrameType.Interrupt);
   }
 
   export function preempt() {
@@ -2047,9 +2054,6 @@ module J2ME {
     }
     getSP() {
       return this.sp;
-    }
-    getNextPC() {
-      return this.nextPC;
     }
   }
 

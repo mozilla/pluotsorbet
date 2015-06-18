@@ -292,7 +292,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
         $.ctx.executeMethod(clinit);
         if (U) {
-            $.nativeBailout(J2ME.Kind.Void);
+            $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
         }
     }
 };
@@ -324,6 +324,9 @@ Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(name) {
   }
   // The following can trigger an unwind.
   J2ME.classInitCheck(classInfo);
+  if (U) {
+    $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
+  }
 };
 
 Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
@@ -354,7 +357,7 @@ Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
   }
   J2ME.getLinkedMethod(methodInfo).call(o);
   if (U) {
-      $.nativeBailout(J2ME.Kind.Void);
+      $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESPECIAL);
   }
 };
 

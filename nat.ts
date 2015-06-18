@@ -108,15 +108,21 @@ module J2ME {
 
   Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
     $.ctx.wait(this, longToNumber(timeoutL, timeoutH));
-    $.nativeBailout(Kind.Void);
+    if (U) {
+      $.nativeBailout(Kind.Void);
+    }
   };
 
   Native["java/lang/Object.notify.()V"] = function() {
     $.ctx.notify(this, false);
+    // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify..
+    release || assert(!U, "Unexpected unwind in java/lang/Object.notify.()V.");
   };
 
   Native["java/lang/Object.notifyAll.()V"] = function() {
     $.ctx.notify(this, true);
+    // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify.
+    release || assert(!U, "Unexpected unwind in java/lang/Object.notifyAll.()V.");
   };
 
   Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function() {
@@ -127,7 +133,7 @@ module J2ME {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
     getLinkedMethod(methodInfo).call($.mainThread, J2ME.newString("main"));
     if (U) {
-      $.nativeBailout(J2ME.Kind.Void);
+      $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESPECIAL);
     }
   };
 
@@ -141,7 +147,7 @@ module J2ME {
       throw new Error("Could not find isolate main.");
     getLinkedMethod(entryPoint).call(null, $.isolate._mainArgs);
     if (U) {
-      $.nativeBailout(J2ME.Kind.Void);
+      $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
     }
   };
 }

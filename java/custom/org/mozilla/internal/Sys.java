@@ -121,4 +121,6 @@ public final class Sys {
   public static float unwind(float v) { return v; }
   public static int unwind(int v) { return v; }
   public static Object unwind(Object v) { return v; }
+
+  public static void unwindFromInvoke() { unwind(); }
 }

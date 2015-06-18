@@ -130,10 +130,15 @@ module J2ME {
     /**
      * Marks the beginning of frames that were not invoked by the previous frame.
      */
-    Interrupt = 3
+    Interrupt = 3,
+
+    /**
+     * Marks the beginning of native/compiled code called from the interpreter.
+     */
+    Native = 4
   }
 
-  enum FrameLayout {
+  export enum FrameLayout {
     CalleeMethodInfoOffset      = 2,
     FrameTypeOffset             = 2,
     CallerFPOffset              = 1,
@@ -383,10 +388,10 @@ module J2ME {
     }
 
     pushMarkerFrame(frameType: FrameType) {
-      this.pushFrame(null, 0, 0, frameType);
+      this.pushFrame(null, 0, 0, null, frameType);
     }
 
-    pushFrame(methodInfo: MethodInfo, sp: number = 0, pc: number = 0, frameType: FrameType = FrameType.Interpreter) {
+    pushFrame(methodInfo: MethodInfo, sp: number = 0, pc: number = 0, monitor: Object = null, frameType: FrameType = FrameType.Interpreter) {
       var fp = this.fp;
       if (methodInfo) {
         this.fp = this.sp + methodInfo.codeAttribute.max_locals;
@@ -398,7 +403,7 @@ module J2ME {
       i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo; // Callee
       i32[this.fp + FrameLayout.FrameTypeOffset] = frameType; // Frame Type
-      ref[this.fp + FrameLayout.MonitorOffset] = null; // Monitor
+      ref[this.fp + FrameLayout.MonitorOffset] = monitor; // Monitor
       this.sp = this.fp + FrameLayout.CallerSaveSize + sp;
       this.pc = pc;
     }
@@ -420,7 +425,7 @@ module J2ME {
     }
 
     run() {
-      release || traceWriter && traceWriter.writeLn("Thread.run");
+      release || traceWriter && traceWriter.writeLn("Thread.run " + $.ctx.id);
       return interpret(this);
     }
 
@@ -428,48 +433,59 @@ module J2ME {
       release || traceWriter && traceWriter.writeLn("exceptionUnwind: " + toName(e));
       var pc = -1;
       var classInfo;
-      var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-      var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
-      while (mi) {
-        release || traceWriter && traceWriter.writeLn("Looking for handler in: " + mi.implKey);
-        for (var i = 0; i < mi.exception_table_length; i++) {
-          var exceptionEntryView = mi.getExceptionEntryViewByIndex(i);
-          release || traceWriter && traceWriter.writeLn("Checking catch range: " + exceptionEntryView.start_pc + " - " + exceptionEntryView.end_pc);
-          if (this.pc >= exceptionEntryView.start_pc && this.pc < exceptionEntryView.end_pc) {
-            if (exceptionEntryView.catch_type === 0) {
-              pc = exceptionEntryView.handler_pc;
-              break;
-            } else {
-              classInfo = resolveClass(exceptionEntryView.catch_type, mi.classInfo);
-              release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo.klass);
-              if (isAssignableTo(e.klass, classInfo.klass)) {
-                pc = exceptionEntryView.handler_pc;
-                break;
+      while (true) {
+        var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
+        switch (frameType) {
+          case FrameType.Interpreter:
+            var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
+            release || traceWriter && traceWriter.writeLn("Looking for handler in: " + mi.implKey);
+            for (var i = 0; i < mi.exception_table_length; i++) {
+              var exceptionEntryView = mi.getExceptionEntryViewByIndex(i);
+              release || traceWriter && traceWriter.writeLn("Checking catch range: " + exceptionEntryView.start_pc + " - " + exceptionEntryView.end_pc);
+              if (this.pc >= exceptionEntryView.start_pc && this.pc < exceptionEntryView.end_pc) {
+                if (exceptionEntryView.catch_type === 0) {
+                  pc = exceptionEntryView.handler_pc;
+                  break;
+                } else {
+                  classInfo = resolveClass(exceptionEntryView.catch_type, mi.classInfo);
+                  release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo.klass);
+                  if (isAssignableTo(e.klass, classInfo.klass)) {
+                    pc = exceptionEntryView.handler_pc;
+                    break;
+                  }
+                }
               }
             }
-          }
+            if (pc >= 0) {
+              this.pc = pc;
+              this.sp = this.fp + FrameLayout.CallerSaveSize;
+              ref[this.sp++] = e;
+              return;
+            }
+            if (mi.isSynchronized) {
+              this.ctx.monitorExit(ref[this.fp + FrameLayout.MonitorOffset]);
+            }
+            this.popFrame(mi);
+            release || traceWriter && traceWriter.outdent();
+            release || traceWriter && traceWriter.writeLn("<< I Unwind");
+            break;
+          case FrameType.ExitInterpreter:
+            this.popMarkerFrame(FrameType.ExitInterpreter);
+            throw e;
+            break;
+          case FrameType.PushPendingFrames:
+            this.frame.thread.pushPendingNativeFrames();
+            break;
+          case FrameType.Interrupt:
+            this.popMarkerFrame(FrameType.Interrupt);
+            break;
+          case FrameType.Native:
+            this.popMarkerFrame(FrameType.Native);
+            break;
+          default:
+            Debug.assertUnreachable("Unhandled frame type: " + frameType);
+            break;
         }
-        if (pc >= 0) {
-          this.pc = pc;
-          this.sp = this.fp + FrameLayout.CallerSaveSize;
-          ref[this.sp++] = e;
-          return;
-        }
-        if (mi.isSynchronized) {
-          this.ctx.monitorExit(ref[this.fp + FrameLayout.MonitorOffset]);
-        }
-        mi = this.popFrame(mi);
-        frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
-        if (frameType === FrameType.ExitInterpreter) {
-          throw e;
-        } else if (frameType === FrameType.PushPendingFrames) {
-          this.frame.thread.pushPendingNativeFrames();
-          mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-        } else if (frameType === FrameType.Interrupt) {
-          mi = this.popMarkerFrame(FrameType.Interrupt);
-        }
-        release || traceWriter && traceWriter.outdent();
-        release || traceWriter && traceWriter.writeLn("<< I Unwind");
       }
       release || traceWriter && traceWriter.writeLn("Cannot catch: " + toName(e));
       throw e;
@@ -498,63 +514,68 @@ module J2ME {
       }
     }
 
+    tracePendingFrames(writer: IndentingWriter) {
+      for (var i = 0; i < this.pendingNativeFrames.length; i++) {
+        var pendingFrame = this.pendingNativeFrames[i];
+        writer.writeLn(pendingFrame ? pendingFrame.methodInfo.implKey : "-marker-");
+      }
+    }
+
     pushPendingNativeFrames() {
       traceWriter && traceWriter.writeLn("Pushing pending native frames.");
 
-
       if (traceWriter) {
         traceWriter.enter("Pending native frames before:");
-        for (var i = 0; i < this.pendingNativeFrames.length; i++) {
-          traceWriter.writeLn(this.pendingNativeFrames[i] ? this.pendingNativeFrames[i].methodInfo.implKey: "marker");
-        }
+        this.tracePendingFrames(traceWriter);
+        traceWriter.leave("");
+
+        traceWriter.enter("Stack before:");
+        this.frame.traceStack(traceWriter);
         traceWriter.leave("");
       }
 
-      traceWriter && traceWriter.enter("Stack before:");
-      traceWriter && this.frame.traceStack(traceWriter);
-      traceWriter && traceWriter.leave("");
+      while (true) {
+        // We should have a |PushPendingFrames| marker frame on the stack at this point.
+        this.popMarkerFrame(FrameType.PushPendingFrames);
 
-      // We should have a |PushPendingFrames| marker frame on the stack at this point.
-      this.popMarkerFrame(FrameType.PushPendingFrames);
+        var pendingNativeFrame = null;
+        var frames = [];
+        while (pendingNativeFrame = this.pendingNativeFrames.pop()) {
+          frames.push(pendingNativeFrame);
+        }
+        while (pendingNativeFrame = frames.pop()) {
+          traceWriter && traceWriter.writeLn("Pushing frame: " + pendingNativeFrame.methodInfo.implKey);
+          this.pushFrame(pendingNativeFrame.methodInfo, pendingNativeFrame.stack.length, pendingNativeFrame.pc, pendingNativeFrame.lockObject);
+          // TODO: Figure out how to copy floats and doubles.
+          var frame = this.frame;
+          for (var j = 0; j < pendingNativeFrame.local.length; j++) {
+            var value = pendingNativeFrame.local[j];
+            var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
+            frame.setParameter(kind, j, value);
+          }
+          for (var j = 0; j < pendingNativeFrame.stack.length; j++) {
+            var value = pendingNativeFrame.stack[j];
+            var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
+            frame.setStackSlot(kind, j, value);
+          }
+        }
+        var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
 
-      var pendingNativeFrame = null;
-      var frames = [];
-      while (pendingNativeFrame = this.pendingNativeFrames.pop()) {
-        frames.push(pendingNativeFrame);
-      }
-      while (pendingNativeFrame = frames.pop()) {
-        traceWriter && traceWriter.writeLn("Pushing frame: " + pendingNativeFrame.methodInfo.implKey);
-        this.pushFrame(pendingNativeFrame.methodInfo, pendingNativeFrame.stack.length, pendingNativeFrame.pc);
-        // TODO: Figure out how to copy floats and doubles.
-        var frame = this.frame;
-        for (var j = 0; j < pendingNativeFrame.local.length; j++) {
-          var value = pendingNativeFrame.local[j];
-          var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
-          frame.setParameter(kind, j, value);
+        if (frameType === FrameType.PushPendingFrames) {
+          continue;
         }
-        for (var j = 0; j < pendingNativeFrame.stack.length; j++) {
-          var value = pendingNativeFrame.stack[j];
-          var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
-          frame.setStackSlot(kind, j, value);
-        }
+        break;
       }
 
       if (traceWriter) {
         traceWriter.enter("Pending native frames after:");
-        for (var i = 0; i < this.pendingNativeFrames.length; i++) {
-          traceWriter.writeLn(this.pendingNativeFrames[i] ? this.pendingNativeFrames[i].methodInfo.implKey : "marker");
-        }
+        this.tracePendingFrames(traceWriter);
+        traceWriter.leave("");
+
+        traceWriter.enter("Stack after:");
+        this.frame.traceStack(traceWriter);
         traceWriter.leave("");
       }
-
-      var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
-      if (frameType === FrameType.Interrupt) {
-        this.popMarkerFrame(FrameType.Interrupt);
-      }
-
-      traceWriter && traceWriter.enter("Stack after:");
-      traceWriter && this.frame.traceStack(traceWriter);
-      traceWriter && traceWriter.leave("");
     }
 
     /**
@@ -611,10 +632,11 @@ module J2ME {
       var ctx = $.ctx;
       var thread = ctx.nativeThread;
       var callerFP = thread.fp;
+      var callerPC = thread.pc;
       // release || traceWriter && traceWriter.writeLn(">> I");
       thread.pushMarkerFrame(FrameType.ExitInterpreter);
-      var frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
       thread.pushFrame(methodInfo);
+      var calleeFP = thread.fp;
       var frame = thread.frame;
       var kinds = methodInfo.signatureKinds;
       var index = 0;
@@ -637,11 +659,9 @@ module J2ME {
       }
       var v = interpret(thread);
       if (U) {
-        i32[frameTypeOffset] = FrameType.PushPendingFrames;
-
-        thread.unwoundNativeFrames.push(null);
-        release || assert(methodInfo.returnKind === Kind.Void, "Non void returns are currently not supported here.");
-        release || assert(v === undefined, "Return value must be undefined.");
+        // Splice out the marker frame so the interpreter doesn't return early when execution is resumed.
+        i32[calleeFP + FrameLayout.CallerFPOffset] = callerFP;
+        i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
         return;
       }
       thread.popMarkerFrame(FrameType.ExitInterpreter);
@@ -1775,75 +1795,75 @@ module J2ME {
             mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
             type = i32[fp + FrameLayout.FrameTypeOffset];
             release || assert(type === FrameType.Interpreter && mi !== null || type !== FrameType.Interpreter && mi === null, "Is valid frame type and method info after return.");
-            if (type === FrameType.ExitInterpreter) {
-              thread.set(fp, sp, opPC);
-              switch (lastOP) {
-                case Bytecodes.IRETURN:
-                case Bytecodes.FRETURN:
-                  return i32[lastSP - 1];
-                case Bytecodes.LRETURN:
-                  return returnLong(i32[lastSP - 2], i32[lastSP - 1]);
-                case Bytecodes.DRETURN:
-                  return returnDouble(i32[lastSP - 2], i32[lastSP - 1]);
-                case Bytecodes.ARETURN:
-                  return ref[lastSP - 1];
-                case Bytecodes.RETURN:
-                  return;
-              }
-            } else if (type === FrameType.PushPendingFrames ||
-                       type === FrameType.Interrupt) {
-              thread.set(fp, sp, opPC);
-              if (type === FrameType.PushPendingFrames) {
+            var interrupt = false;
+            while (type !== FrameType.Interpreter) {
+              if (type === FrameType.ExitInterpreter) {
+                thread.set(fp, sp, opPC);
+                switch (lastOP) {
+                  case Bytecodes.IRETURN:
+                  case Bytecodes.FRETURN:
+                    return i32[lastSP - 1];
+                  case Bytecodes.LRETURN:
+                    return returnLong(i32[lastSP - 2], i32[lastSP - 1]);
+                  case Bytecodes.DRETURN:
+                    return returnDouble(i32[lastSP - 2], i32[lastSP - 1]);
+                  case Bytecodes.ARETURN:
+                    return ref[lastSP - 1];
+                  case Bytecodes.RETURN:
+                    return;
+                }
+              } else if (type === FrameType.PushPendingFrames) {
+                thread.set(fp, sp, opPC);
                 thread.pushPendingNativeFrames();
-              } else {
+                fp = thread.fp;
+                sp = thread.sp;
+                opPC = pc = thread.pc;
+                type = i32[fp + FrameLayout.FrameTypeOffset];
+                mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
+                continue;
+              } else if (type === FrameType.Interrupt) {
+                thread.set(fp, sp, opPC);
                 thread.popMarkerFrame(FrameType.Interrupt);
+                fp = thread.fp;
+                sp = thread.sp;
+                opPC = pc = thread.pc;
+                type = i32[fp + FrameLayout.FrameTypeOffset];
+                mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
+                interrupt = true;
+                continue;
+              } else {
+                assert(false, "Bad frame type: " + FrameType[type]);
               }
-              fp = thread.fp;
-              sp = thread.sp;
-              pc = thread.pc;
-
-              mi = thread.frame.methodInfo;
-              maxLocals = mi.codeAttribute.max_locals;
-              lp = fp - maxLocals;
-              ci = mi.classInfo;
-              cp = ci.constantPool;
-              code = mi.codeAttribute.code;
-              continue;
             }
             release || assert(type === FrameType.Interpreter, "Cannot resume in frame type: " + FrameType[type]);
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
             release || traceWriter && traceWriter.outdent();
-            release || traceWriter && traceWriter.writeLn("<< I " + lastMI.implKey);
+            release || traceWriter && traceWriter.writeLn(">> I " + lastMI.implKey);
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
-            var op = code[opPC];
-            if (op >= Bytecodes.FIRST_INVOKE && op <= Bytecodes.LAST_INVOKE) {
-              // Calculate the PC based on the size of the caller's invoke bytecode.
-              pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
-              // Push return value.
-              switch (lastOP) {
-                case Bytecodes.LRETURN:
-                case Bytecodes.DRETURN:
-                  i32[sp++] = i32[lastSP - 2]; // Low Bits
-                // Fallthrough
-                case Bytecodes.IRETURN:
-                case Bytecodes.FRETURN:
-                  i32[sp++] = i32[lastSP - 1];
-                  continue;
-                case Bytecodes.ARETURN:
-                  ref[sp++] = ref[lastSP - 1];
-                  continue;
-              }
-            } else {
-              // We are returning to a bytecode that trapped.
-              // REDUX: I need to think through this some more, why do we need to subtract the CallerSaveSize? Is it
-              // because of the the null frame? This frame should have been spliced out, ... is this a coincidence?
-              traceWriter && traceWriter.writeLn("CRAP " + Bytecodes[op]);
-              sp -= FrameLayout.CallerSaveSize;
-              pc = opPC;
+            if (interrupt) {
+              continue;
             }
+            release || assert(isInvoke(code[opPC]), "Return must come from invoke op: " + mi.implKey + " PC: " + pc + Bytecodes[op]);
+            // Calculate the PC based on the size of the caller's invoke bytecode.
+            pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
+            // Push return value.
+            switch (lastOP) {
+              case Bytecodes.LRETURN:
+              case Bytecodes.DRETURN:
+                i32[sp++] = i32[lastSP - 2]; // Low Bits
+              // Fallthrough
+              case Bytecodes.IRETURN:
+              case Bytecodes.FRETURN:
+                i32[sp++] = i32[lastSP - 1];
+                continue;
+              case Bytecodes.ARETURN:
+                ref[sp++] = ref[lastSP - 1];
+                continue;
+            }
+
             continue;
           case Bytecodes.INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
@@ -1906,6 +1926,8 @@ module J2ME {
               callee = calleeTargetMethodInfo.fn || getLinkedMethod(calleeTargetMethodInfo);
               var returnValue;
 
+
+              var frameTypeOffset;
               // Fast path for the no-argument case.
               if (signatureKinds.length === 1) {
                 if (!isStatic) {
@@ -1913,6 +1935,8 @@ module J2ME {
                 }
 
                 thread.set(fp, sp, opPC);
+                thread.pushMarkerFrame(FrameType.Native);
+                frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
 
                 returnValue = callee.call(object);
               } else {
@@ -1946,6 +1970,8 @@ module J2ME {
                 }
 
                 thread.set(fp, sp, opPC);
+                thread.pushMarkerFrame(FrameType.Native);
+                frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
 
                 if (!release) {
                   // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
@@ -1959,12 +1985,13 @@ module J2ME {
               }
 
               if (U) {
-                if (thread.fp === fp) { // We're the last interpreter frame on the stack.
-                  thread.pushMarkerFrame(FrameType.PushPendingFrames);
-                }
                 traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
+                release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
+                i32[frameTypeOffset] = FrameType.PushPendingFrames;
+                thread.unwoundNativeFrames.push(null);
                 return;
               }
+              thread.popMarkerFrame(FrameType.Native);
 
               kind = signatureKinds[0];
 

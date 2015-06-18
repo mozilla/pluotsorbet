@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-declare var trackedOpts;
+declare var pc2line;
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
-var inBrowser = typeof trackedOpts === "undefined";
+var inBrowser = typeof pc2line === "undefined";
 
 
 declare var putstr;

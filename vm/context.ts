@@ -280,7 +280,6 @@ module J2ME {
         throw e;
       }
       if (U) {
-        this.nativeThread.unwoundNativeFrames.push(null);
         this.nativeThread.endUnwind();
         switch (U) {
           case VMState.Yielding:
@@ -316,7 +315,7 @@ module J2ME {
         var ctx = object._lock[queue].pop();
         if (!ctx)
           continue;
-          ctx.wakeup(object)
+        ctx.wakeup(object);
         if (!notifyAll)
           break;
       }
@@ -406,13 +405,15 @@ module J2ME {
     notify(object: java.lang.Object, notifyAll: boolean) {
       if (!object._lock || object._lock.thread !== this.thread)
         throw $.newIllegalMonitorStateException();
-
+      // TODO Unblock can call wakeup on a different ctx which in turn calls monitorEnter and can cause unwinds
+      // on another ctx, but we shouldn't unwind this ctx. After figuring out why this is, remove assertions in
+      // "java/lang/Object.notify.()V" and "java/lang/Object.notifyAll.()V"
       this.unblock(object, "waiting", notifyAll);
     }
 
-    bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+    bailout(methodInfo: MethodInfo, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       traceWriter && traceWriter.writeLn("Bailout: " + methodInfo.implKey);
-      this.nativeThread.unwoundNativeFrames.push({methodInfo: methodInfo, pc: pc, nextPC: nextPC, local: local, stack: stack});
+      this.nativeThread.unwoundNativeFrames.push({frameType: FrameType.Interpreter, methodInfo: methodInfo, pc: pc, local: local, stack: stack, lockObject: lockObject});
     }
 
     pauseMethodTimeline() {
