@@ -313,11 +313,13 @@ module J2ME {
     private createIsolateCtx(): Context {
       var runtime = new Runtime(this);
       var ctx = new Context(runtime);
-      ctx.thread = runtime.mainThread = <java.lang.Thread>newObject(CLASSES.java_lang_Thread.klass);
-      ctx.thread.pid = util.id();
-      ctx.thread.alive = true;
+      ctx.threadAddress = runtime.mainThread = allocObject(CLASSES.java_lang_Thread.klass); // Just use newObject.
+      var thread = <java.lang.Thread>getHandle(ctx.threadAddress);
+      // XXX thread.pid seems to be unused, so remove it.
+      thread.pid = util.id();
+      thread.nativeAlive = true;
       // The constructor will set the real priority, however one is needed for the scheduler.
-      ctx.thread.priority = NORMAL_PRIORITY;
+      thread.priority = NORMAL_PRIORITY;
       runtime.preInitializeClasses(ctx);
       return ctx;
     }
@@ -342,8 +344,13 @@ module J2ME {
     startIsolate(isolate: Isolate) {
       var ctx = this.createIsolateCtx();
       var runtime = ctx.runtime;
-      isolate.runtime = runtime;
-      runtime.isolate = isolate;
+      runtime.isolateAddress = isolate._address;
+
+      // We could look this up from the address, but we use it a lot,
+      // so we cache it here.
+      runtime.isolateId = isolate._id;
+
+      Runtime.isolateMap[isolate._address] = runtime;
 
       var sys = CLASSES.getClass("org/mozilla/internal/Sys");
 
@@ -387,7 +394,7 @@ module J2ME {
     lockTimeout: number;
     lockLevel: number;
     nativeThread: Thread;
-    thread: java.lang.Thread;
+    threadAddress: number;
     writer: IndentingWriter;
     methodTimeline: any;
     virtualRuntime: number;
@@ -435,15 +442,17 @@ module J2ME {
     }
 
     getPriority() {
-      if (this.thread) {
-        return this.thread.priority;
+      if (this.threadAddress) {
+        var thread = <java.lang.Thread>getHandle(this.threadAddress);
+        return thread.priority;
       }
       return NORMAL_PRIORITY;
     }
 
     kill() {
-      if (this.thread) {
-        this.thread.alive = false;
+      if (this.threadAddress) {
+        var thread = <java.lang.Thread>getHandle(this.threadAddress);
+        thread.nativeAlive = false;
       }
       this.runtime.removeContext(this);
     }
@@ -557,33 +566,35 @@ module J2ME {
       Scheduler.enqueue(this);
     }
 
-    block(object: java.lang.Object, queue, lockLevel: number) {
-      object._lock[queue].push(this);
+    block(monitor: java.lang.Object, queue, lockLevel: number) {
+      monitor._lock[queue].push(this);
       this.lockLevel = lockLevel;
       $.pause("block");
     }
 
-    unblock(object: java.lang.Object, queue, notifyAll: boolean) {
-      while (object._lock[queue].length) {
-        var ctx = object._lock[queue].pop();
-        if (!ctx)
+    unblock(monitor: java.lang.Object, queue, notifyAll: boolean) {
+      while (monitor._lock[queue].length) {
+        var ctx = monitor._lock[queue].pop();
+        if (!ctx) {
           continue;
-          ctx.wakeup(object)
-        if (!notifyAll)
+        }
+        ctx.wakeup(monitor);
+        if (!notifyAll) {
           break;
+        }
       }
     }
 
-    wakeup(object: java.lang.Object) {
+    wakeup(monitor: java.lang.Object) {
       if (this.lockTimeout !== null) {
         window.clearTimeout(this.lockTimeout);
         this.lockTimeout = null;
       }
-      if (object._lock.level !== 0) {
-        object._lock.ready.push(this);
+      if (monitor._lock.level !== 0) {
+        monitor._lock.ready.push(this);
       } else {
         while (this.lockLevel-- > 0) {
-          this.monitorEnter(object);
+          this.monitorEnter(monitor);
           if (U === VMState.Pausing || U === VMState.Stopping) {
             return;
           }
@@ -592,31 +603,31 @@ module J2ME {
       }
     }
 
-    monitorEnter(object: java.lang.Object) {
-      var lock = object._lock;
+    monitorEnter(monitor: java.lang.Object) {
+      var lock = monitor._lock;
       if (lock && lock.level === 0) {
-        lock.thread = this.thread;
+        lock.threadAddress = this.threadAddress;
         lock.level = 1;
         return;
       }
       if (!lock) {
-        object._lock = new Lock(this.thread, 1);
+        monitor._lock = new Lock(this.threadAddress, 1);
         return;
       }
-      if (lock.thread === this.thread) {
+      if (lock.threadAddress === this.threadAddress) {
         ++lock.level;
         return;
       }
-      this.block(object, "ready", 1);
+      this.block(monitor, "ready", 1);
     }
 
-    monitorExit(object: java.lang.Object) {
-      var lock = object._lock;
+    monitorExit(monitor: java.lang.Object) {
+      var lock = monitor._lock;
       if (lock.level === 1 && lock.ready.length === 0) {
         lock.level = 0;
         return;
       }
-      if (lock.thread !== this.thread)
+      if (lock.threadAddress !== this.threadAddress)
         throw $.newIllegalMonitorStateException();
       if (--lock.level > 0) {
         return;
@@ -625,18 +636,19 @@ module J2ME {
       if (lock.level < 0) {
         throw $.newIllegalMonitorStateException("Unbalanced monitor enter/exit.");
       }
-      this.unblock(object, "ready", false);
+      this.unblock(monitor, "ready", false);
     }
 
     wait(object: java.lang.Object, timeout: number) {
-      var lock = object._lock;
+      var monitor = getMonitor(object);
+      var lock = monitor._lock;
       if (timeout < 0)
         throw $.newIllegalArgumentException();
-      if (!lock || lock.thread !== this.thread)
+      if (!lock || lock.threadAddress !== this.threadAddress)
         throw $.newIllegalMonitorStateException();
       var lockLevel = lock.level;
       for (var i = lockLevel; i > 0; i--) {
-        this.monitorExit(object);
+        this.monitorExit(monitor);
       }
       if (timeout) {
         var self = this;
@@ -645,21 +657,22 @@ module J2ME {
             var ctx = lock.waiting[i];
             if (ctx === self) {
               lock.waiting[i] = null;
-              ctx.wakeup(object);
+              ctx.wakeup(monitor);
             }
           }
         }, timeout);
       } else {
         this.lockTimeout = null;
       }
-      this.block(object, "waiting", lockLevel);
+      this.block(monitor, "waiting", lockLevel);
     }
 
     notify(object: java.lang.Object, notifyAll: boolean) {
-      if (!object._lock || object._lock.thread !== this.thread)
+      var monitor = getMonitor(object);
+      if (!monitor._lock || monitor._lock.threadAddress !== this.threadAddress)
         throw $.newIllegalMonitorStateException();
 
-      this.unblock(object, "waiting", notifyAll);
+      this.unblock(monitor, "waiting", notifyAll);
     }
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {

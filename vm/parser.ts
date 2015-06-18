@@ -705,7 +705,7 @@ module J2ME {
           i32[object._address + this.byteOffset >> 2] = value;
           break;
         case Kind.Reference:
-          ref[object._address + this.byteOffset >> 2] = value;
+          ref[object._address + this.byteOffset >> 2] = value._address;
           break;
         default:
           Debug.assert(false, Kind[this.kind]);
@@ -1312,11 +1312,11 @@ module J2ME {
           fieldInfo.fTableIndex = fTable.length;
           fTable.push(fieldInfo); // Append
           fieldInfo.mangledName = "f" + fieldInfo.fTableIndex;
-          fieldInfo.byteOffset = this.sizeOfFields;
+          fieldInfo.byteOffset = OBJ_HDR_SIZE + this.sizeOfFields;
           this.sizeOfFields += kindSize(fieldInfo.kind);
         } else {
           fieldInfo.mangledName = "s" + i;
-          fieldInfo.byteOffset = this.sizeOfStaticFields;
+          fieldInfo.byteOffset = OBJ_HDR_SIZE + this.sizeOfStaticFields;
           this.sizeOfStaticFields += kindSize(fieldInfo.kind);
         }
       }

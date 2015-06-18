@@ -230,6 +230,12 @@ public final class Isolate {
     private Isolate         _next;
 
     /**
+     * A small integer ID that uniquely identifies this Isolate
+     * among the current set of active Isolates.
+     */
+    private int             _id = -1;
+
+    /**
      * A number that uniquely identifies the task represented by this
      * Isolate object.
      */
@@ -663,9 +669,8 @@ public final class Isolate {
      *         
      */
     public int id() {
-        return id0();
+        return _id;
     }
-    private native int id0();
 
     /**
      * Returns a 64-bit ID that uniquely identifies this Isolate.

@@ -74,6 +74,41 @@ module J2ME {
   }
 
   /**
+   * Given a reference, returns its canonical representation, which is ideally
+   * its address in the ASM heap.  This is an intermediate solution until we
+   * start storing all objects in that heap and referencing them via addresses.
+   */
+  export function canonicalizeRef(reference: any): number {
+    // The reference is the address itself, so just return it.
+    if (typeof reference === "number") {
+      return reference;
+    }
+
+    if (reference === null) {
+      return reference;
+    }
+
+    // A primitive array, which is still represented by a JS object.
+    var prototype = Object.getPrototypeOf(reference);
+    if (prototype && prototype.klass && prototype.klass.classInfo instanceof J2ME.PrimitiveArrayClassInfo) {
+      return reference;
+    }
+
+    // An object array, which is still represented by a JS object.
+    if (reference && reference.klass && reference.klass.classInfo instanceof J2ME.ObjectArrayClassInfo) {
+      return reference;
+    }
+
+    // XXX Also check that |reference instanceof java.lang.Object|?
+    if ("_address" in reference) {
+      return reference._address;
+    }
+
+    // XXX Should we return the reference itself here and hope for the best?
+    assert(false, "unknown reference type");
+  }
+
+  /**
    * Calling Convention:
    *
    * Interpreter -> Interpreter:
@@ -160,7 +195,7 @@ module J2ME {
     setParameter(kind: Kind, i: number, v: any) {
       switch (kind) {
         case Kind.Reference:
-          ref[this.fp + this.parameterOffset + i] = v;
+          ref[this.fp + this.parameterOffset + i] = canonicalizeRef(v);
           break;
         case Kind.Int:
           i32[this.fp + this.parameterOffset + i] = v;
@@ -248,6 +283,7 @@ module J2ME {
           ((i32[i] >= 32 && i32[i] < 1024) ? String.fromCharCode(i32[i]) : "?") + " " +
           clampString(String(f32[i]), 12).padLeft(' ', 12) + " " +
           clampString(String(wordsToDouble(i32[i], i32[i + 1])), 12).padLeft(' ', 12) + " " +
+          // XXX ref[i] could be an address, so update toName to handle that.
           toName(ref[i]));
       }
     }
@@ -384,11 +420,12 @@ module J2ME {
         if (pc >= 0) {
           this.pc = pc;
           this.sp = this.fp + FrameLayout.CallerSaveSize;
-          ref[this.sp++] = e;
+          release || assert(e instanceof Object && "_address" in e, "exception is object with address");
+          ref[this.sp++] = e._address;
           return;
         }
         if (mi.isSynchronized) {
-          this.ctx.monitorExit(ref[this.fp + FrameLayout.MonitorOffset]);
+          this.ctx.monitorExit(getMonitor(ref[this.fp + FrameLayout.MonitorOffset]));
         }
         mi = this.popFrame(mi);
         release || traceWriter && traceWriter.outdent();
@@ -441,10 +478,8 @@ module J2ME {
         frame.setParameter(kinds[i], index++, arguments[i - 1]);
       }
       if (methodInfo.isSynchronized) {
-        var monitor = methodInfo.isStatic
-          ? methodInfo.classInfo.getClassObject()
-          : this;
-        frame.monitor = monitor;
+        var monitor = methodInfo.isStatic ? methodInfo.classInfo.getClassObject() : getMonitor(this);
+        frame.monitor = monitor; // XXX This doesn't seem to be used; delete?
         $.ctx.monitorEnter(monitor);
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
@@ -531,7 +566,7 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, array, object, offset, buffer, tag: TAGS, targetPC;
+    var value, index, array, object, klass, offset, buffer, tag: TAGS, targetPC;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
@@ -609,7 +644,8 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Integer || tag === TAGS.CONSTANT_Float) {
               i32[sp++] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
             } else if (tag === TAGS.CONSTANT_String) {
-              ref[sp++] = ci.constantPool.resolve(index, tag, false);
+              object = ci.constantPool.resolve(index, tag, false);
+              ref[sp++] = object ? object._address : null;
             } else {
               release || assert(false, TAGS[tag]);
             }
@@ -858,7 +894,12 @@ module J2ME {
             array[index] = value;
             continue;
           case Bytecodes.AASTORE:
-            value = ref[--sp];
+            address = ref[--sp];
+            if (typeof address === "number") {
+              value = getHandle(address);
+            } else {
+              value = address;
+            }
             index = i32[--sp];
             array = ref[--sp];
             if ((index >>> 0) >= (array.length >>> 0)) {
@@ -1202,13 +1243,13 @@ module J2ME {
             continue;
           case Bytecodes.IF_ACMPEQ:
             targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-            if (ref[--sp] === ref[--sp]) {
+            if (canonicalizeRef(ref[--sp]) === canonicalizeRef(ref[--sp])) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ACMPNE:
             targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-            if (ref[--sp] !== ref[--sp]) {
+            if (canonicalizeRef(ref[--sp]) !== canonicalizeRef(ref[--sp])) {
               pc = targetPC;
             }
             continue;
@@ -1398,11 +1439,16 @@ module J2ME {
               if (U) {
                 return;
               }
-              object = fieldInfo.classInfo.getStaticObject($.ctx);
+              address = fieldInfo.classInfo.getStaticObject($.ctx)._address + fieldInfo.byteOffset;
             } else {
-              object = ref[--sp];
+              address = ref[--sp];
+              if (typeof address !== "number") {
+                // If address is null, this will throw, which is intentional,
+                // since this operation on a null is a NullPointerException.
+                address = address["_address"];
+              }
+              address += fieldInfo.byteOffset;
             }
-            address = object._address + fieldInfo.byteOffset;
             switch (fieldInfo.kind) {
               case Kind.Reference:
                 ref[sp++] = ref[address >> 2];
@@ -1434,11 +1480,16 @@ module J2ME {
               if (U) {
                 return;
               }
-              object = fieldInfo.classInfo.getStaticObject($.ctx);
+              address = fieldInfo.classInfo.getStaticObject($.ctx)._address + fieldInfo.byteOffset;
             } else {
-              object = ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
+              address = ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
+              if (typeof address !== "number") {
+                // If address is null, this will throw, which is intentional,
+                // since this operation on a null is a NullPointerException.
+                address = address["_address"];
+              }
+              address += fieldInfo.byteOffset;
             }
-            address = object._address + fieldInfo.byteOffset;
             switch (fieldInfo.kind) {
               case Kind.Reference:
                 ref[address >> 2] = ref[--sp];
@@ -1471,36 +1522,53 @@ module J2ME {
             if (U) {
               return;
             }
-            ref[sp++] = newObject(classInfo.klass);
+            ref[sp++] = allocObject(classInfo.klass);
             continue;
           case Bytecodes.CHECKCAST:
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, mi.classInfo);
-            object = ref[sp - 1];
-            if (object && !isAssignableTo(object.klass, classInfo.klass)) {
+            address = ref[sp - 1];
+            // XXX Refactor using canonicalizeRef on the address?
+            if (!address) {
+              continue;
+            }
+            if (typeof address === "number") {
+              klass = klassIdMap[i32[address >> 2]];
+            } else {
+              klass = address["klass"];
+            }
+            if (!isAssignableTo(klass, classInfo.klass)) {
               thread.set(fp, sp, opPC);
               throw $.newClassCastException (
-                object.klass.classInfo.getClassNameSlow() + " is not assignable to " +
-                classInfo.getClassNameSlow()
+                klass.classInfo.getClassNameSlow() + " is not assignable to " + classInfo.getClassNameSlow()
               );
             }
             continue;
           case Bytecodes.INSTANCEOF:
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
-            object = ref[--sp];
-            i32[sp++] = (!object ? false : isAssignableTo(object.klass, classInfo.klass)) ? 1 : 0;
+            address = ref[--sp];
+            // XXX Refactor using canonicalizeRef on the address?
+            if (!address) {
+              i32[sp++] = 0;
+            } else {
+              if (typeof address === "number") {
+                klass = klassIdMap[i32[address >> 2]];
+              } else {
+                klass = address["klass"];
+              }
+              i32[sp++] = isAssignableTo(klass, classInfo.klass) ? 1 : 0;
+            }
             continue;
           case Bytecodes.ATHROW:
-            object = ref[--sp];
-            if (!object) {
+            address = canonicalizeRef(ref[--sp]);
+            if (!address) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
             }
-            throw object;
+            throw getHandle(address);
             continue;
           case Bytecodes.MONITORENTER:
-            object = ref[--sp];
-            thread.ctx.monitorEnter(object);
+            thread.ctx.monitorEnter(getMonitor(ref[--sp]));
             release || assert(U !== VMState.Yielding, "Monitors should never yield.");
             if (U === VMState.Pausing || U === VMState.Stopping) {
               thread.set(fp, sp, pc); // We need to resume past the MONITORENTER bytecode.
@@ -1508,8 +1576,7 @@ module J2ME {
             }
             continue;
           case Bytecodes.MONITOREXIT:
-            object = ref[--sp];
-            thread.ctx.monitorExit(object);
+            thread.ctx.monitorExit(getMonitor(ref[--sp]));
             continue;
           case Bytecodes.WIDE:
             var op = code[pc++];
@@ -1571,8 +1638,7 @@ module J2ME {
             var lastMI = mi;
             var lastOP = op;
             if (lastMI.isSynchronized) {
-              monitor = ref[fp + FrameLayout.MonitorOffset];
-              $.ctx.monitorExit(monitor);
+              $.ctx.monitorExit(getMonitor(ref[fp + FrameLayout.MonitorOffset]));
             }
             opPC = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - maxLocals;
@@ -1632,9 +1698,21 @@ module J2ME {
             var calleeTargetMethodInfo: MethodInfo = null;
 
             var callee = null;
-            object = null;
-            if (!isStatic) {
-              object = ref[sp - calleeMethodInfo.argumentSlots];
+
+            if (isStatic) {
+              object = null;
+            } else {
+              address = canonicalizeRef(ref[sp - calleeMethodInfo.argumentSlots]);
+              if (typeof address === "number") {
+                object = getHandle(address);
+                klass = klassIdMap[i32[address >> 2]];
+              } else if (address === null) {
+                object = null;
+                klass = null;
+              } else {
+                object = address;
+                klass = object["klass"];
+              }
             }
 
             if (isStatic) {
@@ -1653,10 +1731,10 @@ module J2ME {
                 calleeTargetMethodInfo = calleeMethodInfo;
                 break;
               case Bytecodes.INVOKEVIRTUAL:
-                calleeTargetMethodInfo = object.klass.classInfo.vTable[calleeMethodInfo.vTableIndex];
+                calleeTargetMethodInfo = klass.classInfo.vTable[calleeMethodInfo.vTableIndex];
                 break;
               case Bytecodes.INVOKEINTERFACE:
-                calleeTargetMethodInfo = object.klass.classInfo.iTable[calleeMethodInfo.mangledName];
+                calleeTargetMethodInfo = klass.classInfo.iTable[calleeMethodInfo.mangledName];
                 break;
               default:
                 release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
@@ -1704,7 +1782,16 @@ module J2ME {
                       args.unshift(i32[--sp]);
                       break;
                     case Kind.Reference:
-                      args.unshift(ref[--sp]);
+                      // XXX Update natives to expect addresses and stop passing
+                      // handles.
+                      address = ref[--sp];
+                      if (typeof address === "number") {
+                        args.unshift(getHandle(address));
+                      } else if (typeof address === "object") {
+                        args.unshift(address);
+                      } else {
+                        args.unshift(address);
+                      }
                       break;
                     default:
                       release || assert(false, "Invalid Kind: " + Kind[kind]);
@@ -1725,7 +1812,7 @@ module J2ME {
               }
 
               if (!release) {
-                checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
+                // checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
               }
 
               if (U) {
@@ -1757,7 +1844,7 @@ module J2ME {
                   i32[sp++] = returnValue;
                   continue;
                 case Kind.Reference:
-                  ref[sp++] = returnValue;
+                  ref[sp++] = canonicalizeRef(returnValue);
                   continue;
                 case Kind.Void:
                   continue;
@@ -1792,7 +1879,7 @@ module J2ME {
             if (calleeTargetMethodInfo.isSynchronized) {
               monitor = calleeTargetMethodInfo.isStatic
                 ? calleeTargetMethodInfo.classInfo.getClassObject()
-                : object;
+                : getMonitor(object);
               ref[fp + FrameLayout.MonitorOffset] = monitor;
               $.ctx.monitorEnter(monitor);
               release || assert(U !== VMState.Yielding, "Monitors should never yield.");

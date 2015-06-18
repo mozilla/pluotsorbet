@@ -37,7 +37,7 @@ var Content = (function() {
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
 
   Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] = function(storageId, className, handlerData) {
-    var registerID = J2ME.fromJavaString(handlerData.ID);
+    var registerID = J2ME.fromJavaString(getHandle(handlerData.ID));
     if (chRegisteredID && chRegisteredID != registerID) {
       console.warn("Dynamic registration ID doesn't match the configuration");
     }

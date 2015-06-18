@@ -421,6 +421,9 @@ module J2ME {
    */
   export class RuntimeTemplate {
     static all = new Set();
+
+    static isolateMap = Object.create(null);
+
     jvm: JVM;
     status: RuntimeStatus;
     waiting: any [];
@@ -432,9 +435,11 @@ module J2ME {
     ctx: Context;
     allCtxs: Set<Context>;
 
-    isolate: com.sun.cldc.isolate.Isolate;
+    isolateId: number;
+    isolateAddress: number;
     priority: number = ISOLATE_NORM_PRIORITY;
-    mainThread: java.lang.Thread;
+    // XXX Rename mainThread to mainThreadAddress so it's clearly an address.
+    mainThread: number;
 
     private static _nextRuntimeId: number = 0;
     private _runtimeId: number;
@@ -537,6 +542,10 @@ module J2ME {
       if (javaString !== null) {
         return javaString;
       }
+      // It's ok to create and intern an object here, because we only return it
+      // to ConstantPool.resolve, which itself is only called by a few callers,
+      // which should be able to convert it into an address if needed.  But we
+      // should confirm that all callers of ConstantPool.resolve really do that.
       javaString = <java.lang.String>newObject(Klasses.java.lang.String);
       javaString.value = utf16Array;
       javaString.offset = 0;
@@ -722,11 +731,69 @@ module J2ME {
     }
   }
 
+  export var klassIdMap = Object.create(null);
+
+  /**
+   * A map from addresses to monitors, which are JS objects that we use to track
+   * the lock state of Java objects.
+   *
+   * In most cases, we create the JS objects via Object.create(null), but we use
+   * java.lang.Class objects for classes, since those continue to be represented
+   * by JS objects in the runtime.  We also overload this map to retrieve those
+   * class objects for other purposes.
+   *
+   * XXX Consider storing lock state in the ASM heap.
+   */
+  export var monitorMap = Object.create(null);
+
+  // XXX Figure out correct return type(s).
+  export function getMonitor(ref: any): any {
+    // An numerical reference is an address.
+    if (typeof ref === "number") {
+      return monitorMap[ref] || (monitorMap[ref] = Object.create(null));
+    }
+
+    // A primitive array, which is still represented in JS, is its own monitor.
+    var proto = Object.getPrototypeOf(ref);
+    if (proto && proto.klass && proto.klass.classInfo instanceof J2ME.PrimitiveArrayClassInfo) {
+      return ref;
+    }
+
+    // An object array, which is still represented in JS, is its own monitor.
+    if (ref && ref.klass && ref.klass.classInfo instanceof J2ME.ObjectArrayClassInfo) {
+      return ref;
+    }
+
+    // A java.lang.Class object is its own monitor.
+    if (ref.klass === CLASSES.java_lang_Class.klass) {
+      return ref;
+    }
+
+    // An object with an _address property is a handle to a Java object.
+    // XXX Also check that ref instanceof java.lang.Object?
+    if ("_address" in ref) {
+      release || assert(!("_lock" in ref), "monitor reference with _address doesn't have lock");
+      return monitorMap[ref._address] || (monitorMap[ref._address] = Object.create(null));
+    }
+
+    // An object with a _lock property is itself a monitor.
+    // XXX Seems dicey, warn or assert?
+    if ("_lock" in ref) {
+      return ref;
+    }
+
+    // Return the reference itself and hope for the best.
+    release || assert(false, "monitor reference is unknown type");
+    return ref;
+  }
+
   /**
    * Representation of a template class.
    */
   export interface Klass extends Function {
-    new (): java.lang.Object;
+    new (address?: number): java.lang.Object;
+
+    id: number;
 
     /**
      * Array klass of this klass, constructed via \arrayKlass\.
@@ -791,7 +858,7 @@ module J2ME {
 
   export class RuntimeKlass {
 
-    _address: number;
+    public _address: number;
 
     templateKlass: Klass;
 
@@ -807,7 +874,11 @@ module J2ME {
     // isRuntimeKlass: boolean;
 
     constructor(templateKlass: Klass) {
-      this._address = ASM._gcMalloc(templateKlass.classInfo.sizeOfStaticFields);
+      this._address = ASM._gcMalloc(OBJ_HDR_SIZE + templateKlass.classInfo.sizeOfStaticFields);
+
+      // XXX Should we set the ID of this instance to java.lang.Class's ID?
+      // i32[this._address >> 2] = Klasses.java.lang.Class.id | 0;
+
       this.templateKlass = templateKlass;
     }
   }
@@ -816,7 +887,7 @@ module J2ME {
     ready: Context [];
     waiting: Context [];
 
-    constructor(public thread: java.lang.Thread, public level: number) {
+    constructor(public threadAddress: number, public level: number) {
       this.ready = [];
       this.waiting = [];
     }
@@ -827,6 +898,7 @@ module J2ME {
     release || assert(!runtimeKlass.classObject);
     runtimeKlass.classObject = <java.lang.Class><any>new Klasses.java.lang.Class();
     runtimeKlass.classObject.runtimeKlass = runtimeKlass;
+    monitorMap[runtimeKlass.classObject._address] = runtimeKlass.classObject;
     var className = runtimeKlass.templateKlass.classInfo.getClassNameSlow();
     if (className === "java/lang/Object" ||
         className === "java/lang/Class" ||
@@ -1251,9 +1323,12 @@ module J2ME {
               setter = new Function("value", "ref[this._address + " + field.byteOffset + " >> 2] = value;");
               getter = new Function("return ref[this._address + " + field.byteOffset + " >> 2];");
               break;
+            case Kind.Boolean:
+              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value ? 1 : 0;");
+              getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
+              break;
             case Kind.Byte:
             case Kind.Short:
-            case Kind.Boolean:
             case Kind.Int:
               setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
               getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
@@ -1263,12 +1338,20 @@ module J2ME {
               getter = new Function("return f32[this._address + " + field.byteOffset + " >> 2];");
               break;
             case Kind.Long:
-              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value); i32[this._address + 4 + " + field.byteOffset + " >> 2] = tempReturn0;");
-              getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2], i32[this._address + 4 + " + field.byteOffset + " >> 2]);");
+              setter = new Function("value",
+                                    "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value);" +
+                                    "i32[this._address + " + field.byteOffset + " + 4 >> 2] = tempReturn0;");
+              getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2]," +
+                                    "                         i32[this._address + " + field.byteOffset + " + 4 >> 2]);");
               break;
             case Kind.Double:
-              setter = new Function("value", "aliasedF64[0] = value; i32[this._address + " + field.byteOffset + " >> 2] = aliasedI32[0]; i32[this._address + 4 + " + field.byteOffset + " >> 2] = aliasedI32[1];");
-              getter = new Function("aliasedI32[0] = i32[this._address + " + field.byteOffset + " >> 2];  aliasedI32[1] = i32[this._address + 4 + " + field.byteOffset + " >> 2]; return aliasedF64[0];");
+              setter = new Function("value",
+                                    "aliasedF64[0] = value;" +
+                                    "i32[this._address + " + field.byteOffset + " >> 2] = aliasedI32[0];" +
+                                    "i32[this._address + " + field.byteOffset + " + 4 >> 2] = aliasedI32[1];");
+              getter = new Function("aliasedI32[0] = i32[this._address + " + field.byteOffset + " >> 2];" +
+                                    "aliasedI32[1] = i32[this._address + " + field.byteOffset + " + 4 >> 2];" +
+                                    "return aliasedF64[0];");
               break;
             default:
               Debug.assert(false, Kind[field.kind]);
@@ -1806,6 +1889,44 @@ module J2ME {
     return new klass();
   }
 
+  export function allocObject(klass: Klass): number {
+    // This could be implemented via a call to newObject, at the cost
+    // of creating a temporary object: return newObject(klass)._address;
+    var address = ASM._gcMalloc(OBJ_HDR_SIZE + klass.classInfo.sizeOfFields);
+    i32[address >> 2] = klass.id | 0;
+    return address;
+  }
+
+  /**
+   * Get a handle for an object in the ASM heap.
+   *
+   * Currently, we implement this using JS constructors (i.e. Klass instances)
+   * with a prototype chain that reflects the Java class hierarchy and getters/
+   * setters for fields.
+   */
+  export function getHandle(address: number): java.lang.Object {
+    release || assert(typeof address === "number", "address is number");
+
+    var klassId = i32[address >> 2];
+    release || assert(typeof klassId === "number", "klassId is number");
+
+    var klass = klassIdMap[klassId];
+    release || assert(klass, "object has klass");
+
+    // Special-case an object that represents a java.lang.Class, since some code
+    // accesses its runtimeKlass property, which we set only when we create
+    // the object in initializeClassObject, not when we call the klass constructor.
+    if (klass === CLASSES.java_lang_Class.klass) {
+      var classObject = getMonitor(address);
+      return classObject;
+    }
+
+    // Use the constructor to create a wrapper for the already allocated object
+    // by passing in an address, which tells the constructor to reuse the memory
+    // already allocated instead of allocating new memory.
+    return new klass(address);
+  }
+
   export function newString(jsString: string): java.lang.String {
     if (jsString === null || jsString === undefined) {
       return null;
@@ -1969,8 +2090,14 @@ module J2ME {
     LONG_MIN_LOW = 0,
     LONG_MIN_HIGH = 0x80000000,
 
+    TWO_PWR_32_DBL = 4294967296,
 
-    TWO_PWR_32_DBL = 4294967296
+    // The size in bytes of the header in the memory allocated to the object.
+    OBJ_HDR_SIZE = 8,
+
+    // The offset in bytes from the beginning of the allocated memory
+    // to the location of the hash code.
+    HASH_CODE_OFFSET = 4,
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
@@ -2087,8 +2214,21 @@ var AOTMD = J2ME.aotMetaData;
  * Are we currently unwinding the stack because of a Yield? This technically
  * belonges to a context but we store it in the global object because it is
  * read very often.
+ *
+ * We define it as a getter/setter to enable breaking when it is set in Chrome:
+ *   http://stackoverflow.com/questions/11618278/how-to-break-on-property-change-in-chrome
  */
-var U: J2ME.VMState = J2ME.VMState.Running;
+var _U: J2ME.VMState = J2ME.VMState.Running;
+declare var U;
+Object.defineProperty(jsGlobal, 'U', {
+    get: function () {
+        return jsGlobal._U;
+    },
+
+    set: function (value) {
+        jsGlobal._U = value;
+    }
+});
 
 // Several unwind throws for different stack heights.
 
@@ -2118,6 +2258,8 @@ var CCK = J2ME.checkCastKlass;
 var CCI = J2ME.checkCastInterface;
 
 var AK = J2ME.getArrayKlass;
+
+// XXX These (or their callers) will need to be updated to handle addresses.
 var NA = J2ME.newArray;
 var NM = J2ME.newMultiArray;
 
@@ -2127,8 +2269,10 @@ var CDZL = J2ME.checkDivideByZeroLong;
 var CAB = J2ME.checkArrayBounds;
 var CAS = J2ME.checkArrayStore;
 
+// XXX Ensure these work with new monitor objects.
 var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
+
 var TE = J2ME.translateException;
 var TI = J2ME.throwArrayIndexOutOfBoundsException;
 var TA = J2ME.throwArithmeticException;
@@ -2136,3 +2280,8 @@ var TN = J2ME.throwNegativeArraySizeException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
+
+var OBJ_HDR_SIZE = J2ME.Constants.OBJ_HDR_SIZE;
+var HASH_CODE_OFFSET = J2ME.Constants.HASH_CODE_OFFSET;
+
+var getHandle = J2ME.getHandle;

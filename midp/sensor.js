@@ -241,7 +241,6 @@ Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/s
 
     var n = c.mrangeArray.length;
     var array = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, n);
-    debugger;
     for (var i = 0; i < n; i++) {
         array.value[i * 2] = c.mrangeArray[i].low_;
         array.value[i * 2 + 1] = c.mrangeArray[i].high_;

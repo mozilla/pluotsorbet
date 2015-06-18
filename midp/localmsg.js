@@ -1034,16 +1034,26 @@ MIDP.LocalMsgConnections["nokia.product-info"] = NokiaProductInfoLocalMsgConnect
 
 var localmsgServerWait = null;
 
+// XXX Consolidate the objects we store in this map with those in NativeMap.
+nativeConnectionMap = Object.create(null);
+function getNativeConnection(obj) {
+    return nativeConnectionMap[obj._address];
+}
+
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(jName) {
     var name = J2ME.fromJavaString(jName);
 
-    this.server = (name[2] == ":");
-    this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
+    var info = {
+      server: (name[2] == ":"),
+      protocolName: name.slice((name[2] == ':') ? 3 : 2),
+    };
 
-    if (this.server) {
+    setNative(this, info);
+
+    if (info.server) {
         // It seems that one server only serves on client at a time, let's
         // store an object instead of the constructor.
-        this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
+        nativeConnectionMap[this._address] = MIDP.LocalMsgConnections[info.protocolName] = new LocalMsgConnection();
         if (localmsgServerWait) {
             localmsgServerWait();
         }
@@ -1051,9 +1061,9 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
         return;
     }
 
-    if (!MIDP.LocalMsgConnections[this.protocolName]) {
-        if (this.protocolName.startsWith("nokia")) {
-            console.error("localmsg server (" + this.protocolName + ") unimplemented");
+    if (!MIDP.LocalMsgConnections[info.protocolName]) {
+        if (info.protocolName.startsWith("nokia")) {
+            console.error("localmsg server (" + info.protocolName + ") unimplemented");
             // Return without resolving the promise, we want the thread that is connecting
             // to this unimplemented server to stop indefinitely.
             return;
@@ -1062,8 +1072,8 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
         asyncImpl("V", new Promise((function(resolve, reject) {
             localmsgServerWait = function() {
                 localmsgServerWait = null;
-                this.connection = MIDP.LocalMsgConnections[this.protocolName];
-                this.connection.notifyConnection();
+                var connection = nativeConnectionMap[this._address] = MIDP.LocalMsgConnections[info.protocolName];
+                connection.notifyConnection();
                 resolve();
             }.bind(this);
         }).bind(this)));
@@ -1071,55 +1081,64 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
         return;
     }
 
-    if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-        console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
+    if (MIDP.FakeLocalMsgServers.indexOf(info.protocolName) != -1) {
+        console.warn("connect to an unimplemented localmsg server (" + info.protocolName + ")");
     }
 
-    this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
-        new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
+    var connection = nativeConnectionMap[this._address] = typeof MIDP.LocalMsgConnections[info.protocolName] === 'function' ?
+        new MIDP.LocalMsgConnections[info.protocolName]() : MIDP.LocalMsgConnections[info.protocolName];
 
-    this.connection.reset();
+    connection.reset();
 
-    this.connection.notifyConnection();
+    connection.notifyConnection();
 };
 
 Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
-    if (this.connection.clientConnected) {
+    var connection = getNativeConnection(this);
+
+    if (connection.clientConnected) {
         return;
     }
 
-    asyncImpl("V", this.connection.waitConnection());
+    asyncImpl("V", connection.waitConnection());
 };
 
 Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, offset, length) {
-    if (this.server) {
-        this.connection.sendMessageToClient(data, offset, length);
+    var connection = getNativeConnection(this);
+    var info = getNative(this);
+
+    if (info.server) {
+        connection.sendMessageToClient(data, offset, length);
     } else {
-        if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-            console.warn("sendData (" + util.decodeUtf8(new Int8Array(data.buffer, offset, length)) + ") to an unimplemented localmsg server (" + this.protocolName + ")");
+        if (MIDP.FakeLocalMsgServers.indexOf(info.protocolName) != -1) {
+            console.warn("sendData (" + util.decodeUtf8(new Int8Array(data.buffer, offset, length)) +
+                         ") to an unimplemented localmsg server (" + info.protocolName + ")");
         }
 
-        this.connection.sendMessageToServer(data, offset, length);
+        connection.sendMessageToServer(data, offset, length);
     }
 };
 
 Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
-    if (this.server) {
-        if (this.connection.serverMessages.length > 0) {
-          return this.connection.getServerMessage(data);
+    var connection = getNativeConnection(this);
+    var info = getNative(this);
+
+    if (info.server) {
+        if (connection.serverMessages.length > 0) {
+          return connection.getServerMessage(data);
         }
 
-        this.connection.waitServerMessage(data);
+        connection.waitServerMessage(data);
         return;
     }
 
-    if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-        console.warn("receiveData from an unimplemented localmsg server (" + this.protocolName + ")");
+    if (MIDP.FakeLocalMsgServers.indexOf(info.protocolName) != -1) {
+        console.warn("receiveData from an unimplemented localmsg server (" + info.protocolName + ")");
     }
 
-    if (this.connection.clientMessages.length > 0) {
-      return this.connection.getClientMessage(data);
+    if (connection.clientMessages.length > 0) {
+      return connection.getClientMessage(data);
     }
 
-    this.connection.waitClientMessage(data);
+    connection.waitClientMessage(data);
 };

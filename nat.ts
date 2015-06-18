@@ -70,7 +70,7 @@ module J2ME {
           i32[sp++] = l;
           break;
         case Kind.Reference:
-          ref[sp++] = l;
+          ref[sp++] = J2ME.canonicalizeRef(l);
           break;
         case Kind.Void:
           break;
@@ -97,7 +97,7 @@ module J2ME {
   };
 
   Native["java/lang/Thread.isAlive.()Z"] = function() {
-    return this.alive ? 1 : 0;
+    return this.nativeAlive ? 1 : 0;
   };
 
   Native["java/lang/Thread.yield.()V"] = function() {
@@ -124,18 +124,35 @@ module J2ME {
 
   Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function() {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
-    getLinkedMethod(methodInfo).call($.mainThread, J2ME.newString("main"));
+    var thread = <java.lang.Thread>getHandle($.mainThread);
+    getLinkedMethod(methodInfo).call(thread, J2ME.newString("main"));
+
+    // We've already set this in JVM.createIsolateCtx, but calling the instance
+    // initializer above resets it, so we set it again here.
+    //
+    // We used to store this state on the persistent native object, which was
+    // unaffected by the instance initializer; but now we store it on the Java
+    // object, which is susceptible to it, since there is no persistent native
+    // object anymore).
+    //
+    // XXX Figure out a less hacky approach.
+    //
+    thread.nativeAlive = true;
   };
 
   Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): java.lang.String {
-    return $.isolate._mainClass;
+    var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+    return <java.lang.String>getHandle(isolate._mainClass);
   };
 
   Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(main: java.lang.Class) {
     var entryPoint = CLASSES.getEntryPoint(main.runtimeKlass.templateKlass.classInfo);
     if (!entryPoint)
       throw new Error("Could not find isolate main.");
-    getLinkedMethod(entryPoint).call(null, $.isolate._mainArgs);
+
+    var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+
+    getLinkedMethod(entryPoint).call(null, isolate._mainArgs);
   };
 
   Native["org/mozilla/internal/Sys.forceCollection.()V"] = function() {
