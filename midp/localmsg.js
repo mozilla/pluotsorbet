@@ -607,42 +607,14 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(data, off
           throw new Error("Media type '" + mediaType + "' not supported");
       }
 
-      var promptTemplateNode = document.getElementById('nokia-fileui-prompt');
-      var el = promptTemplateNode.cloneNode(true);
-      el.style.display = 'block';
-      el.classList.add('visible');
-
-      var fileInput = el.querySelector('input');
-      fileInput.accept = accept;
-
-      var btnDone = el.querySelector('button.recommend');
-      btnDone.disabled = true;
-
-      var selectedFile = null;
-
-      fileInput.addEventListener('change', function() {
-        btnDone.disabled = false;
-        selectedFile = this.files[0];
-      });
-
-      el.querySelector('button.cancel').addEventListener('click', function() {
-        el.parentElement.removeChild(el);
-      });
-
-      btnDone.addEventListener('click', (function() {
-        el.parentElement.removeChild(el);
-
-        if (!selectedFile) {
-          return;
-        }
-
+      var sendFileSelectReply = (function(blob, name) {
         var ext = "";
-        var extIndex = selectedFile.name.lastIndexOf(".");
+        var extIndex = name.lastIndexOf(".");
         if (extIndex != -1) {
-          ext = selectedFile.name.substr(extIndex);
+          ext = name.substr(extIndex);
         }
 
-        var fileName = fs.createUniqueFile("/Private/nokiafileui", "file" + ext, selectedFile);
+        var fileName = fs.createUniqueFile("/Private/nokiafileui", "file" + ext, blob);
         var encoder = new DataEncoder();
 
         encoder.putStart(DataType.STRUCT, "event");
@@ -662,9 +634,61 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(data, off
 
         var replyData = new TextEncoder().encode(encoder.getData());
         this.sendMessageToClient(replyData, 0, replyData.length);
-      }).bind(this));
+      }).bind(this);
 
-      promptTemplateNode.parentNode.appendChild(el);
+      if (window.MozActivity) {
+        var pipe = DumbPipe.open("mozActivityPick", {
+          name: "pick",
+          data: {
+            type: accept
+          },
+        }, function(message) {
+          switch (message.type) {
+            case "onsuccess":
+              DumbPipe.close(pipe);
+              sendFileSelectReply(new Blob([ message.data ]), message.name);
+              break;
+
+            case "onerror":
+              console.log("Error while picking: " + accept);
+              break;
+          }
+        });
+      } else {
+        var promptTemplateNode = document.getElementById('nokia-fileui-prompt');
+        var el = promptTemplateNode.cloneNode(true);
+        el.style.display = 'block';
+        el.classList.add('visible');
+
+        var fileInput = el.querySelector('input');
+        fileInput.accept = accept;
+
+        var btnDone = el.querySelector('button.recommend');
+        btnDone.disabled = true;
+
+        var selectedFile = null;
+
+        fileInput.addEventListener('change', function() {
+          btnDone.disabled = false;
+          selectedFile = this.files[0];
+        });
+
+        el.querySelector('button.cancel').addEventListener('click', function() {
+          el.parentElement.removeChild(el);
+        });
+
+        btnDone.addEventListener('click', (function() {
+          el.parentElement.removeChild(el);
+
+          if (!selectedFile) {
+            return;
+          }
+
+          sendFileSelectReply(selectedFile, selectedFile.name);
+        }).bind(this));
+
+        promptTemplateNode.parentNode.appendChild(el);
+      }
     break;
 
     default:
