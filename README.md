@@ -15,7 +15,7 @@ PluotSorbet launches MIDlets under two different circumstances.
 * Cold runs require starting up both foreground and background MIDlets, if needed
 * Hot runs only require switching to the active app
 
-![](https://cloud.githubusercontent.com/assets/812428/7572315/0a3a174e-f7d2-11e4-811d-5e1a38caa439.png)
+![](https://cloud.githubusercontent.com/assets/305455/8236833/e2762838-159f-11e5-9ba2-4b7625f10f01.png)
 
 ## Building PluotSorbet
 
