@@ -191,6 +191,7 @@ public class ShellTestlets {
     "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInstanceof",
     "test/org/jikesrvm/basic/core/bytecode/TestResolveOnInvokeInterface",
     "gnu/testlet/vm/InterfaceTest",
+    "java/lang/TestStaticInitUnwind",
     "java/lang/TestStaticInitRaceCondition",
     "gnu/testlet/java/lang/Thread/isAlive",
     "gnu/testlet/java/lang/Thread/join",
