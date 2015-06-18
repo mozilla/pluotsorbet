@@ -1336,7 +1336,7 @@ module J2ME {
         //case Bytecodes.L2I: break;
         //case Bytecodes.L2F: break;
         //case Bytecodes.L2D: break;
-        case Bytecodes.D2I:
+        //case Bytecodes.D2I: break;
         case Bytecodes.F2I: v = "f2i(" + x + ")"; break;
         //case Bytecodes.F2L: break;
         //case Bytecodes.F2D: v = "f2d(" + x + ")"; break;
