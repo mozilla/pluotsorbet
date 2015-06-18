@@ -1277,6 +1277,8 @@ module J2ME {
           this.emitPush(kind, x + ".negate()", Precedence.Member); // TODO: Or is it call?
           break;
         case Kind.Float:
+          this.emitPush(kind, "fneg(" + x + ")", Precedence.UnaryNegation)
+          break;
         case Kind.Double:
           this.emitPush(kind, "- " + x, Precedence.UnaryNegation);
           break;
