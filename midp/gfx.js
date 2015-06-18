@@ -116,7 +116,7 @@ var currentlyFocusedTextEditor;
         } else {
             ctxs.unshift($.ctx);
             $.pause("Async");
-            $.nativeBailout("V");
+            $.nativeBailout(J2ME.Kind.Void);
         }
     }
 
