@@ -795,6 +795,13 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
           return;
         }
 
+        // Keep the aspect ratio of the image.
+        var ratioX = max_hres / img.naturalWidth;
+        var ratioY = max_vres / img.naturalHeight;
+        var ratio = ratioX < ratioY ? ratioX : ratioY;
+        max_hres = ratio * img.naturalWidth;
+        max_vres = ratio * img.naturalHeight;
+
         function _imageToBlob(aCanvas, aImage, aHeight, aWidth, aQuality) {
           aCanvas.width = aWidth;
           aCanvas.height = aHeight;
@@ -818,10 +825,10 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
           var imgSizeInKb = blob.size / 1024;
 
           // Roughly recalc max_vres and max_hres based on the max_kb and the real resolution.
-          var ratio = Math.sqrt(max_kb / imgSizeInKb);
-          max_hres = Math.min(img.naturalWidth * ratio,
+          var sizeRatio = Math.sqrt(max_kb / imgSizeInKb);
+          max_hres = Math.min(img.naturalWidth * sizeRatio,
             max_hres <= 0 ? img.naturalWidth : max_hres);
-          max_vres = Math.min(img.naturalHeight * ratio,
+          max_vres = Math.min(img.naturalHeight * sizeRatio,
             max_vres <=0 ? img.naturalHeight : max_vres);
 
           return _imageToBlob(canvas, img, Math.min(img.naturalHeight, max_vres),
