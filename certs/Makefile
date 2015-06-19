@@ -1,5 +1,18 @@
 CERTS=$(wildcard *.der)
 
+# Set this to the location of the mekeytool executable on your system.
+# The executable comes with the Java Platform Micro Edition Software Development
+# Kit Version 3.0 (or possibly later versions).
+#
+# On Mac, download it from:
+#   http://www.oracle.com/technetwork/java/javame/downloads/sdk30-mac-jsp-137878.html
+#
+# Then see these instructions for finding mekeytool:
+#   https://docs.oracle.com/javame/dev-tools/jme-sdk-3.0-mac/UserGuide-html/z400007747110.html
+#
+# It should be located at:
+#   /Applications/Java_ME_SDK_3.0.app/Contents/Resources/bin/mekeytool
+#
 MEKEYTOOL ?= mekeytool
 
 _main.ks: $(CERTS)

@@ -15,8 +15,7 @@ while True:
                                      server_side=True,
                                      certfile="cert.pem",
                                      keyfile="cert.pem",
-                                     ciphers="RC4",
-                                     ssl_version=ssl.PROTOCOL_SSLv3)
+                                     ciphers="RC4")
     except ssl.SSLError as e:
         # Catch occurrences of:
         #   ssl.SSLEOFError: EOF occurred in violation of protocol (_ssl.c:581)
