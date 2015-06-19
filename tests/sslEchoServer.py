@@ -15,6 +15,7 @@ while True:
                                      server_side=True,
                                      certfile="cert.pem",
                                      keyfile="cert.pem",
+                                     ciphers="RC4",
                                      ssl_version=ssl.PROTOCOL_SSLv3)
     except ssl.SSLError as e:
         # Catch occurrences of:
