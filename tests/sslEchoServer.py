@@ -2,6 +2,16 @@
 
 import socket, ssl
 
+# This is a copy of _RESTRICTED_SERVER_CIPHERS from the current tip of ssl.py
+# <https://hg.python.org/cpython/file/af793c7580f1/Lib/ssl.py#l174> except that
+# RC4 has been added back in, since it was removed in Python 2.7.10,
+# but SSLStreamConnection only supports RC4 ciphers.
+CIPHERS = (
+  'ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+HIGH:'
+  'DH+HIGH:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+HIGH:RSA+3DES:!aNULL:'
+  '!eNULL:!MD5:!DSS:RC4'
+)
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 s.bind(('localhost', 54443))
@@ -15,7 +25,7 @@ while True:
                                      server_side=True,
                                      certfile="cert.pem",
                                      keyfile="cert.pem",
-                                     ciphers="RC4")
+                                     ciphers=CIPHERS)
     except ssl.SSLError as e:
         # Catch occurrences of:
         #   ssl.SSLEOFError: EOF occurred in violation of protocol (_ssl.c:581)
