@@ -14,8 +14,7 @@ while True:
         connstream = ssl.wrap_socket(newsocket,
                                      server_side=True,
                                      certfile="cert.pem",
-                                     keyfile="cert.pem",
-                                     ssl_version=ssl.PROTOCOL_SSLv3)
+                                     keyfile="cert.pem")
     except ssl.SSLError as e:
         # Catch occurrences of:
         #   ssl.SSLEOFError: EOF occurred in violation of protocol (_ssl.c:581)
