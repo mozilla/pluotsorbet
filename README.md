@@ -1,40 +1,40 @@
-# j2me.js [![Build Status](https://travis-ci.org/mozilla/j2me.js.svg)](https://travis-ci.org/mozilla/j2me.js)
+# PluotSorbet [![Build Status](https://travis-ci.org/mozilla/pluotsorbet.svg)](https://travis-ci.org/mozilla/pluotsorbet)
 
-j2me.js is a J2ME virtual machine in JavaScript.
+PluotSorbet implements a Java-compatible virtual machine and J2ME-compatible platform in JavaScript<sup>[[1]](#user-content-JavaScript)</sup>. The goal of PluotSorbet is to run MIDlets in web apps without a native plugin.
 
-The current goals of j2me.js are:
+The current goals of PluotSorbet are:
 
 1. Run MIDlets in a way that emulates the reference implementation of phone ME Feature MR4 (b01)
-1. Keep j2me.js simple and small: Leverage the phoneME JDK/infrastructure and existing Java code as much as we can, and implement as little as possible in JavaScript
+1. Keep PluotSorbet simple and small: Leverage the phoneME JDK/infrastructure and existing Java code as much as we can, and implement as little as possible in JavaScript
 
 ## Install vs Hot runs
 
-J2ME.js launches MIDlets under two different circumstances.
+PluotSorbet launches MIDlets under two different circumstances.
 
 * Install run only happens once per device. It spends extra time downloading, optimizing, and precompiling so that subsequent runs will be faster.
 * Cold runs require starting up both foreground and background MIDlets, if needed
 * Hot runs only require switching to the active app
 
-![](https://cloud.githubusercontent.com/assets/812428/7572315/0a3a174e-f7d2-11e4-811d-5e1a38caa439.png)
+![](https://cloud.githubusercontent.com/assets/305455/8236833/e2762838-159f-11e5-9ba2-4b7625f10f01.png)
 
-## Building j2me.js
+## Building PluotSorbet
 
 Make sure you have [wget](https://www.gnu.org/software/wget/) and a [JRE](http://www.oracle.com/technetwork/java/javase/downloads/jre7-downloads-1880261.html) installed
 
 You need to install the TypeScript compiler, the easiest way is via NPM: `npm install -g typescript`.
 
-Get the [j2me.js repo](https://github.com/mozilla/j2me.js) if you don't have it already
+Get the [PluotSorbet repo](https://github.com/mozilla/pluotsorbet) if you don't have it already
 
-        git clone https://github.com/mozilla/j2me.js
+        git clone https://github.com/mozilla/pluotsorbet
 
 Build using make:
 
-        cd j2me.js
+        cd pluotsorbet
         make
 
 ## Running apps & MIDlets, Debugging
 
-index.html is a webapp that runs j2me.js. The URL parameters you pass to index.html control the specific behavior of j2me.js.
+index.html is a webapp that runs PluotSorbet. The URL parameters you pass to index.html control the specific behavior of PluotSorbet.
 
 ### URL parameters
 
@@ -70,7 +70,7 @@ To enable this type of API for a MIDlet you're running, use [Myk's API Enabler A
 
 To run a MIDlet on a FirefoxOS device, update the `launch_path` property in manifest.webapp. The `midletClassName` URL parameter needs to point to an app.
 
-Once you've updated manifest.webapp, connect to the device or emulator as described in the [FirefoxOS Developer Phone Guide](https://developer.mozilla.org/en-US/Firefox_OS/Developer_phone_guide/Flame) and select your j2me.js directory (the one containing manifest.webapp) when choosing the app to push to device.
+Once you've updated manifest.webapp, connect to the device or emulator as described in the [FirefoxOS Developer Phone Guide](https://developer.mozilla.org/en-US/Firefox_OS/Developer_phone_guide/Flame) and select your PluotSorbet directory (the one containing manifest.webapp) when choosing the app to push to device.
 
 Example - Asteroids
 
@@ -126,7 +126,7 @@ When running `make test`, verbose test output will be printed to your terminal. 
 
 See `logConsole` and `logLevel` URL params in libs/console.js
 
-## Running j2me.js in the SpiderMonkey shell
+## Running PluotSorbet in the SpiderMonkey shell
 
 1. Download the [SpiderMonkey shell](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey/Introduction_to_the_JavaScript_shell)
 1. Execute the jsshell.js file as follows:
@@ -154,11 +154,11 @@ Modelines for JS files:
 
 ### JS profiling
 
-One way to profile j2me.js is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
+One way to profile PluotSorbet is to use the JS profiler available in Firefox Dev Tools. This will tell us how well the JVM is working and how well natives work. This type of profiling will not measure time that is taken waiting for async callbacks to be called (for example, when using the native JS filesystem API).
 
 ### VM profiling
 
-The j2me.js VM has several profiling tools. The simplest feature is to use counters. `runtime.ts` defines several: `runtimeCounter`, `nativeCounter`, etc ... these are only available in debug builds.
+The PluotSorbet VM has several profiling tools. The simplest feature is to use counters. `runtime.ts` defines several: `runtimeCounter`, `nativeCounter`, etc ... these are only available in debug builds.
 
 To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view accumulated counts, allow the application to run for some time and then click the `Dump Counters` button. If you want, reset the counter count any time by clicking `Clear Counters`.
 
@@ -190,7 +190,7 @@ To use them, just add calls to `runtimeCounter.count(name, count = 1)`. To view 
   }
   ```
 
-The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build j2me.js with `PROFILE=[1|2|4]`. Then wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
+The second, more heavy weight profiling tool is Shumway's timeline profiler. The profiler records `enter` / `leave` events in a large circular buffer that can be later displayed visually as a flame chart or saved in a text format. To use it, build PluotSorbet with `PROFILE=[1|2|4]`. Then wrap code regions that you're interested in measuring with calls to `timeline.enter` / `timeline.leave`.
 
 Java methods are automatically wrapped with calls to `methodTimeline.enter` /  `methodTimeline.leave`. The resulting timeline is a very detailed trace of the application's execution. Note that this instrumentation has some overhead, and timing information of very short lived events may not be accurate and can lead to the entire application slowing down.
 
@@ -330,7 +330,7 @@ Overriding Java functions only works in debug mode (RELEASE=0).
 
 ## Packaging
 
-`make app` packages j2me.js into an Open Web App in output directory.
+`make app` packages PluotSorbet into an Open Web App in output directory.
 It's possible to simply package the entire contents of your working directory,
 but these tools will produce a better app.
 
@@ -344,3 +344,6 @@ To use it, first install a recent version of the
 ### Compiling With Closure
 
 `make closure` compiles some JavaScript code with the Closure compiler.
+
+---
+*<a name="JavaScript"></a>[1] JavaScript is a trademark or registered trademark of Sun Microsystems, Inc. in the U.S. and other countries, used under license.*
