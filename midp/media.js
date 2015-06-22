@@ -1016,7 +1016,7 @@ AudioRecorder.prototype.close = function() {
 
 Native["com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I"] = function(appId, pId, jURI) {
     var url = J2ME.fromJavaString(jURI);
-    var id = pId + (appId << 32);
+    var id = pId + (appId << 15);
     Media.PlayerCache[id] = new PlayerContainer(url, pId);
     return id;
 };
