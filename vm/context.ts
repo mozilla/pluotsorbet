@@ -536,7 +536,7 @@ module J2ME {
         this.kill();
         this.clearCurrentContext();
         // Rethrow so the exception is not silent.
-        throw e;
+        throw "klass" in e ? e.klass : e;
       }
       if (U) {
         //if (this.bailoutFrames.length) {
