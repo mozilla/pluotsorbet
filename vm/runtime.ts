@@ -219,10 +219,11 @@ module J2ME {
     long: null
   };
 
-  function Int64Array(length: number) {
-    this.value = new Int32Array(length * 2);
+  function Int64Array(buffer: ArrayBuffer, offset: number, length: number) {
+    this.value = new Int32Array(buffer, offset, length * 2);
     this.length = length;
   }
+  Int64Array.prototype.BYTES_PER_ELEMENT = 8;
 
   var arrays = {
     'Z': Uint8Array,
@@ -255,6 +256,7 @@ module J2ME {
       case Int8Array:
       case Int16Array:
       case Int32Array:
+      case Int64Array:
         return false;
       default:
         return true;
@@ -1942,7 +1944,15 @@ module J2ME {
     if (size < 0) {
       throwNegativeArraySizeException();
     }
+
     var constructor: any = getArrayKlass(klass);
+
+    if (klass.classInfo instanceof PrimitiveClassInfo) {
+      return new constructor(ASM.buffer,
+                             ASM._gcMallocAtomic(size * constructor.prototype.BYTES_PER_ELEMENT),
+                             size);
+    }
+
     return new constructor(size);
   }
   
@@ -1974,11 +1984,11 @@ module J2ME {
     return newArray(Klasses.java.lang.String, size);
   }
 
-  export function newByteArray(size: number): number[]  {
+  export function newByteArray(size: number): Int8Array  {
     return newArray(Klasses.byte, size);
   }
 
-  export function newIntArray(size: number): number[]  {
+  export function newIntArray(size: number): Int32Array  {
     return newArray(Klasses.int, size);
   }
 

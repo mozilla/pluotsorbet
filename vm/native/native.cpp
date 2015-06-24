@@ -49,6 +49,12 @@ extern "C" {
     return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
   }
 
+  uintptr_t gcMallocAtomic(int32_t size) {
+    // TODO:
+    // return (uintptr_t)GC_MALLOC_ATOMIC(size);
+    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
+  }
+
   void forceCollection(void) {
     GC_gcollect();
   }
@@ -56,5 +62,5 @@ extern "C" {
 
 int main() {
   GC_INIT();
-  GC_set_max_heap_size(1024 * 1024 * 16);
+  GC_set_max_heap_size(128 * 1024 * 1024);
 }
