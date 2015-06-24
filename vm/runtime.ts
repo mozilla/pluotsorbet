@@ -1676,7 +1676,7 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
-    jitWriter && jitWriter.enter("Compiling: " + compiledMethodCount + " " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
+    jitWriter && jitWriter.enter("Compiling: " + compiledMethodCount + " " + methodInfo.implKey + ", interpreterCallCount: " + methodInfo.stats.interpreterCallCount + " backwardsBranchCount: " + methodInfo.stats.backwardsBranchCount + " currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
     var s = performance.now();
 
     var compiledMethod;
@@ -1964,6 +1964,11 @@ module J2ME {
     }
   }
 
+  export enum ConfigConstants {
+    InvokeThreshold = 1500,
+    BackwardBranchThreshold = 10000
+  }
+
   export enum Constants {
     BYTE_MIN = -128,
     BYTE_MAX = 127,
@@ -2193,7 +2198,7 @@ var B7 = J2ME.throwUnwind7;
  * OSR Frame.
  */
 // REDUX
-var O = null;
+var O: J2ME.MethodInfo = null;
 
 /**
  * Runtime exports for compiled code.

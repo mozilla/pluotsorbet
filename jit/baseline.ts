@@ -607,21 +607,25 @@ module J2ME {
 
       if (needsOSREntryPoint) {
         // Are we doing an OSR?
-        this.bodyEmitter.enter("if(O){");
-        this.bodyEmitter.writeLn("var _=O.local;");
+        this.bodyEmitter.enter("if(O){debugger;");
+        this.bodyEmitter.writeLn("var nt=$.ctx.nativeThread;");
+        this.bodyEmitter.writeLn("var fp=nt.fp;");
+        this.bodyEmitter.writeLn("var lp=fp-" + this.methodInfo.codeAttribute.max_locals +";");
 
         // Restore locals.
         var restoreLocals = [];
         for (var i = 0; i < this.methodInfo.codeAttribute.max_locals; i++) {
-          restoreLocals.push(this.getLocal(i) + "=_[" + i + "]");
+          restoreLocals.push(this.getLocal(i) + "=i32[lp+" + i + "]===(0xDEADBEEF|0)?ref[lp+" + i + "]:i32[lp+" + i + "]");
         }
         this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
         this.needsVariable("re");
         if (!this.methodInfo.isStatic) {
-          this.bodyEmitter.writeLn("ins=O.lockObject;");
+          this.bodyEmitter.writeLn("ins=ref[fp+" + FrameLayout.MonitorOffset + "]");
         }
-        this.bodyEmitter.writeLn("pc=O.pc;");
-        this.bodyEmitter.writeLn("O.free();O=null;");
+        this.bodyEmitter.writeLn("pc=nt.pc;");
+        this.bodyEmitter.writeLn("nt.popFrame(O);");
+        this.bodyEmitter.writeLn("nt.pushMarkerFrame(" + FrameType.Native + ");");
+        this.bodyEmitter.writeLn("O=null;");
         if (this.methodInfo.isSynchronized) {
           this.bodyEmitter.leaveAndEnter("}else{");
           this.emitMonitorEnter(this.bodyEmitter, 0, this.lockObject);
@@ -792,7 +796,7 @@ module J2ME {
 
     emitReturn(kind: Kind) {
       if (isTwoSlot(kind)) {
-        throwCompilerError("XXX Long Return");
+        throwCompilerError("XXX Two slot return");
       }
       if (this.methodInfo.isSynchronized) {
         this.emitMonitorExit(this.blockEmitter, this.lockObject);
