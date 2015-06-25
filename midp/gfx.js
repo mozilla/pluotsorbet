@@ -379,16 +379,21 @@ var currentlyFocusedTextEditor;
         context.canvas.width = 0;
         context.canvas.height = 0;
         context.font = style + size + "px " + face;
-        this.size = size;
-        this.style = style;
-        this.face = face;
+
+        // This is a custom property that we set on the context so we can
+        // access it in natives.  Note the difference between this value,
+        // which represents the size of the font in pixels, and the Font.size
+        // field, which stores one of the three font size bit mask constants
+        // (SIZE_SMALL, SIZE_MEDIUM, SIZE_LARGE).
+        context.fontSize = size;
     };
 
     function calcStringWidth(font, str) {
         var emojiLen = 0;
 
-        var len = getNative(font).measureText(str.replace(emoji.regEx, function() {
-            emojiLen += font.size;
+        var context = getNative(font);
+        var len = context.measureText(str.replace(emoji.regEx, function() {
+            emojiLen += context.fontSize;
             return "";
         })).width | 0;
 
@@ -935,6 +940,8 @@ var currentlyFocusedTextEditor;
 
     function drawString(info, str, x, y, anchor) {
         var c = info.getGraphicsContext();
+        var font = info.currentFont;
+        var fontSize = getNative(font).fontSize;
 
         var finalText;
         if (!emoji.regEx.test(str)) {
@@ -942,7 +949,6 @@ var currentlyFocusedTextEditor;
             finalText = str;
         } else {
             // Emojis are present. Handle all the text up to the last emoji.
-            var font = info.currentFont;
             var match;
             var lastIndex = 0;
             emoji.regEx.lastIndex = 0;
@@ -951,16 +957,16 @@ var currentlyFocusedTextEditor;
                 var match0 = match[0];
                 lastIndex = match.index + match0.length;
 
-                var textX = withTextAnchor(c, info.currentFont, anchor, x, text);
+                var textX = withTextAnchor(c, font, anchor, x, text);
 
                 c.fillText(text, textX, y);
 
                 // Calculate the string width.
                 x += c.measureText(text).width | 0;
 
-                var emojiData = emoji.getData(match0, font.size);
-                c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, font.size, font.size);
-                x += font.size;
+                var emojiData = emoji.getData(match0, fontSize);
+                c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, fontSize, fontSize);
+                x += fontSize;
             }
             finalText = str.substring(lastIndex);
         }
@@ -968,7 +974,7 @@ var currentlyFocusedTextEditor;
         // Now handle all the text after the final emoji. If there were no
         // emojis present, this is the entire string.
         if (finalText) {
-            var textX = withTextAnchor(c, info.currentFont, anchor, x, finalText);
+            var textX = withTextAnchor(c, font, anchor, x, finalText);
             c.fillText(finalText, textX, y);
         }
     }
