@@ -2224,21 +2224,21 @@ var AOTMD = J2ME.aotMetaData;
  * Are we currently unwinding the stack because of a Yield? This technically
  * belonges to a context but we store it in the global object because it is
  * read very often.
- *
- * We define it as a getter/setter to enable breaking when it is set in Chrome:
- *   http://stackoverflow.com/questions/11618278/how-to-break-on-property-change-in-chrome
  */
-var _U: J2ME.VMState = J2ME.VMState.Running;
-declare var U;
-Object.defineProperty(jsGlobal, 'U', {
-    get: function () {
-        return jsGlobal._U;
-    },
+var U: J2ME.VMState = J2ME.VMState.Running;
 
-    set: function (value) {
-        jsGlobal._U = value;
-    }
-});
+// To enable breaking when it is set in Chrome, define it as a getter/setter:
+// http://stackoverflow.com/questions/11618278/how-to-break-on-property-change-in-chrome
+// var _U: J2ME.VMState = J2ME.VMState.Running;
+// declare var U;
+// Object.defineProperty(jsGlobal, 'U', {
+//     get: function () {
+//         return jsGlobal._U;
+//     },
+//     set: function (value) {
+//         jsGlobal._U = value;
+//     }
+// });
 
 // Several unwind throws for different stack heights.
 
