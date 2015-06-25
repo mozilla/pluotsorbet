@@ -160,7 +160,6 @@ module J2ME {
         instanceSymbols: {
           "baseline": "I",
           "height": "I",
-          "size": "I",
         }
       }
     },

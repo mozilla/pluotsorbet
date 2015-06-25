@@ -164,8 +164,11 @@ var TextEditorProvider = (function() {
         },
 
         setFont: function(font) {
+            // The *font* argument is a handle to the Java Font instance.
+            // We mostly access its native, which is a CanvasRenderingContext2D.
             this.font = font;
-            this._setStyle("font", getNative(font).font);
+            var fontContext = getNative(font);
+            this._setStyle("font", fontContext.font);
         },
 
         setSize: function(width, height) {
@@ -300,15 +303,16 @@ var TextEditorProvider = (function() {
             }
 
             var toImg = function(str) {
-                var emojiData = emoji.getData(str, this.font.size);
+                var fontContext = getNative(this.font);
+                var emojiData = emoji.getData(str, fontContext.fontSize);
 
-                var scale = this.font.size / emoji.squareSize;
+                var scale = fontContext.fontSize / emoji.squareSize;
 
                 var style = 'display:inline-block;';
-                style += 'width:' + this.font.size + 'px;';
-                style += 'height:' + this.font.size + 'px;';
+                style += 'width:' + fontContext.fontSize + 'px;';
+                style += 'height:' + fontContext.fontSize + 'px;';
                 style += 'background:url(' + emojiData.img.src + ') -' + (emojiData.x * scale) + 'px 0px no-repeat;';
-                style += 'background-size:' + (emojiData.img.naturalWidth * scale) + 'px ' + this.font.size + 'px;';
+                style += 'background-size:' + (emojiData.img.naturalWidth * scale) + 'px ' + fontContext.fontSize + 'px;';
 
                 // We use <object> instead of <img> to not allow image resizing.
                 return '<object style="' + style + '" name="' + str + '"></object>';
@@ -448,7 +452,8 @@ var TextEditorProvider = (function() {
         getContentHeight: function() {
             var div = document.getElementById("hidden-textarea-editor");
             div.style.setProperty("width", this.getWidth() + "px");
-            div.style.setProperty("font", getNative(this.font).font);
+            var fontContext = getNative(this.font);
+            div.style.setProperty("font", fontContext.font);
             div.innerHTML = this.html;
             var height = div.offsetHeight;
 

@@ -1509,9 +1509,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(font) {
-        // XXX If font is an object handle, then does this set TextEditor.font correctly?
-console.warn("TextEditor.setFont: " + font);
-        this.font = font;
+        this.font = font._address;
         var textEditor = getNative(this);
         textEditor.setFont(font);
     };
