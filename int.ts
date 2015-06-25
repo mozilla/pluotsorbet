@@ -1787,8 +1787,6 @@ module J2ME {
                       address = ref[--sp];
                       if (typeof address === "number") {
                         args.unshift(getHandle(address));
-                      } else if (typeof address === "object") {
-                        args.unshift(address);
                       } else {
                         args.unshift(address);
                       }
