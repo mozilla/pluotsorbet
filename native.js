@@ -39,6 +39,10 @@ function setNative(javaObj, nativeObj) {
     return nativeObj;
 }
 
+function deleteNative(javaObj) {
+    NativeMap.delete(javaObj);
+}
+
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
     if (!src || !dst)
         throw $.newNullPointerException("Cannot copy to/from a null array.");
@@ -604,15 +608,17 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
 };
 
 Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(target) {
-    this.target = target;
+    // XXX Make these real weak references.
+    setNative(this, target);
 };
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function() {
-    return this.target ? this.target : null;
+    var target = getNative(this);
+    return target ? target : null;
 };
 
 Native["java/lang/ref/WeakReference.clear.()V"] = function() {
-    this.target = null;
+    deleteNative(this);
 };
 
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function() {
