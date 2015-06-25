@@ -40,7 +40,7 @@ function setNative(javaObj, nativeObj) {
 }
 
 function deleteNative(javaObj) {
-    NativeMap.delete(javaObj);
+    NativeMap.delete(javaObj._address);
 }
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
