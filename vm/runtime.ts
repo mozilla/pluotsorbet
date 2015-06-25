@@ -876,7 +876,7 @@ module J2ME {
     // isRuntimeKlass: boolean;
 
     constructor(templateKlass: Klass) {
-      this._address = ASM._gcMalloc(OBJ_HDR_SIZE + templateKlass.classInfo.sizeOfStaticFields);
+      this._address = ASM._gcMalloc(Constants.OBJ_HDR_SIZE + templateKlass.classInfo.sizeOfStaticFields);
 
       // XXX Should we set the ID of this instance to java.lang.Class's ID?
       // i32[this._address >> 2] = Klasses.java.lang.Class.id | 0;
@@ -1894,7 +1894,7 @@ module J2ME {
   export function allocObject(klass: Klass): number {
     // This could be implemented via a call to newObject, at the cost
     // of creating a temporary object: return newObject(klass)._address;
-    var address = ASM._gcMalloc(OBJ_HDR_SIZE + klass.classInfo.sizeOfFields);
+    var address = ASM._gcMalloc(Constants.OBJ_HDR_SIZE + klass.classInfo.sizeOfFields);
     i32[address >> 2] = klass.id | 0;
     return address;
   }
@@ -2290,8 +2290,5 @@ var TN = J2ME.throwNegativeArraySizeException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
-
-var OBJ_HDR_SIZE = J2ME.Constants.OBJ_HDR_SIZE;
-var HASH_CODE_OFFSET = J2ME.Constants.HASH_CODE_OFFSET;
 
 var getHandle = J2ME.getHandle;

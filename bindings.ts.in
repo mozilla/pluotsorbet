@@ -8,12 +8,12 @@ module J2ME {
             return self._hashCode;
           }
 
-          self._hashCode = i32[this._address + HASH_CODE_OFFSET >> 2];
+          self._hashCode = i32[this._address + Constants.HASH_CODE_OFFSET >> 2];
           if (self._hashCode) {
             return self._hashCode;
           }
 
-          return self._hashCode = i32[this._address + HASH_CODE_OFFSET >> 2] = $.nextHashCode();
+          return self._hashCode = i32[this._address + Constants.HASH_CODE_OFFSET >> 2] = $.nextHashCode();
         }
       }
     },

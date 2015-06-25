@@ -1312,11 +1312,11 @@ module J2ME {
           fieldInfo.fTableIndex = fTable.length;
           fTable.push(fieldInfo); // Append
           fieldInfo.mangledName = "f" + fieldInfo.fTableIndex;
-          fieldInfo.byteOffset = OBJ_HDR_SIZE + this.sizeOfFields;
+          fieldInfo.byteOffset = Constants.OBJ_HDR_SIZE + this.sizeOfFields;
           this.sizeOfFields += kindSize(fieldInfo.kind);
         } else {
           fieldInfo.mangledName = "s" + i;
-          fieldInfo.byteOffset = OBJ_HDR_SIZE + this.sizeOfStaticFields;
+          fieldInfo.byteOffset = Constants.OBJ_HDR_SIZE + this.sizeOfStaticFields;
           this.sizeOfStaticFields += kindSize(fieldInfo.kind);
         }
       }
