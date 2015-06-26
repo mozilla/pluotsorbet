@@ -87,7 +87,8 @@ Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = fun
 };
 
 Native["javax/microedition/lcdui/TestTextEditorFocus.isTextEditorReallyFocused.(Lcom/nokia/mid/ui/TextEditor;)Z"] = function(textEditor) {
-  return (currentlyFocusedTextEditor == textEditor.textEditor && currentlyFocusedTextEditor.focused) ? 1 : 0;
+  var nativeTextEditor = getNative(textEditor);
+  return (currentlyFocusedTextEditor == nativeTextEditor && currentlyFocusedTextEditor.focused) ? 1 : 0;
 };
 
 Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = function(pathStr) {

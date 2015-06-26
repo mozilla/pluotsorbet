@@ -111,6 +111,13 @@ class Thread implements Runnable {
     private int    is_terminated;
     private int    is_stillborn;
 
+    /*
+     * Whether or not the thread is alive.  Used by the VM and accessible
+     * via Thread.isAlive().  This is basically !is_terminated && !is_stillborn,
+     * except that our VM doesn't use those variables, it uses this one.
+     */
+    private boolean nativeAlive = false;
+
     /* Thread name */
     private char   name[];
 

@@ -136,37 +136,37 @@ DataDecoder.prototype.getType = function() {
 }
 
 Native["com/nokia/mid/s40/codec/DataEncoder.init.()V"] = function() {
-  this.encoder = new DataEncoder();
+  setNative(this, new DataEncoder());
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V"] = function(tag, name) {
-  this.encoder.putStart(tag, J2ME.fromJavaString(name));
+  getNative(this).putStart(tag, J2ME.fromJavaString(name));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V"] = function(tag, name, value) {
-  this.encoder.put(tag, J2ME.fromJavaString(name), J2ME.fromJavaString(value));
+  getNative(this).put(tag, J2ME.fromJavaString(name), J2ME.fromJavaString(value));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(tag, name, valueLow, valueHigh) {
-  this.encoder.put(tag, J2ME.fromJavaString(name), J2ME.longToNumber(valueLow, valueHigh));
+  getNative(this).put(tag, J2ME.fromJavaString(name), J2ME.longToNumber(valueLow, valueHigh));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(tag, name, value) {
-  this.encoder.put(tag, J2ME.fromJavaString(name), value);
+  getNative(this).put(tag, J2ME.fromJavaString(name), value);
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.put.(Ljava/lang/String;[BI)V"] = function(name, data, length) {
   var array = Array.prototype.slice.call(data.subarray(0, length));
   array.constructor = Array;
-  this.encoder.putNoTag(J2ME.fromJavaString(name), array);
+  getNative(this).putNoTag(J2ME.fromJavaString(name), array);
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = function(tag, name) {
-  this.encoder.putEnd(tag, J2ME.fromJavaString(name));
+  getNative(this).putEnd(tag, J2ME.fromJavaString(name));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function() {
-  var data = this.encoder.getData();
+  var data = getNative(this).getData();
 
   var array = J2ME.newByteArray(data.length);
   for (var i = 0; i < data.length; i++) {
@@ -177,23 +177,23 @@ Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function() {
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(data, offset, length) {
-  this.decoder = new DataDecoder(data, offset, length);
+  setNative(this, new DataDecoder(data, offset, length));
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V"] = function(tag) {
-  if (!this.decoder.getStart(tag)) {
+  if (!getNative(this).getStart(tag)) {
     throw $.newIOException("no start found " + tag);
   }
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V"] = function(tag) {
-  if (!this.decoder.getEnd(tag)) {
+  if (!getNative(this).getEnd(tag)) {
     throw $.newIOException("no end found " + tag);
   }
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = function(tag) {
-  var str = this.decoder.getValue(tag);
+  var str = getNative(this).getValue(tag);
   if (str === undefined) {
     throw $.newIOException("tag (" + tag + ") invalid");
   }
@@ -201,7 +201,7 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = 
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(tag) {
-  var num = this.decoder.getValue(tag);
+  var num = getNative(this).getValue(tag);
   if (num === undefined) {
     throw $.newIOException("tag (" + tag + ") invalid");
   }
@@ -209,7 +209,7 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(tag) {
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z"] = function() {
-  var val = this.decoder.getNextValue();
+  var val = getNative(this).getNextValue();
   if (val === undefined) {
     throw $.newIOException();
   }
@@ -217,7 +217,7 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z"] = function() {
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = function() {
-  var name = this.decoder.getName();
+  var name = getNative(this).getName();
   if (name === undefined) {
     throw $.newIOException();
   }
@@ -225,7 +225,7 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = fun
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getType.()I"] = function() {
-  var tag = this.decoder.getTag();
+  var tag = getNative(this).getTag();
   if (tag === undefined) {
     throw $.newIOException();
   }
@@ -233,5 +233,5 @@ Native["com/nokia/mid/s40/codec/DataDecoder.getType.()I"] = function() {
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.listHasMoreItems.()Z"] = function() {
-  return this.decoder.getType() != DataEncoder.END ? 1 : 0;
+  return getNative(this).getType() != DataEncoder.END ? 1 : 0;
 };

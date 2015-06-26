@@ -177,7 +177,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {
-    return $.ctx.runtime.isolate.id;
+    return $.ctx.runtime.isolateId;
   };
 
   var AMS = (function() {
@@ -218,7 +218,7 @@ var MIDP = (function() {
   })();
 
   Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function() {
-    AMS.set($.ctx.runtime.isolate.id);
+    AMS.set($.ctx.runtime.isolateId);
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function() {
@@ -226,7 +226,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function() {
-    return AMS.isAMSIsolate($.ctx.runtime.isolate.id) ? 1 : 0;
+    return AMS.isAMSIsolate($.ctx.runtime.isolateId) ? 1 : 0;
   };
 
   // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
@@ -644,6 +644,8 @@ var MIDP = (function() {
 
   Native["com/sun/midp/util/isolate/InterIsolateMutex.lock0.(I)V"] = function(id) {
     var ctx = $.ctx;
+    var isolateId = $.ctx.runtime.isolateId;
+
     var mutex;
     for (var i = 0; i < interIsolateMutexes.length; i++) {
       if (interIsolateMutexes[i].id == id) {
@@ -658,24 +660,25 @@ var MIDP = (function() {
 
     if (!mutex.locked) {
       mutex.locked = true;
-      mutex.holder = ctx.runtime.isolate.id;
+      mutex.holder = isolateId;
       return;
     }
 
-    if (mutex.holder == ctx.runtime.isolate.id) {
+    if (mutex.holder == isolateId) {
       throw $.newRuntimeException("Attempting to lock mutex twice within the same Isolate");
     }
 
     asyncImpl("V", new Promise(function(resolve, reject) {
       mutex.waiting.push(function() {
         mutex.locked = true;
-        mutex.holder = ctx.runtime.isolate.id;
+        mutex.holder = isolateId;
         resolve();
       });
     }));
   };
 
   Native["com/sun/midp/util/isolate/InterIsolateMutex.unlock0.(I)V"] = function(id) {
+    var isolateId = $.ctx.runtime.isolateId;
     var mutex;
     for (var i = 0; i < interIsolateMutexes.length; i++) {
       if (interIsolateMutexes[i].id == id) {
@@ -692,7 +695,7 @@ var MIDP = (function() {
       throw $.newRuntimeException("Mutex is not locked");
     }
 
-    if (mutex.holder !== $.ctx.runtime.isolate.id) {
+    if (mutex.holder !== isolateId) {
       throw $.newRuntimeException("Mutex is locked by different Isolate");
     }
 
@@ -725,6 +728,12 @@ var MIDP = (function() {
 
   var pendingMIDletUpdate = null;
   Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
+    // XXX According to Isolate.java, Isolate.id() should return -1 if an
+    // isolate has been terminated, so we should set this._id to -1 here.
+
+    // XXX Other com/sun/cldc/isolate/Isolate natives are in native.js.
+    // We should move this one there or those here.
+
     if (destroyedForRestart) {
       destroyedForRestart = false;
       if (destroyedListener) {
@@ -734,7 +743,7 @@ var MIDP = (function() {
       return;
     }
 
-    var isolateId = $.ctx.runtime.isolate.id;
+    var isolateId = $.ctx.runtime.isolateId;
     console.info("Isolate " + isolateId + " stops with code " + code + " and reason " + reason);
 
     if (AMS.isAMSIsolate(isolateId)) {
@@ -905,7 +914,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() {
-    nativeEventQueues[$.ctx.runtime.isolate.id] = [];
+    nativeEventQueues[$.ctx.runtime.isolateId] = [];
   };
 
   Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
@@ -923,7 +932,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
     function(nativeEvent) {
-      var isolateId = $.ctx.runtime.isolate.id;
+      var isolateId = $.ctx.runtime.isolateId;
       var nativeEventQueue = nativeEventQueues[isolateId];
 
       if (nativeEventQueue.length !== 0) {
@@ -941,7 +950,7 @@ var MIDP = (function() {
 
   Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
     function(obj) {
-      var isolateId = $.ctx.runtime.isolate.id;
+      var isolateId = $.ctx.runtime.isolateId;
       var nativeEventQueue = nativeEventQueues[isolateId];
       if (!nativeEventQueue.length) {
         return 0;
@@ -981,7 +990,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
-    sendNativeEvent({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
+    sendNativeEvent({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolateId);
   };
 
   Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {

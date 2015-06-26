@@ -15,6 +15,34 @@ function preemptingImpl(returnKind, returnValue) {
 
 var Override = {};
 
+/**
+ * A map from Java object addresses to native objects.
+ *
+ * Use getNative and setNative to simplify accessing this map.  getNative takes
+ * a handle, so callers don't need to dereference its address, while setNative
+ * returns the native, so callers can chain it with a local variable assignment.
+ *
+ * Currently this only supports mapping an address to a single native.
+ * Will we ever want to map multiple natives to an address?  If so, we'll need
+ * to do something more sophisticated here.
+ *
+ * XXX Figure out how to collect a native when its Java object is collected.
+ */
+var NativeMap = new Map();
+
+function getNative(javaObj) {
+    return NativeMap.get(javaObj._address);
+}
+
+function setNative(javaObj, nativeObj) {
+    NativeMap.set(javaObj._address, nativeObj);
+    return nativeObj;
+}
+
+function deleteNative(javaObj) {
+    NativeMap.delete(javaObj._address);
+}
+
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
     if (!src || !dst)
         throw $.newNullPointerException("Cannot copy to/from a null array.");
@@ -481,7 +509,7 @@ Native["java/lang/Math.floor.(D)D"] = function(val) {
 };
 
 Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function() {
-    return $.ctx.thread;
+    return getHandle($.ctx.threadAddress);
 };
 
 Native["java/lang/Thread.setPriority0.(II)V"] = function(oldPriority, newPriority) {
@@ -490,13 +518,14 @@ Native["java/lang/Thread.setPriority0.(II)V"] = function(oldPriority, newPriorit
 Native["java/lang/Thread.start0.()V"] = function() {
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
-    if (this === $.ctx.runtime.mainThread || this.alive)
+    if (this._address === $.ctx.runtime.mainThread || this.nativeAlive)
         throw $.newIllegalThreadStateException();
-    this.alive = true;
+    this.nativeAlive = 1;
+    // XXX this.pid seems to be unused, so remove it.
     this.pid = util.id();
     // Create a context for the thread and start it.
     var newCtx = new Context($.ctx.runtime);
-    newCtx.thread = this;
+    newCtx.threadAddress = this._address;
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
@@ -538,28 +567,36 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
     var obj = null;
     if (data) {
         obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
-        obj.data = data;
-        obj.pos = 0;
+        setNative(obj, {
+            data: data,
+            pos: 0,
+        });
     }
     return obj;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(source) {
     var obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
-    obj.data = new Uint8Array(source.data);
-    obj.pos = source.pos;
+    var sourceDecoder = getNative(source);
+    setNative(obj, {
+        data: new Uint8Array(sourceDecoder.data),
+        pos: sourceDecoder.pos,
+    });
     return obj;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(handle) {
+Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(fileDecoder) {
+    var handle = getNative(fileDecoder);
     return handle.data.length - handle.pos;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(handle) {
+Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(fileDecoder) {
+    var handle = getNative(fileDecoder);
     return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(handle, b, off, len) {
+Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(fileDecoder, b, off, len) {
+    var handle = getNative(fileDecoder);
     var data = handle.data;
     var remaining = data.length - handle.pos;
     if (len > remaining)
@@ -571,23 +608,26 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
 };
 
 Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(target) {
-    this.target = target;
+    // XXX Make these real weak references.
+    setNative(this, target);
 };
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function() {
-    return this.target ? this.target : null;
+    var target = getNative(this);
+    return target ? target : null;
 };
 
 Native["java/lang/ref/WeakReference.clear.()V"] = function() {
-    this.target = null;
+    deleteNative(this);
 };
 
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function() {
-    this.id = util.id();
+    this._id = util.id();
 };
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function() {
-    return this.runtime ? this.runtime.status : J2ME.RuntimeStatus.New;
+    var runtime = Runtime.isolateMap[this._address];
+    return runtime ? runtime.status : J2ME.RuntimeStatus.New;
 };
 
 Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function() {
@@ -595,8 +635,8 @@ Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function() {
 };
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(status) {
-    asyncImpl("V", new Promise((function(resolve, reject) {
-        var runtime = this.runtime;
+    var runtime = Runtime.isolateMap[this._address];
+    asyncImpl("V", new Promise(function(resolve, reject) {
         if (runtime.status >= status) {
             resolve();
             return;
@@ -609,27 +649,26 @@ Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(status) {
             runtime.waitStatus(waitForStatus);
         }
         waitForStatus();
-    }).bind(this)));
+    }));
 };
 
 Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;"] = function() {
-    return $.ctx.runtime.isolate;
+    return getHandle($.ctx.runtime.isolateAddress);
 };
 
 Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function() {
     var isolates = J2ME.newObjectArray(Runtime.all.keys().length);
     var n = 0;
     Runtime.all.forEach(function (runtime) {
-        isolates[n++] = runtime.isolate;
+        var address = runtime.isolateAddress;
+        var isolate = getHandle(address);
+        isolates[n++] = isolate;
     });
     return isolates;
 };
 
-Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function() {
-    return this.id;
-};
-
 Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(newPriority) {
+    // XXX Figure out if there's anything to do here.  If not, say so.
 };
 
 Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(suiteId, className) {
