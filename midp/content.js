@@ -134,14 +134,14 @@ var Content = (function() {
       return 0;
     }
 
-    var arguments = J2ME.getArrayFromAddr(invoc.arguments);
+    var invocArguments = J2ME.getArrayFromAddr(invoc.arguments);
 
-    if (arguments.length != 1) {
+    if (invocArguments.length != 1) {
       invoc.argsLen = 1;
       return -1;
     }
 
-    arguments[0] = J2ME.newString(invocation.argument)._address;
+    invocArguments[0] = J2ME.newString(invocation.argument)._address;
     invoc.action = J2ME.newString(invocation.action);
     invoc.status = 2; // Invocation.ACTIVE
 
