@@ -539,7 +539,8 @@ module J2ME {
       this.allCtxs.delete(ctx);
     }
 
-    newStringConstant(utf16Array: Uint16Array): java.lang.String {
+    newStringConstant(utf16ArrayAddr: number): java.lang.String {
+      var utf16Array = getArrayFromAddr(utf16ArrayAddr);
       var javaString = internedStrings.get(utf16Array);
       if (javaString !== null) {
         return javaString;
@@ -549,11 +550,11 @@ module J2ME {
       // which should be able to convert it into an address if needed.  But we
       // should confirm that all callers of ConstantPool.resolve really do that.
       javaString = <java.lang.String>newObject(Klasses.java.lang.String);
-      javaString.value = utf16Array;
+      javaString.value = utf16ArrayAddr;
       javaString.offset = 0;
       javaString.count = utf16Array.length;
       internedStrings.put(utf16Array, javaString);
-      return javaString;
+      return javaString._address;
     }
 
     setStatic(field, value) {
@@ -753,17 +754,6 @@ module J2ME {
     // An numerical reference is an address.
     if (typeof ref === "number") {
       return monitorMap[ref] || (monitorMap[ref] = Object.create(null));
-    }
-
-    // A primitive array, which is still represented in JS, is its own monitor.
-    var proto = Object.getPrototypeOf(ref);
-    if (proto && proto.klass && proto.klass.classInfo instanceof J2ME.PrimitiveArrayClassInfo) {
-      return ref;
-    }
-
-    // An object array, which is still represented in JS, is its own monitor.
-    if (ref && ref.klass && ref.klass.classInfo instanceof J2ME.ObjectArrayClassInfo) {
-      return ref;
     }
 
     // A java.lang.Class object is its own monitor.
@@ -1130,10 +1120,9 @@ module J2ME {
     var klass = <Klass><any> getArrayConstructor(elementKlass.classInfo.getClassNameSlow());
     if (!klass) {
       klass = <Klass><any> function (size: number) {
-        var array = createEmptyObjectArray(size);
-        (<any>array).klass = klass;
-        return array;
+        Debug.unexpected("Array constructor should not be called");
       };
+      klass.prototype.klass = klass;
       klass.toString = function () {
         return "[Array of " + elementKlass + "]";
       };
@@ -1879,14 +1868,6 @@ module J2ME {
     }
   }
 
-  function createEmptyObjectArray(size: number) {
-    var array = new Array(size);
-    for (var i = 0; i < size; i++) {
-      array[i] = null;
-    }
-    return array;
-  }
-
   export function newObject(klass: Klass): java.lang.Object {
     return new klass();
   }
@@ -1907,6 +1888,10 @@ module J2ME {
    * setters for fields.
    */
   export function getHandle(address: number): java.lang.Object {
+    if (address === 0) {
+      return null;
+    }
+
     release || assert(typeof address === "number", "address is number");
 
     var klassId = i32[address >> 2];
@@ -1936,11 +1921,27 @@ module J2ME {
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
     object.value = util.stringToCharArray(jsString);
     object.offset = 0;
-    object.count = object.value.length;
+    object.count = getArrayFromAddr(object.value).length;
     return object;
   }
 
-  export function newArray(klass: Klass, size: number) {
+  export var arrayMap = Object.create(null);
+
+  export function getArrayFromAddr(addr) {
+    if (addr === 0) {
+      return null;
+    }
+
+    if (typeof addr === "number") {
+      return J2ME.arrayMap[addr];
+    } else if ("_address" in addr) {
+      return J2ME.arrayMap[addr._address];
+    } else {
+      return addr;
+    }
+  }
+
+  export function newArray(klass: Klass, size: number): number {
     if (size < 0) {
       throwNegativeArraySizeException();
     }
@@ -1948,24 +1949,49 @@ module J2ME {
     var constructor: any = getArrayKlass(klass);
 
     if (klass.classInfo instanceof PrimitiveClassInfo) {
-      return new constructor(ASM.buffer,
-                             ASM._gcMallocAtomic(size * constructor.prototype.BYTES_PER_ELEMENT),
-                             size);
+      var addr = ASM._gcMallocAtomic(4 + size * constructor.prototype.BYTES_PER_ELEMENT);
+      i32[addr >> 2] = size;
+      var offset = 4;
+      if (constructor.prototype.BYTES_PER_ELEMENT > 4) {
+        i32[addr >> 2 + 1] = 0xDEADBEEF;
+        offset = 8;
+      }
+
+      // XXX: To remove
+      var primArr = new constructor(ASM.buffer,
+                                    offset + addr,
+                                    size);
+      primArr._address = addr;
+      arrayMap[addr] = primArr;
+
+      return addr;
     }
 
-    return new constructor(size);
+    // We need to hold an integer to define the length of the array
+    // and *size* references.
+    var addr = ASM._gcMalloc(4 + size * 4);
+    i32[addr >> 2] = size;
+    var arr = new Int32Array(ASM.buffer,
+                             4 + addr,
+                             size);
+    (<any>arr).klass = constructor;
+    (<any>arr)._address = addr;
+    arrayMap[addr] = arr;
+
+    return addr;
   }
   
-  export function newMultiArray(klass: Klass, lengths: number[]) {
+  export function newMultiArray(klass: Klass, lengths: number[]): number {
     var length = lengths[0];
-    var array = newArray(klass.elementKlass, length);
+    var arrayAddr = newArray(klass.elementKlass, length);
+    var array = arrayMap[arrayAddr];
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i = 0; i < length; i++) {
         array[i] = newMultiArray(klass.elementKlass, lengths);
       }
     }
-    return array;
+    return arrayAddr;
   }
 
   export function throwNegativeArraySizeException() {
@@ -1976,19 +2002,23 @@ module J2ME {
     throw $.newNullPointerException();
   }
 
-  export function newObjectArray(size: number): java.lang.Object[] {
+  export function newObjectArray(size: number): number {
     return newArray(Klasses.java.lang.Object, size);
   }
 
-  export function newStringArray(size: number): java.lang.String[]  {
+  export function newStringArray(size: number): number {
     return newArray(Klasses.java.lang.String, size);
   }
 
-  export function newByteArray(size: number): Int8Array  {
+  export function newByteArray(size: number): number {
     return newArray(Klasses.byte, size);
   }
 
-  export function newIntArray(size: number): Int32Array  {
+  export function newCharArray(size: number): number {
+    return newArray(Klasses.char, size);
+  }
+
+  export function newIntArray(size: number): number {
     return newArray(Klasses.int, size);
   }
 
@@ -2035,7 +2065,7 @@ module J2ME {
     if (!value) {
       return null;
     }
-    return util.fromJavaChars(value.value, value.offset, value.count);
+    return util.fromJavaChars(getArrayFromAddr(value.value), value.offset, value.count);
   }
 
   export function checkDivideByZero(value: number) {
@@ -2058,6 +2088,8 @@ module J2ME {
    * unsinged branch doesn't kick in.
    */
   export function checkArrayBounds(array: any [], index: number) {
+    // XXX: This function is unused, should be updated if we're
+    // ever going to use it
     if ((index >>> 0) >= (array.length >>> 0)) {
       throw $.newArrayIndexOutOfBoundsException(String(index));
     }
@@ -2071,9 +2103,18 @@ module J2ME {
     throw $.newArithmeticException("/ by zero");
   }
 
-  export function checkArrayStore(array: java.lang.Object, value: any) {
-    var arrayKlass = array.klass;
-    if (value && !isAssignableTo(value.klass, arrayKlass.elementKlass)) {
+  export function checkArrayStore(arrayAddr: number, valueAddr: number) {
+    if (valueAddr === 0) {
+      return;
+    }
+
+    var array = getArrayFromAddr(arrayAddr);
+    var value = getArrayFromAddr(valueAddr);
+    if (!value) {
+      value = getHandle(valueAddr);
+    }
+
+    if (!isAssignableTo(value.klass, array.klass.elementKlass)) {
       throw $.newArrayStoreException();
     }
   }

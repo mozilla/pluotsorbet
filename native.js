@@ -44,30 +44,39 @@ function deleteNative(javaObj) {
 }
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
-    if (!src || !dst)
+    if (!src || !dst) {
         throw $.newNullPointerException("Cannot copy to/from a null array.");
+    }
+
     var srcKlass = src.klass;
     var dstKlass = dst.klass;
 
-    if (!srcKlass.isArrayKlass || !dstKlass.isArrayKlass)
+    if (!srcKlass.isArrayKlass || !dstKlass.isArrayKlass) {
         throw $.newArrayStoreException("Can only copy to/from array types.");
-    if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
+    }
+    if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0) {
         throw $.newArrayIndexOutOfBoundsException("Invalid index.");
-    var srcIsPrimitive = !(src instanceof Array);
-    var dstIsPrimitive = !(dst instanceof Array);
+    }
+    var srcIsPrimitive = srcKlass.classInfo instanceof J2ME.PrimitiveArrayClassInfo;
+    var dstIsPrimitive = dstKlass.classInfo instanceof J2ME.PrimitiveArrayClassInfo;
     if ((srcIsPrimitive && dstIsPrimitive && srcKlass !== dstKlass) ||
         (srcIsPrimitive && !dstIsPrimitive) ||
         (!srcIsPrimitive && dstIsPrimitive)) {
         throw $.newArrayStoreException("Incompatible component types: " + srcKlass + " -> " + dstKlass);
     }
+
     if (!dstIsPrimitive) {
         if (srcKlass != dstKlass && !J2ME.isAssignableTo(srcKlass.elementKlass, dstKlass.elementKlass)) {
             var copy = function(to, from) {
-                var obj = src[from];
+                var addr = src[from];
+                var obj = J2ME.getArrayFromAddr(addr);
+                if (!obj) {
+                    obj = getHandle(addr);
+                }
                 if (obj && !J2ME.isAssignableTo(obj.klass, dstKlass.elementKlass)) {
                     throw $.newArrayStoreException("Incompatible component types.");
                 }
-                dst[to] = obj;
+                dst[to] = addr;
             };
             if (dst !== src || dstOffset < srcOffset) {
                 for (var n = 0; n < length; ++n)
@@ -81,6 +90,7 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
             return;
         }
     }
+
     if (dst !== src || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n)
             dst[dstOffset++] = src[srcOffset++];
@@ -283,8 +293,9 @@ Native["com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V"] = function(s
 
 Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
     if (dst !== src || dstOffset < srcOffset) {
-        for (var n = 0; n < length; ++n)
+        for (var n = 0; n < length; ++n) {
             dst[dstOffset++] = src[srcOffset++];
+        }
     } else {
         dstOffset += length;
         srcOffset += length;
@@ -431,26 +442,32 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
 };
 
 Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() {
-    var result = null;
+    var resultAddr = 0;
+    // XXX: Untested.
     if (this.stackTrace) {
         var depth = this.stackTrace.length;
-        var classNames = J2ME.newObjectArray(depth);
-        var methodNames = J2ME.newObjectArray(depth);
-        var methodSignatures = J2ME.newObjectArray(depth);
-        var offsets = J2ME.newIntArray(depth);
+        var classNamesAddr = J2ME.newStringArray(depth);
+        var classNames = J2ME.getArrayFromAddr(classNamesAddr);
+        var methodNamesAddr = J2ME.newStringArray(depth);
+        var methodNames = J2ME.getArrayFromAddr(methodNamesAddr);
+        var methodSignaturesAddr = J2ME.newStringArray(depth);
+        var methodSignatures = J2ME.getArrayFromAddr(methodSignaturesAddr);
+        var offsetsAddr = J2ME.newIntArray(depth);
+        var offsets = J2ME.getArrayFromAddr(offsetsAddr);
         this.stackTrace.forEach(function(e, n) {
             classNames[n] = J2ME.newString(e.className);
             methodNames[n] = J2ME.newString(e.methodName);
             methodSignatures[n] = J2ME.newString(e.methodSignature);
             offsets[n] = e.offset;
         });
-        result = J2ME.newObjectArray(3);
-        result[0] = classNames;
-        result[1] = methodNames;
-        result[2] = methodSignatures;
-        result[3] = offsets;
+        resultAddr = J2ME.newObjectArray(3);
+        var result = J2ME.getArrayFromAddr(resultAddr);
+        result[0] = classNamesAddr;
+        result[1] = methodNamesAddr;
+        result[2] = methodSignaturesAddr;
+        result[3] = offsetsAddr;
     }
-    return result;
+    return resultAddr;
 };
 
 Native["java/lang/Runtime.freeMemory.()J"] = function() {
@@ -657,14 +674,13 @@ Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Iso
 };
 
 Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function() {
-    var isolates = J2ME.newObjectArray(Runtime.all.keys().length);
+    var isolatesAddr = J2ME.newObjectArray(Runtime.all.size);
+    var isolates = J2ME.getArrayFromAddr(isolatesAddr);
     var n = 0;
-    Runtime.all.forEach(function (runtime) {
-        var address = runtime.isolateAddress;
-        var isolate = getHandle(address);
-        isolates[n++] = isolate;
+    Runtime.all.forEach(function(runtime) {
+        isolates[n++] = runtime.isolateAddress;
     });
-    return isolates;
+    return isolatesAddr;
 };
 
 Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(newPriority) {
@@ -744,12 +760,13 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
 };
 
 Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
+  var value = J2ME.getArrayFromAddr(this.value);
   var internedStrings = J2ME.internedStrings;
-  var internedString = internedStrings.getByRange(this.value, this.offset, this.count);
+  var internedString = internedStrings.getByRange(value, this.offset, this.count);
   if (internedString !== null) {
     return internedString;
   }
-  internedStrings.put(this.value.subarray(this.offset, this.offset + this.count), this);
+  internedStrings.put(value.subarray(this.offset, this.offset + this.count), this);
   return this;
 };
 
