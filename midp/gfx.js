@@ -22,58 +22,58 @@ var currentlyFocusedTextEditor;
     tempContext.canvas.width = 0;
     tempContext.canvas.height = 0;
 
-    Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
+    Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function(addr) {
         var ids = J2ME.newIntArray( 1);
         ids[0] = 1;
         return ids;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(addr, id) {
         return null;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(addr, id) {
         console.warn("DisplayDevice.isDisplayPrimary0.(I)Z not implemented (" + id + ")");
         return 1;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.isbuildInDisplay0.(I)Z"] = function(addr, id) {
         return 1;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.getDisplayCapabilities0.(I)I"] = function(addr, id) {
         return 0x3ff;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenSupported0.(I)Z"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenSupported0.(I)Z"] = function(addr, id) {
         return 1;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenMotionSupported0.(I)Z"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPenMotionSupported0.(I)Z"] = function(addr, id) {
         return 1;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.reverseOrientation0.(I)Z"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.reverseOrientation0.(I)Z"] = function(addr, id) {
         return 0;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.getReverseOrientation0.(I)Z"] = function(addr, id) {
         return 0;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(addr, id) {
         return offscreenCanvas.width;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
+    Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(addr, id) {
         return offscreenCanvas.height;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
+    Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(addr, hardwareId, state) {
         console.warn("DisplayDevice.displayStateChanged0.(II)V not implemented (" + hardwareId + ", " + state + ")");
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
+    Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(addr, hardwareId, displayId) {
         hideSplashScreen();
 
         if (!emoji.loaded) {
@@ -88,11 +88,11 @@ var currentlyFocusedTextEditor;
         }
     };
 
-    Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(displayId, on) {
+    Native["com/sun/midp/lcdui/DisplayDeviceAccess.vibrate0.(IZ)Z"] = function(addr, displayId, on) {
         return 1;
     };
 
-    Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = function(displayId) {
+    Native["com/sun/midp/lcdui/DisplayDeviceAccess.isBacklightSupported0.(I)Z"] = function(addr, displayId) {
         return 1;
     };
 
@@ -111,7 +111,7 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    Native["com/sun/midp/lcdui/RepaintEventProducer.waitForAnimationFrame.()V"] = function() {
+    Native["com/sun/midp/lcdui/RepaintEventProducer.waitForAnimationFrame.()V"] = function(addr) {
         if (hasNewFrame) {
             hasNewFrame = false;
             window.requestAnimationFrame(gotNewFrame);
@@ -121,7 +121,7 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
+    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(addr, hardwareId, displayId, x1, y1, x2, y2) {
         x1 = Math.max(0, x1);
         y1 = Math.max(0, y1);
         x2 = Math.max(0, x2);
@@ -244,7 +244,7 @@ var currentlyFocusedTextEditor;
     }
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] =
-    function(imageData, bytes, offset, length) {
+    function(addr, imageData, bytes, offset, length) {
         var ctx = $.ctx;
         asyncImpl("V", new Promise(function(resolve, reject) {
             var blob = new Blob([bytes.subarray(offset, offset + length)], { type: "image/png" });
@@ -266,27 +266,27 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
-    function(dataDest, dataSource, x, y, width, height, transform, isMutable) {
+    function(addr, dataDest, dataSource, x, y, width, height, transform, isMutable) {
         var context = initImageData(dataDest, width, height, isMutable);
         renderRegion(context, getNative(dataSource).context.canvas, x, y, width, height, transform, 0, 0, TOP|LEFT);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
-    function(dest, source) {
+    function(addr, dest, source) {
         var srcCanvas = getNative(source).context.canvas;
         var context = initImageData(dest, srcCanvas.width, srcCanvas.height, 0);
         context.drawImage(srcCanvas, 0, 0);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] =
-    function(imageData, width, height) {
+    function(addr, imageData, width, height) {
         var context = initImageData(imageData, width, height, 1);
         context.fillStyle = "rgb(255,255,255)"; // white
         context.fillRect(0, 0, width, height);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
-    function(imageData, rgbData, width, height, processAlpha) {
+    function(addr, imageData, rgbData, width, height, processAlpha) {
         var context = initImageData(imageData, width, height, 0);
         var ctxImageData = context.createImageData(width, height);
         var abgrData = new Int32Array(ctxImageData.data.buffer);
@@ -300,17 +300,17 @@ var currentlyFocusedTextEditor;
         context.putImageData(ctxImageData, 0, 0);
     };
 
-    Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {
+    Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(addr, rgbData, offset, scanlength, x, y, width, height) {
         var abgrData = new Int32Array(getNative(this).context.getImageData(x, y, width, height).data.buffer);
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     };
 
-    Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V"] = function(image) {
+    Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V"] = function(addr, image) {
         var imageData = getHandle(image.imageData);
         imageData.isMutable = 1;
     };
 
-    Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(image, argb) {
+    Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(addr, image, argb) {
         var width = image.width;
         var height = image.height;
         var imageData = getHandle(image.imageData);
@@ -348,7 +348,7 @@ var currentlyFocusedTextEditor;
     var SIZE_MEDIUM = 0;
     var SIZE_LARGE = 16;
 
-    Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
+    Native["javax/microedition/lcdui/Font.init.(III)V"] = function(addr, face, style, size) {
         var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (offscreenCanvas.height / 35) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
@@ -414,23 +414,23 @@ var currentlyFocusedTextEditor;
         return defaultFont;
     }
 
-    Native["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function() {
+    Native["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function(addr) {
         return getDefaultFont();
     };
 
-    Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(str) {
+    Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(addr, str) {
         return calcStringWidth(this, J2ME.fromJavaString(str));
     };
 
-    Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
+    Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(addr, char) {
         return getNative(this).measureText(String.fromCharCode(char)).width | 0;
     };
 
-    Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
+    Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(addr, str, offset, len) {
         return calcStringWidth(this, util.fromJavaChars(str).slice(offset, offset + len));
     };
 
-    Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(str, offset, len) {
+    Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(addr, str, offset, len) {
         return calcStringWidth(this, J2ME.fromJavaString(str).slice(offset, offset + len));
     };
 
@@ -515,87 +515,87 @@ var currentlyFocusedTextEditor;
         createEllipticalArc(c, x + rw, y + rh, rw, rh, Math.PI, 1.5 * Math.PI, false);
     }
 
-    Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(color) {
+    Native["javax/microedition/lcdui/Graphics.getDisplayColor.(I)I"] = function(addr, color) {
         return color & 0x00FFFFFF;
     };
 
-    Native["javax/microedition/lcdui/Graphics.resetGC.()V"] = function() {
+    Native["javax/microedition/lcdui/Graphics.resetGC.()V"] = function(addr) {
         getNative(this).resetGC();
     };
 
-    Native["javax/microedition/lcdui/Graphics.reset.(IIII)V"] = function(x1, y1, x2, y2) {
+    Native["javax/microedition/lcdui/Graphics.reset.(IIII)V"] = function(addr, x1, y1, x2, y2) {
         getNative(this).reset(x1, y1, x2, y2);
     };
 
-    Native["javax/microedition/lcdui/Graphics.reset.()V"] = function() {
+    Native["javax/microedition/lcdui/Graphics.reset.()V"] = function(addr) {
         var info = getNative(this);
         info.reset(0, 0, info.contextInfo.context.canvas.width, info.contextInfo.context.canvas.height);
     };
 
-    Native["javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V"] = function(x_src, y_src, width, height, x_dest, y_dest, anchor) {
+    Native["javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V"] = function(addr, x_src, y_src, width, height, x_dest, y_dest, anchor) {
         if (isScreenGraphics(this)) {
             throw $.newIllegalStateException();
         }
         console.warn("javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V not implemented");
     };
 
-    Native["javax/microedition/lcdui/Graphics.setDimensions.(II)V"] = function(w, h) {
+    Native["javax/microedition/lcdui/Graphics.setDimensions.(II)V"] = function(addr, w, h) {
         getNative(this).resetNonGC(0, 0, w, h);
     };
 
-    Native["javax/microedition/lcdui/Graphics.translate.(II)V"] = function(x, y) {
+    Native["javax/microedition/lcdui/Graphics.translate.(II)V"] = function(addr, x, y) {
         getNative(this).translate(x, y);
     };
 
-    Native["javax/microedition/lcdui/Graphics.getTranslateX.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getTranslateX.()I"] = function(addr) {
         return getNative(this).transX;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getTranslateY.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getTranslateY.()I"] = function(addr) {
         return getNative(this).transY;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function(addr) {
         return getNative(this).contextInfo.context.canvas.width;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function(addr) {
         return getNative(this).contextInfo.context.canvas.height;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getCreator.()Ljava/lang/Object;"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getCreator.()Ljava/lang/Object;"] = function(addr) {
         return this.creator;
     };
 
-    Native["javax/microedition/lcdui/Graphics.setCreator.(Ljava/lang/Object;)V"] = function(creator) {
+    Native["javax/microedition/lcdui/Graphics.setCreator.(Ljava/lang/Object;)V"] = function(addr, creator) {
         if (!this.creator) {
             this.creator = creator;
         }
     };
 
-    Native["javax/microedition/lcdui/Graphics.getColor.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getColor.()I"] = function(addr) {
         var info = getNative(this);
         return (info.red << 16) | (info.green << 8) | info.blue;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getRedComponent.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getRedComponent.()I"] = function(addr) {
         return getNative(this).red;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getGreenComponent.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getGreenComponent.()I"] = function(addr) {
         return getNative(this).green;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getBlueComponent.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getBlueComponent.()I"] = function(addr) {
         return getNative(this).blue;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getGrayScale.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getGrayScale.()I"] = function(addr) {
         var info = getNative(this);
         return (info.red*76 + info.green*150 + info.blue*29) >>> 8;
     };
 
-    Native["javax/microedition/lcdui/Graphics.setColor.(III)V"] = function(red, green, blue) {
+    Native["javax/microedition/lcdui/Graphics.setColor.(III)V"] = function(addr, red, green, blue) {
         if ((red < 0)   || (red > 255)
             || (green < 0) || (green > 255)
             || (blue < 0)  || (blue > 255)) {
@@ -605,7 +605,7 @@ var currentlyFocusedTextEditor;
         getNative(this).setPixel(0xFF, red, green, blue);
     };
 
-    Native["javax/microedition/lcdui/Graphics.setColor.(I)V"] = function(rgb) {
+    Native["javax/microedition/lcdui/Graphics.setColor.(I)V"] = function(addr, rgb) {
         var red = (rgb >>> 16) & 0xFF;
         var green = (rgb >>> 8) & 0xFF;
         var blue = rgb & 0xFF;
@@ -622,7 +622,7 @@ var currentlyFocusedTextEditor;
         }
     };
 
-    Native["javax/microedition/lcdui/Graphics.setGrayScale.(I)V"] = function(value) {
+    Native["javax/microedition/lcdui/Graphics.setGrayScale.(I)V"] = function(addr, value) {
         if ((value < 0) || (value > 255)) {
             throw $.newIllegalArgumentException("Gray value out of range");
         }
@@ -639,17 +639,17 @@ var currentlyFocusedTextEditor;
         }
     };
 
-    Native["javax/microedition/lcdui/Graphics.getFont.()Ljavax/microedition/lcdui/Font;"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getFont.()Ljavax/microedition/lcdui/Font;"] = function(addr) {
         return getNative(this).currentFont;
     };
 
-    Native["javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(font) {
+    Native["javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(addr, font) {
         getNative(this).setFont(font);
     };
 
     var SOLID = 0;
     var DOTTED = 1;
-    Native["javax/microedition/lcdui/Graphics.setStrokeStyle.(I)V"] = function(style) {
+    Native["javax/microedition/lcdui/Graphics.setStrokeStyle.(I)V"] = function(addr, style) {
         if ((style !== SOLID) && (style !== DOTTED)) {
             throw $.newIllegalArgumentException("Invalid stroke style");
         }
@@ -657,31 +657,31 @@ var currentlyFocusedTextEditor;
         // We don't actually implement DOTTED style so this is a no-op
     };
 
-    Native["javax/microedition/lcdui/Graphics.getStrokeStyle.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getStrokeStyle.()I"] = function(addr) {
         return SOLID;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getClipX.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getClipX.()I"] = function(addr) {
         var info = getNative(this);
         return info.clipX1 - info.transX;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getClipY.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getClipY.()I"] = function(addr) {
         var info = getNative(this);
         return info.clipY1 - info.transY;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getClipWidth.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getClipWidth.()I"] = function(addr) {
         var info = getNative(this);
         return info.clipX2 - info.clipX1;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getClipHeight.()I"] = function() {
+    Native["javax/microedition/lcdui/Graphics.getClipHeight.()I"] = function(addr) {
         var info = getNative(this);
         return info.clipY2 - info.clipY1;
     };
 
-    Native["javax/microedition/lcdui/Graphics.getClip.([I)V"] = function(region) {
+    Native["javax/microedition/lcdui/Graphics.getClip.([I)V"] = function(addr, region) {
         var info = getNative(this);
         region[0] = info.clipX1 - info.transX;
         region[1] = info.clipY1 - info.transY;
@@ -689,7 +689,7 @@ var currentlyFocusedTextEditor;
         region[3] = info.clipY2 - info.transY;
     };
 
-    Native["javax/microedition/lcdui/Graphics.clipRect.(IIII)V"] = function(x, y, width, height) {
+    Native["javax/microedition/lcdui/Graphics.clipRect.(IIII)V"] = function(addr, x, y, width, height) {
         var info = getNative(this);
         info.setClip(x, y, width, height, info.clipX1, info.clipY1, info.clipX2, info.clipY2);
     };
@@ -698,7 +698,7 @@ var currentlyFocusedTextEditor;
     var TYPE_USHORT_4444_ARGB = 4444;
     var TYPE_USHORT_565_RGB = 565;
 
-    Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(argb) {
+    Native["com/nokia/mid/ui/DirectGraphicsImp.setARGBColor.(I)V"] = function(addr, argb) {
         var alpha = (argb >>> 24);
         var red = (argb >>> 16) & 0xFF;
         var green = (argb >>> 8) & 0xFF;
@@ -706,12 +706,12 @@ var currentlyFocusedTextEditor;
         getNative(getHandle(this.graphics)).setPixel(alpha, red, green, blue);
     };
 
-    Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function() {
+    Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function(addr) {
         return getNative(getHandle(this.graphics)).alpha;
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V"] =
-    function(pixels, offset, scanlength, x, y, width, height, format) {
+    function(addr, pixels, offset, scanlength, x, y, width, height, format) {
         if (pixels === null) {
             throw $.newNullPointerException("Pixels array is null");
         }
@@ -731,7 +731,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] =
-    function(pixels, transparency, offset, scanlength, x, y, width, height, manipulation, format) {
+    function(addr, pixels, transparency, offset, scanlength, x, y, width, height, manipulation, format) {
         if (pixels === null) {
             throw $.newNullPointerException("Pixels array is null");
         }
@@ -759,13 +759,13 @@ var currentlyFocusedTextEditor;
         tempContext.canvas.height = 0;
     };
 
-    Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(image, x, y, anchor) {
+    Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] = function(addr, image, x, y, anchor) {
         renderRegion(getNative(this).getGraphicsContext(), getNative(getHandle(image.imageData)).context.canvas,
                      0, 0, image.width, image.height, TRANS_NONE, x, y, anchor);
         return 1;
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] = function(src, x_src, y_src, width, height, transform, x_dest, y_dest, anchor) {
+    Native["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] = function(addr, src, x_src, y_src, width, height, transform, x_dest, y_dest, anchor) {
         if (null === src) {
             throw $.newNullPointerException("src image is null");
         }
@@ -774,7 +774,7 @@ var currentlyFocusedTextEditor;
                      x_src, y_src, width, height, transform, x_dest, y_dest, anchor);
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawImage.(Ljavax/microedition/lcdui/Image;III)V"] = function(image, x, y, anchor) {
+    Native["javax/microedition/lcdui/Graphics.drawImage.(Ljavax/microedition/lcdui/Image;III)V"] = function(addr, image, x, y, anchor) {
         if (image === null) {
             throw $.newNullPointerException("image is null");
         }
@@ -917,13 +917,13 @@ var currentlyFocusedTextEditor;
         this.currentlyAppliedGraphicsInfo = graphicsInfo;
     };
 
-    Native["javax/microedition/lcdui/Graphics.initScreen0.(I)V"] = function(displayId) {
+    Native["javax/microedition/lcdui/Graphics.initScreen0.(I)V"] = function(addr, displayId) {
         this.displayId = displayId;
         setNative(this, new GraphicsInfo(screenContextInfo));
         this.creator = null;
     };
 
-    Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;)V"] = function(img) {
+    Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;)V"] = function(addr, img) {
         this.displayId = -1;
         setNative(this, new GraphicsInfo(getNative(getHandle(img.imageData))));
         this.creator = null;
@@ -933,7 +933,7 @@ var currentlyFocusedTextEditor;
         return g.displayId !== -1;
     }
 
-    Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
+    Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(addr, x, y, w, h) {
         var info = getNative(this);
         info.setClip(x, y, w, h, 0, 0, info.contextInfo.context.canvas.width, info.contextInfo.context.canvas.height);
     };
@@ -979,20 +979,20 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(str, x, y, anchor) {
+    Native["javax/microedition/lcdui/Graphics.drawString.(Ljava/lang/String;III)V"] = function(addr, str, x, y, anchor) {
         drawString(getNative(this), J2ME.fromJavaString(str), x, y, anchor);
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V"] = 
-    function(str, offset, len, x, y, anchor) {
+    Native["javax/microedition/lcdui/Graphics.drawSubstring.(Ljava/lang/String;IIIII)V"] =
+    function(addr, str, offset, len, x, y, anchor) {
         drawString(getNative(this), J2ME.fromJavaString(str).substr(offset, len), x, y, anchor);
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(data, offset, len, x, y, anchor) {
+    Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] = function(addr, data, offset, len, x, y, anchor) {
         drawString(getNative(this), util.fromJavaChars(data, offset, len), x, y, anchor);
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(jChr, x, y, anchor) {
+    Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(addr, jChr, x, y, anchor) {
         var chr = String.fromCharCode(jChr);
         var info = getNative(this);
 
@@ -1003,7 +1003,7 @@ var currentlyFocusedTextEditor;
         c.fillText(chr, x, y);
     };
 
-    Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(x1, y1, x2, y2, x3, y3) {
+    Native["javax/microedition/lcdui/Graphics.fillTriangle.(IIIIII)V"] = function(addr, x1, y1, x2, y2, x3, y3) {
         var c = getNative(this).getGraphicsContext();
 
         var dx1 = (x2 - x1) || 1;
@@ -1019,7 +1019,7 @@ var currentlyFocusedTextEditor;
         c.fill();
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(x, y, w, h) {
+    Native["javax/microedition/lcdui/Graphics.drawRect.(IIII)V"] = function(addr, x, y, w, h) {
         if (w < 0 || h < 0) {
             return;
         }
@@ -1032,7 +1032,7 @@ var currentlyFocusedTextEditor;
         c.strokeRect(x, y, w, h);
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
+    Native["javax/microedition/lcdui/Graphics.drawRoundRect.(IIIIII)V"] = function(addr, x, y, w, h, arcWidth, arcHeight) {
         if (w < 0 || h < 0) {
             return;
         }
@@ -1047,7 +1047,7 @@ var currentlyFocusedTextEditor;
         c.stroke();
     };
 
-    Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(x, y, w, h) {
+    Native["javax/microedition/lcdui/Graphics.fillRect.(IIII)V"] = function(addr, x, y, w, h) {
         if (w <= 0 || h <= 0) {
             return;
         }
@@ -1060,7 +1060,7 @@ var currentlyFocusedTextEditor;
         c.fillRect(x, y, w, h);
     };
 
-    Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(x, y, w, h, arcWidth, arcHeight) {
+    Native["javax/microedition/lcdui/Graphics.fillRoundRect.(IIIIII)V"] = function(addr, x, y, w, h, arcWidth, arcHeight) {
         if (w <= 0 || h <= 0) {
             return;
         }
@@ -1075,7 +1075,7 @@ var currentlyFocusedTextEditor;
         c.fill();
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(x, y, width, height, startAngle, arcAngle) {
+    Native["javax/microedition/lcdui/Graphics.drawArc.(IIIIII)V"] = function(addr, x, y, width, height, startAngle, arcAngle) {
         if (width < 0 || height < 0) {
             return;
         }
@@ -1089,7 +1089,7 @@ var currentlyFocusedTextEditor;
         c.stroke();
     };
 
-    Native["javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V"] = function(x, y, width, height, startAngle, arcAngle) {
+    Native["javax/microedition/lcdui/Graphics.fillArc.(IIIIII)V"] = function(addr, x, y, width, height, startAngle, arcAngle) {
         if (width <= 0 || height <= 0) {
             return;
         }
@@ -1222,7 +1222,7 @@ var currentlyFocusedTextEditor;
         }
     };
 
-    Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
+    Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(addr, x1, y1, x2, y2) {
         var c = getNative(this).getGraphicsContext();
 
         // If we're drawing a completely vertical line that is
@@ -1251,7 +1251,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] =
-    function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
+    function(addr, rgbData, offset, scanlength, x, y, width, height, processAlpha) {
         tempContext.canvas.height = height;
         tempContext.canvas.width = width;
         var imageData = tempContext.createImageData(width, height);
@@ -1305,7 +1305,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.init.(Ljava/lang/String;IIII)V"] =
-    function(text, maxSize, constraints, width, height) {
+    function(addr, text, maxSize, constraints, width, height) {
         if (constraints !== 0) {
             console.warn("TextEditor.constraints not implemented");
         }
@@ -1328,7 +1328,7 @@ var currentlyFocusedTextEditor;
         }.bind(this));
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.attachNativeImpl.()V"] = function() {
+    Native["com/nokia/mid/ui/CanvasItem.attachNativeImpl.()V"] = function(addr) {
         var textEditor = getNative(this);
         if (textEditor) {
             textEditor.attach();
@@ -1339,7 +1339,7 @@ var currentlyFocusedTextEditor;
         }
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.detachNativeImpl.()V"] = function() {
+    Native["com/nokia/mid/ui/CanvasItem.detachNativeImpl.()V"] = function(addr) {
         var textEditor = getNative(this);
         if (textEditor) {
             this.caretPosition = textEditor.getSelectionStart();
@@ -1347,52 +1347,52 @@ var currentlyFocusedTextEditor;
         }
     };
 
-    Native["javax/microedition/lcdui/Display.setTitle.(Ljava/lang/String;)V"] = function(title) {
+    Native["javax/microedition/lcdui/Display.setTitle.(Ljava/lang/String;)V"] = function(addr, title) {
         document.getElementById("display_title").textContent = J2ME.fromJavaString(title);
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.setSize.(II)V"] = function(width, height) {
+    Native["com/nokia/mid/ui/CanvasItem.setSize.(II)V"] = function(addr, width, height) {
         getNative(this).setSize(width, height);
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.setVisible.(Z)V"] = function(visible) {
+    Native["com/nokia/mid/ui/CanvasItem.setVisible.(Z)V"] = function(addr, visible) {
         getNative(this).setVisible(visible ? true : false);
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.getWidth.()I"] = function() {
+    Native["com/nokia/mid/ui/CanvasItem.getWidth.()I"] = function(addr) {
         return getNative(this).getWidth();
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.getHeight.()I"] = function() {
+    Native["com/nokia/mid/ui/CanvasItem.getHeight.()I"] = function(addr) {
         return getNative(this).getHeight();
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.setPosition0.(II)V"] = function(x, y) {
+    Native["com/nokia/mid/ui/CanvasItem.setPosition0.(II)V"] = function(addr, x, y) {
         getNative(this).setPosition(x, y);
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.getPositionX.()I"] = function() {
+    Native["com/nokia/mid/ui/CanvasItem.getPositionX.()I"] = function(addr) {
         return getNative(this).getLeft();
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.getPositionY.()I"] = function() {
+    Native["com/nokia/mid/ui/CanvasItem.getPositionY.()I"] = function(addr) {
         return getNative(this).getTop();
     };
 
-    Native["com/nokia/mid/ui/CanvasItem.isVisible.()Z"] = function() {
+    Native["com/nokia/mid/ui/CanvasItem.isVisible.()Z"] = function(addr) {
         return getNative(this).visible ? 1 : 0;
     };
 
-    Native["com/nokia/mid/ui/TextEditor.setConstraints.(I)V"] = function(constraints) {
+    Native["com/nokia/mid/ui/TextEditor.setConstraints.(I)V"] = function(addr, constraints) {
         var textEditor = getNative(this);
         setNative(this, TextEditorProvider.getEditor(constraints, textEditor, textEditor.id));
     };
 
-    Native["com/nokia/mid/ui/TextEditor.getConstraints.()I"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.getConstraints.()I"] = function(addr) {
         return getNative(this).constraints;
     };
 
-    Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(shouldFocus) {
+    Native["com/nokia/mid/ui/TextEditor.setFocus.(Z)V"] = function(addr, shouldFocus) {
         var textEditor = getNative(this);
         var promise;
         if (shouldFocus && (currentlyFocusedTextEditor !== textEditor)) {
@@ -1407,11 +1407,11 @@ var currentlyFocusedTextEditor;
         asyncImpl("V", promise);
     };
 
-    Native["com/nokia/mid/ui/TextEditor.hasFocus.()Z"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.hasFocus.()Z"] = function(addr) {
         return (getNative(this) === currentlyFocusedTextEditor) ? 1 : 0;
     };
 
-    Native["com/nokia/mid/ui/TextEditor.setCaret.(I)V"] = function(index) {
+    Native["com/nokia/mid/ui/TextEditor.setCaret.(I)V"] = function(addr, index) {
         var textEditor = getNative(this);
 
         if (index < 0 || index > textEditor.getContentSize()) {
@@ -1421,28 +1421,28 @@ var currentlyFocusedTextEditor;
         setTextEditorCaretPosition(this, index);
     };
 
-    Native["com/nokia/mid/ui/TextEditor.getCaretPosition.()I"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.getCaretPosition.()I"] = function(addr) {
         return getTextEditorCaretPosition(this);
     };
 
-    Native["com/nokia/mid/ui/TextEditor.getBackgroundColor.()I"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.getBackgroundColor.()I"] = function(addr) {
         return getNative(this).getBackgroundColor();
     };
-    Native["com/nokia/mid/ui/TextEditor.getForegroundColor.()I"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.getForegroundColor.()I"] = function(addr) {
         return getNative(this).getForegroundColor();
     };
-    Native["com/nokia/mid/ui/TextEditor.setBackgroundColor.(I)V"] = function(backgroundColor) {
+    Native["com/nokia/mid/ui/TextEditor.setBackgroundColor.(I)V"] = function(addr, backgroundColor) {
         getNative(this).setBackgroundColor(backgroundColor);
     };
-    Native["com/nokia/mid/ui/TextEditor.setForegroundColor.(I)V"] = function(foregroundColor) {
+    Native["com/nokia/mid/ui/TextEditor.setForegroundColor.(I)V"] = function(addr, foregroundColor) {
         getNative(this).setForegroundColor(foregroundColor);
     };
 
-    Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function(addr) {
         return J2ME.newString(getNative(this).getContent());
     };
 
-    Native["com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V"] = function(jStr) {
+    Native["com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V"] = function(addr, jStr) {
         var textEditor = getNative(this);
         var str = J2ME.fromJavaString(jStr);
         textEditor.setContent(str);
@@ -1452,11 +1452,11 @@ var currentlyFocusedTextEditor;
     addUnimplementedNative("com/nokia/mid/ui/TextEditor.getLineMarginHeight.()I", 0);
     addUnimplementedNative("com/nokia/mid/ui/TextEditor.getVisibleContentPosition.()I", 0);
 
-    Native["com/nokia/mid/ui/TextEditor.getContentHeight.()I"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.getContentHeight.()I"] = function(addr) {
         return getNative(this).getContentHeight();
     };
 
-    Native["com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V"] = function(jStr, pos) {
+    Native["com/nokia/mid/ui/TextEditor.insert.(Ljava/lang/String;I)V"] = function(addr, jStr, pos) {
         var textEditor = getNative(this);
         var str = J2ME.fromJavaString(jStr);
         var len = util.toCodePointArray(str).length;
@@ -1467,7 +1467,7 @@ var currentlyFocusedTextEditor;
         setTextEditorCaretPosition(this, pos + len);
     };
 
-    Native["com/nokia/mid/ui/TextEditor.delete.(II)V"] = function(offset, length) {
+    Native["com/nokia/mid/ui/TextEditor.delete.(II)V"] = function(addr, offset, length) {
         var textEditor = getNative(this);
         var old = textEditor.getContent();
 
@@ -1480,11 +1480,11 @@ var currentlyFocusedTextEditor;
         setTextEditorCaretPosition(this, offset);
     };
 
-    Native["com/nokia/mid/ui/TextEditor.getMaxSize.()I"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.getMaxSize.()I"] = function(addr) {
         return parseInt(getNative(this).getAttribute("maxlength"));
     };
 
-    Native["com/nokia/mid/ui/TextEditor.setMaxSize.(I)I"] = function(maxSize) {
+    Native["com/nokia/mid/ui/TextEditor.setMaxSize.(I)I"] = function(addr, maxSize) {
         var textEditor = getNative(this);
         if (textEditor.getContentSize() > maxSize) {
             var oldCaretPosition = getTextEditorCaretPosition(this);
@@ -1504,17 +1504,17 @@ var currentlyFocusedTextEditor;
         return maxSize;
     };
 
-    Native["com/nokia/mid/ui/TextEditor.size.()I"] = function() {
+    Native["com/nokia/mid/ui/TextEditor.size.()I"] = function(addr) {
         return getNative(this).getContentSize();
     };
 
-    Native["com/nokia/mid/ui/TextEditor.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(font) {
+    Native["com/nokia/mid/ui/TextEditor.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(addr, font) {
         this.font = font._address;
         var textEditor = getNative(this);
         textEditor.setFont(font);
     };
 
-    Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;"] = function() {
+    Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;"] = function(addr) {
         if (dirtyEditors.length) {
             return dirtyEditors.shift();
         }
@@ -1530,10 +1530,10 @@ var currentlyFocusedTextEditor;
     var nextMidpDisplayableId = 1;
     var PLAIN = 0;
 
-    Native["javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V"] = function() {
+    Native["javax/microedition/lcdui/DisplayableLFImpl.initialize0.()V"] = function(addr) {
     };
 
-    Native["javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V"] = function(nativeId) {
+    Native["javax/microedition/lcdui/DisplayableLFImpl.deleteNativeResource0.(I)V"] = function(addr, nativeId) {
         var el = document.getElementById("displayable-" + nativeId);
         if (el) {
             el.parentElement.removeChild(el);
@@ -1545,17 +1545,17 @@ var currentlyFocusedTextEditor;
         }
     };
 
-    Native["javax/microedition/lcdui/DisplayableLFImpl.setTitle0.(ILjava/lang/String;)V"] = function(nativeId, title) {
+    Native["javax/microedition/lcdui/DisplayableLFImpl.setTitle0.(ILjava/lang/String;)V"] = function(addr, nativeId, title) {
         document.getElementById("display_title").textContent = J2ME.fromJavaString(title);
     };
 
-    Native["javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I"] = function(title, ticker) {
+    Native["javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I"] = function(addr, title, ticker) {
         console.warn("javax/microedition/lcdui/CanvasLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;)I not implemented");
         curDisplayableId = nextMidpDisplayableId++;
         return curDisplayableId;
     };
 
-    Native["javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(title, ticker, type) {
+    Native["javax/microedition/lcdui/AlertLFImpl.createNativeResource0.(Ljava/lang/String;Ljava/lang/String;I)I"] = function(addr, title, ticker, type) {
         var nativeId = nextMidpDisplayableId++;
         var alertTemplateNode = document.getElementById("lcdui-alert");
         var el = alertTemplateNode.cloneNode(true);
@@ -1567,14 +1567,14 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/AlertLFImpl.setNativeContents0.(ILjavax/microedition/lcdui/ImageData;[ILjava/lang/String;)Z"] =
-    function(nativeId, imgId, indicatorBounds, text) {
+    function(addr, nativeId, imgId, indicatorBounds, text) {
         var el = document.getElementById("displayable-" + nativeId);
         el.querySelector('p.text').textContent = J2ME.fromJavaString(text);
 
         return 0;
     };
 
-    Native["javax/microedition/lcdui/AlertLFImpl.showNativeResource0.(I)V"] = function(nativeId) {
+    Native["javax/microedition/lcdui/AlertLFImpl.showNativeResource0.(I)V"] = function(addr, nativeId) {
         var el = document.getElementById("displayable-" + nativeId);
         el.style.display = 'block';
         el.classList.add('visible');
@@ -1589,7 +1589,7 @@ var currentlyFocusedTextEditor;
     var CONTINUOUS_RUNNING = 2;
 
     Native["javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I"] =
-    function(ownerId, label, layout, interactive, maxValue, initialValue) {
+    function(addr, ownerId, label, layout, interactive, maxValue, initialValue) {
         if (label !== null) {
             console.error("Expected null label");
         }
@@ -1617,13 +1617,13 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/TextFieldLFImpl.createNativeResource0.(ILjava/lang/String;ILcom/sun/midp/lcdui/DynamicCharacterArray;ILjava/lang/String;)I"] =
-    function(ownerId, label, layout, buffer, constraints, initialInputMode) {
+    function(addr, ownerId, label, layout, buffer, constraints, initialInputMode) {
         console.warn("javax/microedition/lcdui/TextFieldLFImpl.createNativeResource0.(ILjava/lang/String;ILcom/sun/midp/lcdui/DynamicCharacterArray;ILjava/lang/String;)I not implemented");
         return nextMidpDisplayableId++;
     };
 
     Native["javax/microedition/lcdui/ImageItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjavax/microedition/lcdui/ImageData;Ljava/lang/String;I)I"] =
-    function(ownerId, label, layout, imageData, altText, appearanceMode) {
+    function(addr, ownerId, label, layout, imageData, altText, appearanceMode) {
         console.warn("javax/microedition/lcdui/ImageItemLFImpl.createNativeResource0.(ILjava/lang/String;ILjavax/microedition/lcdui/ImageData;Ljava/lang/String;I)I not implemented");
         return nextMidpDisplayableId++;
     };
@@ -1644,19 +1644,19 @@ var currentlyFocusedTextEditor;
         function() { return nextMidpDisplayableId++ }
     );
 
-    Native["javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V"] = function(nativeId, w, h) {
+    Native["javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V"] = function(addr, nativeId, w, h) {
         console.warn("javax/microedition/lcdui/ItemLFImpl.setSize0.(III)V not implemented");
     };
 
-    Native["javax/microedition/lcdui/ItemLFImpl.setLocation0.(III)V"] = function(nativeId, x, y) {
+    Native["javax/microedition/lcdui/ItemLFImpl.setLocation0.(III)V"] = function(addr, nativeId, x, y) {
         console.warn("javax/microedition/lcdui/ItemLFImpl.setLocation0.(III)V not implemented");
     };
 
-    Native["javax/microedition/lcdui/ItemLFImpl.show0.(I)V"] = function(nativeId) {
+    Native["javax/microedition/lcdui/ItemLFImpl.show0.(I)V"] = function(addr, nativeId) {
         console.warn("javax/microedition/lcdui/ItemLFImpl.show0.(I)V not implemented");
     };
 
-    Native["javax/microedition/lcdui/ItemLFImpl.hide0.(I)V"] = function(nativeId) {
+    Native["javax/microedition/lcdui/ItemLFImpl.hide0.(I)V"] = function(addr, nativeId) {
         console.warn("javax/microedition/lcdui/ItemLFImpl.hide0.(I)V not implemented");
     };
 
@@ -1672,7 +1672,7 @@ var currentlyFocusedTextEditor;
     var STOP = 6;
 
     Native["javax/microedition/lcdui/NativeMenu.updateCommands.([Ljavax/microedition/lcdui/Command;I[Ljavax/microedition/lcdui/Command;I)V"] =
-    function(itemCommands, numItemCommands, commands, numCommands) {
+    function(addr, itemCommands, numItemCommands, commands, numCommands) {
         if (numItemCommands !== 0) {
             console.error("NativeMenu.updateCommands: item commands not yet supported");
         }

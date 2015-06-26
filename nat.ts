@@ -90,39 +90,43 @@ module J2ME {
     $.pause("Async");
   }
 
-  Native["java/lang/Thread.sleep.(J)V"] = function(delayL: number, delayH: number) {
+  Native["java/lang/Thread.sleep.(J)V"] = function(addr: number, delayL: number, delayH: number) {
     asyncImpl(Kind.Void, new Promise(function(resolve, reject) {
       window.setTimeout(resolve, longToNumber(delayL, delayH));
     }));
   };
 
-  Native["java/lang/Thread.isAlive.()Z"] = function() {
-    return this.nativeAlive ? 1 : 0;
+  Native["java/lang/Thread.isAlive.()Z"] = function(addr: number) {
+    var self = <java.lang.Thread>getHandle(addr);
+    return self.nativeAlive ? 1 : 0;
   };
 
-  Native["java/lang/Thread.yield.()V"] = function() {
+  Native["java/lang/Thread.yield.()V"] = function(addr: number) {
     $.yield("Thread.yield");
     $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
-  Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
-    $.ctx.wait(this, longToNumber(timeoutL, timeoutH));
+  Native["java/lang/Object.wait.(J)V"] = function(addr: number, timeoutL: number, timeoutH: number) {
+    var self = getHandle(addr);
+    $.ctx.wait(self, longToNumber(timeoutL, timeoutH));
     $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
-  Native["java/lang/Object.notify.()V"] = function() {
-    $.ctx.notify(this, false);
+  Native["java/lang/Object.notify.()V"] = function(addr: number) {
+    var self = getHandle(addr);
+    $.ctx.notify(self, false);
   };
 
-  Native["java/lang/Object.notifyAll.()V"] = function() {
-    $.ctx.notify(this, true);
+  Native["java/lang/Object.notifyAll.()V"] = function(addr: number) {
+    var self = getHandle(addr);
+    $.ctx.notify(self, true);
   };
 
-  Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function() {
+  Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function(addr: number) {
     return unwindCount;
   };
 
-  Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function() {
+  Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
     var thread = <java.lang.Thread>getHandle($.mainThread);
     getLinkedMethod(methodInfo).call(thread, J2ME.newString("main"));
@@ -140,12 +144,12 @@ module J2ME {
     thread.nativeAlive = true;
   };
 
-  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): java.lang.String {
+  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(addr: number): java.lang.String {
     var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
     return <java.lang.String>getHandle(isolate._mainClass);
   };
 
-  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(main: java.lang.Class) {
+  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(addr: number, main: java.lang.Class) {
     var entryPoint = CLASSES.getEntryPoint(main.runtimeKlass.templateKlass.classInfo);
     if (!entryPoint)
       throw new Error("Could not find isolate main.");
@@ -155,7 +159,7 @@ module J2ME {
     getLinkedMethod(entryPoint).call(null, isolate._mainArgs);
   };
 
-  Native["org/mozilla/internal/Sys.forceCollection.()V"] = function() {
+  Native["org/mozilla/internal/Sys.forceCollection.()V"] = function(addr: number) {
     ASM._forceCollection();
   };
 }
