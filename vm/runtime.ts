@@ -1949,13 +1949,13 @@ module J2ME {
     var constructor: any = getArrayKlass(klass);
 
     if (klass.classInfo instanceof PrimitiveClassInfo) {
-      var addr = ASM._gcMallocAtomic(4 + size * constructor.prototype.BYTES_PER_ELEMENT);
-      i32[addr >> 2] = size;
       var offset = 4;
       if (constructor.prototype.BYTES_PER_ELEMENT > 4) {
-        i32[addr >> 2 + 1] = 0xDEADBEEF;
         offset = 8;
       }
+
+      var addr = ASM._gcMallocAtomic(offset + size * constructor.prototype.BYTES_PER_ELEMENT);
+      i32[addr >> 2] = size;
 
       // XXX: To remove
       var primArr = new constructor(ASM.buffer,
