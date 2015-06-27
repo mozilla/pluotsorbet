@@ -1916,7 +1916,7 @@ module J2ME {
 
   export function newString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
-      return null;
+      return 0;
     }
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
     object.value = util.stringToCharArray(jsString);
