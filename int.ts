@@ -762,7 +762,7 @@ module J2ME {
             if ((index >>> 0) >= (i32[arrayAddr >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            aliasedF64[0] = getArrayFromAddr(arrayAddr)[index];
+            aliasedF64[0] = f64[(arrayAddr >> 3) + 1 + index];
             i32[sp++] = aliasedI32[0];
             i32[sp++] = aliasedI32[1];
             continue;
@@ -887,7 +887,7 @@ module J2ME {
             if ((index >>> 0) >= (i32[arrayAddr >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            getArrayFromAddr(arrayAddr)[index] = value;
+            f64[(arrayAddr >> 3) + 1 + index] = value;
             continue;
           case Bytecodes.AASTORE:
             address = canonicalizeRef(ref[--sp]);
