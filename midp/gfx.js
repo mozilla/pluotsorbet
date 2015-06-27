@@ -23,7 +23,7 @@ var currentlyFocusedTextEditor;
     tempContext.canvas.height = 0;
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
-        var idsAddr = J2ME.newIntArray( 1);
+        var idsAddr = J2ME.newIntArray(1);
         var ids = J2ME.getArrayFromAddr(idsAddr);
         ids[0] = 1;
         return idsAddr;
