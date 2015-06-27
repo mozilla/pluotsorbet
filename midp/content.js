@@ -141,7 +141,7 @@ var Content = (function() {
       return -1;
     }
 
-    invocArguments[0] = J2ME.newString(invocation.argument)._address;
+    invocArguments[0] = J2ME.newString(invocation.argument);
     invoc.action = J2ME.newString(invocation.action);
     invoc.status = 2; // Invocation.ACTIVE
 
