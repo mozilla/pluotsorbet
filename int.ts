@@ -1811,12 +1811,7 @@ module J2ME {
                         if (address === 0) {
                           args.unshift(null);
                         } else {
-                          var tmp = getArrayFromAddr(address);
-                          if (tmp) {
-                            args.unshift(tmp);
-                          } else {
-                            args.unshift(getHandle(address));
-                          }
+                          args.unshift(getArrayFromAddr(address) || getHandle(address));
                         }
                       } else {
                         args.unshift(address);
