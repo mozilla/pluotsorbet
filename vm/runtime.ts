@@ -1931,7 +1931,6 @@ module J2ME {
 
   export var arrayMap = Object.create(null);
 
-  // XXX: addr should be a number
   export function getArrayFromAddr(addr: number) {
     if (addr === 0) {
       return null;
