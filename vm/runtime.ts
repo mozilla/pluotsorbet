@@ -2108,13 +2108,10 @@ module J2ME {
       return;
     }
 
-    var array = getArrayFromAddr(arrayAddr);
-    var value = getArrayFromAddr(valueAddr);
-    if (!value) {
-      value = getHandle(valueAddr);
-    }
+    var arrayKlass = klassIdMap[i32[arrayAddr >> 2]];
+    var valueKlass = klassIdMap[i32[valueAddr >> 2]];
 
-    if (!isAssignableTo(value.klass, array.klass.elementKlass)) {
+    if (!isAssignableTo(valueKlass, arrayKlass.elementKlass)) {
       throw $.newArrayStoreException();
     }
   }
