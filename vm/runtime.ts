@@ -1927,6 +1927,7 @@ module J2ME {
 
   export var arrayMap = Object.create(null);
 
+  // XXX: addr should be a number
   export function getArrayFromAddr(addr) {
     if (addr === 0) {
       return null;
@@ -1934,11 +1935,13 @@ module J2ME {
 
     if (typeof addr === "number") {
       return J2ME.arrayMap[addr];
-    } else if ("_address" in addr) {
-      return J2ME.arrayMap[addr._address];
-    } else {
-      return addr;
     }
+
+    if ("_address" in addr) {
+      return J2ME.arrayMap[addr._address];
+    }
+
+    release || assert(false, "addr invalid");
   }
 
   export function newArray(klass: Klass, size: number): number {
