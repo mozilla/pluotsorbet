@@ -1932,20 +1932,14 @@ module J2ME {
   export var arrayMap = Object.create(null);
 
   // XXX: addr should be a number
-  export function getArrayFromAddr(addr) {
+  export function getArrayFromAddr(addr: number) {
     if (addr === 0) {
       return null;
     }
 
-    if (typeof addr === "number") {
-      return J2ME.arrayMap[addr];
-    }
+    release || assert(typeof addr === "number", "addr is number");
 
-    if ("_address" in addr) {
-      return J2ME.arrayMap[addr._address];
-    }
-
-    release || assert(false, "addr invalid");
+    return arrayMap[addr];
   }
 
   export function newArray(klass: Klass, size: number): number {
@@ -1974,6 +1968,7 @@ module J2ME {
 
     i32[(addr >> 2)] = klassId;
     i32[(addr >> 2) + 1] = size;
+    // XXX: To remove
     (<any>arr).klass = constructor;
     (<any>arr)._address = addr;
     arrayMap[addr] = arr;
