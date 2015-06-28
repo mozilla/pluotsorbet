@@ -539,7 +539,7 @@ module J2ME {
       this.allCtxs.delete(ctx);
     }
 
-    newStringConstant(utf16ArrayAddr: number): java.lang.String {
+    newStringConstant(utf16ArrayAddr: number): number {
       var utf16Array = getArrayFromAddr(utf16ArrayAddr);
       var javaString = internedStrings.get(utf16Array);
       if (javaString !== null) {
