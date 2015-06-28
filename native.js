@@ -69,10 +69,7 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
         if (srcKlass != dstKlass && !J2ME.isAssignableTo(srcKlass.elementKlass, dstKlass.elementKlass)) {
             var copy = function(to, from) {
                 var addr = src[from];
-                var obj = J2ME.getArrayFromAddr(addr);
-                if (!obj) {
-                    obj = getHandle(addr);
-                }
+                var obj = getHandle(addr);
                 if (obj && !J2ME.isAssignableTo(obj.klass, dstKlass.elementKlass)) {
                     throw $.newArrayStoreException("Incompatible component types.");
                 }
