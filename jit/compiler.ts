@@ -38,7 +38,7 @@ module J2ME {
    * XXX Should we instead store the address of the Java object that represents
    * the Klass in the ASM heap?
    */
-  var generateKlassId = (function() {
+  export var generateKlassId = (function() {
     var nextId = 0;
     return function() {
       return nextId++;

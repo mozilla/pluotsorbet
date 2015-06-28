@@ -1948,32 +1948,25 @@ module J2ME {
 
     var constructor: any = getArrayKlass(klass);
 
+    var arr;
+    var addr;
+    var klassId = generateKlassId();
+    klassIdMap[klassId] = constructor;
+
     if (klass.classInfo instanceof PrimitiveClassInfo) {
-      var offset = 4;
-      if (constructor.prototype.BYTES_PER_ELEMENT > 4) {
-        offset = 8;
-      }
-
-      var addr = ASM._gcMallocAtomic(offset + size * constructor.prototype.BYTES_PER_ELEMENT);
-      i32[addr >> 2] = size;
-
+      addr = ASM._gcMallocAtomic(8 + size * constructor.prototype.BYTES_PER_ELEMENT);
       // XXX: To remove
-      var primArr = new constructor(ASM.buffer,
-                                    offset + addr,
-                                    size);
-      primArr._address = addr;
-      arrayMap[addr] = primArr;
-
-      return addr;
+      arr = new constructor(ASM.buffer, 8 + addr, size);
+    } else {
+      // We need to hold an integer to define the length of the array
+      // and *size* references.
+      addr = ASM._gcMalloc(8 + size * 4);
+      // XXX: To remove
+      arr = new Int32Array(ASM.buffer, 8 + addr, size);
     }
 
-    // We need to hold an integer to define the length of the array
-    // and *size* references.
-    var addr = ASM._gcMalloc(4 + size * 4);
-    i32[addr >> 2] = size;
-    var arr = new Int32Array(ASM.buffer,
-                             4 + addr,
-                             size);
+    i32[(addr >> 2)] = klassId;
+    i32[(addr >> 2) + 1] = size;
     (<any>arr).klass = constructor;
     (<any>arr)._address = addr;
     arrayMap[addr] = arr;
