@@ -1908,6 +1908,10 @@ module J2ME {
       return classObject;
     }
 
+    if (klass.isArrayKlass) {
+      return getArrayFromAddr(address);
+    }
+
     // Use the constructor to create a wrapper for the already allocated object
     // by passing in an address, which tells the constructor to reuse the memory
     // already allocated instead of allocating new memory.

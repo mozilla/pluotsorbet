@@ -1566,12 +1566,7 @@ module J2ME {
               i32[sp++] = 0;
             } else {
               if (typeof address === "number") {
-                object = getArrayFromAddr(address);
-                if (!object) {
-                  klass = klassIdMap[i32[address >> 2]];
-                } else {
-                  klass = object.klass;
-                }
+                klass = klassIdMap[i32[address >> 2]];
               } else {
                 klass = address["klass"];
               }
@@ -1725,7 +1720,7 @@ module J2ME {
                 object = null;
                 klass = null;
               } else if (typeof address === "number") {
-                object = getArrayFromAddr(address) || getHandle(address);
+                object = getHandle(address);
                 klass = klassIdMap[i32[address >> 2]];
               } else {
                 object = address;
@@ -1807,7 +1802,7 @@ module J2ME {
                         if (address === 0) {
                           args.unshift(null);
                         } else {
-                          args.unshift(getArrayFromAddr(address) || getHandle(address));
+                          args.unshift(getHandle(address));
                         }
                       } else {
                         args.unshift(address);
