@@ -3,7 +3,7 @@
 
 'use strict';
 
-Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(b, nbytes) {
+Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(addr, b, nbytes) {
     window.crypto.getRandomValues(b.subarray(0, nbytes));
     return 1;
 };
@@ -38,11 +38,11 @@ MIDP.bin2String = function(array) {
   return bin2StringResult.join("");
 };
 
-Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(inBuf, inOff, inLen, state, num, count, data) {
+Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(addr, inBuf, inOff, inLen, state, num, count, data) {
     MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Int8Array(inBuf.subarray(inOff, inOff + inLen))));
 };
 
-Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
+Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(addr, inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
     var hasher = MIDP.getMD5Hasher(data);
 
     if (inBuf) {
@@ -64,7 +64,7 @@ Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(inBu
     MIDP.hashers.delete(data);
 };
 
-Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(data) {
+Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(addr, data) {
     for (var key of MIDP.hashers.keys()) {
         if (util.compareTypedArrays(key, data)) {
             var value = MIDP.hashers.get(key);
@@ -107,7 +107,7 @@ function hexStringToBytes(hex) {
     return bytes;
 }
 
-Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(data, exponent, modulus, result) {
+Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(addr, data, exponent, modulus, result) {
     // The jsbn library doesn't work well with typed arrays, so we're using this
     // hack of translating the numbers to hexadecimal strings before handing
     // them to jsbn (and we're getting the result back in a hex string).
@@ -122,7 +122,7 @@ Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(data, exponent, 
     return remainder.length;
 };
 
-Native["com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V"] = function(S, X, Y, inbuf, inoff, inlen, outbuf, outoff) {
+Native["com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V"] = function(addr, S, X, Y, inbuf, inoff, inlen, outbuf, outoff) {
     var x = X[0];
     var y = Y[0];
 

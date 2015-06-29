@@ -193,12 +193,12 @@ AccelerometerSensor.handleEvent = function(evt) {
     this.acceleration[2] = a.z;
 };
 
-Native["com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I"] = function() {
+Native["com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I"] = function(addr) {
     // Only support the acceleration sensor.
     return 1;
 };
 
-Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V"] = function(number, model) {
+Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V"] = function(addr, number, model) {
     if (number !== 0) {
         console.error("Invalid sensor number: " + number);
         return;
@@ -225,7 +225,7 @@ Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/S
     model.properties = pAddr;
 };
 
-Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] = function(sensorsNumber, number, model) {
+Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] = function(addr, sensorsNumber, number, model) {
     if (sensorsNumber !== 0) {
         console.error("Invalid sensor number: " + sensorsNumber);
         return;
@@ -252,12 +252,12 @@ Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/s
     model.mrageArray = arrayAddr;
 };
 
-Native["com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z"] = function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z"] = function(addr, number) {
     // Only support the acceleration sensor with number = 0.
     return number === 0 ? 1 : 0;
 };
 
-Native["com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z"] = function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z"] = function(addr, number) {
     if (number !== 0) {
         return 0;
     }
@@ -265,7 +265,7 @@ Native["com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z"] = function(number
     return 1;
 };
 
-Native["com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z"] = function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z"] = function(addr, number) {
     if (number !== 0) {
         return 0;
     }
@@ -273,7 +273,7 @@ Native["com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z"] = function(numb
     return 1;
 };
 
-Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(sensorNumber, channelNumber) {
+Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(addr, sensorNumber, channelNumber) {
     if (sensorNumber !== 0 || channelNumber < 0 || channelNumber >= 3) {
         if (sensorNumber !== 0) {
             console.error("Invalid sensor number: " + sensorsNumber);

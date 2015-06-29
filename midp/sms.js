@@ -124,7 +124,7 @@ function promptForMessageText() {
     }, MIDlet.SMSDialogTimeout);
 }
 
-Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(host, msid, port) {
+Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(addr, host, msid, port) {
     MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
@@ -135,7 +135,7 @@ Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = func
 };
 
 Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] =
-function(port, msid, handle, smsPacket) {
+function(addr, port, msid, handle, smsPacket) {
     asyncImpl("I", new Promise(function(resolve, reject) {
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
@@ -174,18 +174,18 @@ function(port, msid, handle, smsPacket) {
     }));
 };
 
-Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(port, handle, deRegister) {
+Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(addr, port, handle, deRegister) {
     delete MIDP.smsConnections[handle];
     return 0;
 };
 
-Native["com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I"] = function(msgBuffer, msgLen, msgType, hasPort) {
+Native["com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I"] = function(addr, msgBuffer, msgLen, msgType, hasPort) {
     console.warn("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I not implemented");
     return 1;
 };
 
 Native["com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I"] =
-function(handle, type, host, destPort, sourcePort, message) {
+function(addr, handle, type, host, destPort, sourcePort, message) {
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
         var pipe = DumbPipe.open("mozActivity", {

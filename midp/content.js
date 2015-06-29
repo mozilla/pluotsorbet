@@ -19,7 +19,7 @@ var Content = (function() {
 
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.init.()Z", 1);
 
-  Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
+  Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(addr, suiteID) {
     if (!chRegisteredClassName) {
       return null;
     }
@@ -36,7 +36,7 @@ var Content = (function() {
 
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
 
-  Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] = function(storageId, className, handlerData) {
+  Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] = function(addr, storageId, className, handlerData) {
     var registerID = J2ME.fromJavaString(getHandle(handlerData.ID));
     if (chRegisteredID && chRegisteredID != registerID) {
       console.warn("Dynamic registration ID doesn't match the configuration");
@@ -69,7 +69,7 @@ var Content = (function() {
   // registered and unregisters it.
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.unregister0.(Ljava/lang/String;)Z", 1);
 
-  Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(callerId, id, mode) {
+  Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(addr, callerId, id, mode) {
     if (!chRegisteredClassName) {
       return null;
     }
@@ -90,7 +90,7 @@ var Content = (function() {
                                           ]));
   };
 
-  Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
+  Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function(addr) {
     // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;
   };
@@ -127,7 +127,7 @@ var Content = (function() {
     }
   });
 
-  Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] = function(invoc, suiteId, className, mode, shouldBlock) {
+  Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] = function(addr, invoc, suiteId, className, mode, shouldBlock) {
     getInvocationCalled = true;
 
     if (!invocation) {
