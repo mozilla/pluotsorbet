@@ -439,7 +439,7 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr) {
 };
 
 Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(addr) {
-    var resultAddr = 0;
+    var resultAddr = J2ME.Constants.NULL;
     // XXX: Untested.
     if (this.stackTrace) {
         var depth = this.stackTrace.length;

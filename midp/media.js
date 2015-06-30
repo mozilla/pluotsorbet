@@ -536,7 +536,7 @@ function ImageRecorder(playerContainer) {
 
     this.realizeResolver = null;
 
-    this.snapshotDataAddr = 0;
+    this.snapshotDataAddr = J2ME.Constants.NULL;
     this.ctx = $.ctx;
 }
 
