@@ -709,7 +709,7 @@ function(dirHandleLow, dirHandleHigh, includeHidden) {
     var iterator = MIDP.openDirs.get(J2ME.longToNumber(dirHandleLow, dirHandleHigh));
     var nextFile = iterator.files[++iterator.index];
 DEBUG_FS && console.log(iterator.index + " " + nextFile);
-    return nextFile ? J2ME.newString(nextFile) : 0;
+    return nextFile ? J2ME.newString(nextFile) : J2ME.Constants.NULL;
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativePathForRoot.(Ljava/lang/String;)Ljava/lang/String;"] =
