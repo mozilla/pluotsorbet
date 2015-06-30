@@ -84,10 +84,9 @@ module J2ME {
       return reference;
     }
 
-    if (reference === null || reference === 0) {
-      return 0;
+    if (reference === null || reference === Constants.NULL) {
+      return Constants.NULL;
     }
-
 
     // XXX Also check that |reference instanceof java.lang.Object|?
     if ("_address" in reference) {
@@ -590,7 +589,7 @@ module J2ME {
           case Bytecodes.NOP:
             continue;
           case Bytecodes.ACONST_NULL:
-            ref[sp++] = 0;
+            ref[sp++] = Constants.NULL;
             continue;
           case Bytecodes.ICONST_M1:
           case Bytecodes.ICONST_0:
@@ -745,7 +744,7 @@ module J2ME {
             index = i32[--sp];
             arrayAddr = ref[--sp];
 
-            if (arrayAddr === 0) {
+            if (arrayAddr === Constants.NULL) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
               continue;
             }
@@ -1419,7 +1418,7 @@ module J2ME {
             continue;
           case Bytecodes.ARRAYLENGTH:
             arrayAddr = ref[--sp];
-            if (arrayAddr === 0) {
+            if (arrayAddr === Constants.NULL) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
               continue;
             }
@@ -1436,7 +1435,7 @@ module J2ME {
               }
               address = fieldInfo.classInfo.getStaticObject($.ctx)._address + fieldInfo.byteOffset;
 
-              if (address === 0) {
+              if (address === Constants.NULL) {
                 thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
                 continue;
               }
@@ -1448,7 +1447,7 @@ module J2ME {
                 address = address["_address"];
               }
 
-              if (address === 0) {
+              if (address === Constants.NULL) {
                 thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
                 continue;
               }
@@ -1720,7 +1719,7 @@ module J2ME {
               object = null;
             } else {
               address = canonicalizeRef(ref[sp - calleeMethodInfo.argumentSlots]);
-              if (address === null || address === 0) {
+              if (address === null || address === Constants.NULL) {
                 object = null;
                 klass = null;
               } else if (typeof address === "number") {
@@ -1808,7 +1807,7 @@ module J2ME {
                       // handles.
                       address = ref[--sp];
                       if (typeof address === "number") {
-                        if (address === 0) {
+                        if (address === Constants.NULL) {
                           args.unshift(null);
                         } else {
                           args.unshift(getArrayFromAddr(address) || getHandle(address));
