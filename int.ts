@@ -88,7 +88,6 @@ module J2ME {
       return 0;
     }
 
-
     // XXX Also check that |reference instanceof java.lang.Object|?
     if ("_address" in reference) {
       return reference._address;
@@ -1719,12 +1718,14 @@ module J2ME {
               if (address === null || address === 0) {
                 object = null;
                 klass = null;
+                address = 0;
               } else if (typeof address === "number") {
                 object = getHandle(address);
                 klass = klassIdMap[i32[address >> 2]];
               } else {
                 object = address;
                 klass = object["klass"];
+                address = object._address;
               }
             }
 
@@ -1769,7 +1770,7 @@ module J2ME {
 
                 thread.set(fp, sp, opPC);
 
-                returnValue = callee.call(object, object ? object._address : 0);
+                returnValue = callee.call(object, address);
               } else {
                 args.length = 0;
 
@@ -1823,7 +1824,7 @@ module J2ME {
                   // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
                 }
 
-                args.unshift(object ? object._address : 0);
+                args.unshift(address);
                 returnValue = callee.apply(object, args);
               }
 
