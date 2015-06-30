@@ -2108,6 +2108,8 @@ module J2ME {
     // The offset in bytes from the beginning of the allocated memory
     // to the location of the hash code.
     HASH_CODE_OFFSET = 4,
+
+    NULL = 0,
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
