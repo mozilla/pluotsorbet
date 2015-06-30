@@ -1888,7 +1888,7 @@ module J2ME {
    * setters for fields.
    */
   export function getHandle(address: number): java.lang.Object {
-    if (address === 0) {
+    if (address === Constants.NULL) {
       return null;
     }
 
@@ -1932,7 +1932,7 @@ module J2ME {
   export var arrayMap = Object.create(null);
 
   export function getArrayFromAddr(addr: number) {
-    if (addr === 0) {
+    if (addr === Constants.NULL) {
       return null;
     }
 
@@ -2098,7 +2098,7 @@ module J2ME {
   }
 
   export function checkArrayStore(arrayAddr: number, valueAddr: number) {
-    if (valueAddr === 0) {
+    if (valueAddr === Constants.NULL) {
       return;
     }
 
@@ -2140,6 +2140,8 @@ module J2ME {
     // The offset in bytes from the beginning of the allocated memory
     // to the location of the hash code.
     HASH_CODE_OFFSET = 4,
+
+    NULL = 0,
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
