@@ -1888,7 +1888,7 @@ module J2ME {
    * setters for fields.
    */
   export function getHandle(address: number): java.lang.Object {
-    if (address === 0) {
+    if (address === Constants.NULL) {
       return null;
     }
 
@@ -1928,7 +1928,7 @@ module J2ME {
   export var arrayMap = Object.create(null);
 
   export function getArrayFromAddr(addr) {
-    if (addr === 0) {
+    if (addr === Constants.NULL) {
       return null;
     }
 
@@ -2104,7 +2104,7 @@ module J2ME {
   }
 
   export function checkArrayStore(arrayAddr: number, valueAddr: number) {
-    if (valueAddr === 0) {
+    if (valueAddr === Constants.NULL) {
       return;
     }
 
