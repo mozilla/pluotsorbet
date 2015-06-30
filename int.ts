@@ -893,7 +893,7 @@ module J2ME {
             index = i32[--sp];
             arrayAddr = ref[--sp];
 
-            if (arrayAddr === 0) {
+            if (arrayAddr === Constants.NULL) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
               continue;
             }
