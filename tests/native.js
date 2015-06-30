@@ -151,9 +151,10 @@ Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V"] = f
 
 Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(data) {
   var converted = Media.convert3gpToAmr(new Uint8Array(data));
-  var result = J2ME.newByteArray(converted.length);
+  var resultAddr = J2ME.newByteArray(converted.length);
+  var result = J2ME.getArrayFromAddr(resultAddr);
   result.set(converted);
-  return result;
+  return resultAddr;
 };
 
 Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)V"] = function(language) {

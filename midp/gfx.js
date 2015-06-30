@@ -23,9 +23,10 @@ var currentlyFocusedTextEditor;
     tempContext.canvas.height = 0;
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
-        var ids = J2ME.newIntArray( 1);
+        var idsAddr = J2ME.newIntArray(1);
+        var ids = J2ME.getArrayFromAddr(idsAddr);
         ids[0] = 1;
-        return ids;
+        return idsAddr;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(id) {
@@ -712,7 +713,7 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V"] =
     function(pixels, offset, scanlength, x, y, width, height, format) {
-        if (pixels === null) {
+        if (!pixels) {
             throw $.newNullPointerException("Pixels array is null");
         }
 
@@ -727,12 +728,12 @@ var currentlyFocusedTextEditor;
 
         var context = getNative(getHandle(this.graphics)).contextInfo.context;
         var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
-        converterFunc(abgrData, pixels, width, height, offset, scanlength);
+        converterFunc(abgrData, J2ME.getArrayFromAddr(pixels), width, height, offset, scanlength);
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] =
     function(pixels, transparency, offset, scanlength, x, y, width, height, manipulation, format) {
-        if (pixels === null) {
+        if (!pixels) {
             throw $.newNullPointerException("Pixels array is null");
         }
 
@@ -748,7 +749,7 @@ var currentlyFocusedTextEditor;
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
-        converterFunc(pixels, abgrData, width, height, offset, scanlength);
+        converterFunc(J2ME.getArrayFromAddr(pixels), abgrData, width, height, offset, scanlength);
 
         tempContext.putImageData(imageData, 0, 0);
 
@@ -1687,9 +1688,15 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        var validCommands = commands.filter(function(command) {
-            return !!command;
-        }).sort(function(a, b) {
+        var validCommands = [];
+
+        for (var i = 0; i < commands.length; i++) {
+            if (commands[i]) {
+                validCommands.push(getHandle(commands[i]));
+            }
+        }
+
+        validCommands.sort(function(a, b) {
             return a.priority - b.priority;
         });
 
@@ -1705,7 +1712,7 @@ var currentlyFocusedTextEditor;
             validCommands.slice(0, 2).forEach(function(command, i) {
                 var button = el.querySelector(".button" + i);
                 button.style.display = 'inline';
-                button.textContent = J2ME.fromJavaString(command.shortLabel);
+                button.textContent = J2ME.fromJavaString(getHandle(command.shortLabel));
 
                 var commandType = command.commandType;
                 if (numCommands === 1 || commandType === OK) {
@@ -1741,7 +1748,7 @@ var currentlyFocusedTextEditor;
                     return;
                 }
                 var li = document.createElement("li");
-                var text = J2ME.fromJavaString(command.shortLabel);
+                var text = J2ME.fromJavaString(getHandle(command.shortLabel));
                 var a = document.createElement("a");
                 a.textContent = text;
                 li.appendChild(a);

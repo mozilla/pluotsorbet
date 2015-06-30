@@ -168,12 +168,13 @@ Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = fu
 Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function() {
   var data = getNative(this).getData();
 
-  var array = J2ME.newByteArray(data.length);
+  var arrayAddr = J2ME.newByteArray(data.length);
+  var array = J2ME.getArrayFromAddr(arrayAddr);
   for (var i = 0; i < data.length; i++) {
     array[i] = data.charCodeAt(i);
   }
 
-  return array;
+  return arrayAddr;
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(data, offset, length) {
