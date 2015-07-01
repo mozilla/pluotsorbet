@@ -33,10 +33,10 @@ ifeq ($(PACKAGE_TESTS),1)
   TESTS_JAR = tests/tests.jar
 endif
 
-NAME ?= j2me.js
+NAME ?= PluotSorbet
 MIDLET_NAME ?= midlet
 DESCRIPTION ?= j2me interpreter for firefox os
-ORIGIN ?= app://j2mejs.mozilla.org
+ORIGIN ?= app://pluotsorbet.mozilla.org
 VERSION ?= $(shell date +%s)
 
 ICON_128 ?= img/default-icon-128.png
