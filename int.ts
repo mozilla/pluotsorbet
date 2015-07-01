@@ -833,6 +833,7 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Integer || tag === TAGS.CONSTANT_Float) {
               i32[sp++] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
             } else if (tag === TAGS.CONSTANT_String) {
+              i32[sp] = 0xDEADBEEF;
               ref[sp++] = ci.constantPool.resolve(index, tag, false);
             } else {
               release || assert(false, TAGS[tag]);
@@ -856,6 +857,7 @@ module J2ME {
             i32[sp++] = i32[lp + code[pc++]];
             continue;
           case Bytecodes.ALOAD:
+            i32[sp] = 0xDEADBEEF;
             ref[sp++] = ref[lp + code[pc++]];
             continue;
           case Bytecodes.LLOAD:
@@ -877,11 +879,13 @@ module J2ME {
             i32[sp++] = i32[lp + op - Bytecodes.FLOAD_0];
             continue;
           case Bytecodes.ALOAD_0:
+            i32[sp] = 0xDEADBEEF;
             ref[sp++] = ref[lp];
             continue;
           case Bytecodes.ALOAD_1:
           case Bytecodes.ALOAD_2:
           case Bytecodes.ALOAD_3:
+            i32[sp] = 0xDEADBEEF;
             ref[sp++] = ref[lp + op - Bytecodes.ALOAD_0];
             continue;
           case Bytecodes.LLOAD_0:
@@ -946,6 +950,7 @@ module J2ME {
             if ((index >>> 0) >= (array.length >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
+            i32[sp] = 0xDEADBEEF;
             ref[sp++] = array[index];
             continue;
           case Bytecodes.DALOAD:
@@ -1550,7 +1555,7 @@ module J2ME {
             jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (jumpOffset < 0) {
               mi.stats.backwardsBranchCount++;
-              if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+              if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.BackwardBranchThreshold) {
                 compileAndLinkMethod(mi);
               }
               //runtimeCounter.count(Bytecodes[code[opPC + jumpOffset]]);
@@ -1560,13 +1565,17 @@ module J2ME {
                 // at the beginning of a basic block. This is a really cheap test and a convenient place to perform an
                 // on stack replacement.
 
-                if (mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
+                var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset];
+
+                if (previousFrameType === FrameType.Interpreter && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
                   onStackReplacementCount++;
 
                   // Set the global OSR to the current method info.
                   O = mi;
 
                   thread.set(fp, sp, opPC + jumpOffset);
+                  opPC = i32[fp + FrameLayout.CallerRAOffset];
+                  fp = i32[fp + FrameLayout.CallerFPOffset];
 
                   var kind = Kind.Void;
                   var signatureKinds = mi.signatureKinds;
@@ -1588,8 +1597,22 @@ module J2ME {
                     return;
                   }
                   thread.popMarkerFrame(FrameType.Native);
+                  sp = thread.sp;
+
+                  release || assert(fp >= thread.tp, "Valid frame pointer after return.");
+                  mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
+                  type = i32[fp + FrameLayout.FrameTypeOffset];
+
+                  maxLocals = mi.codeAttribute.max_locals;
+                  lp = fp - maxLocals;
 
                   kind = signatureKinds[0];
+
+                  ci = mi.classInfo;
+                  cp = ci.constantPool;
+                  code = mi.codeAttribute.code;
+
+                  pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
 
                   // Push return value.
                   switch (kind) {
