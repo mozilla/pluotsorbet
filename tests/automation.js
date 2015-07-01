@@ -29,8 +29,8 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferentLinux: 1266, maxDifferentMac: 2029 },
-  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1403, maxDifferentMac: 2186 },
+  { name: "gfx/AlertTest", maxDifferentLinux: 1401, maxDifferentMac: 1889 },
+  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1538, maxDifferentMac: 2046 },
   { name: "gfx/CanvasTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/CanvasWithHeaderTest", maxDifferentLinux: 823, maxDifferentMac: 1351 },
   { name: "gfx/ImageRenderingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
