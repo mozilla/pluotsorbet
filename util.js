@@ -69,7 +69,11 @@ var util = (function () {
    * multiple string instances.
    */
   function stringToCharArray(str) {
-    return new Uint16Array(jStringEncoder.encode(str).buffer);
+    var encoded = new Uint16Array(jStringEncoder.encode(str).buffer);
+    var arrayAddr = J2ME.newCharArray(encoded.length);
+    var array = J2ME.getArrayFromAddr(arrayAddr);
+    array.set(encoded);
+    return arrayAddr;
   }
 
   var id = (function() {

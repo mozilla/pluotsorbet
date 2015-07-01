@@ -9,10 +9,14 @@ var Native = Object.create(null);
  * Asm.js heap buffer and views.
  */
 var buffer = ASM.buffer;
-var u8: Uint32Array = ASM.HEAPU8;
+var i8: Int8Array = ASM.HEAP8;
+var u8: Uint8Array = ASM.HEAPU8;
+var i16: Int16Array = ASM.HEAP16;
+var u16: Uint16Array = ASM.HEAPU16;
 var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
 var f32: Float32Array = ASM.HEAPF32;
+var f64: Float64Array = ASM.HEAPF64;
 var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
 
 var aliasedI32 = J2ME.IntegerUtilities.i32;

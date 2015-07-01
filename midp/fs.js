@@ -57,7 +57,7 @@ function(addr, filenameBase, names) {
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase);
     var files = fs.list(path);
     for (var i = 0; i < files.length; i++) {
-        names[i] = J2ME.newString(files[i]);
+        names[i] = J2ME.newString(files[i])._address;
     }
 };
 
@@ -817,11 +817,12 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(
 };
 
 Native["javax/microedition/io/file/FileSystemRegistry.getRoots.()[Ljava/lang/String;"] = function(addr) {
-    var array = J2ME.newStringArray(MIDP.fsRoots.length);
+    var arrayAddr = J2ME.newStringArray(MIDP.fsRoots.length);
+    var array = J2ME.getArrayFromAddr(arrayAddr);
 
     for (var i = 0; i < MIDP.fsRoots.length; i++) {
-        array[i] = J2ME.newString(MIDP.fsRoots[i]);
+        array[i] = J2ME.newString(MIDP.fsRoots[i])._address;
     }
 
-    return array;
+    return arrayAddr;
 };

@@ -72,6 +72,10 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function(addr) {
   }));
 };
 
+Native["org/mozilla/regression/TestVectorNull.nativeThatReturnsNull.()Ljava/lang/Object;"] = function(addr) {
+  return null;
+};
+
 Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function(addr) {
   MIDP.isVKVisible = function() { return false; };
   MIDP.sendVirtualKeyboardEvent();
@@ -151,9 +155,10 @@ Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V"] = f
 
 Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(addr, data) {
   var converted = Media.convert3gpToAmr(new Uint8Array(data));
-  var result = J2ME.newByteArray(converted.length);
+  var resultAddr = J2ME.newByteArray(converted.length);
+  var result = J2ME.getArrayFromAddr(resultAddr);
   result.set(converted);
-  return result;
+  return resultAddr;
 };
 
 Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)V"] = function(addr, language) {

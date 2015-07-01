@@ -145,12 +145,13 @@ module J2ME {
 
     private static internedMap = new TypedArrayHashtable(64);
 
-    static UTF8toUTF16(utf8: Uint8Array): Uint16Array {
+    static UTF8toUTF16(utf8: Uint8Array): number {
       // This conversion is mainly used for symbols within a class file,
       // in which the large majority of strings are all ascii.
       var ascii = true;
       var utf8Length = utf8.length;
-      var utf16 = new Uint16Array(utf8Length);
+      var utf16Addr = newCharArray(utf8Length);
+      var utf16 = getArrayFromAddr(utf16Addr);
       for (var i = 0; i < utf8Length; i++) {
         var ch1 = utf8[i];
         if (ch1 === 0) {
@@ -163,7 +164,7 @@ module J2ME {
         utf16[i] = ch1;
       }
       if (ascii) {
-        return utf16;
+        return utf16Addr;
       }
       var index = 0;
       var a = [];
@@ -220,7 +221,11 @@ module J2ME {
             break;
         }
       }
-      return new Uint16Array(a);
+
+      var retAddr = newCharArray(a.length);
+      var ret = getArrayFromAddr(retAddr);
+      ret.set(a);
+      return retAddr;
     }
 
     constructor (

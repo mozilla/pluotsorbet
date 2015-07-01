@@ -301,11 +301,12 @@ var MIDP = (function() {
       return null;
     }
     var len = data.byteLength;
-    var bytes = J2ME.newByteArray(len);
+    var arrayAddr = J2ME.newByteArray(len);
+    var array = J2ME.getArrayFromAddr(arrayAddr);
     for (var n = 0; n < len; ++n) {
-      bytes[n] = data[n];
+      array[n] = data[n];
     }
-    return bytes;
+    return arrayAddr;
   };
 
   var verticalChrome;
@@ -601,13 +602,14 @@ var MIDP = (function() {
 
   Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(addr) {
     var keys = Object.keys(manifest);
-    var arr = J2ME.newStringArray(keys.length * 2);
+    var arrAddr = J2ME.newStringArray(keys.length * 2);
+    var arr = J2ME.getArrayFromAddr(arrAddr);
     var i = 0;
     keys.forEach(function(key) {
-      arr[i++] = J2ME.newString(key);
-      arr[i++] = J2ME.newString(manifest[key]);
+      arr[i++] = J2ME.newString(key)._address;
+      arr[i++] = J2ME.newString(manifest[key])._address;
     });
-    return arr;
+    return arrAddr;
   };
 
   Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(addr, imageData, suiteId, fileName) {

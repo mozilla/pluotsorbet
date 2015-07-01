@@ -59,7 +59,7 @@ Native["com/sun/j2me/pim/PIMProxy.getListNamesCount0.(I)I"] = function(addr, lis
 
 Native["com/sun/j2me/pim/PIMProxy.getListNames0.([Ljava/lang/String;)V"] = function(addr, names) {
   console.warn("PIMProxy.getListNames0.([Ljava/lang/String;)V incomplete");
-  names[0] = J2ME.newString("ContactList");
+  names[0] = J2ME.newString("ContactList")._address;
 };
 
 Native["com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I"] = function(addr, listType, listName, mode) {
@@ -154,9 +154,10 @@ Native["com/sun/j2me/pim/PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescri
   console.warn("PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescriptor;I)V incomplete");
 
   PIM.supportedFields.forEach(function(field, i) {
-    desc[i].field = field.field;
-    desc[i].dataType = field.dataType;
-    desc[i].maxValues = field.maxValues;
+    var descObj = J2ME.getHandle(desc[i]);
+    descObj.field = field.field;
+    descObj.dataType = field.dataType;
+    descObj.maxValues = field.maxValues;
   });
 };
 

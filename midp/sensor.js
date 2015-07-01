@@ -164,9 +164,11 @@ AccelerometerSensor.readBuffer = (function() {
     };
 
     var DATA_LENGTH = 1;
-    var result = new Int8Array(5 + DATA_LENGTH * 13);
 
     return function(channelNumber) {
+        var resultAddr = J2ME.newByteArray(5 + DATA_LENGTH * 13);
+        var result = J2ME.getArrayFromAddr(resultAddr);
+
         offset = 0;
         result[offset++] = this.channels[channelNumber].dataType;
         // Set data length
@@ -177,7 +179,7 @@ AccelerometerSensor.readBuffer = (function() {
         write_float32(result, 0);
         // Set sensor data.
         write_double64(result, this.acceleration[channelNumber]);
-        return result;
+        return resultAddr;
     };
 })();
 
@@ -215,11 +217,12 @@ Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/S
     model.errorMsgs = J2ME.newStringArray(0);
 
     var n = m.properties.length;
-    var p = J2ME.newStringArray(n);
+    var pAddr = J2ME.newStringArray(n);
+    var p = J2ME.getArrayFromAddr(pAddr);
     for (var i = 0; i < n; i++) {
-        p[i] = J2ME.newString(m.properties[i]);
+        p[i] = J2ME.newString(m.properties[i])._address;
     }
-    model.properties = p;
+    model.properties = pAddr;
 };
 
 Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] = function(addr, sensorsNumber, number, model) {
@@ -240,12 +243,13 @@ Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/s
     model.mrangeCount = c.mrangeArray.length;
 
     var n = c.mrangeArray.length;
-    var array = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, n);
+    var arrayAddr = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, n);
+    var array = J2ME.getArrayFromAddr(arrayAddr);
     for (var i = 0; i < n; i++) {
-        array.value[i * 2] = c.mrangeArray[i].low_;
-        array.value[i * 2 + 1] = c.mrangeArray[i].high_;
+        array[i * 2] = c.mrangeArray[i].low_;
+        array[i * 2 + 1] = c.mrangeArray[i].high_;
     }
-    model.mrageArray = array;
+    model.mrageArray = arrayAddr;
 };
 
 Native["com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z"] = function(addr, number) {
@@ -276,7 +280,7 @@ Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(ad
         } else {
             console.error("Invalid channel number: " + channelNumber);
         }
-        return J2ME.newArray(J2ME.PrimitiveClassInfo.B.klass, 0);
+        return J2ME.newByteArray(0);
     }
 
     asyncImpl("[B", new Promise(function(resolve, reject) {
