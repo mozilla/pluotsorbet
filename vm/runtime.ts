@@ -539,7 +539,7 @@ module J2ME {
       this.allCtxs.delete(ctx);
     }
 
-    newStringConstant(utf16ArrayAddr: number): java.lang.String {
+    newStringConstant(utf16ArrayAddr: number): number {
       var utf16Array = getArrayFromAddr(utf16ArrayAddr);
       var javaString = internedStrings.get(utf16Array);
       if (javaString !== null) {
@@ -1908,6 +1908,10 @@ module J2ME {
       return classObject;
     }
 
+    if (klass.isArrayKlass) {
+      return getArrayFromAddr(address);
+    }
+
     // Use the constructor to create a wrapper for the already allocated object
     // by passing in an address, which tells the constructor to reuse the memory
     // already allocated instead of allocating new memory.
@@ -1927,18 +1931,14 @@ module J2ME {
 
   export var arrayMap = Object.create(null);
 
-  export function getArrayFromAddr(addr) {
+  export function getArrayFromAddr(addr: number) {
     if (addr === Constants.NULL) {
       return null;
     }
 
-    if (typeof addr === "number") {
-      return J2ME.arrayMap[addr];
-    } else if ("_address" in addr) {
-      return J2ME.arrayMap[addr._address];
-    } else {
-      return addr;
-    }
+    release || assert(typeof addr === "number", "addr is number");
+
+    return arrayMap[addr];
   }
 
   export function newArray(klass: Klass, size: number): number {
@@ -1948,32 +1948,26 @@ module J2ME {
 
     var constructor: any = getArrayKlass(klass);
 
+    var arr;
+    var addr;
+    var klassId = generateKlassId();
+    klassIdMap[klassId] = constructor;
+
     if (klass.classInfo instanceof PrimitiveClassInfo) {
-      var offset = 4;
-      if (constructor.prototype.BYTES_PER_ELEMENT > 4) {
-        offset = 8;
-      }
-
-      var addr = ASM._gcMallocAtomic(offset + size * constructor.prototype.BYTES_PER_ELEMENT);
-      i32[addr >> 2] = size;
-
+      addr = ASM._gcMallocAtomic(8 + size * constructor.prototype.BYTES_PER_ELEMENT);
       // XXX: To remove
-      var primArr = new constructor(ASM.buffer,
-                                    offset + addr,
-                                    size);
-      primArr._address = addr;
-      arrayMap[addr] = primArr;
-
-      return addr;
+      arr = new constructor(ASM.buffer, 8 + addr, size);
+    } else {
+      // We need to hold an integer to define the length of the array
+      // and *size* references.
+      addr = ASM._gcMalloc(8 + size * 4);
+      // XXX: To remove
+      arr = new Int32Array(ASM.buffer, 8 + addr, size);
     }
 
-    // We need to hold an integer to define the length of the array
-    // and *size* references.
-    var addr = ASM._gcMalloc(4 + size * 4);
-    i32[addr >> 2] = size;
-    var arr = new Int32Array(ASM.buffer,
-                             4 + addr,
-                             size);
+    i32[(addr >> 2)] = klassId;
+    i32[(addr >> 2) + 1] = size;
+    // XXX: To remove
     (<any>arr).klass = constructor;
     (<any>arr)._address = addr;
     arrayMap[addr] = arr;
@@ -2108,13 +2102,10 @@ module J2ME {
       return;
     }
 
-    var array = getArrayFromAddr(arrayAddr);
-    var value = getArrayFromAddr(valueAddr);
-    if (!value) {
-      value = getHandle(valueAddr);
-    }
+    var arrayKlass = klassIdMap[i32[arrayAddr >> 2]];
+    var valueKlass = klassIdMap[i32[valueAddr >> 2]];
 
-    if (!isAssignableTo(value.klass, array.klass.elementKlass)) {
+    if (!isAssignableTo(valueKlass, arrayKlass.elementKlass)) {
       throw $.newArrayStoreException();
     }
   }
