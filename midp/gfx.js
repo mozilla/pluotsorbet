@@ -728,7 +728,7 @@ var currentlyFocusedTextEditor;
 
         var context = getNative(getHandle(this.graphics)).contextInfo.context;
         var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
-        converterFunc(abgrData, J2ME.getArrayFromAddr(pixels), width, height, offset, scanlength);
+        converterFunc(abgrData, pixels, width, height, offset, scanlength);
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.drawPixels.([SZIIIIIIII)V"] =
@@ -749,7 +749,7 @@ var currentlyFocusedTextEditor;
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
-        converterFunc(J2ME.getArrayFromAddr(pixels), abgrData, width, height, offset, scanlength);
+        converterFunc(pixels, abgrData, width, height, offset, scanlength);
 
         tempContext.putImageData(imageData, 0, 0);
 
