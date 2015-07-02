@@ -21,7 +21,7 @@ var Content = (function() {
 
   Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(addr, suiteID) {
     if (!chRegisteredClassName) {
-      return null;
+      return J2ME.Constants.NULL;
     }
 
     var serializedString = serializeString([
@@ -34,7 +34,7 @@ var Content = (function() {
     return J2ME.newString(String.fromCharCode(serializedString.length * 2) + serializedString);
   };
 
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", J2ME.Constants.NULL);
 
   Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] = function(addr, storageId, className, handlerData) {
     var registerID = J2ME.fromJavaString(getHandle(handlerData.ID));
@@ -71,7 +71,7 @@ var Content = (function() {
 
   Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(addr, callerId, id, mode) {
     if (!chRegisteredClassName) {
-      return null;
+      return J2ME.Constants.NULL;
     }
 
     if (mode != 0) {
@@ -141,7 +141,7 @@ var Content = (function() {
       return -1;
     }
 
-    invocArguments[0] = J2ME.newString(invocation.argument)._address;
+    invocArguments[0] = J2ME.newString(invocation.argument);
     invoc.action = J2ME.newString(invocation.action);
     invoc.status = 2; // Invocation.ACTIVE
 

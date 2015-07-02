@@ -298,7 +298,7 @@ var MIDP = (function() {
     var data = JARStore.loadFile(fileName);
     if (!data) {
       console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
-      return null;
+      return J2ME.Constants.NULL;
     }
     var len = data.byteLength;
     var arrayAddr = J2ME.newByteArray(len);
@@ -607,8 +607,8 @@ var MIDP = (function() {
     var arr = J2ME.getArrayFromAddr(arrAddr);
     var i = 0;
     keys.forEach(function(key) {
-      arr[i++] = J2ME.newString(key)._address;
-      arr[i++] = J2ME.newString(manifest[key])._address;
+      arr[i++] = J2ME.newString(key);
+      arr[i++] = J2ME.newString(manifest[key]);
     });
     return arrAddr;
   };
@@ -1265,9 +1265,9 @@ var MIDP = (function() {
     throw $.newIllegalArgumentException("VirtualKeyboard::getCustomKeyboardControl() not implemented")
   };
 
-  var keyboardVisibilityListener = null;
+  var keyboardVisibilityListener = J2ME.Constants.NULL;
   Native["com/nokia/mid/ui/VirtualKeyboard.setVisibilityListener.(Lcom/nokia/mid/ui/KeyboardVisibilityListener;)V"] = function(addr, listener) {
-    keyboardVisibilityListener = listener;
+    keyboardVisibilityListener = listener ? listener._address : J2ME.Constants.NULL;
   };
 
   Native["javax/microedition/lcdui/Display.getKeyboardVisibilityListener.()Lcom/nokia/mid/ui/KeyboardVisibilityListener;"] = function(addr) {
