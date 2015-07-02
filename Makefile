@@ -35,7 +35,7 @@ endif
 
 NAME ?= PluotSorbet
 MIDLET_NAME ?= midlet
-DESCRIPTION ?= j2me interpreter for firefox os
+DESCRIPTION ?= a J2ME-compatible virtual machine written in JavaScript
 ORIGIN ?= app://pluotsorbet.mozilla.org
 VERSION ?= $(shell date +%s)
 
