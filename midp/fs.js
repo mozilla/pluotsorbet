@@ -249,7 +249,7 @@ Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lan
 function(suiteId, storeName) {
     console.warn("RecordStoreRegistry.getRecordStoreListeners.(IL...String;)[I not implemented (" +
                  suiteId + ", " + J2ME.fromJavaString(storeName) + ")");
-    return null;
+    return J2ME.Constants.NULL;
 };
 
 Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] =

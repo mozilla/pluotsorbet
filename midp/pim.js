@@ -113,7 +113,7 @@ Native["com/sun/j2me/pim/PIMProxy.getNextItemData0.(I[BI)Z"] = function(itemHand
 
 Native["com/sun/j2me/pim/PIMProxy.getItemCategories0.(II)Ljava/lang/String;"] = function(itemHandle, dataHandle) {
   console.warn("PIMProxy.getItemCategories0.(II)Ljava/lang/String; not implemented");
-  return null;
+  return J2ME.Constants.NULL;
 };
 
 Native["com/sun/j2me/pim/PIMProxy.listClose0.(I)Z"] = function(listHandle, description) {
@@ -138,7 +138,7 @@ Native["com/sun/j2me/pim/PIMProxy.getDefaultListName.(I)Ljava/lang/String;"] = f
     return J2ME.newString("TodoList");
   }
 
-  return null;
+  return J2ME.Constants.NULL;
 };
 
 Native["com/sun/j2me/pim/PIMProxy.getFieldsCount0.(I[I)I"] = function(listHandle, dataHandle) {

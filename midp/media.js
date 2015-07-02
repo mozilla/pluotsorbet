@@ -161,10 +161,10 @@ Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesNext.(I)Ljava/lang/
     var cached = Media.ListCache.get(hdlr);
     if (!cached) {
         console.error("Invalid hdlr: " + hdlr);
-        return null;
+        return J2ME.Constants.NULL;
     }
     var s = cached.shift();
-    return s ? J2ME.newString(s) : null;
+    return s ? J2ME.newString(s) : J2ME.Constants.NULL;
 };
 
 Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesClose.(I)V"] = function(hdlr) {
@@ -189,10 +189,10 @@ Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsNext.(I)Ljava/lang/Str
     var cached = Media.ListCache.get(hdlr);
     if (!cached) {
         console.error("Invalid hdlr: " + hdlr);
-        return null;
+        return J2ME.Constants.NULL;
     }
     var s = cached.shift();
-    return s ? J2ME.newString(s) : null;
+    return s ? J2ME.newString(s) : J2ME.Constants.NULL;
 };
 
 Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsClose.(I)V"] = function(hdlr) {

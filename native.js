@@ -306,7 +306,7 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function() {
 };
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {
-    return $.getRuntimeKlass(this.klass).classObject;
+    return $.getRuntimeKlass(this.klass).classObject._address;
 };
 
 Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
@@ -314,7 +314,7 @@ Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
     if (!superKlass) {
       return null;
     }
-    return superKlass.classInfo.getClassObject();
+    return superKlass.classInfo.getClassObject()._address;
 };
 
 Native["java/lang/Class.invoke_clinit.()V"] = function() {
@@ -360,7 +360,7 @@ Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = funct
   var className = J2ME.fromJavaString(name).replace(/\./g, "/");
   var classInfo = CLASSES.getClass(className);
   var classObject = classInfo.getClassObject();
-  return classObject;
+  return classObject._address;
 };
 
 Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
@@ -373,7 +373,7 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
     throw $.newInstantiationException("Can't instantiate array classes");
   }
 
-  return new this.runtimeKlass.templateKlass;
+  return (new this.runtimeKlass.templateKlass)._address;
 };
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
@@ -523,7 +523,7 @@ Native["java/lang/Math.floor.(D)D"] = function(val) {
 };
 
 Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function() {
-    return getHandle($.ctx.threadAddress);
+    return $.ctx.threadAddress;
 };
 
 Native["java/lang/Thread.setPriority0.(II)V"] = function(oldPriority, newPriority) {
@@ -586,7 +586,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
             pos: 0,
         });
     }
-    return obj;
+    return obj ? obj._address : J2ME.Constants.NULL;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(source) {
@@ -596,7 +596,7 @@ Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang
         data: new Uint8Array(sourceDecoder.data),
         pos: sourceDecoder.pos,
     });
-    return obj;
+    return obj._address;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(fileDecoder) {
@@ -628,7 +628,7 @@ Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function() {
     var target = getNative(this);
-    return target ? target : null;
+    return target ? target._address : J2ME.Constants.NULL;
 };
 
 Native["java/lang/ref/WeakReference.clear.()V"] = function() {
@@ -667,7 +667,7 @@ Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(status) {
 };
 
 Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;"] = function() {
-    return getHandle($.ctx.runtime.isolateAddress);
+    return $.ctx.runtime.isolateAddress;
 };
 
 Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function() {
@@ -761,10 +761,10 @@ Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
   var internedStrings = J2ME.internedStrings;
   var internedString = internedStrings.getByRange(value, this.offset, this.count);
   if (internedString !== null) {
-    return internedString;
+    return internedString._address;
   }
   internedStrings.put(value.subarray(this.offset, this.offset + this.count), this);
-  return this;
+  return this._address;
 };
 
 var profileStarted = false;

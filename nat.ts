@@ -74,7 +74,8 @@ module J2ME {
           i32[sp++] = l;
           break;
         case Kind.Reference:
-          ref[sp++] = J2ME.canonicalizeRef(l);
+          release || assert(l === "number", "async native return value is a number");
+          ref[sp++] = l;
           break;
         case Kind.Void:
           break;
@@ -144,9 +145,9 @@ module J2ME {
     thread.nativeAlive = true;
   };
 
-  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): java.lang.String {
+  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): number {
     var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
-    return <java.lang.String>getHandle(isolate._mainClass);
+    return isolate._mainClass;
   };
 
   Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(main: java.lang.Class) {

@@ -1852,7 +1852,8 @@ module J2ME {
                   i32[sp++] = returnValue;
                   continue;
                 case Kind.Reference:
-                  ref[sp++] = canonicalizeRef(returnValue);
+                  release || assert(returnValue === "number", "native return value is a number");
+                  ref[sp++] = returnValue;
                   continue;
                 case Kind.Void:
                   continue;
