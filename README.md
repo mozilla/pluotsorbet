@@ -1,6 +1,6 @@
 # PluotSorbet [![Build Status](https://travis-ci.org/mozilla/pluotsorbet.svg)](https://travis-ci.org/mozilla/pluotsorbet)
 
-PluotSorbet implements a Java-compatible virtual machine and J2ME-compatible platform in JavaScript<sup>[[1]](#user-content-JavaScript)</sup>. The goal of PluotSorbet is to run MIDlets in web apps without a native plugin.
+PluotSorbet is a J2ME-compatible virtual machine written in JavaScript<sup>[[1]](#user-content-JavaScript)</sup>. The goal of PluotSorbet is to run MIDlets in web apps without a native plugin.
 
 The current goals of PluotSorbet are:
 
