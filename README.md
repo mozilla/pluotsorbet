@@ -277,7 +277,9 @@ We use `Native` object in JS to handle creation and registration of `native` fun
 
 e.g.:
 
-    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(src, srcOffset, dst, dstOffset, length) {...};
+    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(addr, src, srcOffset, dst, dstOffset, length) {...};
+
+The first parameter of every native, *addr*, is the address in memory of the object on which the native is being called. If the native is static, then the value of *addr* is `Constants.NULL`. Call `getHandle(addr)` to get a handle to a JavaScript object that wraps the Java object with getters/setters for its fields.
 
 If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in vm/runtime.ts, e.g.:
 
@@ -316,7 +318,6 @@ e.g:
 Remember:
 
   * Return types are automatically converted to Java types, but parameters are not automatically converted from Java types to JS types
-  * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
   * `$` is current runtime and `$.ctx` current Context
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
 
