@@ -84,7 +84,7 @@ module J2ME {
       return reference;
     }
 
-    if (reference === null || reference === Constants.NULL) {
+    if (reference === null) {
       return Constants.NULL;
     }
 
@@ -1463,7 +1463,7 @@ module J2ME {
 
             switch (fieldInfo.kind) {
               case Kind.Reference:
-                ref[sp++] = canonicalizeRef(ref[address >> 2]);
+                ref[sp++] = ref[address >> 2];
                 continue;
               case Kind.Int:
               case Kind.Byte:

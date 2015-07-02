@@ -1311,7 +1311,7 @@ module J2ME {
         if (true || release) {
           switch (field.kind) {
             case Kind.Reference:
-              setter = new Function("value", "ref[this._address + " + field.byteOffset + " >> 2] = value;");
+              setter = new Function("value", "ref[this._address + " + field.byteOffset + " >> 2] = J2ME.canonicalizeRef(value);");
               getter = new Function("return ref[this._address + " + field.byteOffset + " >> 2];");
               break;
             case Kind.Boolean:
