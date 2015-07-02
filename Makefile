@@ -35,7 +35,7 @@ endif
 
 NAME ?= PluotSorbet
 MIDLET_NAME ?= midlet
-DESCRIPTION ?= j2me interpreter for firefox os
+DESCRIPTION ?= a J2ME-compatible virtual machine written in JavaScript
 ORIGIN ?= app://pluotsorbet.mozilla.org
 VERSION ?= $(shell date +%s)
 
@@ -197,7 +197,7 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
-SPIDERMONKEY_VERSION=37.0b7
+SPIDERMONKEY_VERSION=38.1.0esr
 OLD_SPIDERMONKEY_VERSION := $(shell [ -f build_tools/.spidermonkey_version ] && cat build_tools/.spidermonkey_version)
 $(shell [ "$(SPIDERMONKEY_VERSION)" != "$(OLD_SPIDERMONKEY_VERSION)" ] && echo $(SPIDERMONKEY_VERSION) > build_tools/.spidermonkey_version)
 
