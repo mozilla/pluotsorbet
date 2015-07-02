@@ -545,7 +545,7 @@ Native["java/lang/Thread.start0.()V"] = function() {
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
     newCtx.nativeThread.pushFrame(null);
     newCtx.nativeThread.pushFrame(run);
-    newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, this);
+    newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, this._address);
     newCtx.start();
 }
 

@@ -87,7 +87,7 @@ module J2ME {
       var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
       var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
       ctx.nativeThread.pushFrame(methodInfo);
-      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception);
+      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
       Scheduler.enqueue(ctx);
     });
 

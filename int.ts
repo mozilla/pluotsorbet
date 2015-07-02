@@ -184,7 +184,7 @@ module J2ME {
     setParameter(kind: Kind, i: number, v: any) {
       switch (kind) {
         case Kind.Reference:
-          ref[this.fp + this.parameterOffset + i] = canonicalizeRef(v);
+          ref[this.fp + this.parameterOffset + i] = v;
           break;
         case Kind.Int:
           i32[this.fp + this.parameterOffset + i] = v;
@@ -461,10 +461,10 @@ module J2ME {
       var kinds = methodInfo.signatureKinds;
       var index = 0;
       if (!methodInfo.isStatic) {
-        frame.setParameter(Kind.Reference, index++, this);
+        frame.setParameter(Kind.Reference, index++, canonicalizeRef(this));
       }
       for (var i = 1; i < kinds.length; i++) {
-        frame.setParameter(kinds[i], index++, arguments[i - 1]);
+        frame.setParameter(kinds[i], index++, canonicalizeRef(arguments[i - 1]));
       }
       if (methodInfo.isSynchronized) {
         var monitor = methodInfo.isStatic ? methodInfo.classInfo.getClassObject() : getMonitor(this);
