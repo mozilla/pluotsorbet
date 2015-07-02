@@ -171,9 +171,9 @@ var MIDP = (function() {
     state.suiteId = suiteId;
     state.midletClassName = J2ME.newString(config.midletClassName);
     var args = config.args;
-    state.arg0 = J2ME.newString((args.length > 0) ? args[0] : "");
-    state.arg1 = J2ME.newString((args.length > 1) ? args[1] : "");
-    state.arg2 = J2ME.newString((args.length > 2) ? args[2] : "");
+    state.arg0 = J2ME.newString((args.length > 0) ? args[0] : "")._address;
+    state.arg1 = J2ME.newString((args.length > 1) ? args[1] : "")._address;
+    state.arg2 = J2ME.newString((args.length > 2) ? args[2] : "")._address;
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function() {

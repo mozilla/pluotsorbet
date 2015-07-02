@@ -543,7 +543,7 @@ module J2ME {
       var utf16Array = getArrayFromAddr(utf16ArrayAddr);
       var javaString = internedStrings.get(utf16Array);
       if (javaString !== null) {
-        return javaString;
+        return javaString._address;
       }
       // It's ok to create and intern an object here, because we only return it
       // to ConstantPool.resolve, which itself is only called by a few callers,
