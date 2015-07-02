@@ -606,8 +606,8 @@ var MIDP = (function() {
     var arr = J2ME.getArrayFromAddr(arrAddr);
     var i = 0;
     keys.forEach(function(key) {
-      arr[i++] = J2ME.newString(key)._address;
-      arr[i++] = J2ME.newString(manifest[key])._address;
+      arr[i++] = J2ME.newString(key);
+      arr[i++] = J2ME.newString(manifest[key]);
     });
     return arrAddr;
   };

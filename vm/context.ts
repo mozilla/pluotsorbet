@@ -332,7 +332,7 @@ module J2ME {
       var arrayAddr = newStringArray(args.length);
       var array = getArrayFromAddr(arrayAddr);
       for (var n = 0; n < args.length; ++n) {
-        array[n] = args[n] ? J2ME.newString(args[n])._address : 0;
+        array[n] = args[n] ? J2ME.newString(args[n]) : Constants.NULL;
       }
 
       ctx.nativeThread.pushFrame(null);
