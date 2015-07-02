@@ -365,7 +365,7 @@ module J2ME {
 
       ctx.nativeThread.pushFrame(null);
       ctx.nativeThread.pushFrame(entryPoint);
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate._address);
       ctx.start();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }

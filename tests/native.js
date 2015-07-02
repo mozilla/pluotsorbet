@@ -73,7 +73,7 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function() {
 };
 
 Native["org/mozilla/regression/TestVectorNull.nativeThatReturnsNull.()Ljava/lang/Object;"] = function() {
-  return null;
+  return J2ME.Constants.NULL;
 };
 
 Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function() {

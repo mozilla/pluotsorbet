@@ -17,7 +17,7 @@ var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
 var f32: Float32Array = ASM.HEAPF32;
 var f64: Float64Array = ASM.HEAPF64;
-var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
+var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, 0 /* J2ME.Constants.NULL */);
 
 var aliasedI32 = J2ME.IntegerUtilities.i32;
 var aliasedF32 = J2ME.IntegerUtilities.f32;
@@ -74,7 +74,8 @@ module J2ME {
           i32[sp++] = l;
           break;
         case Kind.Reference:
-          ref[sp++] = J2ME.canonicalizeRef(l);
+          release || assert(l !== "number", "async native return value is a number");
+          ref[sp++] = l;
           break;
         case Kind.Void:
           break;
@@ -87,7 +88,7 @@ module J2ME {
       var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
       var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
       ctx.nativeThread.pushFrame(methodInfo);
-      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception);
+      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
       Scheduler.enqueue(ctx);
     });
 
@@ -144,9 +145,9 @@ module J2ME {
     thread.nativeAlive = true;
   };
 
-  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): java.lang.String {
+  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): number {
     var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
-    return <java.lang.String>getHandle(isolate._mainClass);
+    return isolate._mainClass;
   };
 
   Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(main: java.lang.Class) {
