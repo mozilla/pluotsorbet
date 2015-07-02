@@ -84,7 +84,7 @@ module J2ME {
       return reference;
     }
 
-    if (reference === null || reference === Constants.NULL) {
+    if (reference === null) {
       return Constants.NULL;
     }
 
@@ -184,7 +184,7 @@ module J2ME {
     setParameter(kind: Kind, i: number, v: any) {
       switch (kind) {
         case Kind.Reference:
-          ref[this.fp + this.parameterOffset + i] = canonicalizeRef(v);
+          ref[this.fp + this.parameterOffset + i] = v;
           break;
         case Kind.Int:
           i32[this.fp + this.parameterOffset + i] = v;
@@ -461,10 +461,10 @@ module J2ME {
       var kinds = methodInfo.signatureKinds;
       var index = 0;
       if (!methodInfo.isStatic) {
-        frame.setParameter(Kind.Reference, index++, this);
+        frame.setParameter(Kind.Reference, index++, canonicalizeRef(this));
       }
       for (var i = 1; i < kinds.length; i++) {
-        frame.setParameter(kinds[i], index++, arguments[i - 1]);
+        frame.setParameter(kinds[i], index++, canonicalizeRef(arguments[i - 1]));
       }
       if (methodInfo.isSynchronized) {
         var monitor = methodInfo.isStatic ? methodInfo.classInfo.getClassObject() : getMonitor(this);
@@ -633,7 +633,7 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Integer || tag === TAGS.CONSTANT_Float) {
               i32[sp++] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
             } else if (tag === TAGS.CONSTANT_String) {
-              ref[sp++] = canonicalizeRef(ci.constantPool.resolve(index, tag, false));
+              ref[sp++] = ci.constantPool.resolve(index, tag, false);
             } else {
               release || assert(false, TAGS[tag]);
             }
@@ -889,7 +889,7 @@ module J2ME {
             f64[(arrayAddr >> 3) + 1 + index] = value;
             continue;
           case Bytecodes.AASTORE:
-            address = canonicalizeRef(ref[--sp]);
+            address = ref[--sp];
             index = i32[--sp];
             arrayAddr = ref[--sp];
 
@@ -1239,13 +1239,13 @@ module J2ME {
             continue;
           case Bytecodes.IF_ACMPEQ:
             targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-            if (canonicalizeRef(ref[--sp]) === canonicalizeRef(ref[--sp])) {
+            if (ref[--sp] === ref[--sp]) {
               pc = targetPC;
             }
             continue;
           case Bytecodes.IF_ACMPNE:
             targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-            if (canonicalizeRef(ref[--sp]) !== canonicalizeRef(ref[--sp])) {
+            if (ref[--sp] !== ref[--sp]) {
               pc = targetPC;
             }
             continue;
@@ -1540,15 +1540,13 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, mi.classInfo);
             address = ref[sp - 1];
-            // XXX Refactor using canonicalizeRef on the address?
-            if (!address) {
+
+            if (address === Constants.NULL) {
               continue;
             }
-            if (typeof address === "number") {
-              klass = klassIdMap[i32[address >> 2]];
-            } else {
-              klass = address["klass"];
-            }
+
+            klass = klassIdMap[i32[address >> 2]];
+
             if (!isAssignableTo(klass, classInfo.klass)) {
               thread.set(fp, sp, opPC);
               throw $.newClassCastException (
@@ -1560,20 +1558,16 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
             address = ref[--sp];
-            // XXX Refactor using canonicalizeRef on the address?
-            if (!address) {
+
+            if (address === Constants.NULL) {
               i32[sp++] = 0;
             } else {
-              if (typeof address === "number") {
-                klass = klassIdMap[i32[address >> 2]];
-              } else {
-                klass = address["klass"];
-              }
+              klass = klassIdMap[i32[address >> 2]];
               i32[sp++] = isAssignableTo(klass, classInfo.klass) ? 1 : 0;
             }
             continue;
           case Bytecodes.ATHROW:
-            address = canonicalizeRef(ref[--sp]);
+            address = ref[--sp];
             if (!address) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
             }
@@ -1714,7 +1708,7 @@ module J2ME {
             if (isStatic) {
               object = null;
             } else {
-              address = canonicalizeRef(ref[sp - calleeMethodInfo.argumentSlots]);
+              address = ref[sp - calleeMethodInfo.argumentSlots];
               if (address === null || address === Constants.NULL) {
                 object = null;
                 klass = null;
@@ -1859,7 +1853,8 @@ module J2ME {
                   i32[sp++] = returnValue;
                   continue;
                 case Kind.Reference:
-                  ref[sp++] = canonicalizeRef(returnValue);
+                  release || assert(returnValue !== "number", "native return value is a number");
+                  ref[sp++] = returnValue;
                   continue;
                 case Kind.Void:
                   continue;

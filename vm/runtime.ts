@@ -543,7 +543,7 @@ module J2ME {
       var utf16Array = getArrayFromAddr(utf16ArrayAddr);
       var javaString = internedStrings.get(utf16Array);
       if (javaString !== null) {
-        return javaString;
+        return javaString._address;
       }
       // It's ok to create and intern an object here, because we only return it
       // to ConstantPool.resolve, which itself is only called by a few callers,
@@ -1918,15 +1918,15 @@ module J2ME {
     return new klass(address);
   }
 
-  export function newString(jsString: string): java.lang.String {
+  export function newString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
-      return null;
+      return Constants.NULL;
     }
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
     object.value = util.stringToCharArray(jsString);
     object.offset = 0;
     object.count = getArrayFromAddr(object.value).length;
-    return object;
+    return object._address;
   }
 
   export var arrayMap = Object.create(null);
