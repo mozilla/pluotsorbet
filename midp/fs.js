@@ -57,7 +57,7 @@ function (filenameBase, names) {
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase);
     var files = fs.list(path);
     for (var i = 0; i < files.length; i++) {
-        names[i] = J2ME.newString(files[i])._address;
+        names[i] = J2ME.newString(files[i]);
     }
 };
 
@@ -709,7 +709,7 @@ function(dirHandleLow, dirHandleHigh, includeHidden) {
     var iterator = MIDP.openDirs.get(J2ME.longToNumber(dirHandleLow, dirHandleHigh));
     var nextFile = iterator.files[++iterator.index];
 DEBUG_FS && console.log(iterator.index + " " + nextFile);
-    return nextFile ? J2ME.newString(nextFile) : null;
+    return nextFile ? J2ME.newString(nextFile) : J2ME.Constants.NULL;
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativePathForRoot.(Ljava/lang/String;)Ljava/lang/String;"] =
@@ -821,7 +821,7 @@ Native["javax/microedition/io/file/FileSystemRegistry.getRoots.()[Ljava/lang/Str
     var array = J2ME.getArrayFromAddr(arrayAddr);
 
     for (var i = 0; i < MIDP.fsRoots.length; i++) {
-        array[i] = J2ME.newString(MIDP.fsRoots[i])._address;
+        array[i] = J2ME.newString(MIDP.fsRoots[i]);
     }
 
     return arrayAddr;

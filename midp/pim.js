@@ -59,7 +59,7 @@ Native["com/sun/j2me/pim/PIMProxy.getListNamesCount0.(I)I"] = function(listType)
 
 Native["com/sun/j2me/pim/PIMProxy.getListNames0.([Ljava/lang/String;)V"] = function(names) {
   console.warn("PIMProxy.getListNames0.([Ljava/lang/String;)V incomplete");
-  names[0] = J2ME.newString("ContactList")._address;
+  names[0] = J2ME.newString("ContactList");
 };
 
 Native["com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I"] = function(listType, listName, mode) {
