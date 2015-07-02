@@ -16,7 +16,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 80000;
+casper.options.waitTimeout = 90000;
 casper.options.verbose = true;
 casper.options.viewportSize = { width: 240, height: 320 };
 casper.options.clientScripts = [
@@ -29,8 +29,8 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferentLinux: 1266, maxDifferentMac: 2029 },
-  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1403, maxDifferentMac: 2186 },
+  { name: "gfx/AlertTest", maxDifferentLinux: 1401, maxDifferentMac: 1889 },
+  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1538, maxDifferentMac: 2046 },
   { name: "gfx/CanvasTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/CanvasWithHeaderTest", maxDifferentLinux: 823, maxDifferentMac: 1351 },
   { name: "gfx/ImageRenderingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
