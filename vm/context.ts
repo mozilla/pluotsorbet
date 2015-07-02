@@ -337,7 +337,7 @@ module J2ME {
 
       ctx.nativeThread.pushFrame(null);
       ctx.nativeThread.pushFrame(sys.getMethodByNameString("isolate0Entry", "(Ljava/lang/String;[Ljava/lang/String;)V"));
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newString(className.replace(/\./g, "/"))._address);
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newString(className.replace(/\./g, "/")));
       ctx.nativeThread.frame.setParameter(Kind.Reference, 1, arrayAddr);
       ctx.start();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
