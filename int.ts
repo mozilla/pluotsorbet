@@ -1768,7 +1768,7 @@ module J2ME {
 
                 thread.set(fp, sp, opPC);
 
-                returnValue = callee.call(object, object ? object._address : Constants.NULL);
+                returnValue = callee(object ? object._address : Constants.NULL);
               } else {
                 args.length = 0;
 
@@ -1823,7 +1823,7 @@ module J2ME {
                 }
 
                 args.unshift(object ? object._address : Constants.NULL);
-                returnValue = callee.apply(object, args);
+                returnValue = callee.apply(null, args);
               }
 
               if (!release) {
