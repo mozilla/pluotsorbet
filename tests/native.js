@@ -72,6 +72,10 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function(addr) {
   }));
 };
 
+Native["org/mozilla/regression/TestVectorNull.nativeThatReturnsNull.()Ljava/lang/Object;"] = function() {
+  return null;
+};
+
 Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function(addr) {
   MIDP.isVKVisible = function() { return false; };
   MIDP.sendVirtualKeyboardEvent();
