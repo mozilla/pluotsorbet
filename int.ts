@@ -1852,7 +1852,7 @@ module J2ME {
                   i32[sp++] = returnValue;
                   continue;
                 case Kind.Reference:
-                  release || assert(returnValue === "number", "native return value is a number");
+                  release || assert(returnValue !== "number", "native return value is a number");
                   ref[sp++] = returnValue;
                   continue;
                 case Kind.Void:
