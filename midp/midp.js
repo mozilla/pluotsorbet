@@ -595,8 +595,9 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function(addr) {
+    var self = getHandle(addr);
     // The MIDlet has to be trusted for opening SSL connections using port 443.
-    this.trusted = 1;
+    self.trusted = 1;
     console.warn("com/sun/midp/midletsuite/InstallInfo.load.()V incomplete");
   };
 
