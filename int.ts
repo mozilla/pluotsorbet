@@ -1447,11 +1447,6 @@ module J2ME {
               }
             } else {
               address = ref[--sp];
-              if (typeof address !== "number") {
-                // If address is null, this will throw, which is intentional,
-                // since this operation on a null is a NullPointerException.
-                address = address["_address"];
-              }
 
               if (address === Constants.NULL) {
                 thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
@@ -1495,11 +1490,12 @@ module J2ME {
               address = fieldInfo.classInfo.getStaticObject($.ctx)._address + fieldInfo.byteOffset;
             } else {
               address = ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
-              if (typeof address !== "number") {
-                // If address is null, this will throw, which is intentional,
-                // since this operation on a null is a NullPointerException.
-                address = address["_address"];
+
+              if (address === Constants.NULL) {
+                thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+                continue;
               }
+
               address += fieldInfo.byteOffset;
             }
             switch (fieldInfo.kind) {
