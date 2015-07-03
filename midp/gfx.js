@@ -30,7 +30,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getDisplayName0.(I)Ljava/lang/String;"] = function(addr, id) {
-        return null;
+        return J2ME.Constants.NULL;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.isDisplayPrimary0.(I)Z"] = function(addr, id) {
@@ -416,7 +416,7 @@ var currentlyFocusedTextEditor;
     }
 
     Native["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function(addr) {
-        return getDefaultFont();
+        return getDefaultFont()._address;
     };
 
     Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(addr, str) {
@@ -641,7 +641,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getFont.()Ljavax/microedition/lcdui/Font;"] = function(addr) {
-        return getNative(this).currentFont;
+        return getNative(this).currentFont._address;
     };
 
     Native["javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(addr, font) {

@@ -332,7 +332,7 @@ module J2ME {
       var arrayAddr = newStringArray(args.length);
       var array = getArrayFromAddr(arrayAddr);
       for (var n = 0; n < args.length; ++n) {
-        array[n] = args[n] ? J2ME.newString(args[n])._address : 0;
+        array[n] = args[n] ? J2ME.newString(args[n]) : Constants.NULL;
       }
 
       ctx.nativeThread.pushFrame(null);
@@ -365,7 +365,7 @@ module J2ME {
 
       ctx.nativeThread.pushFrame(null);
       ctx.nativeThread.pushFrame(entryPoint);
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate);
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate._address);
       ctx.start();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }

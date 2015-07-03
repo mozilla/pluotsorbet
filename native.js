@@ -306,7 +306,7 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(addr) {
 };
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(addr) {
-    return $.getRuntimeKlass(this.klass).classObject;
+    return $.getRuntimeKlass(this.klass).classObject._address;
 };
 
 Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
@@ -314,7 +314,7 @@ Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
     if (!superKlass) {
       return null;
     }
-    return superKlass.classInfo.getClassObject();
+    return superKlass.classInfo.getClassObject()._address;
 };
 
 Native["java/lang/Class.invoke_clinit.()V"] = function(addr) {
@@ -360,7 +360,7 @@ Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = funct
   var className = J2ME.fromJavaString(name).replace(/\./g, "/");
   var classInfo = CLASSES.getClass(className);
   var classObject = classInfo.getClassObject();
-  return classObject;
+  return classObject._address;
 };
 
 Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function(addr) {
@@ -373,7 +373,7 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function(addr) {
     throw $.newInstantiationException("Can't instantiate array classes");
   }
 
-  return new this.runtimeKlass.templateKlass;
+  return (new this.runtimeKlass.templateKlass)._address;
 };
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, o) {
@@ -523,7 +523,7 @@ Native["java/lang/Math.floor.(D)D"] = function(addr, val) {
 };
 
 Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function(addr) {
-    return getHandle($.ctx.threadAddress);
+    return $.ctx.threadAddress;
 };
 
 Native["java/lang/Thread.setPriority0.(II)V"] = function(addr, oldPriority, newPriority) {
@@ -545,7 +545,7 @@ Native["java/lang/Thread.start0.()V"] = function(addr) {
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
     newCtx.nativeThread.pushFrame(null);
     newCtx.nativeThread.pushFrame(run);
-    newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, this);
+    newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, this._address);
     newCtx.start();
 }
 
@@ -586,7 +586,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
             pos: 0,
         });
     }
-    return obj;
+    return obj ? obj._address : J2ME.Constants.NULL;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(addr, source) {
@@ -596,7 +596,7 @@ Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang
         data: new Uint8Array(sourceDecoder.data),
         pos: sourceDecoder.pos,
     });
-    return obj;
+    return obj._address;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(addr, fileDecoder) {
@@ -628,7 +628,7 @@ Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) {
     var target = getNative(this);
-    return target ? target : null;
+    return target ? target._address : J2ME.Constants.NULL;
 };
 
 Native["java/lang/ref/WeakReference.clear.()V"] = function(addr) {
@@ -667,7 +667,7 @@ Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(addr, status) 
 };
 
 Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;"] = function(addr) {
-    return getHandle($.ctx.runtime.isolateAddress);
+    return $.ctx.runtime.isolateAddress;
 };
 
 Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function(addr) {
@@ -761,10 +761,10 @@ Native["java/lang/String.intern.()Ljava/lang/String;"] = function(addr) {
   var internedStrings = J2ME.internedStrings;
   var internedString = internedStrings.getByRange(value, this.offset, this.count);
   if (internedString !== null) {
-    return internedString;
+    return internedString._address;
   }
   internedStrings.put(value.subarray(this.offset, this.offset + this.count), this);
-  return this;
+  return this._address;
 };
 
 var profileStarted = false;

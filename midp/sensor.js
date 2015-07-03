@@ -220,7 +220,7 @@ Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/S
     var pAddr = J2ME.newStringArray(n);
     var p = J2ME.getArrayFromAddr(pAddr);
     for (var i = 0; i < n; i++) {
-        p[i] = J2ME.newString(m.properties[i])._address;
+        p[i] = J2ME.newString(m.properties[i]);
     }
     model.properties = pAddr;
 };

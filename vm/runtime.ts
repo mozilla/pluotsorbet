@@ -543,7 +543,7 @@ module J2ME {
       var utf16Array = getArrayFromAddr(utf16ArrayAddr);
       var javaString = internedStrings.get(utf16Array);
       if (javaString !== null) {
-        return javaString;
+        return javaString._address;
       }
       // It's ok to create and intern an object here, because we only return it
       // to ConstantPool.resolve, which itself is only called by a few callers,
@@ -1894,7 +1894,7 @@ module J2ME {
 
     release || assert(typeof address === "number", "address is number");
 
-    var klassId = i32[address >> 2];
+    var klassId = i32[address + Constants.OBJ_KLASS_ID_OFFSET >> 2];
     release || assert(typeof klassId === "number", "klassId is number");
 
     var klass = klassIdMap[klassId];
@@ -1918,15 +1918,15 @@ module J2ME {
     return new klass(address);
   }
 
-  export function newString(jsString: string): java.lang.String {
+  export function newString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
-      return null;
+      return Constants.NULL;
     }
     var object = <java.lang.String>newObject(Klasses.java.lang.String);
     object.value = util.stringToCharArray(jsString);
     object.offset = 0;
     object.count = getArrayFromAddr(object.value).length;
-    return object;
+    return object._address;
   }
 
   export var arrayMap = Object.create(null);
@@ -1954,19 +1954,19 @@ module J2ME {
     klassIdMap[klassId] = constructor;
 
     if (klass.classInfo instanceof PrimitiveClassInfo) {
-      addr = ASM._gcMallocAtomic(8 + size * constructor.prototype.BYTES_PER_ELEMENT);
+      addr = ASM._gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * constructor.prototype.BYTES_PER_ELEMENT);
       // XXX: To remove
-      arr = new constructor(ASM.buffer, 8 + addr, size);
+      arr = new constructor(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
-      addr = ASM._gcMalloc(8 + size * 4);
+      addr = ASM._gcMalloc(Constants.ARRAY_HDR_SIZE + size * 4);
       // XXX: To remove
-      arr = new Int32Array(ASM.buffer, 8 + addr, size);
+      arr = new Int32Array(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
     }
 
-    i32[(addr >> 2)] = klassId;
-    i32[(addr >> 2) + 1] = size;
+    i32[addr + Constants.OBJ_KLASS_ID_OFFSET >> 2] = klassId;
+    i32[addr + Constants.ARRAY_LENGTH_OFFSET >> 2] = size;
     // XXX: To remove
     (<any>arr).klass = constructor;
     arrayMap[addr] = arr;
@@ -2101,8 +2101,8 @@ module J2ME {
       return;
     }
 
-    var arrayKlass = klassIdMap[i32[arrayAddr >> 2]];
-    var valueKlass = klassIdMap[i32[valueAddr >> 2]];
+    var arrayKlass = klassIdMap[i32[arrayAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]];
+    var valueKlass = klassIdMap[i32[valueAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]];
 
     if (!isAssignableTo(valueKlass, arrayKlass.elementKlass)) {
       throw $.newArrayStoreException();
@@ -2137,9 +2137,15 @@ module J2ME {
     OBJ_HDR_SIZE = 8,
 
     // The offset in bytes from the beginning of the allocated memory
+    // to the location of the klass id.
+    OBJ_KLASS_ID_OFFSET = 0,
+    // The offset in bytes from the beginning of the allocated memory
     // to the location of the hash code.
     HASH_CODE_OFFSET = 4,
 
+    ARRAY_HDR_SIZE = 8,
+
+    ARRAY_LENGTH_OFFSET = 4,
     NULL = 0,
   }
 
