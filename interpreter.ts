@@ -28,7 +28,7 @@ module J2ME {
 
   function classInitAndUnwindCheck(classInfo: ClassInfo, pc: number) {
     classInitCheck(classInfo);
-    if (U) {
+    if ($.ctx.U) {
       $.ctx.current().pc = pc;
       return;
     } 
@@ -77,7 +77,7 @@ module J2ME {
    * Debugging helper to make sure native methods were implemented correctly.
    */
   function checkReturnValue(methodInfo: MethodInfo, returnValue: any) {
-    if (U) {
+    if ($.ctx.U) {
       if (typeof returnValue !== "undefined") {
         assert(false, "Expected undefined return value during unwind, got " + returnValue + " in " + methodInfo.implKey);
       }
@@ -276,7 +276,7 @@ module J2ME {
 
               // Perform OSR, the callee reads the frame stored in |O| and updates its own state.
               returnValue = O.methodInfo.fn();
-              if (U) {
+              if (ctx.U) {
                 return;
               }
 
@@ -991,7 +991,7 @@ module J2ME {
             index = frame.read16();
             fieldInfo = mi.classInfo.constantPool.resolveField(index, true);
             classInitAndUnwindCheck(fieldInfo.classInfo, frame.pc - 3);
-            if (U) {
+            if (ctx.U) {
               return;
             }
             value = fieldInfo.getStatic();
@@ -1001,7 +1001,7 @@ module J2ME {
             index = frame.read16();
             fieldInfo = mi.classInfo.constantPool.resolveField(index, true);
             classInitAndUnwindCheck(fieldInfo.classInfo, frame.pc - 3);
-            if (U) {
+            if (ctx.U) {
               return;
             }
             fieldInfo.setStatic(stack.popKind(fieldInfo.kind));
@@ -1010,7 +1010,7 @@ module J2ME {
             index = frame.read16();
             classInfo = resolveClass(index, mi.classInfo);
             classInitAndUnwindCheck(classInfo, frame.pc - 3);
-            if (U) {
+            if (ctx.U) {
               return;
             }
             stack.push(newObject(classInfo.klass));
@@ -1042,7 +1042,7 @@ module J2ME {
           case Bytecodes.MONITORENTER:
             object = stack.pop();
             ctx.monitorEnter(object);
-            if (U === VMState.Pausing || U === VMState.Stopping) {
+            if (ctx.U === VMState.Pausing || ctx.U === VMState.Stopping) {
               return;
             }
             break;
@@ -1108,7 +1108,7 @@ module J2ME {
             if (!release) {
               checkReturnValue(calleeMethodInfo, returnValue);
             }
-            if (U) {
+            if (ctx.U) {
               return;
             }
             if (calleeMethodInfo.returnKind !== Kind.Void) {
@@ -1141,7 +1141,7 @@ module J2ME {
 
             if (isStatic) {
               classInitAndUnwindCheck(calleeMethodInfo.classInfo, lastPC);
-              if (U) {
+              if (ctx.U) {
                 return;
               }
             }
@@ -1190,7 +1190,7 @@ module J2ME {
                     : frame.local[0];
                 }
                 ctx.monitorEnter(calleeFrame.lockObject);
-                if (U === VMState.Pausing || U === VMState.Stopping) {
+                if (ctx.U === VMState.Pausing || ctx.U === VMState.Stopping) {
                   return;
                 }
               }
@@ -1236,7 +1236,7 @@ module J2ME {
               checkReturnValue(calleeMethodInfo, returnValue);
             }
 
-            if (U) {
+            if (ctx.U) {
               return;
             }
 

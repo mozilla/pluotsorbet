@@ -454,7 +454,7 @@ module J2ME {
         var methodInfo = runtimeKlass.classObject.klass.classInfo.getMethodByNameString("initialize", "()V");
         runtimeKlass.classObject[methodInfo.virtualName]();
         // runtimeKlass.classObject.initialize();
-        release || Debug.assert(!U, "Unexpected unwind during preInitializeClasses.");
+        release || Debug.assert(!ctx.U, "Unexpected unwind during preInitializeClasses.");
         preemptionLockLevel-- ;
       }
       ctx.clearCurrentContext();
@@ -679,7 +679,7 @@ module J2ME {
       unwindCount ++;
       threadWriter && threadWriter.writeLn("yielding " + reason);
       runtimeCounter && runtimeCounter.count("yielding " + reason);
-      U = VMState.Yielding;
+      this.ctx.U = VMState.Yielding;
       profile && $.ctx.pauseMethodTimeline();
     }
 
@@ -687,12 +687,12 @@ module J2ME {
       unwindCount ++;
       threadWriter && threadWriter.writeLn("pausing " + reason);
       runtimeCounter && runtimeCounter.count("pausing " + reason);
-      U = VMState.Pausing;
+      this.ctx.U = VMState.Pausing;
       profile && $.ctx.pauseMethodTimeline();
     }
 
     stop() {
-      U = VMState.Stopping;
+      this.ctx.U = VMState.Stopping;
     }
 
     constructor(jvm: JVM) {
@@ -1217,7 +1217,7 @@ module J2ME {
             : frame.local[0];
         }
         $.ctx.monitorEnter(frame.lockObject);
-        if (U === VMState.Pausing) {
+        if ($.ctx.U === VMState.Pausing) {
           $.ctx.pushFrame(frame);
           return;
         }
@@ -1336,7 +1336,7 @@ module J2ME {
           default:
             r = fn.apply(this, arguments);
         }
-        if (U) {
+        if ($.ctx.U) {
           release || assert(ctx.paused, "context is paused");
 
           if (methodInfo.isNative) {
@@ -2055,13 +2055,6 @@ module J2ME {
 var Runtime = J2ME.Runtime;
 
 var AOTMD = J2ME.aotMetaData;
-
-/**
- * Are we currently unwinding the stack because of a Yield? This technically
- * belonges to a context but we store it in the global object because it is
- * read very often.
- */
-var U: J2ME.VMState = J2ME.VMState.Running;
 
 // Several unwind throws for different stack heights.
 
