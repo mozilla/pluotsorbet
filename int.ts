@@ -1706,16 +1706,10 @@ module J2ME {
             var callee = null;
 
             if (isStatic) {
-              object = null;
+              address = Constants.NULL;
             } else {
               address = ref[sp - calleeMethodInfo.argumentSlots];
-              if (address === Constants.NULL) {
-                object = null;
-                klass = null;
-              } else {
-                object = getHandle(address);
-                klass = klassIdMap[i32[address >> 2]];
-              }
+              klass = (address !== Constants.NULL) ? klassIdMap[i32[address >> 2]] : null;
             }
 
             if (isStatic) {
@@ -1727,7 +1721,7 @@ module J2ME {
 
             switch (op) {
               case Bytecodes.INVOKESPECIAL:
-                if (!object) {
+                if (address === Constants.NULL) {
                   thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
                 }
               case Bytecodes.INVOKESTATIC:
@@ -1877,7 +1871,7 @@ module J2ME {
             if (calleeTargetMethodInfo.isSynchronized) {
               monitor = calleeTargetMethodInfo.isStatic
                 ? calleeTargetMethodInfo.classInfo.getClassObject()
-                : getMonitor(object);
+                : getMonitor(address);
               ref[fp + FrameLayout.MonitorOffset] = monitor;
               $.ctx.monitorEnter(monitor);
               release || assert(U !== VMState.Yielding, "Monitors should never yield.");
