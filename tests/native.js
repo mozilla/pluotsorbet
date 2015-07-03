@@ -1,27 +1,27 @@
 /* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-Native["gnu/testlet/vm/NativeTest.getInt.()I"] = function() {
+Native["gnu/testlet/vm/NativeTest.getInt.()I"] = function(addr) {
   return ~~(0xFFFFFFFF);
 };
 
-Native["gnu/testlet/vm/NativeTest.getLongReturnLong.(J)J"] = function(valLow, valHigh) {
+Native["gnu/testlet/vm/NativeTest.getLongReturnLong.(J)J"] = function(addr, valLow, valHigh) {
   return J2ME.returnLong(valLow + 40, valHigh);
 };
 
-Native["gnu/testlet/vm/NativeTest.getLongReturnInt.(J)I"] = function(valLow, valHigh) {
+Native["gnu/testlet/vm/NativeTest.getLongReturnInt.(J)I"] = function(addr, valLow, valHigh) {
   return ~~(40 + J2ME.longToNumber(valLow, valHigh));
 };
 
-Native["gnu/testlet/vm/NativeTest.getIntReturnLong.(I)J"] = function(val) {
+Native["gnu/testlet/vm/NativeTest.getIntReturnLong.(I)J"] = function(addr, val) {
   return J2ME.returnLongValue(40 + val);
 };
 
-Native["gnu/testlet/vm/NativeTest.throwException.()V"] = function() {
+Native["gnu/testlet/vm/NativeTest.throwException.()V"] = function(addr) {
   throw $.newNullPointerException("An exception");
 };
 
-Native["gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V"] = function() {
+Native["gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V"] = function(addr) {
   var ctx = $.ctx;
   asyncImpl("V", new Promise(function(resolve, reject) {
     setTimeout(function() {
@@ -31,25 +31,25 @@ Native["gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V"] = function() {
   }));
 };
 
-Native["gnu/testlet/vm/NativeTest.returnAfterPause.()I"] = function() {
+Native["gnu/testlet/vm/NativeTest.returnAfterPause.()I"] = function(addr) {
   asyncImpl("I", new Promise(function(resolve, reject) {
     setTimeout(resolve.bind(null, 42), 100);
   }));
 };
 
-Native["gnu/testlet/vm/NativeTest.nonStatic.(I)I"] = function(val) {
+Native["gnu/testlet/vm/NativeTest.nonStatic.(I)I"] = function(addr, val) {
   return val + 40;
 };
 
-Native["gnu/testlet/vm/NativeTest.fromJavaString.(Ljava/lang/String;)I"] = function(str) {
+Native["gnu/testlet/vm/NativeTest.fromJavaString.(Ljava/lang/String;)I"] = function(addr, str) {
   return J2ME.fromJavaString(str).length;
 };
 
-Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(str) {
+Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(addr, str) {
   return util.decodeUtf8(str).length;
 };
 
-Native["gnu/testlet/vm/NativeTest.newFunction.()Z"] = function() {
+Native["gnu/testlet/vm/NativeTest.newFunction.()Z"] = function(addr) {
   try {
     var fn = new Function("return true;");
     return fn() ? 1 : 0;
@@ -59,7 +59,7 @@ Native["gnu/testlet/vm/NativeTest.newFunction.()Z"] = function() {
   }
 };
 
-Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function() {
+Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function(addr) {
   asyncImpl("Z", new Promise(function(resolve, reject) {
     // Ensure we can echo a large amount of data.
     var array = [];
@@ -72,30 +72,30 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function() {
   }));
 };
 
-Native["org/mozilla/regression/TestVectorNull.nativeThatReturnsNull.()Ljava/lang/Object;"] = function() {
+Native["org/mozilla/regression/TestVectorNull.nativeThatReturnsNull.()Ljava/lang/Object;"] = function(addr) {
   return J2ME.Constants.NULL;
 };
 
-Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function() {
+Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function(addr) {
   MIDP.isVKVisible = function() { return false; };
   MIDP.sendVirtualKeyboardEvent();
 };
 
-Native["com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V"] = function() {
+Native["com/nokia/mid/ui/TestVirtualKeyboard.showKeyboard.()V"] = function(addr) {
   MIDP.isVKVisible = function() { return true; };
   MIDP.sendVirtualKeyboardEvent();
 };
 
-Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = function() {
+Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = function(addr) {
   return (currentlyFocusedTextEditor && currentlyFocusedTextEditor.focused) ? 1 : 0;
 };
 
-Native["javax/microedition/lcdui/TestTextEditorFocus.isTextEditorReallyFocused.(Lcom/nokia/mid/ui/TextEditor;)Z"] = function(textEditor) {
+Native["javax/microedition/lcdui/TestTextEditorFocus.isTextEditorReallyFocused.(Lcom/nokia/mid/ui/TextEditor;)Z"] = function(addr, textEditor) {
   var nativeTextEditor = getNative(textEditor);
   return (currentlyFocusedTextEditor == nativeTextEditor && currentlyFocusedTextEditor.focused) ? 1 : 0;
 };
 
-Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = function(pathStr) {
+Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = function(addr, pathStr) {
   var path = J2ME.fromJavaString(pathStr);
   asyncImpl("I", new Promise(function(resolve, reject) {
     var gotCanvas = document.getElementById("canvas");
@@ -141,19 +141,19 @@ Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = 
   }));
 };
 
-Native["com/nokia/mid/impl/jms/core/TestLauncher.checkImageModalDialog.()Z"] = function() {
+Native["com/nokia/mid/impl/jms/core/TestLauncher.checkImageModalDialog.()Z"] = function(addr) {
   return document.getElementById("image-launcher") != null ? 1 : 0;
 };
 
-Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOnlineEvent.()V"] = function() {
+Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOnlineEvent.()V"] = function(addr) {
   window.dispatchEvent(new CustomEvent("online"));
 };
 
-Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V"] = function() {
+Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V"] = function(addr) {
   window.dispatchEvent(new CustomEvent("offline"));
 };
 
-Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(data) {
+Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(addr, data) {
   var converted = Media.convert3gpToAmr(new Uint8Array(data));
   var resultAddr = J2ME.newByteArray(converted.length);
   var result = J2ME.getArrayFromAddr(resultAddr);
@@ -161,7 +161,7 @@ Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = fu
   return resultAddr;
 };
 
-Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)V"] = function(language) {
+Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)V"] = function(addr, language) {
   MIDP.localizedStrings = null;
   config.language = J2ME.fromJavaString(language);
 }
@@ -170,7 +170,7 @@ Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)
 // so add it to the list of valid roots.
 MIDP.fsRoots.push("/");
 
-Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(label) {
+Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(addr, label) {
   if (typeof Benchmark !== "undefined") {
     asyncImpl("V", Benchmark.sampleMemory().then(function(memory) {
       var keys = ["totalSize", "domSize", "styleSize", "jsObjectsSize", "jsStringsSize", "jsOtherSize", "otherSize"];
@@ -184,11 +184,11 @@ Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = functio
   }
 };
 
-Native["org/mozilla/Test.callSyncNative.()V"] = function() {
+Native["org/mozilla/Test.callSyncNative.()V"] = function(addr) {
   // A noop sync implementation for comparison with the noop async one.
 };
 
-Native["org/mozilla/Test.callAsyncNative.()V"] = function() {
+Native["org/mozilla/Test.callAsyncNative.()V"] = function(addr) {
   // A noop async implementation for comparison with the noop sync one.
   asyncImpl("V", new Promise(function (resolve, reject) {
     resolve();
@@ -202,7 +202,7 @@ Native["org/mozilla/Test.callAsyncNative.()V"] = function() {
 var readerOpened = false;
 var readerOpenedWaiting = null;
 
-Native["tests/recordstore/ReaderMIDlet.readerOpened.()V"] = function() {
+Native["tests/recordstore/ReaderMIDlet.readerOpened.()V"] = function(addr) {
   readerOpened = true;
 
   if (readerOpenedWaiting) {
@@ -210,7 +210,7 @@ Native["tests/recordstore/ReaderMIDlet.readerOpened.()V"] = function() {
   }
 };
 
-Native["tests/recordstore/WriterMIDlet.waitReaderOpened.()V"] = function() {
+Native["tests/recordstore/WriterMIDlet.waitReaderOpened.()V"] = function(addr) {
   asyncImpl("V", new Promise(function(resolve, reject) {
     if (readerOpened) {
       resolve();
@@ -223,7 +223,7 @@ Native["tests/recordstore/WriterMIDlet.waitReaderOpened.()V"] = function() {
 var writerWrote = false;
 var writerWroteWaiting = null;
 
-Native["tests/recordstore/WriterMIDlet.writerWrote.()V"] = function() {
+Native["tests/recordstore/WriterMIDlet.writerWrote.()V"] = function(addr) {
   writerWrote = true;
 
   if (writerWroteWaiting) {
@@ -231,7 +231,7 @@ Native["tests/recordstore/WriterMIDlet.writerWrote.()V"] = function() {
   }
 };
 
-Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function() {
+Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function(addr) {
   asyncImpl("V", new Promise(function(resolve, reject) {
     if (writerWrote) {
       resolve();
@@ -241,42 +241,42 @@ Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function() {
   }));
 };
 
-Native["tests/background/DestroyMIDlet.sendDestroyMIDletEvent.()V"] = function() {
+Native["tests/background/DestroyMIDlet.sendDestroyMIDletEvent.()V"] = function(addr) {
   MIDP.setDestroyedForRestart(true);
   MIDP.sendDestroyMIDletEvent(J2ME.newString("tests.background.DestroyMIDlet"));
 };
 
-Native["tests/background/DestroyMIDlet.sendExecuteMIDletEvent.()V"] = function() {
+Native["tests/background/DestroyMIDlet.sendExecuteMIDletEvent.()V"] = function(addr) {
   setTimeout(function() {
     MIDP.sendExecuteMIDletEvent();
   }, 0);
 };
 
 var called = 0;
-Native["tests/background/DestroyMIDlet.maybePrintDone.()V"] = function() {
+Native["tests/background/DestroyMIDlet.maybePrintDone.()V"] = function(addr) {
   if (++called === 2) {
     console.log("DONE");
   }
 };
 
-Native["javax/microedition/content/TestContentHandler.addInvocation.(Ljava/lang/String;Ljava/lang/String;)V"] = function(argument, action) {
+Native["javax/microedition/content/TestContentHandler.addInvocation.(Ljava/lang/String;Ljava/lang/String;)V"] = function(addr, argument, action) {
   Content.addInvocation(J2ME.fromJavaString(argument), J2ME.fromJavaString(action));
 };
 
 var ContentHandlerMIDletStarted = 0;
 
 Native["tests/midlets/ContentHandlerMIDlet.sendShareMessage.()V"] =
-Native["tests/midlets/ContentHandlerStarterMIDlet.sendShareMessage.()V"] = function() {
+Native["tests/midlets/ContentHandlerStarterMIDlet.sendShareMessage.()V"] = function(addr) {
   DumbPipe.close(DumbPipe.open("callShareActivityMessageHandler", { num: ContentHandlerMIDletStarted }));
 };
 
-Native["tests/midlets/ContentHandlerStarterMIDlet.startMIDlet.()V"] = function() {
+Native["tests/midlets/ContentHandlerStarterMIDlet.startMIDlet.()V"] = function(addr) {
   setTimeout(function() {
     MIDP.sendExecuteMIDletEvent(1, J2ME.newString("tests.midlets.ContentHandlerMIDlet"));
   }, 0);
 };
 
-Native["tests/midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function() {
+Native["tests/midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function(addr) {
   if (++ContentHandlerMIDletStarted === 3) {
     return 1;
   }

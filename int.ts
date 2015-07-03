@@ -1762,7 +1762,7 @@ module J2ME {
 
                 thread.set(fp, sp, opPC);
 
-                returnValue = callee.call(object);
+                returnValue = callee.call(object, object ? object._address : Constants.NULL);
               } else {
                 args.length = 0;
 
@@ -1816,6 +1816,7 @@ module J2ME {
                   // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
                 }
 
+                args.unshift(object ? object._address : Constants.NULL);
                 returnValue = callee.apply(object, args);
               }
 

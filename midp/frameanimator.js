@@ -33,11 +33,11 @@ FrameAnimator.prototype.isRegistered = function() {
   return this._isRegistered;
 };
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.init.()V"] = function() {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.init.()V"] = function(addr) {
   setNative(this, new FrameAnimator());
 };
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mid/ui/frameanimator/FrameAnimatorListener;)Z"] = function(x, y, maxFps, maxPps, listener) {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mid/ui/frameanimator/FrameAnimatorListener;)Z"] = function(addr, x, y, maxFps, maxPps, listener) {
   var nativeObject = getNative(this);
   if (nativeObject.isRegistered()) {
     throw $.newIllegalStateException("FrameAnimator already registered");
@@ -57,7 +57,7 @@ Native["com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mi
   return 1;
 };
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.unregister.()V"] = function() {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.unregister.()V"] = function(addr) {
   var nativeObject = getNative(this);
   if (!nativeObject.isRegistered()) {
     throw $.newIllegalStateException("FrameAnimator not registered");
@@ -71,10 +71,10 @@ addUnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.kineticScro
 addUnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.limitedKineticScroll.(IIIFII)V");
 addUnimplementedNative("com/nokia/mid/ui/frameanimator/FrameAnimator.stop.()V");
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.isRegistered.()Z"] = function() {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.isRegistered.()Z"] = function(addr) {
   return getNative(this).isRegistered() ? 1 : 0;
 };
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.getNumRegisteredFrameAnimators.()I"] = function() {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.getNumRegisteredFrameAnimators.()I"] = function(addr) {
   return FrameAnimator.numRegistered;
 };

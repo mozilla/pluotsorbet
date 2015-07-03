@@ -1004,7 +1004,7 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(da
   }
 }
 
-Native["com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V"] = function(active) {
+Native["com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V"] = function(addr, active) {
   NokiaActiveStandbyLocalMsgConnection.indicatorActive = active;
 
   if (!active && NokiaActiveStandbyLocalMsgConnection.pipeSender) {
@@ -1040,7 +1040,7 @@ function getNativeConnection(obj) {
     return nativeConnectionMap[obj._address];
 }
 
-Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(jName) {
+Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(addr, jName) {
     var name = J2ME.fromJavaString(jName);
 
     var info = {
@@ -1093,7 +1093,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
     connection.notifyConnection();
 };
 
-Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
+Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function(addr) {
     var connection = getNativeConnection(this);
 
     if (connection.clientConnected) {
@@ -1103,7 +1103,7 @@ Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
     asyncImpl("V", connection.waitConnection());
 };
 
-Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, offset, length) {
+Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(addr, data, offset, length) {
     var connection = getNativeConnection(this);
     var info = getNative(this);
 
@@ -1119,7 +1119,7 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, of
     }
 };
 
-Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
+Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(addr, data) {
     var connection = getNativeConnection(this);
     var info = getNative(this);
 

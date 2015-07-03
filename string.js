@@ -19,25 +19,25 @@
 ////****************************************************************
 //// Constructors
 //
-//Native["java/lang/String.init.()V"] = function() {
+//Native["java/lang/String.init.()V"] = function(addr) {
 //  this.str = "";
 //};
 //
-//Native["java/lang/String.init.(Ljava/lang/String;)V"] = function(jStr) {
+//Native["java/lang/String.init.(Ljava/lang/String;)V"] = function(addr, jStr) {
 //  if (!jStr) {
 //    throw $.newNullPointerException();
 //  }
 //  this.str = jStr.str;
 //};
 //
-//Native["java/lang/String.init.([C)V"] = function(chars) {
+//Native["java/lang/String.init.([C)V"] = function(addr, chars) {
 //  if (!chars) {
 //    throw $.newNullPointerException();
 //  }
 //  this.str = util.fromJavaChars(chars);
 //};
 //
-//Native["java/lang/String.init.([CII)V"] = function(value, offset, count) {
+//Native["java/lang/String.init.([CII)V"] = function(addr, value, offset, count) {
 //  if (offset < 0 || count < 0 || offset > value.length - count) {
 //    throw $.newStringIndexOutOfBoundsException();
 //  }
@@ -88,18 +88,18 @@
 ////****************************************************************
 //// Methods
 //
-//Native["java/lang/String.length.()I"] = function() {
+//Native["java/lang/String.length.()I"] = function(addr) {
 //  return this.str.length;
 //};
 //
-//Native["java/lang/String.charAt.(I)C"] = function(index) {
+//Native["java/lang/String.charAt.(I)C"] = function(addr, index) {
 //  if (index < 0 || index >= this.str.length) {
 //    throw $.newStringIndexOutOfBoundsException();
 //  }
 //  return this.str.charCodeAt(index);
 //};
 //
-//Native["java/lang/String.getChars.(II[CI)V"] = function(srcBegin, srcEnd, dst, dstBegin) {
+//Native["java/lang/String.getChars.(II[CI)V"] = function(addr, srcBegin, srcEnd, dst, dstBegin) {
 //  if (srcBegin < 0 || srcEnd > this.str.length || srcBegin > srcEnd ||
 //      dstBegin + (srcEnd - srcBegin) > dst.length || dstBegin < 0) {
 //    throw $.newStringIndexOutOfBoundsException();
@@ -117,7 +117,7 @@
 //  return encoding;
 //}
 //
-//Native["java/lang/String.getBytes.(Ljava/lang/String;)[B"] = function(jEnc) {
+//Native["java/lang/String.getBytes.(Ljava/lang/String;)[B"] = function(addr, jEnc) {
 //  try {
 //    var encoding = normalizeEncoding(jEnc.str);
 //    return new Int8Array(new TextEncoder(encoding).encode(this.str));
@@ -126,19 +126,19 @@
 //  }
 //};
 //
-//Native["java/lang/String.getBytes.()[B"] = function() {
+//Native["java/lang/String.getBytes.()[B"] = function(addr) {
 //  return new Int8Array(new TextEncoder("utf-8").encode(this.str));
 //};
 //
-//Native["java/lang/String.equals.(Ljava/lang/Object;)Z"] = function(anObject) {
+//Native["java/lang/String.equals.(Ljava/lang/Object;)Z"] = function(addr, anObject) {
 //  return (isString(anObject) && anObject.str === this.str) ? 1 : 0;
 //};
 //
-//Native["java/lang/String.equalsIgnoreCase.(Ljava/lang/String;)Z"] = function(anotherString) {
+//Native["java/lang/String.equalsIgnoreCase.(Ljava/lang/String;)Z"] = function(addr, anotherString) {
 //  return (isString(anotherString) && anotherString.str.toLowerCase() === this.str.toLowerCase()) ? 1 : 0;
 //};
 //
-//Native["java/lang/String.compareTo.(Ljava/lang/String;)I"] = function(anotherString) {
+//Native["java/lang/String.compareTo.(Ljava/lang/String;)I"] = function(addr, anotherString) {
 //  // Sadly, JS String doesn't have a compareTo() method, so we must
 //  // replicate the Java algorithm. (There is String.localeCompare, but
 //  // that only returns {-1, 0, 1}, not a distance measure, which this
@@ -158,25 +158,25 @@
 //  return len1 - len2;
 //};
 //
-//Native["java/lang/String.regionMatches.(ZILjava/lang/String;II)Z"] = function(ignoreCase, toffset, other, ooffset, len) {
+//Native["java/lang/String.regionMatches.(ZILjava/lang/String;II)Z"] = function(addr, ignoreCase, toffset, other, ooffset, len) {
 //  var a = (ignoreCase ? this.str.toLowerCase() : this.str);
 //  var b = (ignoreCase ? other.str.toLowerCase() : other.str);
 //  return a.substr(toffset, len) === b.substr(ooffset, len) ? 1 : 0;
 //};
 //
-//Native["java/lang/String.startsWith.(Ljava/lang/String;I)Z"] = function(prefix, toffset) {
+//Native["java/lang/String.startsWith.(Ljava/lang/String;I)Z"] = function(addr, prefix, toffset) {
 //  return this.str.substr(toffset, prefix.str.length) === prefix.str ? 1 : 0;
 //};
 //
-//Native["java/lang/String.startsWith.(Ljava/lang/String;)Z"] = function(prefix) {
+//Native["java/lang/String.startsWith.(Ljava/lang/String;)Z"] = function(addr, prefix) {
 //  return this.str.substr(0, prefix.str.length) === prefix.str ? 1 : 0;
 //};
 //
-//Native["java/lang/String.endsWith.(Ljava/lang/String;)Z"] = function(suffix) {
+//Native["java/lang/String.endsWith.(Ljava/lang/String;)Z"] = function(addr, suffix) {
 //  return this.str.indexOf(suffix.str, this.str.length - suffix.str.length) !== -1 ? 1 : 0;
 //};
 //
-//Native["java/lang/String.hashCode.()I"] = function() {
+//Native["java/lang/String.hashCode.()I"] = function(addr) {
 //  var hash = 0;
 //  for (var i = 0; i < this.str.length; i++) {
 //    hash = Math.imul(31, hash) + this.str.charCodeAt(i) | 0;
@@ -184,45 +184,45 @@
 //  return hash;
 //};
 //
-//Native["java/lang/String.indexOf.(I)I"] = function(ch) {
+//Native["java/lang/String.indexOf.(I)I"] = function(addr, ch) {
 //  return this.str.indexOf(String.fromCharCode(ch));
 //};
 //
-//Native["java/lang/String.indexOf.(II)I"] = function(ch, fromIndex) {
+//Native["java/lang/String.indexOf.(II)I"] = function(addr, ch, fromIndex) {
 //  return this.str.indexOf(String.fromCharCode(ch), fromIndex);
 //};
 //
-//Native["java/lang/String.lastIndexOf.(I)I"] = function(ch) {
+//Native["java/lang/String.lastIndexOf.(I)I"] = function(addr, ch) {
 //  return this.str.lastIndexOf(String.fromCharCode(ch));
 //};
 //
-//Native["java/lang/String.lastIndexOf.(II)I"] = function(ch, fromIndex) {
+//Native["java/lang/String.lastIndexOf.(II)I"] = function(addr, ch, fromIndex) {
 //  return this.str.lastIndexOf(String.fromCharCode(ch), fromIndex);
 //};
 //
-//Native["java/lang/String.indexOf.(Ljava/lang/String;)I"] = function(s) {
+//Native["java/lang/String.indexOf.(Ljava/lang/String;)I"] = function(addr, s) {
 //  return this.str.indexOf(s.str);
 //};
 //
-//Native["java/lang/String.indexOf.(Ljava/lang/String;I)I"] = function(s, fromIndex) {
+//Native["java/lang/String.indexOf.(Ljava/lang/String;I)I"] = function(addr, s, fromIndex) {
 //  return this.str.indexOf(s.str, fromIndex);
 //};
 //
-//Native["java/lang/String.substring.(I)Ljava/lang/String;"] = function(beginIndex) {
+//Native["java/lang/String.substring.(I)Ljava/lang/String;"] = function(addr, beginIndex) {
 //  if (beginIndex < 0 || beginIndex > this.str.length) {
 //    throw $.newStringIndexOutOfBoundsException();
 //  }
 //  return J2ME.newString(this.str.substring(beginIndex));
 //};
 //
-//Native["java/lang/String.substring.(II)Ljava/lang/String;"] = function(beginIndex, endIndex) {
+//Native["java/lang/String.substring.(II)Ljava/lang/String;"] = function(addr, beginIndex, endIndex) {
 //  if (beginIndex < 0 || endIndex > this.str.length || beginIndex > endIndex) {
 //    throw $.newStringIndexOutOfBoundsException();
 //  }
 //  return J2ME.newString(this.str.substring(beginIndex, endIndex));
 //};
 //
-//Native["java/lang/String.concat.(Ljava/lang/String;)Ljava/lang/String;"] = function(s) {
+//Native["java/lang/String.concat.(Ljava/lang/String;)Ljava/lang/String;"] = function(addr, s) {
 //  return J2ME.newString(this.str + s.str);
 //};
 //
@@ -231,22 +231,22 @@
 //  return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
 //}
 //
-//Native["java/lang/String.replace.(CC)Ljava/lang/String;"] = function(oldChar, newChar) {
+//Native["java/lang/String.replace.(CC)Ljava/lang/String;"] = function(addr, oldChar, newChar) {
 //  // Using a RegExp here to replace all matches of oldChar, rather than just the first.
 //  return J2ME.newString(this.str.replace(
 //    new RegExp(escapeRegExp(String.fromCharCode(oldChar)), "g"),
 //    String.fromCharCode(newChar)));
 //};
 //
-//Native["java/lang/String.toLowerCase.()Ljava/lang/String;"] = function() {
+//Native["java/lang/String.toLowerCase.()Ljava/lang/String;"] = function(addr) {
 //  return J2ME.newString(this.str.toLowerCase());
 //};
 //
-//Native["java/lang/String.toUpperCase.()Ljava/lang/String;"] = function() {
+//Native["java/lang/String.toUpperCase.()Ljava/lang/String;"] = function(addr) {
 //  return J2ME.newString(this.str.toUpperCase());
 //};
 //
-//Native["java/lang/String.trim.()Ljava/lang/String;"] = function() {
+//Native["java/lang/String.trim.()Ljava/lang/String;"] = function(addr) {
 //  // Java's String.trim() removes any character <= ASCII 32;
 //  // JavaScript's only removes a few whitespacey chars.
 //  var start = 0;
@@ -261,11 +261,11 @@
 //  return J2ME.newString(this.str.substring(start, end));
 //};
 //
-//Native["java/lang/String.toString.()Ljava/lang/String;"] = function() {
+//Native["java/lang/String.toString.()Ljava/lang/String;"] = function(addr) {
 //  return this; // Note: returning "this" so that we keep the same object.
 //};
 //
-//Native["java/lang/String.toCharArray.()[C"] = function() {
+//Native["java/lang/String.toCharArray.()[C"] = function(addr) {
 //  return util.stringToCharArray(this.str);
 //};
 //
@@ -275,33 +275,33 @@
 //// NOTE: String.valueOf(Object) left in Java to avoid having to call
 //// back into Java for Object.toString().
 //
-//Native["java/lang/String.valueOf.([C)Ljava/lang/String;"] = function(chars) {
+//Native["java/lang/String.valueOf.([C)Ljava/lang/String;"] = function(addr, chars) {
 //  if (!chars) {
 //    throw $.newNullPointerException();
 //  }
 //  return J2ME.newString(util.fromJavaChars(chars));
 //};
 //
-//Native["java/lang/String.valueOf.([CII)Ljava/lang/String;"] = function(chars, offset, count) {
+//Native["java/lang/String.valueOf.([CII)Ljava/lang/String;"] = function(addr, chars, offset, count) {
 //  if (!chars) {
 //    throw $.newNullPointerException();
 //  }
 //  return J2ME.newString(util.fromJavaChars(chars, offset, count));
 //};
 //
-//Native["java/lang/String.valueOf.(Z)Ljava/lang/String;"] = function(bool) {
+//Native["java/lang/String.valueOf.(Z)Ljava/lang/String;"] = function(addr, bool) {
 //  return J2ME.newString(bool ? "true" : "false");
 //};
 //
-//Native["java/lang/String.valueOf.(C)Ljava/lang/String;"] = function(ch) {
+//Native["java/lang/String.valueOf.(C)Ljava/lang/String;"] = function(addr, ch) {
 //  return J2ME.newString(String.fromCharCode(ch));
 //};
 //
-//Native["java/lang/String.valueOf.(I)Ljava/lang/String;"] = function(n) {
+//Native["java/lang/String.valueOf.(I)Ljava/lang/String;"] = function(addr, n) {
 //  return J2ME.newString(n.toString());
 //};
 //
-//Native["java/lang/String.valueOf.(J)Ljava/lang/String;"] = function(l, h) {
+//Native["java/lang/String.valueOf.(J)Ljava/lang/String;"] = function(addr, l, h) {
 //  return J2ME.newString(J2ME.longToNumber(l, h).toString());
 //};
 //
@@ -313,7 +313,7 @@
 //
 //var internedStrings = J2ME.internedStrings;
 //
-//Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
+//Native["java/lang/String.intern.()Ljava/lang/String;"] = function(addr) {
 //    var string = J2ME.fromJavaString(this);
 //
 //    var internedString = internedStrings.get(string);
@@ -331,12 +331,12 @@
 ////################################################################
 //// java.lang.StringBuffer (manipulated via the 'buf' property)
 //
-//Native["java/lang/StringBuffer.init.()V"] = function() {
+//Native["java/lang/StringBuffer.init.()V"] = function(addr) {
 //  this.buf = new Uint16Array(16); // Initial buffer size: 16, per the Java implementation.
 //  this.count = 0;
 //};
 //
-//Native["java/lang/StringBuffer.init.(I)V"] = function(length) {
+//Native["java/lang/StringBuffer.init.(I)V"] = function(addr, length) {
 //  if (length < 0) {
 //    throw $.newNegativeArraySizeException();
 //  }
@@ -344,22 +344,22 @@
 //  this.count = 0;
 //};
 //
-//Native["java/lang/StringBuffer.init.(Ljava/lang/String;)V"] = function(jStr) {
+//Native["java/lang/StringBuffer.init.(Ljava/lang/String;)V"] = function(addr, jStr) {
 //  var stringBuf = util.stringToCharArray(jStr.str);
 //  this.buf = new Uint16Array(stringBuf.length + 16); // Add 16, per the Java implementation.
 //  this.buf.set(stringBuf, 0);
 //  this.count = stringBuf.length;
 //};
 //
-//Native["java/lang/StringBuffer.length.()I"] = function() {
+//Native["java/lang/StringBuffer.length.()I"] = function(addr) {
 //  return this.count;
 //};
 //
-//Native["java/lang/StringBuffer.capacity.()I"] = function() {
+//Native["java/lang/StringBuffer.capacity.()I"] = function(addr) {
 //  return this.buf.length;
 //};
 //
-//Native["java/lang/StringBuffer.copy.()V"] = function() {
+//Native["java/lang/StringBuffer.copy.()V"] = function(addr) {
 //  // We don't support copying (there's no need unless we also support shared buffers).
 //};
 //
@@ -380,7 +380,7 @@
 //  this.buf.set(oldBuf, 0);
 //}
 //
-//Native["java/lang/StringBuffer.ensureCapacity.(I)V"] = function(minCapacity) {
+//Native["java/lang/StringBuffer.ensureCapacity.(I)V"] = function(addr, minCapacity) {
 //  if (this.buf.length < minCapacity) {
 //    expandCapacity.call(this, minCapacity);
 //  }
@@ -388,7 +388,7 @@
 //
 //// StringBuffer.expandCapacity is private and not needed with these overrides.
 //
-//Native["java/lang/StringBuffer.setLength.(I)V"] = function(newLength) {
+//Native["java/lang/StringBuffer.setLength.(I)V"] = function(addr, newLength) {
 //  if (newLength < 0) {
 //    throw $.newStringIndexOutOfBoundsException();
 //  }
@@ -403,14 +403,14 @@
 //};
 //
 //
-//Native["java/lang/StringBuffer.charAt.(I)C"] = function(index) {
+//Native["java/lang/StringBuffer.charAt.(I)C"] = function(addr, index) {
 //  if (index < 0 || index >= this.count) {
 //    throw $.newStringIndexOutOfBoundsException();
 //  }
 //  return this.buf[index];
 //};
 //
-//Native["java/lang/StringBuffer.getChars.(II[CI)V"] = function(srcBegin, srcEnd, dst, dstBegin) {
+//Native["java/lang/StringBuffer.getChars.(II[CI)V"] = function(addr, srcBegin, srcEnd, dst, dstBegin) {
 //  if (srcBegin < 0 || srcEnd < 0 || srcEnd > this.count || srcBegin > srcEnd) {
 //    throw $.newStringIndexOutOfBoundsException();
 //  }
@@ -420,7 +420,7 @@
 //  dst.set(this.buf.subarray(srcBegin, srcEnd), dstBegin);
 //};
 //
-//Native["java/lang/StringBuffer.setCharAt.(IC)V"] = function(index, ch) {
+//Native["java/lang/StringBuffer.setCharAt.(IC)V"] = function(addr, index, ch) {
 //  if (index < 0 || index >= this.count) {
 //    throw $.newStringIndexOutOfBoundsException();
 //  }
@@ -453,18 +453,18 @@
 //
 //// StringBuffer.append(java.lang.Object) left in Java to avoid Object.toString().
 //
-//Native["java/lang/StringBuffer.append.(Ljava/lang/String;)Ljava/lang/StringBuffer;"] = function(jStr) {
+//Native["java/lang/StringBuffer.append.(Ljava/lang/String;)Ljava/lang/StringBuffer;"] = function(addr, jStr) {
 //  return stringBufferAppend.call(this, jStr ? jStr.str : "null");
 //};
 //
-//Native["java/lang/StringBuffer.append.([C)Ljava/lang/StringBuffer;"] = function(chars) {
+//Native["java/lang/StringBuffer.append.([C)Ljava/lang/StringBuffer;"] = function(addr, chars) {
 //  if (chars == null) {
 //    throw $.newNullPointerException();
 //  }
 //  return stringBufferAppend.call(this, chars);
 //};
 //
-//Native["java/lang/StringBuffer.append.([CII)Ljava/lang/StringBuffer;"] = function(chars, offset, length) {
+//Native["java/lang/StringBuffer.append.([CII)Ljava/lang/StringBuffer;"] = function(addr, chars, offset, length) {
 //  if (chars == null) {
 //    throw $.newNullPointerException();
 //  }
@@ -474,11 +474,11 @@
 //  return stringBufferAppend.call(this, chars.subarray(offset, offset + length));
 //};
 //
-//Native["java/lang/StringBuffer.append.(Z)Ljava/lang/StringBuffer;"] = function(bool) {
+//Native["java/lang/StringBuffer.append.(Z)Ljava/lang/StringBuffer;"] = function(addr, bool) {
 //  return stringBufferAppend.call(this, bool ? "true" : "false");
 //};
 //
-//Native["java/lang/StringBuffer.append.(C)Ljava/lang/StringBuffer;"] = function(ch) {
+//Native["java/lang/StringBuffer.append.(C)Ljava/lang/StringBuffer;"] = function(addr, ch) {
 //  if (this.buf.length < this.count + 1) {
 //    expandCapacity.call(this, this.count + 1);
 //  }
@@ -486,11 +486,11 @@
 //  return this;
 //};
 //
-//Native["java/lang/StringBuffer.append.(I)Ljava/lang/StringBuffer;"] = function(n) {
+//Native["java/lang/StringBuffer.append.(I)Ljava/lang/StringBuffer;"] = function(addr, n) {
 //  return stringBufferAppend.call(this, n + "");
 //};
 //
-//Native["java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;"] = function(l, h) {
+//Native["java/lang/StringBuffer.append.(J)Ljava/lang/StringBuffer;"] = function(addr, l, h) {
 //  return stringBufferAppend.call(this, J2ME.longToNumber(l, h).toString());
 //};
 //
@@ -528,7 +528,7 @@
 //
 //Native["java/lang/StringBuffer.delete.(II)Ljava/lang/StringBuffer;"] = stringBufferDelete;
 //
-//Native["java/lang/StringBuffer.deleteCharAt.(I)Ljava/lang/StringBuffer;"] = function(index) {
+//Native["java/lang/StringBuffer.deleteCharAt.(I)Ljava/lang/StringBuffer;"] = function(addr, index) {
 //  if (index >= this.count) {
 //    // stringBufferDelete handles the other boundary checks; this check is specific to deleteCharAt.
 //    throw $.newStringIndexOutOfBoundsException();
@@ -566,27 +566,27 @@
 //
 //// StringBuffer.insert(Object) left in Java (for String.valueOf()).
 //
-//Native["java/lang/StringBuffer.insert.(ILjava/lang/String;)Ljava/lang/StringBuffer;"] = function(offset, jStr) {
+//Native["java/lang/StringBuffer.insert.(ILjava/lang/String;)Ljava/lang/StringBuffer;"] = function(addr, offset, jStr) {
 //  return stringBufferInsert.call(this, offset, jStr ? jStr.str : "null");
 //};
 //
-//Native["java/lang/StringBuffer.insert.(I[C)Ljava/lang/StringBuffer;"] = function(offset, chars) {
+//Native["java/lang/StringBuffer.insert.(I[C)Ljava/lang/StringBuffer;"] = function(addr, offset, chars) {
 //  return stringBufferInsert.call(this, offset, chars);
 //};
 //
-//Native["java/lang/StringBuffer.insert.(IZ)Ljava/lang/StringBuffer;"] = function(offset, bool) {
+//Native["java/lang/StringBuffer.insert.(IZ)Ljava/lang/StringBuffer;"] = function(addr, offset, bool) {
 //  return stringBufferInsert.call(this, offset, bool ? "true" : "false");
 //};
 //
-//Native["java/lang/StringBuffer.insert.(IC)Ljava/lang/StringBuffer;"] = function(offset, ch) {
+//Native["java/lang/StringBuffer.insert.(IC)Ljava/lang/StringBuffer;"] = function(addr, offset, ch) {
 //  return stringBufferInsert.call(this, offset, String.fromCharCode(ch));
 //};
 //
-//Native["java/lang/StringBuffer.insert.(II)Ljava/lang/StringBuffer;"] = function(offset, n) {
+//Native["java/lang/StringBuffer.insert.(II)Ljava/lang/StringBuffer;"] = function(addr, offset, n) {
 //  return stringBufferInsert.call(this, offset, n + "");
 //};
 //
-//Native["java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;"] = function(offset, l, h) {
+//Native["java/lang/StringBuffer.insert.(IJ)Ljava/lang/StringBuffer;"] = function(addr, offset, l, h) {
 //  return stringBufferInsert.call(this, offset, J2ME.longToNumber(l, h) + "");
 //};
 //
@@ -594,7 +594,7 @@
 //
 //// StringBuffer.insert(double) left in Java.
 //
-//Native["java/lang/StringBuffer.reverse.()Ljava/lang/StringBuffer;"] = function() {
+//Native["java/lang/StringBuffer.reverse.()Ljava/lang/StringBuffer;"] = function(addr) {
 //  var buf = this.buf;
 //  for (var i = 0, j = this.count - 1; i < j; i++, j--) {
 //    var tmp = buf[i];
@@ -604,15 +604,15 @@
 //  return this;
 //};
 //
-//Native["java/lang/StringBuffer.toString.()Ljava/lang/String;"] = function() {
+//Native["java/lang/StringBuffer.toString.()Ljava/lang/String;"] = function(addr) {
 //  return J2ME.newString(util.fromJavaChars(this.buf, 0, this.count));
 //};
 //
-//Native["java/lang/StringBuffer.setShared.()V"] = function() {
+//Native["java/lang/StringBuffer.setShared.()V"] = function(addr) {
 //  // Our StringBuffers are never shared. Everyone gets their very own!
 //};
 //
-//Native["java/lang/StringBuffer.getValue.()[C"] = function() {
+//Native["java/lang/StringBuffer.getValue.()[C"] = function(addr) {
 //  // In theory, this method should only be called by String (which
 //  // we've overridden to not do), so it should never be called. In any
 //  // case, mutating this buf would have the same effect here as it

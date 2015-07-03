@@ -22,38 +22,38 @@ MIDP.fsRootNames = [
     "Private",
 ];
 
-Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(storageId) {
+Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(addr, storageId) {
     return J2ME.newString("assets/" + storageId + "/");
 };
 
-Native["com/sun/midp/io/j2me/storage/File.initStorageRoot.(I)Ljava/lang/String;"] = function(storageId) {
+Native["com/sun/midp/io/j2me/storage/File.initStorageRoot.(I)Ljava/lang/String;"] = function(addr, storageId) {
     return J2ME.newString("assets/" + storageId + "/");
 };
 
-Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(id) {
+Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(addr, id) {
     return J2ME.newString("");
 };
 
 Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] =
-function(filenameBase, name, ext) {
+function(addr, filenameBase, name, ext) {
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase) + "/" + J2ME.fromJavaString(name) + "." + ext;
     return fs.exists(path) ? 1 : 0;
 };
 
 Native["com/sun/midp/rms/RecordStoreUtil.deleteFile.(Ljava/lang/String;Ljava/lang/String;I)V"] =
-function(filenameBase, name, ext) {
+function(addr, filenameBase, name, ext) {
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase) + "/" + J2ME.fromJavaString(name) + "." + ext;
     fs.remove(path);
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.getNumberOfStores.(Ljava/lang/String;)I"] =
-function(filenameBase) {
+function(addr, filenameBase) {
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase);
     return fs.list(path).length;
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.getRecordStoreList.(Ljava/lang/String;[Ljava/lang/String;)V"] =
-function (filenameBase, names) {
+function(addr, filenameBase, names) {
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase);
     var files = fs.list(path);
     for (var i = 0; i < files.length; i++) {
@@ -61,7 +61,7 @@ function (filenameBase, names) {
     }
 };
 
-Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I"] = function(filenameBase, storageId) {
+Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/lang/String;I)I"] = function(addr, filenameBase, storageId) {
     // Pretend there is 50MiB available.  Our implementation is backed
     // by IndexedDB, which has no actual limit beyond space available on device,
     // which I don't think we can determine.  But this should be sufficient
@@ -69,7 +69,7 @@ Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableNewRecordStore0.(Ljava/la
     return 50 * 1024 * 1024;
 };
 
-Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I"] = function(handle, filenameBase, storageId) {
+Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/String;I)I"] = function(addr, handle, filenameBase, storageId) {
     // Pretend there is 50MiB available.  Our implementation is backed
     // by IndexedDB, which has no actual limit beyond space available on device,
     // which I don't think we can determine.  But this should be sufficient
@@ -78,7 +78,7 @@ Native["com/sun/midp/rms/RecordStoreFile.spaceAvailableRecordStore.(ILjava/lang/
 };
 
 Native["com/sun/midp/rms/RecordStoreFile.openRecordStoreFile.(Ljava/lang/String;Ljava/lang/String;I)I"] =
-function(filenameBase, name, ext) {
+function(addr, filenameBase, name, ext) {
     var ctx = $.ctx;
 
     var path = RECORD_STORE_BASE + "/" + J2ME.fromJavaString(filenameBase) + "/" + J2ME.fromJavaString(name) + "." + ext;
@@ -113,11 +113,11 @@ function(filenameBase, name, ext) {
     }
 };
 
-Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(handle, pos) {
+Native["com/sun/midp/rms/RecordStoreFile.setPosition.(II)V"] = function(addr, handle, pos) {
     fs.setpos(handle, pos);
 };
 
-Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(handle, buf, offset, numBytes) {
+Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(addr, handle, buf, offset, numBytes) {
     var from = fs.getpos(handle);
     var to = from + numBytes;
     var readBytes = fs.read(handle, from, to);
@@ -133,19 +133,19 @@ Native["com/sun/midp/rms/RecordStoreFile.readBytes.(I[BII)I"] = function(handle,
     return readBytes.byteLength;
 };
 
-Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(handle, buf, offset, numBytes) {
+Native["com/sun/midp/rms/RecordStoreFile.writeBytes.(I[BII)V"] = function(addr, handle, buf, offset, numBytes) {
     fs.write(handle, buf, offset, numBytes);
 };
 
-Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(handle) {
+Native["com/sun/midp/rms/RecordStoreFile.commitWrite.(I)V"] = function(addr, handle) {
     fs.flush(handle);
 };
 
-Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(handle) {
+Native["com/sun/midp/rms/RecordStoreFile.closeFile.(I)V"] = function(addr, handle) {
     fs.close(handle);
 };
 
-Native["com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V"] = function(handle, size) {
+Native["com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V"] = function(addr, handle, size) {
     fs.flush(handle);
     fs.ftruncate(handle, size);
 };
@@ -153,7 +153,7 @@ Native["com/sun/midp/rms/RecordStoreFile.truncateFile.(II)V"] = function(handle,
 MIDP.RecordStoreCache = [];
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getLookupId0.(ILjava/lang/String;I)I"] =
-function(suiteId, jStoreName, headerDataSize) {
+function(addr, suiteId, jStoreName, headerDataSize) {
     var storeName = J2ME.fromJavaString(jStoreName);
 
     var sharedHeader =
@@ -176,7 +176,7 @@ function(suiteId, jStoreName, headerDataSize) {
     return sharedHeader.lookupId;
 };
 
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = function(lookupId, headerData, headerDataSize) {
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = function(addr, lookupId, headerData, headerDataSize) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
         throw $.newIllegalStateException("invalid header lookup ID");
@@ -197,7 +197,7 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.shareCachedData0.(I[BI)I"] = 
 };
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.updateCachedData0.(I[BII)I"] =
-function(lookupId, headerData, headerDataSize, headerVersion) {
+function(addr, lookupId, headerData, headerDataSize, headerVersion) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
         throw $.newIllegalStateException("invalid header lookup ID");
@@ -222,7 +222,7 @@ function(lookupId, headerData, headerDataSize, headerVersion) {
     return headerVersion;
 };
 
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(lookupId) {
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = function(addr, lookupId) {
     var sharedHeader = MIDP.RecordStoreCache[lookupId];
     if (!sharedHeader) {
         throw $.newIllegalStateException("invalid header lookup ID");
@@ -231,7 +231,7 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = f
     return sharedHeader.refCount;
 };
 
-Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function() {
+Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(addr) {
     var lookupId = this.lookupId;
     if (MIDP.RecordStoreCache[lookupId] &&
         --MIDP.RecordStoreCache[lookupId].refCount <= 0) {
@@ -246,35 +246,35 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.finalize.()V"] =
     Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"];
 
 Native["com/sun/midp/rms/RecordStoreRegistry.getRecordStoreListeners.(ILjava/lang/String;)[I"] =
-function(suiteId, storeName) {
+function(addr, suiteId, storeName) {
     console.warn("RecordStoreRegistry.getRecordStoreListeners.(IL...String;)[I not implemented (" +
                  suiteId + ", " + J2ME.fromJavaString(storeName) + ")");
     return J2ME.Constants.NULL;
 };
 
 Native["com/sun/midp/rms/RecordStoreRegistry.sendRecordStoreChangeEvent.(ILjava/lang/String;II)V"] =
-function(suiteId, storeName, changeType, recordId) {
+function(addr, suiteId, storeName, changeType, recordId) {
     console.warn("RecordStoreRegistry.sendRecordStoreChangeEvent.(IL...String;II)V not implemented (" +
                  suiteId + ", " + J2ME.fromJavaString(storeName) + ", " + changeType + ", " + recordId + ")");
 };
 
 Native["com/sun/midp/rms/RecordStoreRegistry.startRecordStoreListening.(ILjava/lang/String;)V"] =
-function(suiteId, storeName) {
+function(addr, suiteId, storeName) {
     console.warn("RecordStoreRegistry.startRecordStoreListening.(IL...String;)V not implemented (" +
                  suiteId + ", " + J2ME.fromJavaString(storeName) + ")");
 };
 
 Native["com/sun/midp/rms/RecordStoreRegistry.stopRecordStoreListening.(ILjava/lang/String;)V"] =
-function(suiteId, storeName) {
+function(addr, suiteId, storeName) {
     console.warn("RecordStoreRegistry.stopRecordStoreListening.(IL...String;)V not implemented (" +
                  suiteId + ", " + J2ME.fromJavaString(storeName) + ")");
 };
 
-Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(taskId) {
+Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] = function(addr, taskId) {
     console.warn("RecordStoreRegistry.stopAllRecordStoreListeners.(I)V not implemented (" + taskId + ")");
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.create.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.create.()V"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.create: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -289,7 +289,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.create.()V"] = function() {
     }
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.exists.()Z"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.exists.()Z"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.exists: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -302,7 +302,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.exists.()Z"] = function() {
     return exists ? 1 : 0;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isDirectory.()Z"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isDirectory.()Z"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.isDirectory: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -316,7 +316,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isDirectory.()Z"] = function
     return isDirectory ? 1 : 0;
 }
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.delete.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.delete.()V"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.delete: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -330,7 +330,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.delete.()V"] = function() {
 };
 
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)V"] = function(newName) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)V"] = function(addr, newName) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     var newPathname = J2ME.fromJavaString(newName);
     DEBUG_FS && console.log("DefaultFileHandler.rename0: " + pathname + " to " + newPathname);
@@ -344,7 +344,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)
     }
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(byteOffsetL, byteOffsetH) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(addr, byteOffsetL, byteOffsetH) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.lastModified: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -367,7 +367,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(b
     fs.truncate(pathname, J2ME.longToNumber(byteOffsetL, byteOffsetH));
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.fileSize: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -381,7 +381,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function() 
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySize.(Z)J",
                        function() { return J2ME.returnLongValue(0) });
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.canRead: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -392,7 +392,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function() {
     return J2ME.returnLongValue(fs.exists(pathname) ? 1 : 0);
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canWrite.()Z"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canWrite.()Z"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.canWrite: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -403,13 +403,13 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canWrite.()Z"] = function() 
     return fs.exists(pathname) ? 1 : 0;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isHidden0.()Z"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isHidden0.()Z"] = function(addr) {
     // Per the comment in DefaultFileHandler.isHidden, we pretend we're Unix
     // and always return false.
     return 0;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setReadable.(Z)V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setReadable.(Z)V"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.setReadable: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -424,7 +424,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setReadable.(Z)V"] = functio
     // Otherwise this is a noop, as files are always readable in our filesystem.
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setWritable.(Z)V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setWritable.(Z)V"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.setWritable: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -441,7 +441,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setWritable.(Z)V"] = functio
 
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.setHidden0.(Z)V");
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.mkdir.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.mkdir.()V"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.mkdir: " + pathname);
 
@@ -456,7 +456,7 @@ addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.availableSiz
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.totalSize.()J",
                        function() { return J2ME.returnLongValue(1024 * 1024 * 1024) });
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.lastModified: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
@@ -550,28 +550,28 @@ MIDP.closeFileHandler = function(fileHandler, mode) {
     }
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function(addr) {
     MIDP.openFileHandler(this, "read");
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForRead.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForRead.()V"] = function(addr) {
     MIDP.closeFileHandler(this, "read");
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = function(addr) {
     MIDP.openFileHandler(this, "write");
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForWrite.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForWrite.()V"] = function(addr) {
     MIDP.closeFileHandler(this, "write");
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = function(addr) {
     MIDP.closeFileHandler(this, "read");
     MIDP.closeFileHandler(this, "write");
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b, off, len) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(addr, b, off, len) {
     DEBUG_FS && console.log("DefaultFileHandler.read: " + J2ME.fromJavaString(getHandle(this.nativePath)) + " " + len);
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.read: ignored file");
@@ -595,7 +595,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(b,
     return (data.byteLength > 0) ? data.byteLength : -1;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(l, h) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(addr, l, h) {
     DEBUG_FS && console.log("DefaultFileHandler.skip: " + J2ME.fromJavaString(getHandle(this.nativePath)));
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.skip: ignored file");
@@ -620,7 +620,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(l, h)
     }
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b, off, len) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(addr, b, off, len) {
     DEBUG_FS && console.log("DefaultFileHandler.write: " + J2ME.fromJavaString(getHandle(this.nativePath)) + " " + off + "+" + len);
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.write: ignored file");
@@ -634,7 +634,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(b
     return preemptingImpl("I", len);
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(offsetLow, offsetHigh) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(addr, offsetLow, offsetHigh) {
     DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + J2ME.fromJavaString(getHandle(this.nativePath)));
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: ignored file");
@@ -645,7 +645,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = fu
     fs.setpos(fd, J2ME.longToNumber(offsetLow, offsetHigh));
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function(addr) {
     DEBUG_FS && console.log("DefaultFileHandler.flush: " + J2ME.fromJavaString(getHandle(this.nativePath)));
     if (this.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.flush: ignored file");
@@ -656,7 +656,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function() {
     fs.flush(fd);
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function(addr) {
     DEBUG_FS && console.log("DefaultFileHandler.close: " + J2ME.fromJavaString(getHandle(this.nativePath)));
 
     MIDP.closeFileHandler(this, "read");
@@ -668,14 +668,14 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function() {
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativeName.(Ljava/lang/String;J)J",
                        function() { return J2ME.returnLongValue(0) });
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getFileSeparator.()C"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getFileSeparator.()C"] = function(addr) {
     return "/".charCodeAt(0);
 }
 
 MIDP.openDirs = new Map();
 MIDP.openDirHandle = 0;
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openDir.()J"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openDir.()J"] = function(addr) {
     var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.openDir: " + pathname);
 
@@ -700,12 +700,12 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openDir.()J"] = function() {
     return J2ME.returnLongValue(openDirHandle);
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeDir.(J)V"] = function(dirHandleLow, dirHandleHigh) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeDir.(J)V"] = function(addr, dirHandleLow, dirHandleHigh) {
     MIDP.openDirs.delete(J2ME.longToNumber(dirHandleLow, dirHandleHigh));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.dirGetNextFile.(JZ)Ljava/lang/String;"] =
-function(dirHandleLow, dirHandleHigh, includeHidden) {
+function(addr, dirHandleLow, dirHandleHigh, includeHidden) {
     var iterator = MIDP.openDirs.get(J2ME.longToNumber(dirHandleLow, dirHandleHigh));
     var nextFile = iterator.files[++iterator.index];
 DEBUG_FS && console.log(iterator.index + " " + nextFile);
@@ -713,20 +713,20 @@ DEBUG_FS && console.log(iterator.index + " " + nextFile);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativePathForRoot.(Ljava/lang/String;)Ljava/lang/String;"] =
-function(root) {
+function(addr, root) {
 // XXX Ensure root is in MIDP.fsRoots?
 DEBUG_FS && console.log("getNativePathForRoot: " + J2ME.fromJavaString(root));
     var nativePath = J2ME.newString("/" + J2ME.fromJavaString(root));
     return nativePath;
 };
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.illegalFileNameChars0.()Ljava/lang/String;"] = function() {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.illegalFileNameChars0.()Ljava/lang/String;"] = function(addr) {
     return J2ME.newString('<>:"\\|?');
 };
 
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.initialize.()V");
 
-Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getSuiteIdString.(I)Ljava/lang/String;"] = function(id) {
+Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getSuiteIdString.(I)Ljava/lang/String;"] = function(addr, id) {
 DEBUG_FS && console.log("getSuiteIdString: " + id);
     // return J2ME.newString(id.toString());
     // The implementation adds this to the path of the file, presumably
@@ -735,7 +735,7 @@ DEBUG_FS && console.log("getSuiteIdString: " + id);
     return J2ME.newString("");
 };
 
-Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
+Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function(addr) {
     var fileHandler = getHandle(this.fileHandler);
     var fd = fileHandler.nativeDescriptor;
     var available = fs.getsize(fd) - fs.getpos(fd);
@@ -743,7 +743,7 @@ Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function() {
     return available;
 };
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(fileName, mode) {
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;I)I"] = function(addr, fileName, mode) {
     var path = "/" + J2ME.fromJavaString(fileName);
 
     var ctx = $.ctx;
@@ -773,7 +773,7 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.open.(Ljava/lang/String;
 };
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.read.(I[BII)I"] =
-function(handle, buffer, offset, length) {
+function(addr, handle, buffer, offset, length) {
     var from = fs.getpos(handle);
     var to = from + length;
     var readBytes = fs.read(handle, from, to);
@@ -790,19 +790,19 @@ function(handle, buffer, offset, length) {
 };
 
 Native["com/sun/midp/io/j2me/storage/RandomAccessStream.write.(I[BII)V"] =
-function(handle, buffer, offset, length) {
+function(addr, handle, buffer, offset, length) {
     fs.write(handle, buffer, offset, length);
 };
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V"] = function(handle) {
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.commitWrite.(I)V"] = function(addr, handle) {
     fs.flush(handle);
 };
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V"] = function(handle, position) {
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.position.(II)V"] = function(addr, handle, position) {
     fs.setpos(handle, position);
 };
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function(handle) {
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function(addr, handle) {
     var size = fs.getsize(handle);
 
     if (size == -1) {
@@ -812,11 +812,11 @@ Native["com/sun/midp/io/j2me/storage/RandomAccessStream.sizeOf.(I)I"] = function
     return size;
 };
 
-Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(handle) {
+Native["com/sun/midp/io/j2me/storage/RandomAccessStream.close.(I)V"] = function(addr, handle) {
     fs.close(handle);
 };
 
-Native["javax/microedition/io/file/FileSystemRegistry.getRoots.()[Ljava/lang/String;"] = function() {
+Native["javax/microedition/io/file/FileSystemRegistry.getRoots.()[Ljava/lang/String;"] = function(addr) {
     var arrayAddr = J2ME.newStringArray(MIDP.fsRoots.length);
     var array = J2ME.getArrayFromAddr(arrayAddr);
 
