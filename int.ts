@@ -1712,13 +1712,9 @@ module J2ME {
               if (address === Constants.NULL) {
                 object = null;
                 klass = null;
-              } else if (typeof address === "number") {
+              } else {
                 object = getHandle(address);
                 klass = klassIdMap[i32[address >> 2]];
-              } else {
-                object = address;
-                klass = object["klass"];
-                address = object._address;
               }
             }
 
@@ -1791,16 +1787,7 @@ module J2ME {
                     case Kind.Reference:
                       // XXX Update natives to expect addresses and stop passing
                       // handles.
-                      var paramAddress = ref[--sp];
-                      if (typeof paramAddress === "number") {
-                        if (paramAddress === Constants.NULL) {
-                          args.unshift(null);
-                        } else {
-                          args.unshift(getHandle(paramAddress));
-                        }
-                      } else {
-                        args.unshift(paramAddress);
-                      }
+                      args.unshift(getHandle(ref[--sp]));
                       break;
                     default:
                       release || assert(false, "Invalid Kind: " + Kind[kind]);
