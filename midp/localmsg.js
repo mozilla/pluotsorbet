@@ -1035,10 +1035,7 @@ MIDP.LocalMsgConnections["nokia.product-info"] = NokiaProductInfoLocalMsgConnect
 var localmsgServerWait = null;
 
 // XXX Consolidate the objects we store in this map with those in NativeMap.
-nativeConnectionMap = Object.create(null);
-function getNativeConnection(obj) {
-    return nativeConnectionMap[obj._address];
-}
+NativeConnectionMap = Object.create(null);
 
 Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(addr, jName) {
     var name = J2ME.fromJavaString(jName);
@@ -1048,12 +1045,12 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
       protocolName: name.slice((name[2] == ':') ? 3 : 2),
     };
 
-    setNative(this, info);
+    NativeMap.set(addr, info);
 
     if (info.server) {
         // It seems that one server only serves on client at a time, let's
         // store an object instead of the constructor.
-        nativeConnectionMap[this._address] = MIDP.LocalMsgConnections[info.protocolName] = new LocalMsgConnection();
+        NativeConnectionMap[addr] = MIDP.LocalMsgConnections[info.protocolName] = new LocalMsgConnection();
         if (localmsgServerWait) {
             localmsgServerWait();
         }
@@ -1069,14 +1066,14 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
             return;
         }
 
-        asyncImpl("V", new Promise((function(resolve, reject) {
+        asyncImpl("V", new Promise(function(resolve, reject) {
             localmsgServerWait = function() {
                 localmsgServerWait = null;
-                var connection = nativeConnectionMap[this._address] = MIDP.LocalMsgConnections[info.protocolName];
+                var connection = NativeConnectionMap[addr] = MIDP.LocalMsgConnections[info.protocolName];
                 connection.notifyConnection();
                 resolve();
-            }.bind(this);
-        }).bind(this)));
+            };
+        }));
 
         return;
     }
@@ -1085,7 +1082,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
         console.warn("connect to an unimplemented localmsg server (" + info.protocolName + ")");
     }
 
-    var connection = nativeConnectionMap[this._address] = typeof MIDP.LocalMsgConnections[info.protocolName] === 'function' ?
+    var connection = NativeConnectionMap[addr] = typeof MIDP.LocalMsgConnections[info.protocolName] === 'function' ?
         new MIDP.LocalMsgConnections[info.protocolName]() : MIDP.LocalMsgConnections[info.protocolName];
 
     connection.reset();
@@ -1094,7 +1091,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 };
 
 Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function(addr) {
-    var connection = getNativeConnection(this);
+    var connection = NativeConnectionMap[addr];
 
     if (connection.clientConnected) {
         return;
@@ -1104,8 +1101,8 @@ Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function(addr) 
 };
 
 Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(addr, data, offset, length) {
-    var connection = getNativeConnection(this);
-    var info = getNative(this);
+    var connection = NativeConnectionMap[addr];
+    var info = NativeMap.get(addr);
 
     if (info.server) {
         connection.sendMessageToClient(data, offset, length);
@@ -1120,8 +1117,8 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(addr, da
 };
 
 Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(addr, data) {
-    var connection = getNativeConnection(this);
-    var info = getNative(this);
+    var connection = NativeConnectionMap[addr];
+    var info = NativeMap.get(addr);
 
     if (info.server) {
         if (connection.serverMessages.length > 0) {

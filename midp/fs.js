@@ -232,7 +232,8 @@ Native["com/sun/midp/rms/RecordStoreSharedDBHeader.getHeaderRefCount0.(I)I"] = f
 };
 
 Native["com/sun/midp/rms/RecordStoreSharedDBHeader.cleanup0.()V"] = function(addr) {
-    var lookupId = this.lookupId;
+    var self = getHandle(addr);
+    var lookupId = self.lookupId;
     if (MIDP.RecordStoreCache[lookupId] &&
         --MIDP.RecordStoreCache[lookupId].refCount <= 0) {
         // Set to null instead of removing from array to maintain
@@ -275,7 +276,7 @@ Native["com/sun/midp/rms/RecordStoreRegistry.stopAllRecordStoreListeners.(I)V"] 
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.create.()V"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.create: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.create: ignored file");
@@ -290,7 +291,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.create.()V"] = function(addr
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.exists.()Z"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.exists: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.exists: ignored file");
@@ -303,7 +304,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.exists.()Z"] = function(addr
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isDirectory.()Z"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.isDirectory: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.isDirectory: ignored file");
@@ -317,7 +318,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isDirectory.()Z"] = function
 }
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.delete.()V"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.delete: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.delete: ignored file");
@@ -331,7 +332,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.delete.()V"] = function(addr
 
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)V"] = function(addr, newName) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     var newPathname = J2ME.fromJavaString(newName);
     DEBUG_FS && console.log("DefaultFileHandler.rename0: " + pathname + " to " + newPathname);
 
@@ -345,7 +346,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.rename0.(Ljava/lang/String;)
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(addr, byteOffsetL, byteOffsetH) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.lastModified: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.lastModified: ignored file");
@@ -368,7 +369,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.truncate.(J)V"] = function(a
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.fileSize.()J"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.fileSize: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.fileSize: ignored file");
@@ -382,7 +383,7 @@ addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.directorySiz
                        function() { return J2ME.returnLongValue(0) });
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.canRead: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.canRead: ignored file");
@@ -393,7 +394,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canRead.()Z"] = function(add
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.canWrite.()Z"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.canWrite: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.canWrite: ignored file");
@@ -410,7 +411,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.isHidden0.()Z"] = function(a
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setReadable.(Z)V"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.setReadable: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.setReadable: ignored file");
@@ -425,7 +426,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setReadable.(Z)V"] = functio
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setWritable.(Z)V"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.setWritable: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.setWritable: ignored file");
@@ -442,7 +443,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.setWritable.(Z)V"] = functio
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.setHidden0.(Z)V");
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.mkdir.()V"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.mkdir: " + pathname);
 
     if (!fs.mkdir(pathname)) {
@@ -457,7 +458,7 @@ addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.totalSize.()
                        function() { return J2ME.returnLongValue(1024 * 1024 * 1024) });
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.lastModified.()J"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var pathname = J2ME.fromJavaString(getHandle(getHandle(addr).nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.lastModified: " + pathname);
     if (config.ignoredFiles.has(pathname)) {
         DEBUG_FS && console.log("DefaultFileHandler.lastModified: ignored file");
@@ -551,34 +552,35 @@ MIDP.closeFileHandler = function(fileHandler, mode) {
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V"] = function(addr) {
-    MIDP.openFileHandler(this, "read");
+    MIDP.openFileHandler(getHandle(addr), "read");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForRead.()V"] = function(addr) {
-    MIDP.closeFileHandler(this, "read");
+    MIDP.closeFileHandler(getHandle(addr), "read");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openForWrite.()V"] = function(addr) {
-    MIDP.openFileHandler(this, "write");
+    MIDP.openFileHandler(getHandle(addr), "write");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForWrite.()V"] = function(addr) {
-    MIDP.closeFileHandler(this, "write");
+    MIDP.closeFileHandler(getHandle(addr), "write");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.closeForReadWrite.()V"] = function(addr) {
-    MIDP.closeFileHandler(this, "read");
-    MIDP.closeFileHandler(this, "write");
+    MIDP.closeFileHandler(getHandle(addr), "read");
+    MIDP.closeFileHandler(getHandle(addr), "write");
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(addr, b, off, len) {
-    DEBUG_FS && console.log("DefaultFileHandler.read: " + J2ME.fromJavaString(getHandle(this.nativePath)) + " " + len);
-    if (this.nativeDescriptor === -1) {
+    var self = getHandle(addr);
+    DEBUG_FS && console.log("DefaultFileHandler.read: " + J2ME.fromJavaString(getHandle(self.nativePath)) + " " + len);
+    if (self.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.read: ignored file");
         return -1;
     }
 
-    var fd = this.nativeDescriptor;
+    var fd = self.nativeDescriptor;
 
     if (off < 0 || len < 0 || off > b.byteLength || (b.byteLength - off) < len) {
         throw $.newIOException();
@@ -596,8 +598,9 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.read.([BII)I"] = function(ad
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(addr, l, h) {
-    DEBUG_FS && console.log("DefaultFileHandler.skip: " + J2ME.fromJavaString(getHandle(this.nativePath)));
-    if (this.nativeDescriptor === -1) {
+    var self = getHandle(addr);
+    DEBUG_FS && console.log("DefaultFileHandler.skip: " + J2ME.fromJavaString(getHandle(self.nativePath)));
+    if (self.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.skip: ignored file");
         return -1;
     }
@@ -608,7 +611,7 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(addr,
         return J2ME.returnLongValue(0);
     }
 
-    var fd = this.nativeDescriptor;
+    var fd = self.nativeDescriptor;
     var pos = fs.getpos(fd);
     var size = fs.getsize(fd);
     if (pos + toSkip > size) {
@@ -621,13 +624,14 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.skip.(J)J"] = function(addr,
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(addr, b, off, len) {
-    DEBUG_FS && console.log("DefaultFileHandler.write: " + J2ME.fromJavaString(getHandle(this.nativePath)) + " " + off + "+" + len);
-    if (this.nativeDescriptor === -1) {
+    var self = getHandle(addr);
+    DEBUG_FS && console.log("DefaultFileHandler.write: " + J2ME.fromJavaString(getHandle(self.nativePath)) + " " + off + "+" + len);
+    if (self.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.write: ignored file");
         return preemptingImpl("I", len);
     }
 
-    var fd = this.nativeDescriptor;
+    var fd = self.nativeDescriptor;
     fs.write(fd, b, off, len);
     // The return value is the "length of data really written," which is
     // always the same as the length requested in our implementation.
@@ -635,32 +639,35 @@ Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.write.([BII)I"] = function(a
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.positionForWrite.(J)V"] = function(addr, offsetLow, offsetHigh) {
-    DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + J2ME.fromJavaString(getHandle(this.nativePath)));
-    if (this.nativeDescriptor === -1) {
+    var self = getHandle(addr);
+    DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: " + J2ME.fromJavaString(getHandle(self.nativePath)));
+    if (self.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.positionForWrite: ignored file");
         return;
     }
 
-    var fd = this.nativeDescriptor;
+    var fd = self.nativeDescriptor;
     fs.setpos(fd, J2ME.longToNumber(offsetLow, offsetHigh));
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.flush.()V"] = function(addr) {
-    DEBUG_FS && console.log("DefaultFileHandler.flush: " + J2ME.fromJavaString(getHandle(this.nativePath)));
-    if (this.nativeDescriptor === -1) {
+    var self = getHandle(addr);
+    DEBUG_FS && console.log("DefaultFileHandler.flush: " + J2ME.fromJavaString(getHandle(self.nativePath)));
+    if (self.nativeDescriptor === -1) {
         DEBUG_FS && console.log("DefaultFileHandler.flush: ignored file");
         return;
     }
 
-    var fd = this.nativeDescriptor;
+    var fd = self.nativeDescriptor;
     fs.flush(fd);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.close.()V"] = function(addr) {
-    DEBUG_FS && console.log("DefaultFileHandler.close: " + J2ME.fromJavaString(getHandle(this.nativePath)));
+    var self = getHandle(addr);
+    DEBUG_FS && console.log("DefaultFileHandler.close: " + J2ME.fromJavaString(getHandle(self.nativePath)));
 
-    MIDP.closeFileHandler(this, "read");
-    MIDP.closeFileHandler(this, "write");
+    MIDP.closeFileHandler(self, "read");
+    MIDP.closeFileHandler(self, "write");
 };
 
 // Not implemented because we don't use native pointers, so we've commented out
@@ -676,7 +683,8 @@ MIDP.openDirs = new Map();
 MIDP.openDirHandle = 0;
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.openDir.()J"] = function(addr) {
-    var pathname = J2ME.fromJavaString(getHandle(this.nativePath));
+    var self = getHandle(addr);
+    var pathname = J2ME.fromJavaString(getHandle(self.nativePath));
     DEBUG_FS && console.log("DefaultFileHandler.openDir: " + pathname);
 
     try {
@@ -736,7 +744,8 @@ DEBUG_FS && console.log("getSuiteIdString: " + id);
 };
 
 Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function(addr) {
-    var fileHandler = getHandle(this.fileHandler);
+    var self = getHandle(addr);
+    var fileHandler = getHandle(self.fileHandler);
     var fd = fileHandler.nativeDescriptor;
     var available = fs.getsize(fd) - fs.getpos(fd);
     DEBUG_FS && console.log("Protocol.available: " + J2ME.fromJavaString(fileHandler.nativePath) + ": " + available);
