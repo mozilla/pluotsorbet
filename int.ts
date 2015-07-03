@@ -1709,7 +1709,7 @@ module J2ME {
               object = null;
             } else {
               address = ref[sp - calleeMethodInfo.argumentSlots];
-              if (address === null || address === Constants.NULL) {
+              if (address === Constants.NULL) {
                 object = null;
                 klass = null;
               } else if (typeof address === "number") {
