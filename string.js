@@ -7,6 +7,9 @@
 // *
 // * Methods are defined in the same order as the Java source.
 // * Any missing methods have been noted in comments.
+// *
+// * XXX If you reuse this code at some point, update it to work with the new
+// * way that natives associated with Java objects are stored in NativeMap.
 // */
 //
 ////################################################################
@@ -55,35 +58,29 @@
 //  }
 //}
 //
-//Native["java/lang/String.init.([BIILjava/lang/String;)V"] =
-//  function(bytes, off, len, enc) {
-//    constructFromByteArray.call(this, bytes, off, len, enc.str);
-//  };
+//Native["java/lang/String.init.([BIILjava/lang/String;)V"] = function(addr, bytes, off, len, enc) {
+//  constructFromByteArray.call(this, bytes, off, len, enc.str);
+//};
 //
-//Native["java/lang/String.init.([BLjava/lang/String;)V"] =
-//  function(bytes, enc) {
-//    constructFromByteArray.call(this, bytes, 0, bytes.length, enc.str);
-//  };
+//Native["java/lang/String.init.([BLjava/lang/String;)V"] = function(addr, bytes, enc) {
+//  constructFromByteArray.call(this, bytes, 0, bytes.length, enc.str);
+//};
 //
-//Native["java/lang/String.init.([BII)V"] =
-//  function(bytes, offset, len) {
-//    constructFromByteArray.call(this, bytes, offset, len, "UTF-8");
-//  };
+//Native["java/lang/String.init.([BII)V"] = function(addr, bytes, offset, len) {
+//  constructFromByteArray.call(this, bytes, offset, len, "UTF-8");
+//};
 //
-//Native["java/lang/String.init.([B)V"] =
-//  function(bytes) {
-//    constructFromByteArray.call(this, bytes, 0, bytes.length, "UTF-8");
-//  };
+//Native["java/lang/String.init.([B)V"] = function(addr, bytes) {
+//  constructFromByteArray.call(this, bytes, 0, bytes.length, "UTF-8");
+//};
 //
-//Native["java/lang/String.init.(Ljava/lang/StringBuffer;)V"] =
-//  function(jBuffer) {
-//    this.str = util.fromJavaChars(jBuffer.buf, 0, jBuffer.count);
-//  };
+//Native["java/lang/String.init.(Ljava/lang/StringBuffer;)V"] = function(addr, jBuffer) {
+//  this.str = util.fromJavaChars(jBuffer.buf, 0, jBuffer.count);
+//};
 //
-//Native["java/lang/String.init.(II[C)V"] =
-//  function(offset, count, value) {
-//    this.str = util.fromJavaChars(value, offset, count);
-//  };
+//Native["java/lang/String.init.(II[C)V"] = function(addr, offset, count, value) {
+//  this.str = util.fromJavaChars(value, offset, count);
+//};
 //
 ////****************************************************************
 //// Methods

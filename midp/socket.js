@@ -24,9 +24,10 @@ Native["com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;"] = 
     // as Protocol.open0 does.  Then we wouldn't have to get the native socket,
     // and we might avoid an exception if the socket hasn't been opened yet
     // (so the native socket doesn't exist).
-    // var host = J2ME.fromJavaString(getHandle(this.host));
+    // var self = getHandle(addr);
+    // var host = J2ME.fromJavaString(getHandle(self.host));
 
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     return local ? "127.0.0.1" : socket.host;
 };
 
@@ -100,21 +101,22 @@ Socket.prototype.close = function() {
 }
 
 Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(addr, ipBytes, port) {
-    var host = J2ME.fromJavaString(getHandle(this.host));
+    var self = getHandle(addr);
+    var host = J2ME.fromJavaString(getHandle(self.host));
     // console.log("Protocol.open0: " + host + ":" + port);
-    asyncImpl("V", new Promise((function(resolve, reject) {
-        setNative(this, new Socket(host, port, $.ctx, resolve, reject));
-    }).bind(this)));
+    asyncImpl("V", new Promise(function(resolve, reject) {
+        NativeMap.set(addr, new Socket(host, port, $.ctx, resolve, reject));
+    }));
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function(addr) {
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     // console.log("Protocol.available0: " + socket.data.byteLength);
     return socket.dataLen;
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(addr, data, offset, length) {
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     // console.log("Protocol.read0: " + socket.isClosed);
 
     asyncImpl("I", new Promise(function(resolve, reject) {
@@ -163,7 +165,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(addr, da
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(addr, data, offset, length) {
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
         if (socket.isClosed) {
@@ -193,7 +195,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(addr, d
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V"] = function(addr, option, value) {
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     if (!(option in socket.options)) {
         throw $.newIllegalArgumentException("Unsupported socket option");
     }
@@ -202,7 +204,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.setSockOpt0.(II)V"] = function(addr
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I"] = function(addr, option) {
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     if (!(option in socket.options)) {
         throw new $.newIllegalArgumentException("Unsupported socket option");
     }
@@ -211,7 +213,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.getSockOpt0.(I)I"] = function(addr,
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.close0.()V"] = function(addr) {
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     // console.log("Protocol.close0: " + socket.isClosed);
 
     asyncImpl("V", new Promise(function(resolve, reject) {
@@ -240,14 +242,14 @@ Native["com/sun/midp/io/j2me/socket/Protocol.shutdownOutput0.()V"] = function(ad
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedInput0.()V"] = function(addr) {
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     if (socket.waitingData) {
         console.warn("Protocol.notifyClosedInput0.()V unimplemented while thread is blocked on read0");
     }
 };
 
 Native["com/sun/midp/io/j2me/socket/Protocol.notifyClosedOutput0.()V"] = function(addr) {
-    var socket = getNative(this);
+    var socket = NativeMap.get(addr);
     if (socket.ondrain) {
         console.warn("Protocol.notifyClosedOutput0.()V unimplemented while thread is blocked on write0");
     }

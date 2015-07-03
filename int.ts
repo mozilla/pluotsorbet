@@ -1763,7 +1763,7 @@ module J2ME {
 
                 thread.set(fp, sp, opPC);
 
-                returnValue = callee.call(object, address);
+                returnValue = callee(address);
               } else {
                 args.length = 0;
 
@@ -1791,15 +1791,15 @@ module J2ME {
                     case Kind.Reference:
                       // XXX Update natives to expect addresses and stop passing
                       // handles.
-                      address = ref[--sp];
-                      if (typeof address === "number") {
-                        if (address === Constants.NULL) {
+                      var paramAddress = ref[--sp];
+                      if (typeof paramAddress === "number") {
+                        if (paramAddress === Constants.NULL) {
                           args.unshift(null);
                         } else {
-                          args.unshift(getHandle(address));
+                          args.unshift(getHandle(paramAddress));
                         }
                       } else {
-                        args.unshift(address);
+                        args.unshift(paramAddress);
                       }
                       break;
                     default:
@@ -1818,7 +1818,7 @@ module J2ME {
                 }
 
                 args.unshift(address);
-                returnValue = callee.apply(object, args);
+                returnValue = callee.apply(null, args);
               }
 
               if (!release) {

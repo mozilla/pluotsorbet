@@ -306,11 +306,13 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(addr) {
 };
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(addr) {
-    return $.getRuntimeKlass(this.klass).classObject._address;
+    var self = getHandle(addr);
+    return $.getRuntimeKlass(self.klass).classObject._address;
 };
 
 Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
-    var superKlass = this.runtimeKlass.templateKlass.superKlass;
+    var self = getHandle(addr);
+    var superKlass = self.runtimeKlass.templateKlass.superKlass;
     if (!superKlass) {
       return null;
     }
@@ -318,7 +320,8 @@ Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
 };
 
 Native["java/lang/Class.invoke_clinit.()V"] = function(addr) {
-    var classInfo = this.runtimeKlass.templateKlass.classInfo;
+    var self = getHandle(addr);
+    var classInfo = self.runtimeKlass.templateKlass.classInfo;
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
     J2ME.preemptionLockLevel++;
@@ -332,12 +335,14 @@ Native["java/lang/Class.invoke_verify.()V"] = function(addr) {
 };
 
 Native["java/lang/Class.init9.()V"] = function(addr) {
-    $.setClassInitialized(this.runtimeKlass);
+    var self = getHandle(addr);
+    $.setClassInitialized(self.runtimeKlass);
     J2ME.preemptionLockLevel--;
 };
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(addr) {
-    return J2ME.newString(this.runtimeKlass.templateKlass.classInfo.getClassNameSlow().replace(/\//g, "."));
+    var self = getHandle(addr);
+    return J2ME.newString(self.runtimeKlass.templateKlass.classInfo.getClassNameSlow().replace(/\//g, "."));
 };
 
 Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(addr, name) {
@@ -364,16 +369,17 @@ Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = funct
 };
 
 Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function(addr) {
-  if (this.runtimeKlass.templateKlass.classInfo.isInterface ||
-      this.runtimeKlass.templateKlass.classInfo.isAbstract) {
+  var self = getHandle(addr);
+  if (self.runtimeKlass.templateKlass.classInfo.isInterface ||
+      self.runtimeKlass.templateKlass.classInfo.isAbstract) {
     throw $.newInstantiationException("Can't instantiate interfaces or abstract classes");
   }
 
-  if (this.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo) {
+  if (self.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo) {
     throw $.newInstantiationException("Can't instantiate array classes");
   }
 
-  return (new this.runtimeKlass.templateKlass)._address;
+  return (new self.runtimeKlass.templateKlass)._address;
 };
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, o) {
@@ -386,21 +392,25 @@ Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, o)
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function(addr) {
-    return this.runtimeKlass.templateKlass.classInfo.isInterface ? 1 : 0;
+    var self = getHandle(addr);
+    return self.runtimeKlass.templateKlass.classInfo.isInterface ? 1 : 0;
 };
 
 Native["java/lang/Class.isArray.()Z"] = function(addr) {
-    return this.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo ? 1 : 0;
+    var self = getHandle(addr);
+    return self.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo ? 1 : 0;
 };
 
 Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(addr, fromClass) {
+    var self = getHandle(addr);
     if (!fromClass)
         throw $.newNullPointerException();
-    return J2ME.isAssignableTo(fromClass.runtimeKlass.templateKlass, this.runtimeKlass.templateKlass) ? 1 : 0;
+    return J2ME.isAssignableTo(fromClass.runtimeKlass.templateKlass, self.runtimeKlass.templateKlass) ? 1 : 0;
 };
 
 Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(addr, obj) {
-    return obj && J2ME.isAssignableTo(obj.klass, this.runtimeKlass.templateKlass) ? 1 : 0;
+    var self = getHandle(addr);
+    return obj && J2ME.isAssignableTo(obj.klass, self.runtimeKlass.templateKlass) ? 1 : 0;
 };
 
 Native["java/lang/Float.floatToIntBits.(F)I"] = function(addr, f) {
@@ -423,8 +433,9 @@ Native["java/lang/Double.longBitsToDouble.(J)D"] = function(addr, l, h) {
 }
 
 Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr) {
-    this.stackTrace = [];
     J2ME.traceWriter && J2ME.traceWriter.writeLn("REDUX");
+    //var stackTrace = [];
+    //NativeMap.set(addr, stackTrace);
     //$.ctx.frames.forEach(function(frame) {
     //    if (!frame.methodInfo)
     //        return;
@@ -434,15 +445,16 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr) {
     //        return;
     //    var classInfo = methodInfo.classInfo;
     //    var className = classInfo.getClassNameSlow();
-    //    this.stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
-    //}.bind(this));
+    //    stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
+    //});
 };
 
 Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(addr) {
     var resultAddr = J2ME.Constants.NULL;
     // XXX: Untested.
-    if (this.stackTrace) {
-        var depth = this.stackTrace.length;
+    var stackTrace = NativeMap.get(addr);
+    if (stackTrace) {
+        var depth = stackTrace.length;
         var classNamesAddr = J2ME.newStringArray(depth);
         var classNames = J2ME.getArrayFromAddr(classNamesAddr);
         var methodNamesAddr = J2ME.newStringArray(depth);
@@ -451,7 +463,7 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(ad
         var methodSignatures = J2ME.getArrayFromAddr(methodSignaturesAddr);
         var offsetsAddr = J2ME.newIntArray(depth);
         var offsets = J2ME.getArrayFromAddr(offsetsAddr);
-        this.stackTrace.forEach(function(e, n) {
+        stackTrace.forEach(function(e, n) {
             classNames[n] = J2ME.newString(e.className);
             methodNames[n] = J2ME.newString(e.methodName);
             methodSignatures[n] = J2ME.newString(e.methodSignature);
@@ -530,22 +542,24 @@ Native["java/lang/Thread.setPriority0.(II)V"] = function(addr, oldPriority, newP
 };
 
 Native["java/lang/Thread.start0.()V"] = function(addr) {
+    var self = getHandle(addr);
+
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
-    if (this._address === $.ctx.runtime.mainThread || this.nativeAlive)
+    if (addr === $.ctx.runtime.mainThread || self.nativeAlive)
         throw $.newIllegalThreadStateException();
-    this.nativeAlive = 1;
-    // XXX this.pid seems to be unused, so remove it.
-    this.pid = util.id();
+    self.nativeAlive = 1;
+    // XXX self.pid seems to be unused, so remove it.
+    self.pid = util.id();
     // Create a context for the thread and start it.
     var newCtx = new Context($.ctx.runtime);
-    newCtx.threadAddress = this._address;
+    newCtx.threadAddress = addr;
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
     newCtx.nativeThread.pushFrame(null);
     newCtx.nativeThread.pushFrame(run);
-    newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, this._address);
+    newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, addr);
     newCtx.start();
 }
 
@@ -623,33 +637,35 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
 
 Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr, target) {
     // XXX Make these real weak references.
-    setNative(this, target);
+    NativeMap.set(addr, target);
 };
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) {
-    var target = getNative(this);
+    var target = NativeMap.get(addr);
     return target ? target._address : J2ME.Constants.NULL;
 };
 
 Native["java/lang/ref/WeakReference.clear.()V"] = function(addr) {
-    deleteNative(this);
+    NativeMap.delete(addr);
 };
 
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(addr) {
-    this._id = util.id();
+    var self = getHandle(addr);
+    self._id = util.id();
 };
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(addr) {
-    var runtime = Runtime.isolateMap[this._address];
+    var runtime = Runtime.isolateMap[addr];
     return runtime ? runtime.status : J2ME.RuntimeStatus.New;
 };
 
 Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(addr) {
-    $.ctx.runtime.jvm.startIsolate(this);
+    var self = getHandle(addr);
+    $.ctx.runtime.jvm.startIsolate(self);
 };
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(addr, status) {
-    var runtime = Runtime.isolateMap[this._address];
+    var runtime = Runtime.isolateMap[addr];
     asyncImpl("V", new Promise(function(resolve, reject) {
         if (runtime.status >= status) {
             resolve();
@@ -757,14 +773,15 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(addr, s
 };
 
 Native["java/lang/String.intern.()Ljava/lang/String;"] = function(addr) {
-  var value = J2ME.getArrayFromAddr(this.value);
+  var self = getHandle(addr);
+  var value = J2ME.getArrayFromAddr(self.value);
   var internedStrings = J2ME.internedStrings;
-  var internedString = internedStrings.getByRange(value, this.offset, this.count);
+  var internedString = internedStrings.getByRange(value, self.offset, self.count);
   if (internedString !== null) {
     return internedString._address;
   }
-  internedStrings.put(value.subarray(this.offset, this.offset + this.count), this);
-  return this._address;
+  internedStrings.put(value.subarray(self.offset, self.offset + self.count), self);
+  return self._address;
 };
 
 var profileStarted = false;
