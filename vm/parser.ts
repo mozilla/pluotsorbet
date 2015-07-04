@@ -143,7 +143,90 @@ module J2ME {
       new Uint8Array([40, 41, 74]), // ()J
     ];
 
-    private static internedMap = new Uint8Hashtable(64);
+    private static internedMap = new TypedArrayHashtable(64);
+
+    static UTF8toUTF16(utf8: Uint8Array): number {
+      // This conversion is mainly used for symbols within a class file,
+      // in which the large majority of strings are all ascii.
+      var ascii = true;
+      var utf8Length = utf8.length;
+      var utf16Addr = newCharArray(utf8Length);
+      var utf16 = getArrayFromAddr(utf16Addr);
+      for (var i = 0; i < utf8Length; i++) {
+        var ch1 = utf8[i];
+        if (ch1 === 0) {
+          throw new Error("Bad utf16 value.");
+        }
+        if (ch1 >= 128) {
+          ascii = false;
+          break;
+        }
+        utf16[i] = ch1;
+      }
+      if (ascii) {
+        return utf16Addr;
+      }
+      var index = 0;
+      var a = [];
+      while (index < utf8Length) {
+        var ch1 = utf8[index++];
+        if (ch1 < 128) {
+          a.push(ch1);
+          continue;
+        }
+
+        switch (ch1 >> 4) {
+          case 0x8:
+          case 0x9:
+          case 0xA:
+          case 0xB:
+          case 0xF:
+            throw new Error("Bad utf16 value.");
+            break;
+          case 0xC:
+          case 0xD:
+            /* 110xxxxx  10xxxxxx */
+            if (index < utf8Length) {
+              var ch2 = utf8[index];
+              index++;
+              if ((ch2 & 0xC0) == 0x80) {
+                var highFive = (ch1 & 0x1F);
+                var lowSix = (ch2 & 0x3F);
+                a.push(((highFive << 6) + lowSix));
+              }
+            }
+            break;
+          case 0xE:
+            /* 1110xxxx 10xxxxxx 10xxxxxx */
+            if (index < utf8Length) {
+              var ch2 = utf8[index];
+              index++;
+              if ((ch2 & 0xC0) == 0x80 && index < utf8Length) {
+                var ch3 = utf8[index];
+                if ((ch3 & 0xC0) == 0x80) {
+                  index++;
+                  var highFour = (ch1 & 0x0f);
+                  var midSix = (ch2 & 0x3f);
+                  var lowSix = (ch3 & 0x3f);
+                  a.push((((highFour << 6) + midSix) << 6) + lowSix);
+                } else {
+                  var highFour = (ch1 & 0x0f);
+                  var lowSix = (ch2 & 0x3f);
+                  a.push((highFour << 6) + lowSix);
+                }
+              }
+            }
+            break;
+          default:
+            break;
+        }
+      }
+
+      var retAddr = newCharArray(a.length);
+      var ret = getArrayFromAddr(retAddr);
+      ret.set(a);
+      return retAddr;
+    }
 
     constructor (
       public buffer: Uint8Array,
@@ -470,6 +553,10 @@ module J2ME {
       return <TAGS>this.peekU1();
     }
 
+    public peekTag(i: number): TAGS {
+      return this.buffer[this.entries[i]];
+    }
+
     /**
      * This causes the Utf8 string to be redecoded each time so don't use it often.
      */
@@ -517,7 +604,7 @@ module J2ME {
               r = this.resolved[i] = IntegerUtilities.int32ToFloat(s.readS4());
               break;
             case TAGS.CONSTANT_String:
-              r = this.resolved[i] = $.newStringConstant(this.resolveUtf8String(s.readU2()));
+              r = this.resolved[i] = $.newStringConstant(ByteStream.UTF8toUTF16(this.resolveUtf8(s.readU2())));
               break;
             case TAGS.CONSTANT_Long:
               var high = s.readS4();
@@ -579,6 +666,8 @@ module J2ME {
   export class FieldInfo extends ByteStream {
     public classInfo: ClassInfo;
     public kind: Kind;
+    public name: string;
+    public byteOffset: number = 0;
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
     public mangledName: string = null;
@@ -592,6 +681,7 @@ module J2ME {
       this.accessFlags = this.readU2();
       this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
       this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
+      this.name = fromUTF8(this.utf8Name) + " " + fromUTF8(this.utf8Signature);
       this.kind = getSignatureKind(this.utf8Signature);
       this.scanFieldInfoAttributes();
       sealObjects && Object.seal(this);
@@ -602,20 +692,39 @@ module J2ME {
     }
 
     public get(object: java.lang.Object) {
-      return object[this.mangledName];
+      switch (this.kind) {
+        case Kind.Int:
+          return i32[object._address + this.byteOffset >> 2];
+        case Kind.Reference:
+          return i32[object._address + this.byteOffset >> 2];
+        case Kind.Float:
+          return f32[object._address + this.byteOffset >> 2];
+        default:
+          Debug.assert(false, Kind[this.kind]);
+      }
     }
 
     public set(object: java.lang.Object, value: any) {
-      object[this.mangledName] = value
+      switch (this.kind) {
+        case Kind.Int:
+          i32[object._address + this.byteOffset >> 2] = value;
+          break;
+        case Kind.Reference:
+          i32[object._address + this.byteOffset >> 2] = value._address;
+          break;
+        default:
+          Debug.assert(false, Kind[this.kind]);
+      }
+      // object[this.mangledName] = value
     }
-
-    public getStatic() {
-      return this.get(this.classInfo.getStaticObject($.ctx));
-    }
-
-    public setStatic(value: any) {
-      return this.set(this.classInfo.getStaticObject($.ctx), value);
-    }
+    //
+    //public getStatic() {
+    //  return this.get(this.classInfo.getStaticObject($.ctx));
+    //}
+    //
+    //public setStatic(value: any) {
+    //  return this.set(this.classInfo.getStaticObject($.ctx), value);
+    //}
 
     private scanFieldInfoAttributes() {
       var s = this;
@@ -761,8 +870,9 @@ module J2ME {
     public returnKind: Kind;
     public signatureKinds: Kind [];
 
+
     public argumentSlots: number;
-    public consumeArgumentSlots: number;
+    public signatureSlots: number;
     public hasTwoSlotArguments: boolean;
 
     vTableIndex: number;
@@ -801,10 +911,10 @@ module J2ME {
       var signatureKinds = this.signatureKinds = parseMethodDescriptorKinds(this.utf8Signature, 0).slice();
       this.returnKind = signatureKinds[0];
       this.hasTwoSlotArguments = signatureHasTwoSlotArguments(signatureKinds);
-      this.argumentSlots = signatureArgumentSlotCount(signatureKinds);
-      this.consumeArgumentSlots = this.argumentSlots;
+      this.signatureSlots = signatureArgumentSlotCount(signatureKinds);
+      this.argumentSlots = this.signatureSlots;
       if (!this.isStatic) {
-        this.consumeArgumentSlots ++;
+        this.argumentSlots ++;
       }
       sealObjects && Object.seal(this);
     }
@@ -973,6 +1083,8 @@ module J2ME {
 
     accessFlags: number = 0;
     vTable: MethodInfo [] = null;
+    // This is not really a table per se, but rather a map.
+    iTable: { [name: string]: MethodInfo; } = Object.create(null);
 
     // Custom hash map to make vTable name lookups quicker. It maps utf8 method names to indices in
     // the vTable. A zero value indicate no method by that name exists, while a value > 0 indicates
@@ -982,6 +1094,9 @@ module J2ME {
     private vTableMap: Uint16Array = null;
 
     fTable: FieldInfo [] = null;
+
+    sizeOfFields: number = 0;
+    sizeOfStaticFields: number = 0;
 
     klass: Klass = null;
     private resolvedFlags: ResolvedFlags = ResolvedFlags.None;
@@ -1112,6 +1227,7 @@ module J2ME {
     public complete() {
       if (!this.isInterface) {
         this.buildVTable();
+        this.buildITable();
         this.buildFTable();
       }
       loadWriter && this.trace(loadWriter);
@@ -1169,7 +1285,26 @@ module J2ME {
       }
     }
 
+    private buildITable() {
+      var vTable = this.vTable;
+      var iTable = this.iTable;
+      for (var i = 0; i < vTable.length; i++) {
+        var methodInfo = vTable[i];
+        // TODO: Find out why only doing this when |methodInfo.implementsInterface| is |true|, fails.
+        release || assert(methodInfo.mangledName);
+        release || assert(!iTable[methodInfo.mangledName]);
+        iTable[methodInfo.mangledName] = methodInfo;
+      }
+    }
+
     private buildFTable() {
+      if (this.superClass === null) {
+        this.sizeOfFields = 0;
+        this.sizeOfStaticFields = 0;
+      } else {
+        this.sizeOfFields = this.superClass.sizeOfFields;
+        this.sizeOfStaticFields = this.superClass.sizeOfStaticFields;
+      }
       var superClassFTable = this.superClass ? this.superClass.fTable : null;
       var fTable = this.fTable = superClassFTable ? superClassFTable.slice() : [];
       var fields = this.fields;
@@ -1182,8 +1317,12 @@ module J2ME {
           fieldInfo.fTableIndex = fTable.length;
           fTable.push(fieldInfo); // Append
           fieldInfo.mangledName = "f" + fieldInfo.fTableIndex;
+          fieldInfo.byteOffset = Constants.OBJ_HDR_SIZE + this.sizeOfFields;
+          this.sizeOfFields += kindSize(fieldInfo.kind);
         } else {
           fieldInfo.mangledName = "s" + i;
+          fieldInfo.byteOffset = Constants.OBJ_HDR_SIZE + this.sizeOfStaticFields;
+          this.sizeOfStaticFields += kindSize(fieldInfo.kind);
         }
       }
     }
@@ -1525,14 +1664,14 @@ module J2ME {
     
     static initialize() {
       // Primitive array classes require the java_lang_Object to exists before they can be created.
-      PrimitiveArrayClassInfo.Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "Uint8Array");
-      PrimitiveArrayClassInfo.C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "Uint16Array");
-      PrimitiveArrayClassInfo.F = new PrimitiveArrayClassInfo(PrimitiveClassInfo.F, "Float32Array");
-      PrimitiveArrayClassInfo.D = new PrimitiveArrayClassInfo(PrimitiveClassInfo.D, "Float64Array");
-      PrimitiveArrayClassInfo.B = new PrimitiveArrayClassInfo(PrimitiveClassInfo.B, "Int8Array");
-      PrimitiveArrayClassInfo.S = new PrimitiveArrayClassInfo(PrimitiveClassInfo.S, "Int16Array");
-      PrimitiveArrayClassInfo.I = new PrimitiveArrayClassInfo(PrimitiveClassInfo.I, "Int32Array");
-      PrimitiveArrayClassInfo.J = new PrimitiveArrayClassInfo(PrimitiveClassInfo.J, "Int64Array");
+      PrimitiveArrayClassInfo.Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "ZArray");
+      PrimitiveArrayClassInfo.C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "CArray");
+      PrimitiveArrayClassInfo.F = new PrimitiveArrayClassInfo(PrimitiveClassInfo.F, "FArray");
+      PrimitiveArrayClassInfo.D = new PrimitiveArrayClassInfo(PrimitiveClassInfo.D, "DArray");
+      PrimitiveArrayClassInfo.B = new PrimitiveArrayClassInfo(PrimitiveClassInfo.B, "BArray");
+      PrimitiveArrayClassInfo.S = new PrimitiveArrayClassInfo(PrimitiveClassInfo.S, "SArray");
+      PrimitiveArrayClassInfo.I = new PrimitiveArrayClassInfo(PrimitiveClassInfo.I, "IArray");
+      PrimitiveArrayClassInfo.J = new PrimitiveArrayClassInfo(PrimitiveClassInfo.J, "JArray");
     }
 
     static Z: PrimitiveArrayClassInfo;

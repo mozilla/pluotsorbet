@@ -96,7 +96,6 @@ MAIN_JS_SRCS = \
   timer.js \
   util.js \
   native.js \
-  string.js \
   libs/load.js \
   libs/zipfile.js \
   libs/jarstore.js \
@@ -277,11 +276,61 @@ jasmin:
 relooper:
 	make -C jit/relooper/
 
-bld/j2me.js: $(BASIC_SRCS) $(JIT_SRCS) build_tools/closure.jar .checksum
+# Creates a stand alone shell build of j2me that you can use to file bug reports.
+bug: j2me
+	mkdir -p bug
+	mkdir -p bug/java
+	mkdir -p bug/tests
+	mkdir -p bug/bench
+	cp -r libs bug/
+	cp -r bld bug/
+	cp -r polyfill bug/
+	cp -r midp bug/
+	cp java/classes.jar bug/java/classes.jar
+	cp tests/tests.jar bug/tests/tests.jar
+	cp bench/benchmark.jar bug/bench/benchmark.jar
+	cp blackBox.js bug/blackBox.js
+	cp util.js bug/util.js
+	cp native.js bug/native.js
+	cp jsshell.js bug/jsshell.js
+	tar -zcvf bug.tar.gz bug/
+
+UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+ifeq ($(UNAME_S),Linux)
+	BOEHM_LIB=libgc.so
+endif
+ifeq ($(UNAME_S),Darwin)
+	BOEHM_LIB=libgc.dylib
+endif
+ifneq (,$(findstring MINGW,$(uname_S)))
+	BOEHM_LIB=libgc.dll
+endif
+ifneq (,$(findstring CYGWIN,$(uname_S)))
+	BOEHM_LIB=libgc.dll
+endif
+
+bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
+	mkdir -p bld
+	rm -f bld/native.js
+	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=128*1024*1024 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
+	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc", "_gcMallocAtomic", "_forceCollection"]' \
+	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts", "setjmp", "longjmp"]'
+	echo "var ASM = (function(Module) {" >> bld/native.js
+	cat native.raw.js >> bld/native.js
+	echo "" >> bld/native.js
+	echo "  return Module;" >> bld/native.js
+	echo "})(ASM);" >> bld/native.js
+	rm native.raw.js
+
+vm/native/Boehm.js/.libs/$(BOEHM_LIB):
+	cd vm/native/Boehm.js && emconfigure ./configure --without-threads --disable-threads --enable-gc-debug=no __EMSCRIPTEN__=1 && emmake make
+
+bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) bld/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
 	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 ifeq ($(RELEASE),1)
-	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
+	java -jar build_tools/closure.jar --formatting PRETTY_PRINT --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
 endif
 

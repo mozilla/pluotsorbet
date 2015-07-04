@@ -273,12 +273,47 @@ class DataOutputStream extends OutputStream implements DataOutput {
      * @exception  IOException  if an I/O error occurs.
      */
     static final int writeUTF(String str, DataOutput out) throws IOException {
-        byte[] bytearr = UTFToBytes(str);
-        int len = bytearr.length;
-        out.write(bytearr, 0, len);
-        return len;
-    }
+        int strlen = str.length();
+        int utflen = 0;
+        char[] charr = new char[strlen];
+        int c, count = 0;
 
-    static native byte[] UTFToBytes(String str);
+        str.getChars(0, strlen, charr, 0);
+
+        for (int i = 0; i < strlen; i++) {
+            c = charr[i];
+            if ((c >= 0x0001) && (c <= 0x007F)) {
+                utflen++;
+            } else if (c > 0x07FF) {
+                utflen += 3;
+            } else {
+                utflen += 2;
+            }
+        }
+
+        if (utflen > 65535) {
+            throw new UTFDataFormatException();
+        }
+
+        byte[] bytearr = new byte[utflen+2];
+        bytearr[count++] = (byte) ((utflen >>> 8) & 0xFF);
+        bytearr[count++] = (byte) ((utflen >>> 0) & 0xFF);
+        for (int i = 0; i < strlen; i++) {
+            c = charr[i];
+            if ((c >= 0x0001) && (c <= 0x007F)) {
+                bytearr[count++] = (byte) c;
+            } else if (c > 0x07FF) {
+                bytearr[count++] = (byte) (0xE0 | ((c >> 12) & 0x0F));
+                bytearr[count++] = (byte) (0x80 | ((c >>  6) & 0x3F));
+                bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
+            } else {
+                bytearr[count++] = (byte) (0xC0 | ((c >>  6) & 0x1F));
+                bytearr[count++] = (byte) (0x80 | ((c >>  0) & 0x3F));
+            }
+        }
+        out.write(bytearr);
+
+        return utflen + 2;
+    }
 
 }

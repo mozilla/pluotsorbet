@@ -465,7 +465,7 @@ var Benchmark = (function() {
         var vmImplKey = "com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V";
         var vmOriginalFn = Native[vmImplKey];
         var vmCalled = false;
-        Native[vmImplKey] = function() {
+        Native[vmImplKey] = function(addr) {
           if (!vmCalled) {
             vmCalled = true;
             var now = performance.now();
@@ -477,7 +477,7 @@ var Benchmark = (function() {
 
         var bgImplKey = "com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;";
         var bgOriginalFn = Native[bgImplKey];
-        Native[bgImplKey] = function() {
+        Native[bgImplKey] = function(addr) {
           var now = performance.now();
           startup.stopTimer("bgStartupTime", now);
           startup.startTimer("fgStartupTime", now);
@@ -504,7 +504,7 @@ var Benchmark = (function() {
         // First refresh0 call: the first FG MIDlet startup
         // Second refresh0 call: the BG MIDlet temporarily goes to the foreground
         // Third refresh0 call: the FG MIDlet is restarted
-        Native[fgImplKey] = function() {
+        Native[fgImplKey] = function(addr) {
           if (storage.warmBench) {
             if (!restartCalled) {
               restartCalled = true;
@@ -528,7 +528,7 @@ var Benchmark = (function() {
         var refreshImplKey = "com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V";
         var refreshOriginalFn = Native[refreshImplKey];
         var refreshCalled = false;
-        Native[refreshImplKey] = function() {
+        Native[refreshImplKey] = function(addr) {
           if (!refreshCalled) {
             refreshCalled = true;
             var now = performance.now();

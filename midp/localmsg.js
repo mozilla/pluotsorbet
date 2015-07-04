@@ -198,7 +198,7 @@ NokiaMessagingLocalMsgConnection.prototype.sendMessageToServer = function(data, 
 
     default:
       console.error("(nokia.messaging) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                    util.decodeUtf8(data.subarray(offset, offset + length)));
       return;
   }
 
@@ -389,7 +389,7 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(data
 
             default:
               console.error("(nokia.phone-status) Query " + decoder.getName() + " not implemented " +
-                            util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                            util.decodeUtf8(data.subarray(offset, offset + length)));
               break;
           }
         } else if (queryKind === "Disable") {
@@ -411,7 +411,7 @@ NokiaPhoneStatusLocalMsgConnection.prototype.sendMessageToServer = function(data
 
     default:
       console.error("(nokia.phone-status) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                    util.decodeUtf8(data.subarray(offset, offset + length)));
       return;
   }
 };
@@ -518,7 +518,7 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(data, o
       var numEntries = decoder.getValue(DataType.ULONG);
       if (numEntries !== 1) {
         console.error("(nokia.contacts) event getFirst with numEntries != 1 not implemented " +
-                      util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                      util.decodeUtf8(data.subarray(offset, offset + length)));
       }
 
       this.getFirstOrNext(trans_id, "getFirst");
@@ -534,12 +534,12 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(data, o
       var includeStartEntry = decoder.getValue(DataType.BOOLEAN);
       if (includeStartEntry == 1) {
         console.error("(nokia.contacts) event getNext with includeStartEntry == true not implemented " +
-                      util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                      util.decodeUtf8(data.subarray(offset, offset + length)));
       }
       var numEntries = decoder.getValue(DataType.ULONG);
       if (numEntries !== 1) {
         console.error("(nokia.contacts) event getNext with numEntries != 1 not implemented " +
-                      util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                      util.decodeUtf8(data.subarray(offset, offset + length)));
       }
 
       this.getFirstOrNext(trans_id, "getNext");
@@ -547,7 +547,7 @@ NokiaContactsLocalMsgConnection.prototype.sendMessageToServer = function(data, o
 
     default:
       console.error("(nokia.contacts) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                    util.decodeUtf8(data.subarray(offset, offset + length)));
       return;
   }
 }
@@ -669,7 +669,7 @@ NokiaFileUILocalMsgConnection.prototype.sendMessageToServer = function(data, off
 
     default:
       console.error("(nokia.file-ui) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                    util.decodeUtf8(data.subarray(offset, offset + length)));
       return;
   }
 };
@@ -737,7 +737,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
 
       if (aspect != "FullImage" && aspect != "LockToPartialView") {
         console.error("(nokia.image-processing) event " + name + " with aspect != 'FullImage' or 'LockToPartialView' not implemented " +
-                      util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                      util.decodeUtf8(data.subarray(offset, offset + length)));
         return;
       }
 
@@ -844,7 +844,7 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
 
     default:
       console.error("(nokia.image-processing) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                    util.decodeUtf8(data.subarray(offset, offset + length)));
       return;
   }
 };
@@ -890,7 +890,7 @@ NokiaProductInfoLocalMsgConnection.prototype.sendMessageToServer = function(data
       break;
     default:
       console.error("(nokia.status-info) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                    util.decodeUtf8(data.subarray(offset, offset + length)));
       return;
   }
 };
@@ -999,12 +999,12 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(da
 
     default:
       console.error("(nokia.active-standby) event " + name + " not implemented " +
-                    util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+                    util.decodeUtf8(data.subarray(offset, offset + length)));
       return;
   }
 }
 
-Native["com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V"] = function(active) {
+Native["com/nokia/mid/ui/lcdui/Indicator.setActive.(Z)V"] = function(addr, active) {
   NokiaActiveStandbyLocalMsgConnection.indicatorActive = active;
 
   if (!active && NokiaActiveStandbyLocalMsgConnection.pipeSender) {
@@ -1034,16 +1034,23 @@ MIDP.LocalMsgConnections["nokia.product-info"] = NokiaProductInfoLocalMsgConnect
 
 var localmsgServerWait = null;
 
-Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(jName) {
+// XXX Consolidate the objects we store in this map with those in NativeMap.
+NativeConnectionMap = Object.create(null);
+
+Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(addr, jName) {
     var name = J2ME.fromJavaString(jName);
 
-    this.server = (name[2] == ":");
-    this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
+    var info = {
+      server: (name[2] == ":"),
+      protocolName: name.slice((name[2] == ':') ? 3 : 2),
+    };
 
-    if (this.server) {
+    NativeMap.set(addr, info);
+
+    if (info.server) {
         // It seems that one server only serves on client at a time, let's
         // store an object instead of the constructor.
-        this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
+        NativeConnectionMap[addr] = MIDP.LocalMsgConnections[info.protocolName] = new LocalMsgConnection();
         if (localmsgServerWait) {
             localmsgServerWait();
         }
@@ -1051,75 +1058,84 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
         return;
     }
 
-    if (!MIDP.LocalMsgConnections[this.protocolName]) {
-        if (this.protocolName.startsWith("nokia")) {
-            console.error("localmsg server (" + this.protocolName + ") unimplemented");
+    if (!MIDP.LocalMsgConnections[info.protocolName]) {
+        if (info.protocolName.startsWith("nokia")) {
+            console.error("localmsg server (" + info.protocolName + ") unimplemented");
             // Return without resolving the promise, we want the thread that is connecting
             // to this unimplemented server to stop indefinitely.
             return;
         }
 
-        asyncImpl("V", new Promise((function(resolve, reject) {
+        asyncImpl("V", new Promise(function(resolve, reject) {
             localmsgServerWait = function() {
                 localmsgServerWait = null;
-                this.connection = MIDP.LocalMsgConnections[this.protocolName];
-                this.connection.notifyConnection();
+                var connection = NativeConnectionMap[addr] = MIDP.LocalMsgConnections[info.protocolName];
+                connection.notifyConnection();
                 resolve();
-            }.bind(this);
-        }).bind(this)));
+            };
+        }));
 
         return;
     }
 
-    if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-        console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
+    if (MIDP.FakeLocalMsgServers.indexOf(info.protocolName) != -1) {
+        console.warn("connect to an unimplemented localmsg server (" + info.protocolName + ")");
     }
 
-    this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
-        new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
+    var connection = NativeConnectionMap[addr] = typeof MIDP.LocalMsgConnections[info.protocolName] === 'function' ?
+        new MIDP.LocalMsgConnections[info.protocolName]() : MIDP.LocalMsgConnections[info.protocolName];
 
-    this.connection.reset();
+    connection.reset();
 
-    this.connection.notifyConnection();
+    connection.notifyConnection();
 };
 
-Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
-    if (this.connection.clientConnected) {
+Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function(addr) {
+    var connection = NativeConnectionMap[addr];
+
+    if (connection.clientConnected) {
         return;
     }
 
-    asyncImpl("V", this.connection.waitConnection());
+    asyncImpl("V", connection.waitConnection());
 };
 
-Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, offset, length) {
-    if (this.server) {
-        this.connection.sendMessageToClient(data, offset, length);
+Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(addr, data, offset, length) {
+    var connection = NativeConnectionMap[addr];
+    var info = NativeMap.get(addr);
+
+    if (info.server) {
+        connection.sendMessageToClient(data, offset, length);
     } else {
-        if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-            console.warn("sendData (" + util.decodeUtf8(new Int8Array(data.buffer, offset, length)) + ") to an unimplemented localmsg server (" + this.protocolName + ")");
+        if (MIDP.FakeLocalMsgServers.indexOf(info.protocolName) != -1) {
+            console.warn("sendData (" + util.decodeUtf8(data.subarray(offset, offset + length)) +
+                         ") to an unimplemented localmsg server (" + info.protocolName + ")");
         }
 
-        this.connection.sendMessageToServer(data, offset, length);
+        connection.sendMessageToServer(data, offset, length);
     }
 };
 
-Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
-    if (this.server) {
-        if (this.connection.serverMessages.length > 0) {
-          return this.connection.getServerMessage(data);
+Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(addr, data) {
+    var connection = NativeConnectionMap[addr];
+    var info = NativeMap.get(addr);
+
+    if (info.server) {
+        if (connection.serverMessages.length > 0) {
+          return connection.getServerMessage(data);
         }
 
-        this.connection.waitServerMessage(data);
+        connection.waitServerMessage(data);
         return;
     }
 
-    if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-        console.warn("receiveData from an unimplemented localmsg server (" + this.protocolName + ")");
+    if (MIDP.FakeLocalMsgServers.indexOf(info.protocolName) != -1) {
+        console.warn("receiveData from an unimplemented localmsg server (" + info.protocolName + ")");
     }
 
-    if (this.connection.clientMessages.length > 0) {
-      return this.connection.getClientMessage(data);
+    if (connection.clientMessages.length > 0) {
+      return connection.getClientMessage(data);
     }
 
-    this.connection.waitClientMessage(data);
+    connection.waitClientMessage(data);
 };
