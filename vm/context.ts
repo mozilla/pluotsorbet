@@ -18,7 +18,6 @@ module J2ME {
   import assert = Debug.assert;
   import Bytecodes = Bytecode.Bytecodes;
   declare var VM;
-  declare var setZeroTimeout;
 
   export enum WriterFlags {
     None  = 0x00,

@@ -4,7 +4,7 @@ if (config.midletClassName !== "RunTestsMIDlet" && navigator && !navigator.mozCo
   navigator.mozContacts = {
     getAll: function () {
       var req = {};
-      setZeroTimeout(function() {
+      nextTickBeforeEvents(function() {
         if (req.onsuccess) {
           req.result = null;
           req.onsuccess();

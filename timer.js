@@ -3,7 +3,7 @@
 
 'use strict';
 
-// Only add setZeroTimeout to the window object, and hide everything
+// Only add nextTickBeforeEvents to the window object, and hide everything
 // else in a closure.
 (function() {
     var resolved = Promise.resolve();
@@ -11,10 +11,32 @@
     // Like setTimeout, but only takes a function argument.  There's
     // no time argument (always zero) and no arguments (you have to
     // use a closure).
-    function setZeroTimeout(fn) {
+    function nextTickBeforeEvents(fn) {
         resolved.then(fn);
     }
 
     // Add the one thing we want added to the window object.
-    window.setZeroTimeout = setZeroTimeout;
+    window.nextTickBeforeEvents = nextTickBeforeEvents;
+})();
+
+(function() {
+  var cbs = [];
+  var msg = 135921;
+
+  function nextTickDuringEvents(fn) {
+    cbs.push(fn);
+    window.postMessage(msg, window.location.origin);
+  }
+
+  function recv(ev) {
+    if (window !== ev.source || ev.data !== msg) {
+      return;
+    }
+
+    cbs.shift()();
+  }
+
+  window.addEventListener("message", recv, false);
+
+  window.nextTickDuringEvents = nextTickDuringEvents;
 })();
