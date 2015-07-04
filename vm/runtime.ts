@@ -1311,8 +1311,8 @@ module J2ME {
         if (true || release) {
           switch (field.kind) {
             case Kind.Reference:
-              setter = new Function("value", "ref[this._address + " + field.byteOffset + " >> 2] = value;");
-              getter = new Function("return ref[this._address + " + field.byteOffset + " >> 2];");
+              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
+              getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
               break;
             case Kind.Boolean:
               setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value ? 1 : 0;");
