@@ -1,6 +1,6 @@
 public class ShellTestlets {
   static String[] list = {
-    "com/sun/midp/crypto/Sha256Test",
+    // "com/sun/midp/crypto/Sha256Test",
     "com/sun/midp/crypto/TestAES",
     "com/sun/midp/crypto/TestARC4",
     "com/sun/midp/crypto/TestDES",

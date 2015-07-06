@@ -18,7 +18,7 @@ VERBOSE ?= 0
 export VERBOSE
 
 # An extra configuration script to load.  Use this to configure the project
-# to run a particular midlet.  By default, it runs the test midlet RunTests.
+# to run a particular midlet.  By default, it runs the test midlet RunTestsMIDlet.
 CONFIG ?= config/runtests.js
 export CONFIG
 
@@ -33,10 +33,10 @@ ifeq ($(PACKAGE_TESTS),1)
   TESTS_JAR = tests/tests.jar
 endif
 
-NAME ?= j2me.js
+NAME ?= PluotSorbet
 MIDLET_NAME ?= midlet
-DESCRIPTION ?= j2me interpreter for firefox os
-ORIGIN ?= app://j2mejs.mozilla.org
+DESCRIPTION ?= a J2ME-compatible virtual machine written in JavaScript
+ORIGIN ?= app://pluotsorbet.mozilla.org
 VERSION ?= $(shell date +%s)
 
 ICON_128 ?= img/default-icon-128.png
@@ -55,8 +55,8 @@ JSR_179 ?= 1
 export JSR_179
 
 # Content handler support
-CONTENT_HANDLER_SUPPORT ?= 1
-export CONTENT_HANDLER_SUPPORT
+CONTENT_HANDLER_FILTER ?= '["image/*", "video/*", "audio/*"]'
+export CONTENT_HANDLER_FILTER
 
 ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
@@ -165,7 +165,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
-             -D CONTENT_HANDLER_SUPPORT=$(CONTENT_HANDLER_SUPPORT) \
+             -D CONTENT_HANDLER_FILTER=$(CONTENT_HANDLER_FILTER) \
              -D CONFIG=$(CONFIG) \
              -D NAME="$(NAME)" \
              -D MIDLET_NAME="$(MIDLET_NAME)" \
@@ -196,7 +196,7 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
-SPIDERMONKEY_VERSION=37.0b7
+SPIDERMONKEY_VERSION=38.1.0esr
 OLD_SPIDERMONKEY_VERSION := $(shell [ -f build_tools/.spidermonkey_version ] && cat build_tools/.spidermonkey_version)
 $(shell [ "$(SPIDERMONKEY_VERSION)" != "$(OLD_SPIDERMONKEY_VERSION)" ] && echo $(SPIDERMONKEY_VERSION) > build_tools/.spidermonkey_version)
 
@@ -312,8 +312,8 @@ endif
 bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
 	mkdir -p bld
 	rm -f bld/native.js
-	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=16384 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
-	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc"]' \
+	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=128*1024*1024 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
+	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc", "_gcMallocAtomic", "_forceCollection"]' \
 	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts", "setjmp", "longjmp"]'
 	echo "var ASM = (function(Module) {" >> bld/native.js
 	cat native.raw.js >> bld/native.js

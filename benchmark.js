@@ -150,6 +150,7 @@ var Benchmark = (function() {
     bgStartupTime: msFormatter,
     fgStartupTime: msFormatter,
     fgRefreshStartupTime: msFormatter,
+    fgRestartTime: msFormatter,
     totalSize: byteFormatter,
     domSize: byteFormatter,
     styleSize: byteFormatter,
@@ -226,6 +227,7 @@ var Benchmark = (function() {
       current.bgStartupTime = [];
       current.fgStartupTime = [];
       current.fgRefreshStartupTime = [];
+      current.fgRestartTime = [];
       if (settings.recordMemory) {
         storage.recordMemory = true;
         current.totalSize     = [];
@@ -273,7 +275,9 @@ var Benchmark = (function() {
       }
       var took = now - this.startTime[which];
       storage.current[which].push(took);
-      if (which === "startupTime") {
+
+      var endWhich = storage.warmBench ? "fgRestartTime" : "startupTime";
+      if (which === endWhich) {
         storage.round++;
         saveStorage();
         this.runNextRound();
@@ -461,7 +465,7 @@ var Benchmark = (function() {
         var vmImplKey = "com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V";
         var vmOriginalFn = Native[vmImplKey];
         var vmCalled = false;
-        Native[vmImplKey] = function() {
+        Native[vmImplKey] = function(addr) {
           if (!vmCalled) {
             vmCalled = true;
             var now = performance.now();
@@ -473,51 +477,66 @@ var Benchmark = (function() {
 
         var bgImplKey = "com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;";
         var bgOriginalFn = Native[bgImplKey];
-        Native[bgImplKey] = function() {
+        Native[bgImplKey] = function(addr) {
           var now = performance.now();
           startup.stopTimer("bgStartupTime", now);
           startup.startTimer("fgStartupTime", now);
           return bgOriginalFn.apply(null, arguments);
         };
 
+        var restartCalled = false;
+
+        function restartFGMIDlet() {
+          setTimeout(function() {
+            MIDP.setDestroyedForRestart(true);
+            MIDP.sendDestroyMIDletEvent(J2ME.newString(fgMidletClass));
+            MIDP.registerDestroyedListener(function() {
+              MIDP.registerDestroyedListener(null);
+              MIDP.sendExecuteMIDletEvent();
+              startup.startTimer("fgRestartTime", performance.now());
+            });
+          }, storage.startFGDelay);
+        }
+
         var fgImplKey = "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V";
         var fgOriginalFn = Native[fgImplKey];
-        Native[fgImplKey] = function() {
-          var now = performance.now();
-          startup.stopTimer("fgStartupTime", now);
-          startup.startTimer("fgRefreshStartupTime", now);
+        var refresh0Count = 0;
+        // First refresh0 call: the first FG MIDlet startup
+        // Second refresh0 call: the BG MIDlet temporarily goes to the foreground
+        // Third refresh0 call: the FG MIDlet is restarted
+        Native[fgImplKey] = function(addr) {
+          if (storage.warmBench) {
+            if (!restartCalled) {
+              restartCalled = true;
+              restartFGMIDlet();
+            } else if (refresh0Count === 2) {
+              startup.stopTimer("fgRestartTime", performance.now());
+            }
+          }
+
+          if (refresh0Count === 0) {
+            var now = performance.now();
+            startup.stopTimer("fgStartupTime", now);
+            startup.startTimer("fgRefreshStartupTime", now);
+          }
+
+          refresh0Count++;
+
           fgOriginalFn.apply(null, arguments);
         };
 
         var refreshImplKey = "com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V";
         var refreshOriginalFn = Native[refreshImplKey];
         var refreshCalled = false;
-        Native[refreshImplKey] = function() {
+        Native[refreshImplKey] = function(addr) {
           if (!refreshCalled) {
             refreshCalled = true;
             var now = performance.now();
             startup.stopTimer("fgRefreshStartupTime", now);
-            startup.stopTimer("startupTime", storage.warmBench ? (now - storage.startFGDelay) : now);
+            startup.stopTimer("startupTime", now);
           }
+
           refreshOriginalFn.apply(null, arguments);
-        }
-
-        if (storage.warmBench) {
-          var startFGImplKey = "com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V";
-          var startFGOriginalImpl = Native[startFGImplKey];
-          Native[startFGImplKey] = function(midletClassName) {
-            if (J2ME.fromJavaString(midletClassName) !== fgMidletClass) {
-              return;
-            }
-
-            asyncImpl("V", new Promise(function(resolve, reject) {
-              setTimeout(function() {
-                startFGOriginalImpl(midletClassName);
-                startup.startTimer("fgStartupTime", performance.now());
-                resolve();
-              }, storage.startFGDelay);
-            }));
-          };
         }
       },
       run: startup.run.bind(startup),

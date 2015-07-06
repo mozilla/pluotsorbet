@@ -9,11 +9,15 @@ var Native = Object.create(null);
  * Asm.js heap buffer and views.
  */
 var buffer = ASM.buffer;
-var u8: Uint32Array = ASM.HEAPU8;
+var i8: Int8Array = ASM.HEAP8;
+var u8: Uint8Array = ASM.HEAPU8;
+var i16: Int16Array = ASM.HEAP16;
+var u16: Uint16Array = ASM.HEAPU16;
 var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
 var f32: Float32Array = ASM.HEAPF32;
-var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
+var f64: Float64Array = ASM.HEAPF64;
+var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, 0 /* J2ME.Constants.NULL */);
 
 var aliasedI32 = J2ME.IntegerUtilities.i32;
 var aliasedF32 = J2ME.IntegerUtilities.f32;
@@ -67,6 +71,7 @@ module J2ME {
           i32[sp++] = l;
           break;
         case Kind.Reference:
+          release || assert(l !== "number", "async native return value is a number");
           ref[sp++] = l;
           break;
         case Kind.Void:
@@ -83,7 +88,7 @@ module J2ME {
       var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
       thread.pushMarkerFrame(FrameType.Interrupt);
       thread.pushFrame(methodInfo);
-      thread.frame.setParameter(J2ME.Kind.Reference, 0, exception);
+      thread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
       Scheduler.enqueue(ctx);
     });
 
@@ -91,63 +96,88 @@ module J2ME {
     $.nativeBailout(returnKind);
   }
 
-  Native["java/lang/Thread.sleep.(J)V"] = function(delayL: number, delayH: number) {
+  Native["java/lang/Thread.sleep.(J)V"] = function(addr: number, delayL: number, delayH: number) {
     asyncImpl(Kind.Void, new Promise(function(resolve, reject) {
       window.setTimeout(resolve, longToNumber(delayL, delayH));
     }));
   };
 
-  Native["java/lang/Thread.isAlive.()Z"] = function() {
-    return this.alive ? 1 : 0;
+  Native["java/lang/Thread.isAlive.()Z"] = function(addr: number) {
+    var self = <java.lang.Thread>getHandle(addr);
+    return self.nativeAlive ? 1 : 0;
   };
 
-  Native["java/lang/Thread.yield.()V"] = function() {
+  Native["java/lang/Thread.yield.()V"] = function(addr: number) {
     $.yield("Thread.yield");
     $.nativeBailout(Kind.Void);
   };
 
-  Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
-    $.ctx.wait(this, longToNumber(timeoutL, timeoutH));
+  Native["java/lang/Object.wait.(J)V"] = function(addr: number, timeoutL: number, timeoutH: number) {
+    var self = getHandle(addr);
+    $.ctx.wait(self, longToNumber(timeoutL, timeoutH));
     if (U) {
       $.nativeBailout(Kind.Void);
     }
   };
 
-  Native["java/lang/Object.notify.()V"] = function() {
-    $.ctx.notify(this, false);
+  Native["java/lang/Object.notify.()V"] = function(addr: number) {
+    var self = getHandle(addr);
+    $.ctx.notify(self, false);
     // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify..
     release || assert(!U, "Unexpected unwind in java/lang/Object.notify.()V.");
   };
 
-  Native["java/lang/Object.notifyAll.()V"] = function() {
-    $.ctx.notify(this, true);
+  Native["java/lang/Object.notifyAll.()V"] = function(addr: number) {
+    var self = getHandle(addr);
+    $.ctx.notify(self, true);
     // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify.
     release || assert(!U, "Unexpected unwind in java/lang/Object.notifyAll.()V.");
   };
 
-  Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function() {
+  Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function(addr: number) {
     return unwindCount;
   };
 
-  Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function() {
+  Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
-    getLinkedMethod(methodInfo).call($.mainThread, J2ME.newString("main"));
+    var thread = <java.lang.Thread>getHandle($.mainThread);
+    getLinkedMethod(methodInfo).call(thread, J2ME.newString("main"));
     if (U) {
       $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESPECIAL);
     }
+
+    // We've already set this in JVM.createIsolateCtx, but calling the instance
+    // initializer above resets it, so we set it again here.
+    //
+    // We used to store this state on the persistent native object, which was
+    // unaffected by the instance initializer; but now we store it on the Java
+    // object, which is susceptible to it, since there is no persistent native
+    // object anymore).
+    //
+    // XXX Figure out a less hacky approach.
+    //
+    thread.nativeAlive = true;
   };
 
-  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): java.lang.String {
-    return $.isolate._mainClass;
+  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(addr: number): number {
+    var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+    return isolate._mainClass;
   };
 
-  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(main: java.lang.Class) {
+  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(addr: number, main: java.lang.Class) {
     var entryPoint = CLASSES.getEntryPoint(main.runtimeKlass.templateKlass.classInfo);
     if (!entryPoint)
       throw new Error("Could not find isolate main.");
-    getLinkedMethod(entryPoint).call(null, $.isolate._mainArgs);
+
+    var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+
+    getLinkedMethod(entryPoint).call(null, isolate._mainArgs);
     if (U) {
       $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
     }
+  };
+
+  Native["org/mozilla/internal/Sys.forceCollection.()V"] = function(addr: number) {
+    ASM._forceCollection();
   };
 }

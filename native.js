@@ -15,34 +15,66 @@ function preemptingImpl(returnKind, returnValue) {
 
 var Override = {};
 
-Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
-    if (!src || !dst)
+/**
+ * A map from Java object addresses to native objects.
+ *
+ * Use getNative and setNative to simplify accessing this map.  getNative takes
+ * a handle, so callers don't need to dereference its address, while setNative
+ * returns the native, so callers can chain it with a local variable assignment.
+ *
+ * Currently this only supports mapping an address to a single native.
+ * Will we ever want to map multiple natives to an address?  If so, we'll need
+ * to do something more sophisticated here.
+ *
+ * XXX Figure out how to collect a native when its Java object is collected.
+ */
+var NativeMap = new Map();
+
+function getNative(javaObj) {
+    return NativeMap.get(javaObj._address);
+}
+
+function setNative(javaObj, nativeObj) {
+    NativeMap.set(javaObj._address, nativeObj);
+    return nativeObj;
+}
+
+function deleteNative(javaObj) {
+    NativeMap.delete(javaObj._address);
+}
+
+Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(addr, src, srcOffset, dst, dstOffset, length) {
+    if (!src || !dst) {
         throw $.newNullPointerException("Cannot copy to/from a null array.");
+    }
+
     var srcKlass = src.klass;
     var dstKlass = dst.klass;
 
-    if (!srcKlass.isArrayKlass || !dstKlass.isArrayKlass)
+    if (!srcKlass.isArrayKlass || !dstKlass.isArrayKlass) {
         throw $.newArrayStoreException("Can only copy to/from array types.");
-
+    }
     release || J2ME.Debug.assert((src.klass.classInfo !== J2ME.PrimitiveArrayClassInfo.J && dst.klass.classInfo !== J2ME.PrimitiveArrayClassInfo.J), "Long arrays cannot currently be copied.");
-
-    if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0)
+    if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0) {
         throw $.newArrayIndexOutOfBoundsException("Invalid index.");
-    var srcIsPrimitive = !(src instanceof Array);
-    var dstIsPrimitive = !(dst instanceof Array);
+    }
+    var srcIsPrimitive = srcKlass.classInfo instanceof J2ME.PrimitiveArrayClassInfo;
+    var dstIsPrimitive = dstKlass.classInfo instanceof J2ME.PrimitiveArrayClassInfo;
     if ((srcIsPrimitive && dstIsPrimitive && srcKlass !== dstKlass) ||
         (srcIsPrimitive && !dstIsPrimitive) ||
         (!srcIsPrimitive && dstIsPrimitive)) {
         throw $.newArrayStoreException("Incompatible component types: " + srcKlass + " -> " + dstKlass);
     }
+
     if (!dstIsPrimitive) {
         if (srcKlass != dstKlass && !J2ME.isAssignableTo(srcKlass.elementKlass, dstKlass.elementKlass)) {
             var copy = function(to, from) {
-                var obj = src[from];
+                var addr = src[from];
+                var obj = getHandle(addr);
                 if (obj && !J2ME.isAssignableTo(obj.klass, dstKlass.elementKlass)) {
                     throw $.newArrayStoreException("Incompatible component types.");
                 }
-                dst[to] = obj;
+                dst[to] = addr;
             };
             if (dst !== src || dstOffset < srcOffset) {
                 for (var n = 0; n < length; ++n)
@@ -56,6 +88,7 @@ Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] 
             return;
         }
     }
+
     if (dst !== src || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n)
             dst[dstOffset++] = src[srcOffset++];
@@ -73,7 +106,7 @@ var stubProperties = {
   "com.nokia.mid.imei": "",
 };
 
-Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(key) {
+Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(addr, key) {
     key = J2ME.fromJavaString(key);
     var value;
     switch (key) {
@@ -244,22 +277,23 @@ Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
     return J2ME.newString(value);
 };
 
-Native["java/lang/System.currentTimeMillis.()J"] = function() {
+Native["java/lang/System.currentTimeMillis.()J"] = function(addr) {
     return J2ME.returnLongValue(Date.now());
 };
 
-Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(src, srcOffset, dst, dstOffset, length) {
+Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(addr, src, srcOffset, dst, dstOffset, length) {
   dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
 };
 
-Native["com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V"] = function(src, srcOffset, dst, dstOffset, length) {
+Native["com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V"] = function(addr, src, srcOffset, dst, dstOffset, length) {
   dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
 };
 
-Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V"] = function(src, srcOffset, dst, dstOffset, length) {
+Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V"] = function(addr, src, srcOffset, dst, dstOffset, length) {
     if (dst !== src || dstOffset < srcOffset) {
-        for (var n = 0; n < length; ++n)
+        for (var n = 0; n < length; ++n) {
             dst[dstOffset++] = src[srcOffset++];
+        }
     } else {
         dstOffset += length;
         srcOffset += length;
@@ -268,24 +302,27 @@ Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Lja
     }
 };
 
-Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function() {
+Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(addr) {
     return J2ME.returnLongValue(performance.now());
 };
 
-Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function() {
-    return $.getRuntimeKlass(this.klass).classObject;
+Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(addr) {
+    var self = getHandle(addr);
+    return $.getRuntimeKlass(self.klass).classObject._address;
 };
 
-Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function() {
-    var superKlass = this.runtimeKlass.templateKlass.superKlass;
+Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
+    var self = getHandle(addr);
+    var superKlass = self.runtimeKlass.templateKlass.superKlass;
     if (!superKlass) {
       return null;
     }
-    return superKlass.classInfo.getClassObject();
+    return superKlass.classInfo.getClassObject()._address;
 };
 
-Native["java/lang/Class.invoke_clinit.()V"] = function() {
-    var classInfo = this.runtimeKlass.templateKlass.classInfo;
+Native["java/lang/Class.invoke_clinit.()V"] = function(addr) {
+    var self = getHandle(addr);
+    var classInfo = self.runtimeKlass.templateKlass.classInfo;
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
     J2ME.preemptionLockLevel++;
@@ -297,20 +334,22 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     }
 };
 
-Native["java/lang/Class.invoke_verify.()V"] = function() {
+Native["java/lang/Class.invoke_verify.()V"] = function(addr) {
     // There is currently no verification.
 };
 
-Native["java/lang/Class.init9.()V"] = function() {
-    $.setClassInitialized(this.runtimeKlass);
+Native["java/lang/Class.init9.()V"] = function(addr) {
+    var self = getHandle(addr);
+    $.setClassInitialized(self.runtimeKlass);
     J2ME.preemptionLockLevel--;
 };
 
-Native["java/lang/Class.getName.()Ljava/lang/String;"] = function() {
-    return J2ME.newString(this.runtimeKlass.templateKlass.classInfo.getClassNameSlow().replace(/\//g, "."));
+Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(addr) {
+    var self = getHandle(addr);
+    return J2ME.newString(self.runtimeKlass.templateKlass.classInfo.getClassNameSlow().replace(/\//g, "."));
 };
 
-Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(name) {
+Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(addr, name) {
   var classInfo = null;
   try {
     if (!name)
@@ -329,27 +368,28 @@ Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(name) {
   }
 };
 
-Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(name) {
+Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(addr, name) {
   var className = J2ME.fromJavaString(name).replace(/\./g, "/");
   var classInfo = CLASSES.getClass(className);
   var classObject = classInfo.getClassObject();
-  return classObject;
+  return classObject._address;
 };
 
-Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function() {
-  if (this.runtimeKlass.templateKlass.classInfo.isInterface ||
-      this.runtimeKlass.templateKlass.classInfo.isAbstract) {
+Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function(addr) {
+  var self = getHandle(addr);
+  if (self.runtimeKlass.templateKlass.classInfo.isInterface ||
+      self.runtimeKlass.templateKlass.classInfo.isAbstract) {
     throw $.newInstantiationException("Can't instantiate interfaces or abstract classes");
   }
 
-  if (this.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo) {
+  if (self.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo) {
     throw $.newInstantiationException("Can't instantiate array classes");
   }
 
-  return new this.runtimeKlass.templateKlass;
+  return (new self.runtimeKlass.templateKlass)._address;
 };
 
-Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
+Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, o) {
   // The following can trigger an unwind.
   var methodInfo = o.klass.classInfo.getLocalMethodByNameString("<init>", "()V", false);
   if (!methodInfo) {
@@ -361,35 +401,39 @@ Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(o) {
   }
 };
 
-Native["java/lang/Class.isInterface.()Z"] = function() {
-    return this.runtimeKlass.templateKlass.classInfo.isInterface ? 1 : 0;
+Native["java/lang/Class.isInterface.()Z"] = function(addr) {
+    var self = getHandle(addr);
+    return self.runtimeKlass.templateKlass.classInfo.isInterface ? 1 : 0;
 };
 
-Native["java/lang/Class.isArray.()Z"] = function() {
-    return this.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo ? 1 : 0;
+Native["java/lang/Class.isArray.()Z"] = function(addr) {
+    var self = getHandle(addr);
+    return self.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo ? 1 : 0;
 };
 
-Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(fromClass) {
+Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(addr, fromClass) {
+    var self = getHandle(addr);
     if (!fromClass)
         throw $.newNullPointerException();
-    return J2ME.isAssignableTo(fromClass.runtimeKlass.templateKlass, this.runtimeKlass.templateKlass) ? 1 : 0;
+    return J2ME.isAssignableTo(fromClass.runtimeKlass.templateKlass, self.runtimeKlass.templateKlass) ? 1 : 0;
 };
 
-Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(obj) {
-    return obj && J2ME.isAssignableTo(obj.klass, this.runtimeKlass.templateKlass) ? 1 : 0;
+Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(addr, obj) {
+    var self = getHandle(addr);
+    return obj && J2ME.isAssignableTo(obj.klass, self.runtimeKlass.templateKlass) ? 1 : 0;
 };
 
-Native["java/lang/Float.floatToIntBits.(F)I"] = function(f) {
+Native["java/lang/Float.floatToIntBits.(F)I"] = function(addr, f) {
     aliasedI32[0] = f;
     aliasedF32[0] = aliasedF32[0];
     return aliasedI32[0];
 }
 
-Native["java/lang/Float.intBitsToFloat.(I)F"] = function (i) {
+Native["java/lang/Float.intBitsToFloat.(I)F"] = function (addr, i) {
     return i;
 }
 
-Native["java/lang/Double.doubleToLongBits.(D)J"] = function (l, h) {
+Native["java/lang/Double.doubleToLongBits.(D)J"] = function (addr, l, h) {
     aliasedI32[0] = l;
     aliasedI32[1] = h;
     // Canonicalize the value.
@@ -397,15 +441,16 @@ Native["java/lang/Double.doubleToLongBits.(D)J"] = function (l, h) {
     return J2ME.returnLong(aliasedI32[0], aliasedI32[1]);
 }
 
-Native["java/lang/Double.longBitsToDouble.(J)D"] = function (l, h) {
+Native["java/lang/Double.longBitsToDouble.(J)D"] = function(addr, l, h) {
     aliasedI32[0] = l;
     aliasedI32[1] = h;
     return J2ME.returnDoubleValue(aliasedF64[0]);
 }
 
-Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
-    this.stackTrace = [];
+Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr) {
     J2ME.traceWriter && J2ME.traceWriter.writeLn("REDUX");
+    //var stackTrace = [];
+    //NativeMap.set(addr, stackTrace);
     //$.ctx.frames.forEach(function(frame) {
     //    if (!frame.methodInfo)
     //        return;
@@ -415,69 +460,76 @@ Native["java/lang/Throwable.fillInStackTrace.()V"] = function() {
     //        return;
     //    var classInfo = methodInfo.classInfo;
     //    var className = classInfo.getClassNameSlow();
-    //    this.stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
-    //}.bind(this));
+    //    stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
+    //});
 };
 
-Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function() {
-    var result = null;
-    if (this.stackTrace) {
-        var depth = this.stackTrace.length;
-        var classNames = J2ME.newObjectArray(depth);
-        var methodNames = J2ME.newObjectArray(depth);
-        var methodSignatures = J2ME.newObjectArray(depth);
-        var offsets = J2ME.newIntArray(depth);
-        this.stackTrace.forEach(function(e, n) {
+Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(addr) {
+    var resultAddr = J2ME.Constants.NULL;
+    // XXX: Untested.
+    var stackTrace = NativeMap.get(addr);
+    if (stackTrace) {
+        var depth = stackTrace.length;
+        var classNamesAddr = J2ME.newStringArray(depth);
+        var classNames = J2ME.getArrayFromAddr(classNamesAddr);
+        var methodNamesAddr = J2ME.newStringArray(depth);
+        var methodNames = J2ME.getArrayFromAddr(methodNamesAddr);
+        var methodSignaturesAddr = J2ME.newStringArray(depth);
+        var methodSignatures = J2ME.getArrayFromAddr(methodSignaturesAddr);
+        var offsetsAddr = J2ME.newIntArray(depth);
+        var offsets = J2ME.getArrayFromAddr(offsetsAddr);
+        stackTrace.forEach(function(e, n) {
             classNames[n] = J2ME.newString(e.className);
             methodNames[n] = J2ME.newString(e.methodName);
             methodSignatures[n] = J2ME.newString(e.methodSignature);
             offsets[n] = e.offset;
         });
-        result = J2ME.newObjectArray(3);
-        result[0] = classNames;
-        result[1] = methodNames;
-        result[2] = methodSignatures;
-        result[3] = offsets;
+        resultAddr = J2ME.newObjectArray(3);
+        var result = J2ME.getArrayFromAddr(resultAddr);
+        result[0] = classNamesAddr;
+        result[1] = methodNamesAddr;
+        result[2] = methodSignaturesAddr;
+        result[3] = offsetsAddr;
     }
-    return result;
+    return resultAddr;
 };
 
-Native["java/lang/Runtime.freeMemory.()J"] = function() {
+Native["java/lang/Runtime.freeMemory.()J"] = function(addr) {
     return J2ME.returnLong(0x800000, 0);
 };
 
-Native["java/lang/Runtime.totalMemory.()J"] = function() {
+Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
     return J2ME.returnLong(0x1000000, 0);
 };
 
-Native["java/lang/Runtime.gc.()V"] = function() {
+Native["java/lang/Runtime.gc.()V"] = function(addr) {
 };
 
-Native["java/lang/Math.floor.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.floor.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.floor(aliasedF64[0]));
 };
 
-Native["java/lang/Math.asin.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.asin.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.asin(aliasedF64[0]));
 };
 
-Native["java/lang/Math.acos.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.acos.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.acos(aliasedF64[0]));
 };
 
-Native["java/lang/Math.atan.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.atan.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.atan(aliasedF64[0]));
 };
 
-Native["java/lang/Math.atan2.(DD)D"] = function(xLow, xHigh, yLow, yHigh) {
+Native["java/lang/Math.atan2.(DD)D"] = function(addr, xLow, xHigh, yLow, yHigh) {
     aliasedI32[0] = xLow;
     aliasedI32[1] = xHigh;
     var x = aliasedF64[0];
@@ -487,69 +539,72 @@ Native["java/lang/Math.atan2.(DD)D"] = function(xLow, xHigh, yLow, yHigh) {
     return J2ME.returnDoubleValue(Math.atan2(x, y));
 };
 
-Native["java/lang/Math.sin.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.sin.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.sin(aliasedF64[0]));
 };
 
-Native["java/lang/Math.cos.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.cos.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.cos(aliasedF64[0]));
 };
 
-Native["java/lang/Math.tan.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.tan.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.tan(aliasedF64[0]));
 };
 
-Native["java/lang/Math.sqrt.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.sqrt.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.sqrt(aliasedF64[0]));
 };
 
-Native["java/lang/Math.ceil.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.ceil.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.ceil(aliasedF64[0]));
 };
 
-Native["java/lang/Math.floor.(D)D"] = function(valLow, valHigh) {
+Native["java/lang/Math.floor.(D)D"] = function(addr, valLow, valHigh) {
     aliasedI32[0] = valLow;
     aliasedI32[1] = valHigh;
     return J2ME.returnDoubleValue(Math.floor(aliasedF64[0]));
 };
 
-Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function() {
-    return $.ctx.thread;
+Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function(addr) {
+    return $.ctx.threadAddress;
 };
 
-Native["java/lang/Thread.setPriority0.(II)V"] = function(oldPriority, newPriority) {
+Native["java/lang/Thread.setPriority0.(II)V"] = function(addr, oldPriority, newPriority) {
 };
 
-Native["java/lang/Thread.start0.()V"] = function() {
+Native["java/lang/Thread.start0.()V"] = function(addr) {
+    var self = getHandle(addr);
+
     // The main thread starts during bootstrap and don't allow calling start()
     // on already running threads.
-    if (this === $.ctx.runtime.mainThread || this.alive)
+    if (addr === $.ctx.runtime.mainThread || self.nativeAlive)
         throw $.newIllegalThreadStateException();
-    this.alive = true;
-    this.pid = util.id();
+    self.nativeAlive = 1;
+    // XXX self.pid seems to be unused, so remove it.
+    self.pid = util.id();
     // Create a context for the thread and start it.
     var newCtx = new Context($.ctx.runtime);
-    newCtx.thread = this;
+    newCtx.threadAddress = addr;
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
     newCtx.nativeThread.pushMarkerFrame(J2ME.FrameType.ExitInterpreter);
     newCtx.nativeThread.pushFrame(run);
-    newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, this);
+    newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, addr);
     newCtx.start();
 }
 
-Native["java/lang/Thread.activeCount.()I"] = function() {
+Native["java/lang/Thread.activeCount.()I"] = function(addr) {
     return $.ctx.runtime.threadCount;
 };
 
@@ -571,38 +626,46 @@ console.print = function(ch) {
     }
 };
 
-Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(ch) {
+Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(addr, ch) {
     console.print(ch);
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(name) {
+Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(addr, name) {
     var fileName = J2ME.fromJavaString(name);
     var data = JARStore.loadFile(fileName);
     var obj = null;
     if (data) {
         obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
-        obj.data = data;
-        obj.pos = 0;
+        setNative(obj, {
+            data: data,
+            pos: 0,
+        });
     }
-    return obj;
+    return obj ? obj._address : J2ME.Constants.NULL;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(source) {
+Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(addr, source) {
     var obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
-    obj.data = new Uint8Array(source.data);
-    obj.pos = source.pos;
-    return obj;
+    var sourceDecoder = getNative(source);
+    setNative(obj, {
+        data: new Uint8Array(sourceDecoder.data),
+        pos: sourceDecoder.pos,
+    });
+    return obj._address;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(handle) {
+Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(addr, fileDecoder) {
+    var handle = getNative(fileDecoder);
     return handle.data.length - handle.pos;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(handle) {
+Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(addr, fileDecoder) {
+    var handle = getNative(fileDecoder);
     return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(handle, b, off, len) {
+Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(addr, fileDecoder, b, off, len) {
+    var handle = getNative(fileDecoder);
     var data = handle.data;
     var remaining = data.length - handle.pos;
     if (len > remaining)
@@ -613,33 +676,38 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     return (len > 0) ? len : -1;
 };
 
-Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(target) {
-    this.target = target;
+Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr, target) {
+    // XXX Make these real weak references.
+    NativeMap.set(addr, target);
 };
 
-Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function() {
-    return this.target ? this.target : null;
+Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) {
+    var target = NativeMap.get(addr);
+    return target ? target._address : J2ME.Constants.NULL;
 };
 
-Native["java/lang/ref/WeakReference.clear.()V"] = function() {
-    this.target = null;
+Native["java/lang/ref/WeakReference.clear.()V"] = function(addr) {
+    NativeMap.delete(addr);
 };
 
-Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function() {
-    this.id = util.id();
+Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(addr) {
+    var self = getHandle(addr);
+    self._id = util.id();
 };
 
-Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function() {
-    return this.runtime ? this.runtime.status : J2ME.RuntimeStatus.New;
+Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(addr) {
+    var runtime = Runtime.isolateMap[addr];
+    return runtime ? runtime.status : J2ME.RuntimeStatus.New;
 };
 
-Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function() {
-    $.ctx.runtime.jvm.startIsolate(this);
+Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(addr) {
+    var self = getHandle(addr);
+    $.ctx.runtime.jvm.startIsolate(self);
 };
 
-Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(status) {
-    asyncImpl("V", new Promise((function(resolve, reject) {
-        var runtime = this.runtime;
+Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(addr, status) {
+    var runtime = Runtime.isolateMap[addr];
+    asyncImpl("V", new Promise(function(resolve, reject) {
         if (runtime.status >= status) {
             resolve();
             return;
@@ -652,34 +720,32 @@ Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(status) {
             runtime.waitStatus(waitForStatus);
         }
         waitForStatus();
-    }).bind(this)));
+    }));
 };
 
-Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;"] = function() {
-    return $.ctx.runtime.isolate;
+Native["com/sun/cldc/isolate/Isolate.currentIsolate0.()Lcom/sun/cldc/isolate/Isolate;"] = function(addr) {
+    return $.ctx.runtime.isolateAddress;
 };
 
-Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function() {
-    var isolates = J2ME.newObjectArray(Runtime.all.keys().length);
+Native["com/sun/cldc/isolate/Isolate.getIsolates0.()[Lcom/sun/cldc/isolate/Isolate;"] = function(addr) {
+    var isolatesAddr = J2ME.newObjectArray(Runtime.all.size);
+    var isolates = J2ME.getArrayFromAddr(isolatesAddr);
     var n = 0;
-    Runtime.all.forEach(function (runtime) {
-        isolates[n++] = runtime.isolate;
+    Runtime.all.forEach(function(runtime) {
+        isolates[n++] = runtime.isolateAddress;
     });
-    return isolates;
+    return isolatesAddr;
 };
 
-Native["com/sun/cldc/isolate/Isolate.id0.()I"] = function() {
-    return this.id;
+Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(addr, newPriority) {
+    // XXX Figure out if there's anything to do here.  If not, say so.
 };
 
-Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(newPriority) {
-};
-
-Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(suiteId, className) {
+Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(addr, suiteId, className) {
   console.warn("com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V not implemented");
 };
 
-Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V"] = function(content) {
+Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V"] = function(addr, content) {
     var fileName = J2ME.fromJavaString(content);
 
     var ext = fileName.split('.').pop().toLowerCase();
@@ -738,27 +804,29 @@ function addUnimplementedNative(signature, returnValue) {
         return doNotWarn();
     };
 
-    Native[signature] = function() { return warnOnce() };
+    Native[signature] = function(addr) { return warnOnce() };
 }
 
-Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
+Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(addr, src) {
     if (!release) {
         eval(J2ME.fromJavaString(src));
     }
 };
 
-Native["java/lang/String.intern.()Ljava/lang/String;"] = function() {
+Native["java/lang/String.intern.()Ljava/lang/String;"] = function(addr) {
+  var self = getHandle(addr);
+  var value = J2ME.getArrayFromAddr(self.value);
   var internedStrings = J2ME.internedStrings;
-  var internedString = internedStrings.getByRange(this.value, this.offset, this.count);
+  var internedString = internedStrings.getByRange(value, self.offset, self.count);
   if (internedString !== null) {
-    return internedString;
+    return internedString._address;
   }
-  internedStrings.put(this.value.subarray(this.offset, this.offset + this.count), this);
-  return this;
+  internedStrings.put(value.subarray(self.offset, self.offset + self.count), self);
+  return self._address;
 };
 
 var profileStarted = false;
-Native["org/mozilla/internal/Sys.startProfile.()V"] = function() {
+Native["org/mozilla/internal/Sys.startProfile.()V"] = function(addr) {
     if (profile === 4) {
         if (!profileStarted) {
             profileStarted = true;
@@ -770,7 +838,7 @@ Native["org/mozilla/internal/Sys.startProfile.()V"] = function() {
 };
 
 var profileSaved = false;
-Native["org/mozilla/internal/Sys.stopProfile.()V"] = function() {
+Native["org/mozilla/internal/Sys.stopProfile.()V"] = function(addr) {
     if (profile === 4) {
         if (!profileSaved) {
             profileSaved = true;

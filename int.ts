@@ -60,6 +60,30 @@ module J2ME {
   }
 
   /**
+   * Given a reference, returns its canonical representation, which is ideally
+   * its address in the ASM heap.  This is an intermediate solution until we
+   * start storing all objects in that heap and referencing them via addresses.
+   */
+  export function canonicalizeRef(reference: any): number {
+    // The reference is the address itself, so just return it.
+    if (typeof reference === "number") {
+      return reference;
+    }
+
+    if (reference === null) {
+      return Constants.NULL;
+    }
+
+    // XXX Also check that |reference instanceof java.lang.Object|?
+    if ("_address" in reference) {
+      return reference._address;
+    }
+
+    // XXX Should we return the reference itself here and hope for the best?
+    assert(false, "unknown reference type");
+  }
+
+  /**
    * Calling Convention:
    *
    * Interpreter -> Interpreter:
@@ -304,6 +328,7 @@ module J2ME {
             ((i32[i] >= 32 && i32[i] < 1024) ? String.fromCharCode(i32[i]) : "?") + " " +
             clampString(String(f32[i]), 12).padLeft(' ', 12) + " " +
             clampString(String(wordsToDouble(i32[i], i32[i + 1])), 12).padLeft(' ', 12) + " " +
+            // XXX ref[i] could be an address, so update toName to handle that.
             toName(ref[i]));
         }
       }
@@ -459,11 +484,12 @@ module J2ME {
             if (pc >= 0) {
               this.pc = pc;
               this.sp = this.fp + FrameLayout.CallerSaveSize;
-              ref[this.sp++] = e;
+              release || assert(e instanceof Object && "_address" in e, "exception is object with address");
+              ref[this.sp++] = e._address;
               return;
             }
             if (mi.isSynchronized) {
-              this.ctx.monitorExit(ref[this.fp + FrameLayout.MonitorOffset]);
+              this.ctx.monitorExit(getMonitor(ref[this.fp + FrameLayout.MonitorOffset]));
             }
             this.popFrame(mi);
             release || traceWriter && traceWriter.outdent();
@@ -641,16 +667,14 @@ module J2ME {
       var kinds = methodInfo.signatureKinds;
       var index = 0;
       if (!methodInfo.isStatic) {
-        frame.setParameter(Kind.Reference, index++, this);
+        frame.setParameter(Kind.Reference, index++, canonicalizeRef(this));
       }
       for (var i = 1; i < kinds.length; i++) {
-        frame.setParameter(kinds[i], index++, arguments[i - 1]);
+        frame.setParameter(kinds[i], index++, canonicalizeRef(arguments[i - 1]));
       }
       if (methodInfo.isSynchronized) {
-        var monitor = methodInfo.isStatic
-          ? methodInfo.classInfo.getClassObject()
-          : this;
-        frame.monitor = monitor;
+        var monitor = methodInfo.isStatic ? methodInfo.classInfo.getClassObject() : getMonitor(this);
+        frame.monitor = monitor; // XXX This doesn't seem to be used; delete?
         $.ctx.monitorEnter(monitor);
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
@@ -749,7 +773,7 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, array, object, offset, buffer, tag: TAGS, jumpOffset;
+    var value, index, arrayAddr: number, object, klass, offset, buffer, tag: TAGS, targetPC, jumpOffset;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
@@ -789,7 +813,7 @@ module J2ME {
           case Bytecodes.NOP:
             continue;
           case Bytecodes.ACONST_NULL:
-            ref[sp++] = null;
+            ref[sp++] = Constants.NULL;
             continue;
           case Bytecodes.ICONST_M1:
           case Bytecodes.ICONST_0:
@@ -906,60 +930,66 @@ module J2ME {
             continue;
           case Bytecodes.IALOAD:
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp++] = array[index];
+            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
             continue;
           case Bytecodes.BALOAD:
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp++] = array[index];
+            i32[sp++] = i8[arrayAddr + Constants.ARRAY_HDR_SIZE + index];
             continue;
           case Bytecodes.CALOAD:
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp++] = array[index];
+            i32[sp++] = u16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index];
             continue;
           case Bytecodes.SALOAD:
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp++] = array[index];
+            i32[sp++] = i16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index];
             continue;
           case Bytecodes.FALOAD:
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            f32[sp++] = array[index];
+            f32[sp++] = f32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
             continue;
           case Bytecodes.AALOAD:
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+
+            if (arrayAddr === Constants.NULL) {
+              thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+              continue;
+            }
+
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp] = 0xDEADBEEF;
-            ref[sp++] = array[index];
+
+            ref[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
             continue;
           case Bytecodes.DALOAD:
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            aliasedF64[0] = array[index];
+            aliasedF64[0] = f64[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 3) + index];
             i32[sp++] = aliasedI32[0];
             i32[sp++] = aliasedI32[1];
             continue;
@@ -1015,88 +1045,94 @@ module J2ME {
           case Bytecodes.IASTORE:
             value = i32[--sp];
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            array[index] = value;
+            i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index] = value;
             continue;
           case Bytecodes.FASTORE:
             value = f32[--sp];
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            array[index] = value;
+            f32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index] = value;
             continue;
           case Bytecodes.BASTORE:
             value = i32[--sp];
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            array[index] = value;
+            i8[arrayAddr + Constants.ARRAY_HDR_SIZE + index] = value;
             continue;
           case Bytecodes.CASTORE:
             value = i32[--sp];
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            array[index] = value;
+            u16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index] = value;
             continue;
           case Bytecodes.SASTORE:
             value = i32[--sp];
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            array[index] = value;
+            i16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index] = value;
             continue;
           case Bytecodes.LASTORE:
             lh = i32[--sp];
             ll = i32[--sp];
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            array.value[index * 2    ] = ll;
-            array.value[index * 2 + 1] = lh;
+            i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2    ] = ll;
+            i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2 + 1] = lh;
             continue;
           case Bytecodes.LALOAD:
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp++] = array.value[index * 2    ];
-            i32[sp++] = array.value[index * 2 + 1];
+            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE  >> 2) + index * 2    ];
+            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE  >> 2) + index * 2 + 1];
             continue;
           case Bytecodes.DASTORE:
             aliasedI32[1] = i32[--sp];
             aliasedI32[0] = i32[--sp];
             value = aliasedF64[0];
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            array[index] = value;
+            f64[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 3) + index] = value;
             continue;
           case Bytecodes.AASTORE:
-            value = ref[--sp];
+            address = ref[--sp];
             index = i32[--sp];
-            array = ref[--sp];
-            if ((index >>> 0) >= (array.length >>> 0)) {
+            arrayAddr = ref[--sp];
+
+            if (arrayAddr === Constants.NULL) {
+              thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+              continue;
+            }
+
+            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            checkArrayStore(array, value);
-            array[index] = value;
+            checkArrayStore(arrayAddr, address);
+            i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index] = address;
             continue;
           case Bytecodes.POP:
             --sp;
@@ -1800,8 +1836,12 @@ module J2ME {
             ref[sp++] = J2ME.newMultiArray(classInfo.klass, lengths.reverse());
             continue;
           case Bytecodes.ARRAYLENGTH:
-            array = ref[--sp];
-            i32[sp++] = array.length;
+            arrayAddr = ref[--sp];
+            if (arrayAddr === Constants.NULL) {
+              thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+              continue;
+            }
+            i32[sp++] = i32[(arrayAddr >> 2) + 1];
             continue;
           case Bytecodes.GETFIELD:
           case Bytecodes.GETSTATIC:
@@ -1812,11 +1852,23 @@ module J2ME {
               if (U) {
                 return;
               }
-              object = fieldInfo.classInfo.getStaticObject($.ctx);
+              address = fieldInfo.classInfo.getStaticObject($.ctx)._address + fieldInfo.byteOffset;
+
+              if (address === Constants.NULL) {
+                thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+                continue;
+              }
             } else {
-              object = ref[--sp];
+              address = ref[--sp];
+
+              if (address === Constants.NULL) {
+                thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+                continue;
+              }
+
+              address += fieldInfo.byteOffset;
             }
-            address = object._address + fieldInfo.byteOffset;
+
             switch (fieldInfo.kind) {
               case Kind.Reference:
                 ref[sp++] = ref[address >> 2];
@@ -1848,11 +1900,17 @@ module J2ME {
               if (U) {
                 return;
               }
-              object = fieldInfo.classInfo.getStaticObject($.ctx);
+              address = fieldInfo.classInfo.getStaticObject($.ctx)._address + fieldInfo.byteOffset;
             } else {
-              object = ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
+              address = ref[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
+
+              if (address === Constants.NULL) {
+                thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+                continue;
+              }
+
+              address += fieldInfo.byteOffset;
             }
-            address = object._address + fieldInfo.byteOffset;
             switch (fieldInfo.kind) {
               case Kind.Reference:
                 ref[address >> 2] = ref[--sp];
@@ -1885,36 +1943,47 @@ module J2ME {
             if (U) {
               return;
             }
-            ref[sp++] = newObject(classInfo.klass);
+            ref[sp++] = allocObject(classInfo.klass);
             continue;
           case Bytecodes.CHECKCAST:
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, mi.classInfo);
-            object = ref[sp - 1];
-            if (object && !isAssignableTo(object.klass, classInfo.klass)) {
+            address = ref[sp - 1];
+
+            if (address === Constants.NULL) {
+              continue;
+            }
+
+            klass = klassIdMap[i32[address >> 2]];
+
+            if (!isAssignableTo(klass, classInfo.klass)) {
               thread.set(fp, sp, opPC);
               throw $.newClassCastException (
-                object.klass.classInfo.getClassNameSlow() + " is not assignable to " +
-                classInfo.getClassNameSlow()
+                klass.classInfo.getClassNameSlow() + " is not assignable to " + classInfo.getClassNameSlow()
               );
             }
             continue;
           case Bytecodes.INSTANCEOF:
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
-            object = ref[--sp];
-            i32[sp++] = (!object ? false : isAssignableTo(object.klass, classInfo.klass)) ? 1 : 0;
+            address = ref[--sp];
+
+            if (address === Constants.NULL) {
+              i32[sp++] = 0;
+            } else {
+              klass = klassIdMap[i32[address >> 2]];
+              i32[sp++] = isAssignableTo(klass, classInfo.klass) ? 1 : 0;
+            }
             continue;
           case Bytecodes.ATHROW:
-            object = ref[--sp];
-            if (!object) {
+            address = ref[--sp];
+            if (!address) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
             }
-            throw object;
+            throw getHandle(address);
             continue;
           case Bytecodes.MONITORENTER:
-            object = ref[--sp];
-            thread.ctx.monitorEnter(object);
+            thread.ctx.monitorEnter(getMonitor(ref[--sp]));
             release || assert(U !== VMState.Yielding, "Monitors should never yield.");
             if (U === VMState.Pausing || U === VMState.Stopping) {
               thread.set(fp, sp, pc); // We need to resume past the MONITORENTER bytecode.
@@ -1922,8 +1991,7 @@ module J2ME {
             }
             continue;
           case Bytecodes.MONITOREXIT:
-            object = ref[--sp];
-            thread.ctx.monitorExit(object);
+            thread.ctx.monitorExit(getMonitor(ref[--sp]));
             continue;
           case Bytecodes.WIDE:
             var op = code[pc++];
@@ -1986,8 +2054,7 @@ module J2ME {
             var lastMI = mi;
             var lastOP = op;
             if (lastMI.isSynchronized) {
-              monitor = ref[fp + FrameLayout.MonitorOffset];
-              $.ctx.monitorExit(monitor);
+              $.ctx.monitorExit(getMonitor(ref[fp + FrameLayout.MonitorOffset]));
             }
             opPC = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - maxLocals;
@@ -2082,9 +2149,21 @@ module J2ME {
             var calleeTargetMethodInfo: MethodInfo = null;
 
             var callee = null;
-            object = null;
-            if (!isStatic) {
-              object = ref[sp - calleeMethodInfo.argumentSlots];
+
+            if (isStatic) {
+              object = null;
+            } else {
+              address = ref[sp - calleeMethodInfo.argumentSlots];
+              if (address === null || address === Constants.NULL) {
+                object = null;
+                klass = null;
+              } else if (typeof address === "number") {
+                object = getHandle(address);
+                klass = klassIdMap[i32[address >> 2]];
+              } else {
+                object = address;
+                klass = object["klass"];
+              }
             }
 
             if (isStatic) {
@@ -2103,10 +2182,10 @@ module J2ME {
                 calleeTargetMethodInfo = calleeMethodInfo;
                 break;
               case Bytecodes.INVOKEVIRTUAL:
-                calleeTargetMethodInfo = object.klass.classInfo.vTable[calleeMethodInfo.vTableIndex];
+                calleeTargetMethodInfo = klass.classInfo.vTable[calleeMethodInfo.vTableIndex];
                 break;
               case Bytecodes.INVOKEINTERFACE:
-                calleeTargetMethodInfo = object.klass.classInfo.iTable[calleeMethodInfo.mangledName];
+                calleeTargetMethodInfo = klass.classInfo.iTable[calleeMethodInfo.mangledName];
                 break;
               default:
                 release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
@@ -2141,7 +2220,7 @@ module J2ME {
                 thread.pushMarkerFrame(FrameType.Native);
                 frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
 
-                returnValue = callee.call(object);
+                returnValue = callee(object ? object._address : Constants.NULL);
               } else {
                 args.length = 0;
 
@@ -2161,7 +2240,18 @@ module J2ME {
                       args.unshift(i32[--sp]);
                       break;
                     case Kind.Reference:
-                      args.unshift(ref[--sp]);
+                      // XXX Update natives to expect addresses and stop passing
+                      // handles.
+                      address = ref[--sp];
+                      if (typeof address === "number") {
+                        if (address === Constants.NULL) {
+                          args.unshift(null);
+                        } else {
+                          args.unshift(getHandle(address));
+                        }
+                      } else {
+                        args.unshift(address);
+                      }
                       break;
                     default:
                       release || assert(false, "Invalid Kind: " + Kind[kind]);
@@ -2180,11 +2270,12 @@ module J2ME {
                   // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
                 }
 
-                returnValue = callee.apply(object, args);
+                args.unshift(object ? object._address : Constants.NULL);
+                returnValue = callee.apply(null, args);
               }
 
               if (!release) {
-                checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
+                // checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
               }
 
               if (U) {
@@ -2214,6 +2305,7 @@ module J2ME {
                   i32[sp++] = returnValue;
                   continue;
                 case Kind.Reference:
+                  release || assert(returnValue !== "number", "native return value is a number");
                   ref[sp++] = returnValue;
                   continue;
                 case Kind.Void:
@@ -2251,7 +2343,7 @@ module J2ME {
             if (calleeTargetMethodInfo.isSynchronized) {
               monitor = calleeTargetMethodInfo.isStatic
                 ? calleeTargetMethodInfo.classInfo.getClassObject()
-                : object;
+                : getMonitor(object);
               ref[fp + FrameLayout.MonitorOffset] = monitor;
               $.ctx.monitorEnter(monitor);
               release || assert(U !== VMState.Yielding, "Monitors should never yield.");

@@ -3,10 +3,10 @@ package javax.microedition.media;
 import com.sun.mmedia.Configuration;
 import com.sun.mmedia.TonePlayer;
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import javax.microedition.media.control.ToneControl;
 
-public class TestPlayTone implements Testlet {
+public class TestPlayTone implements MIDletTestlet {
     public int getExpectedPass() { return 1; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

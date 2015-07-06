@@ -7,7 +7,13 @@ module J2ME {
           if (self._hashCode) {
             return self._hashCode;
           }
-          return self._hashCode = $.nextHashCode();
+
+          self._hashCode = i32[this._address + Constants.HASH_CODE_OFFSET >> 2];
+          if (self._hashCode) {
+            return self._hashCode;
+          }
+
+          return self._hashCode = i32[this._address + Constants.HASH_CODE_OFFSET >> 2] = $.nextHashCode();
         }
       }
     },
@@ -35,13 +41,15 @@ module J2ME {
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
-          "priority": "I"
+          "priority": "I",
+          "nativeAlive": "Z",
         }
       }
     },
     "com/sun/cldc/isolate/Isolate": {
       fields: {
         instanceSymbols: {
+          "_id": "I",
           "_mainArgs": "[Ljava/lang/String;",
           "_mainClass": "Ljava/lang/String;",
           "_priority": "I",
@@ -177,6 +185,7 @@ module J2ME {
       fields: {
         instanceSymbols: {
           "font": "Ljavax/microedition/lcdui/Font;",
+          "caretPosition": "I",
         }
       }
     },
@@ -258,6 +267,13 @@ module J2ME {
           "port": "I",
           "sentAt": "J",
           "messageType": "I",
+        }
+      }
+    },
+    "com/sun/midp/io/j2me/socket/Protocol": {
+      fields: {
+        instanceSymbols: {
+          "host": "Ljava/lang/String;",
         }
       }
     },
@@ -358,15 +374,16 @@ module J2ME {
     }
 
     export interface String extends java.lang.Object {
-      value: Uint16Array;
+      value: number;
       offset: number;
       count: number;
     }
 
     export interface Thread extends java.lang.Object {
+      // XXX Thread.pid seems to be unused, so remove it.
       pid: number;
-      alive: boolean;
       priority: number;
+      nativeAlive: boolean;
     }
 
     export interface Exception extends java.lang.Object {
@@ -455,10 +472,9 @@ module J2ME {
 
   export module com.sun.cldc.isolate {
     export interface Isolate extends java.lang.Object {
-      id: number;
-      runtime: Runtime;
+      _id: number;
       _mainArgs: java.lang.String [];
-      _mainClass: java.lang.String;
+      _mainClass: number;
       _priority: number;
     }
   }

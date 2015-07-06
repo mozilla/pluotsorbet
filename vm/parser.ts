@@ -145,12 +145,13 @@ module J2ME {
 
     private static internedMap = new TypedArrayHashtable(64);
 
-    static UTF8toUTF16(utf8: Uint8Array): Uint16Array {
+    static UTF8toUTF16(utf8: Uint8Array): number {
       // This conversion is mainly used for symbols within a class file,
       // in which the large majority of strings are all ascii.
       var ascii = true;
       var utf8Length = utf8.length;
-      var utf16 = new Uint16Array(utf8Length);
+      var utf16Addr = newCharArray(utf8Length);
+      var utf16 = getArrayFromAddr(utf16Addr);
       for (var i = 0; i < utf8Length; i++) {
         var ch1 = utf8[i];
         if (ch1 === 0) {
@@ -163,7 +164,7 @@ module J2ME {
         utf16[i] = ch1;
       }
       if (ascii) {
-        return utf16;
+        return utf16Addr;
       }
       var index = 0;
       var a = [];
@@ -220,7 +221,11 @@ module J2ME {
             break;
         }
       }
-      return new Uint16Array(a);
+
+      var retAddr = newCharArray(a.length);
+      var ret = getArrayFromAddr(retAddr);
+      ret.set(a);
+      return retAddr;
     }
 
     constructor (
@@ -707,7 +712,7 @@ module J2ME {
           i32[object._address + this.byteOffset >> 2] = value;
           break;
         case Kind.Reference:
-          ref[object._address + this.byteOffset >> 2] = value;
+          ref[object._address + this.byteOffset >> 2] = value._address;
           break;
         default:
           Debug.assert(false, Kind[this.kind]);
@@ -1314,11 +1319,11 @@ module J2ME {
           fieldInfo.fTableIndex = fTable.length;
           fTable.push(fieldInfo); // Append
           fieldInfo.mangledName = "f" + fieldInfo.fTableIndex;
-          fieldInfo.byteOffset = this.sizeOfFields;
+          fieldInfo.byteOffset = Constants.OBJ_HDR_SIZE + this.sizeOfFields;
           this.sizeOfFields += kindSize(fieldInfo.kind);
         } else {
           fieldInfo.mangledName = "s" + i;
-          fieldInfo.byteOffset = this.sizeOfStaticFields;
+          fieldInfo.byteOffset = Constants.OBJ_HDR_SIZE + this.sizeOfStaticFields;
           this.sizeOfStaticFields += kindSize(fieldInfo.kind);
         }
       }
@@ -1661,14 +1666,14 @@ module J2ME {
     
     static initialize() {
       // Primitive array classes require the java_lang_Object to exists before they can be created.
-      PrimitiveArrayClassInfo.Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "Uint8Array");
-      PrimitiveArrayClassInfo.C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "Uint16Array");
-      PrimitiveArrayClassInfo.F = new PrimitiveArrayClassInfo(PrimitiveClassInfo.F, "Float32Array");
-      PrimitiveArrayClassInfo.D = new PrimitiveArrayClassInfo(PrimitiveClassInfo.D, "Float64Array");
-      PrimitiveArrayClassInfo.B = new PrimitiveArrayClassInfo(PrimitiveClassInfo.B, "Int8Array");
-      PrimitiveArrayClassInfo.S = new PrimitiveArrayClassInfo(PrimitiveClassInfo.S, "Int16Array");
-      PrimitiveArrayClassInfo.I = new PrimitiveArrayClassInfo(PrimitiveClassInfo.I, "Int32Array");
-      PrimitiveArrayClassInfo.J = new PrimitiveArrayClassInfo(PrimitiveClassInfo.J, "Int64Array");
+      PrimitiveArrayClassInfo.Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "ZArray");
+      PrimitiveArrayClassInfo.C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "CArray");
+      PrimitiveArrayClassInfo.F = new PrimitiveArrayClassInfo(PrimitiveClassInfo.F, "FArray");
+      PrimitiveArrayClassInfo.D = new PrimitiveArrayClassInfo(PrimitiveClassInfo.D, "DArray");
+      PrimitiveArrayClassInfo.B = new PrimitiveArrayClassInfo(PrimitiveClassInfo.B, "BArray");
+      PrimitiveArrayClassInfo.S = new PrimitiveArrayClassInfo(PrimitiveClassInfo.S, "SArray");
+      PrimitiveArrayClassInfo.I = new PrimitiveArrayClassInfo(PrimitiveClassInfo.I, "IArray");
+      PrimitiveArrayClassInfo.J = new PrimitiveArrayClassInfo(PrimitiveClassInfo.J, "JArray");
     }
 
     static Z: PrimitiveArrayClassInfo;

@@ -31,8 +31,8 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferentLinux: 1266, maxDifferentMac: 2029 },
-  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1403, maxDifferentMac: 2186 },
+  { name: "gfx/AlertTest", maxDifferentLinux: 1401, maxDifferentMac: 1889 },
+  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1538, maxDifferentMac: 2046 },
   { name: "gfx/CanvasTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/CanvasWithHeaderTest", maxDifferentLinux: 823, maxDifferentMac: 1351 },
   { name: "gfx/ImageRenderingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
@@ -52,6 +52,7 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/ImageProcessingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/ImageProcessingTest2", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferentLinux: 205, maxDifferentMac: 295 },
   { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferentLinux: 0, maxDifferentMac: 788 },
@@ -179,7 +180,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 31 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {

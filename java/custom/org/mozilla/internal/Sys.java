@@ -26,10 +26,6 @@
 
 package org.mozilla.internal;
 
-import java.io.*;
-import com.sun.cldchi.io.*;
-import java.security.*;
-import java.util.PropertyPermission;
 import com.sun.cldc.isolate.Isolate;
 
 /**
@@ -123,4 +119,6 @@ public final class Sys {
   public static Object unwind(Object v) { return v; }
 
   public static void unwindFromInvoke() { unwind(); }
+
+  public static native void forceCollection();
 }

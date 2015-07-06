@@ -30,6 +30,21 @@ module J2ME {
     return list;
   }
 
+  /**
+   * Generate an ID for a Klass.  We use this to map Java objects to their
+   * Klass JS objects, storing the ID for the Klass in the first four bytes
+   * of the memory allocated for the Java object in the ASM heap.
+   *
+   * XXX Should we instead store the address of the Java object that represents
+   * the Klass in the ASM heap?
+   */
+  export var generateKlassId = (function() {
+    var nextId = 0;
+    return function() {
+      return nextId++;
+    }
+  })();
+
   export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
     var writer = emitter.writer;
     var mangledClassName = classInfo.mangledName;
@@ -64,8 +79,17 @@ module J2ME {
       }
     }
     // Emit class initializer.
-    writer.enter("function " + mangledClassName + "() {");
-    writer.writeLn("this._address = ASM._gcMalloc(" + classInfo.sizeOfFields + ");");
+    var klassId = generateKlassId();
+    writer.enter("function " + mangledClassName + "(address) {");
+    writer.writeLn("if (address) {");
+    writer.writeLn("  this._address = address;");
+    // writer.writeLn("  this._hashCode = i32[this._address + " + Constants.HASH_CODE_OFFSET + " >> 2];");
+    writer.writeLn("} else {");
+    writer.writeLn("  this._address = ASM._gcMalloc(" + (Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields) + ");");
+    writer.writeLn("  i32[this._address >> 2] = " + klassId + " | 0;");
+    // writer.writeLn("  this._hashCode = i32[this._address + " + Constants.HASH_CODE_OFFSET + " >> 2] = $.nextHashCode();");
+    writer.writeLn("  this._hashCode = i32[this._address + 4 >> 2] = 0;");
+    writer.writeLn("}");
     //
     // Should we or should we not generate hash codes at this point? Eager or lazy, we should at least
     // initialize it zero to keep object shapes fixed.
@@ -73,6 +97,8 @@ module J2ME {
     //writer.writeLn("this._hashCode = 0;");
     //emitFields(classInfo.fTable, false);
     writer.leave("}");
+    writer.writeLn(mangledClassName + ".id = " + klassId + ";");
+    writer.writeLn("J2ME.klassIdMap[" + klassId + "] = " + mangledClassName + ";");
 
     if (emitter.klassHeaderOnly) {
       return;

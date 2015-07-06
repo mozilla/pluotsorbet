@@ -391,7 +391,7 @@ module J2ME {
         this.bodyEmitter.prependLn("var " + variables.join(",") + ";");
       }
       if (this.hasMonitorEnter) {
-        this.bodyEmitter.prependLn("var th=$.ctx.thread;");
+        this.bodyEmitter.prependLn("var th=$.ctx.threadAddress;");
       }
       return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint ? this.blockMap.getOSREntryPoints() : []);
     }
