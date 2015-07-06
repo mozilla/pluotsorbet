@@ -75,7 +75,7 @@ module J2ME {
           break;
         case Kind.Reference:
           release || assert(l !== "number", "async native return value is a number");
-          ref[sp++] = l;
+          i32[sp++] = l;
           break;
         case Kind.Void:
           break;
