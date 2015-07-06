@@ -45,6 +45,9 @@ var window = {
   nextTickBeforeEvents: function(callback) {
     callbacks.push(callback);
   },
+  nextTickDuringEvents: function(callback) {
+    callbacks.push(callback);
+  },
   addEventListener: function() {
   },
   crypto: {
