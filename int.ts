@@ -559,7 +559,7 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, arrayAddr: number, object, klass, offset, buffer, tag: TAGS, targetPC;
+    var value, index, arrayAddr: number, klass, offset, buffer, tag: TAGS, targetPC;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
@@ -954,9 +954,9 @@ module J2ME {
             sp += 2;
             continue;
           case Bytecodes.SWAP:
-            ia = i32[sp - 1];               object = i32[sp - 1];
-            i32[sp - 1] = i32[sp - 2];      i32[sp - 1] = i32[sp - 2];
-            i32[sp - 2] = ia;               i32[sp - 2] = object;
+            ia = i32[sp - 1];               address = ref[sp - 1];
+            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
+            i32[sp - 2] = ia;               ref[sp - 2] = address;
             continue;
           case Bytecodes.IINC:
             index = code[pc++];
