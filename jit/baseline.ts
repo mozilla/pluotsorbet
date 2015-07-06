@@ -246,6 +246,24 @@ module J2ME {
     return classInfo.mangledName;
   }
 
+  function primitiveArrayValue(kind: Kind, index: String): string {
+    switch (kind) {
+      case Kind.Byte:
+        return "i8[" + index + "+" + Constants.ARRAY_HDR_SIZE + "]";
+      case Kind.Char:
+        return "u16[" + index + "+" + Constants.ARRAY_HDR_SIZE + " >> 1]";
+      case Kind.Short:
+        return "i16[" + index + "+" + Constants.ARRAY_HDR_SIZE + " >> 1]";
+      case Kind.Int:
+      case Kind.Float:
+      case Kind.Reference:
+        return "i32[" + index + "+" + Constants.ARRAY_HDR_SIZE + " >> 2]";
+      default:
+        Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
+        break;
+    }
+  }
+
   /**
    * These bytecodes require stack flushing.
    */
@@ -547,11 +565,16 @@ module J2ME {
       var signatureKinds = this.methodInfo.signatureKinds;
 
       // Skip the first typeDescriptor since it is the return type.
+      var cannon = "";
       for (var i = 1; i < signatureKinds.length; i++) {
         var kind = signatureKinds[i];
         this.parameters.push(this.getLocalName(parameterLocalIndex++));
         if (isTwoSlot(kind)) {
           this.parameters.push(this.getLocalName(parameterLocalIndex++));
+        }
+        if (kind === Kind.Reference) {
+          // XXX remove canonicalizeRef when args aren't passed as handles
+          cannon += this.getLocalName(parameterLocalIndex - 1) + " = " + "J2ME.canonicalizeRef(" + this.getLocalName(parameterLocalIndex - 1) +  ");";
         }
       }
 
@@ -562,6 +585,7 @@ module J2ME {
       if (local.length) {
         this.bodyEmitter.writeLn("var " + local.join(",") + ";");
       }
+      this.bodyEmitter.writeLn(cannon);
       if (!this.methodInfo.isStatic) {
         this.bodyEmitter.writeLn("var ins="+ this.getLocal(0) + "=this;");
       }
@@ -813,15 +837,12 @@ module J2ME {
         this.emitClassInitializationCheck(fieldInfo.classInfo);
       }
       var kind = getSignatureKind(fieldInfo.utf8Signature);
-      var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      var address = object + "._address+" + fieldInfo.byteOffset;
-      if (fieldInfo.kind === Kind.Reference) {
-        this.emitPush(kind, "ref[" + address + ">>2]", Precedence.Member);
-      } else {
-        this.emitPush(Kind.Int, "i32[" + address + ">>2]", Precedence.Member);
-        if (isTwoSlot(fieldInfo.kind)) {
-          this.emitPush(Kind.Int, "i32[" + address + "+4>>2]", Precedence.Member);
-        }
+      var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
+      var address = objectAddr + "+" + fieldInfo.byteOffset;
+      // XXX the push kind is wrong here.
+      this.emitPush(Kind.Int, "i32[" + address + ">>2]", Precedence.Member);
+      if (isTwoSlot(kind)) {
+        this.emitPush(Kind.Int, "i32[" + address + "+4>>2]", Precedence.Member);
       }
     }
 
@@ -834,16 +855,12 @@ module J2ME {
       if (isTwoSlot(kind)) {
         h = this.pop(Kind.Int, Precedence.Sequence);
       }
-      var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      var address = object + "._address+" + fieldInfo.byteOffset;
-      if (fieldInfo.kind === Kind.Reference) {
-        this.blockEmitter.writeLn("ref[" + address + ">>2]=" + l + ";");
-      } else {
-        this.blockEmitter.writeLn("i32[" + address + ">>2]=" + l + ";");
-        if (isTwoSlot(fieldInfo.kind)) {
-          throwCompilerError("XXX");
-          this.blockEmitter.writeLn("i32[" + address + "+4>>2]=" + h + ";");
-        }
+      var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
+      var address = objectAddr + "+" + fieldInfo.byteOffset;
+      this.blockEmitter.writeLn("i32[" + address + ">>2]=" + l + ";");
+      if (isTwoSlot(fieldInfo.kind)) {
+        throwCompilerError("XXX");
+        this.blockEmitter.writeLn("i32[" + address + "+4>>2]=" + h + ";");
       }
     }
 
@@ -935,18 +952,20 @@ module J2ME {
         }
         args.unshift(this.pop(signatureKinds[i]));
       }
-      var object = null, call;
-      var classConstant = this.localClassConstant(methodInfo.classInfo);
-      var methodConstant = "(" + classConstant + ".M[" + methodInfo.index + "]||" + classConstant + ".m(" + methodInfo.index + "))";
+
+      var objectAddr = null, call;
+      var klassId = this.klassId(methodInfo.classInfo);
+      var klassConstant = "J2ME.klassIdMap[" + klassId + "]";
+      var methodConstant = "(" + klassConstant + ".M[" + methodInfo.index + "]||" + klassConstant + ".m(" + methodInfo.index + "))";
       if (opcode !== Bytecodes.INVOKESTATIC) {
-        object = this.pop(Kind.Reference);
+        objectAddr = this.pop(Kind.Reference);
         if (opcode === Bytecodes.INVOKESPECIAL) {
-          args.unshift(object);
+          args.unshift(objectAddr);
           call = methodConstant + ".call(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
-          call = object + "." + methodInfo.virtualName + "(" + args.join(",") + ")";
+          call = "J2ME.klassIdMap[i32[" + objectAddr + "+" + Constants.OBJ_KLASS_ID_OFFSET + " >> 2]].vTable[" + methodInfo.vTableIndex + "](" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
-          call = object + "." + methodInfo.mangledName + "(" + args.join(",") + ")";
+          call = "J2ME.klassIdMap[i32[" + objectAddr + "+" + Constants.OBJ_KLASS_ID_OFFSET + " >> 2]].iTable." + methodInfo.mangledName + "(" + args.join(",") + ")";
         } else {
           Debug.unexpected(Bytecodes[opcode]);
         }
@@ -983,7 +1002,7 @@ module J2ME {
         return;
       }
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("if((" + index + " >>> 0)>=(" + array + ".length >>> 0))TI(" + index + ");");
+        this.blockEmitter.writeLn("if((" + index + " >>> 0)>=(i32[" + array + "+" + Constants.ARRAY_LENGTH_OFFSET + " >> 2] >>> 0))TI(" + index + ");");
       } else {
         this.blockEmitter.writeLn("CAB(" + array + "," + index + ");");
       }
@@ -1004,14 +1023,14 @@ module J2ME {
       if (kind === Kind.Reference) {
         this.emitArrayStoreCheck(array, value);
       }
-      this.blockEmitter.writeLn(array + "[" + index + "]=" + value + ";");
+      this.blockEmitter.writeLn(primitiveArrayValue(kind, index) + "=" + value + ";");
     }
 
     emitLoadIndexed(kind: Kind) {
       var index = this.pop(Kind.Int, Precedence.Sequence);
       var array = this.pop(Kind.Reference, Precedence.Sequence);
       this.emitBoundsCheck(array, index);
-      this.emitPush(kind, array + "[" + index + "]", Precedence.Member);
+      this.emitPush(kind, primitiveArrayValue(kind, index), Precedence.Member);
     }
 
     emitIncrement(stream: BytecodeStream) {
@@ -1058,18 +1077,19 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "new " + this.localClassConstant(classInfo)+ "()", Precedence.New);
+      this.emitPush(Kind.Reference, "J2ME.allocObject(J2ME.klassIdMap[" + classInfo.klass.id + "])", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {
       var kind = arrayTypeCodeToKind(typeCode);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      this.emitPush(Kind.Reference, "new " + kindToTypedArrayName(kind) + "(" + length + ")", Precedence.New);
+      // TODO: inline the logic for allocating a new array.
+      this.emitPush(Kind.Reference, "J2ME.newArray(J2ME.PrimitiveClassInfo." + "????ZCFDBSIJ"[typeCode] + ".klass, " + length + ")", Precedence.New);
     }
 
     emitCheckCast(cpi: number) {
-      var object = this.peek(Kind.Reference);
+      var objectAddr = this.peek(Kind.Reference);
       if (this.isPrivileged) {
         return;
       }
@@ -1078,32 +1098,37 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "CCI";
       }
-      var classConstant = this.localClassConstant(classInfo);
-      call = call + "(" + object + "," + classConstant + ")"
+      var klassId = this.klassId(classInfo);
+      call = call + "(" + objectAddr + "," + klassId + ")"
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("(!" + object + ")||" + object + ".klass===" + classConstant + "||" + call + ";");
+        this.blockEmitter.writeLn("(!" + objectAddr + ")||i32[" + objectAddr + " + " + Constants.OBJ_KLASS_ID_OFFSET + " >> 2]===" + klassId + "||" + call + ";");
       } else {
         this.blockEmitter.writeLn(call + ";");
       }
     }
 
+    klassId(classInfo: ClassInfo): number {
+      return classInfo.klass.id;
+    }
+
     emitInstanceOf(cpi: number) {
-      var object = this.pop(Kind.Reference);
+      var objectAddr = this.pop(Kind.Reference);
       var classInfo = this.lookupClass(cpi);
       var call = "IOK";
       if (classInfo.isInterface) {
         call = "IOI";
       }
-      var classConstant = this.localClassConstant(classInfo);
-      call = call + "(" + object + "," + classConstant + ")|0";
+      var klassId = this.klassId(classInfo);
+      call = call + "(" + objectAddr + "," + klassId + ")|0";
       if (inlineRuntimeCalls) {
-        call = "((" + object + "&&" + object + ".klass===" + classConstant + ")||" + call + ")|0";
+        call = "((" + objectAddr + "&&i32[" + objectAddr + " + " + Constants.OBJ_KLASS_ID_OFFSET + " >> 2]=== " + klassId + ")||" + call + ")|0";
       }
       this.emitPush(Kind.Int, call, Precedence.BitwiseOR);
     }
 
     emitArrayLength() {
-      this.emitPush(Kind.Int, this.pop(Kind.Reference) + ".length", Precedence.Member);
+      // XXX EMIT NULL CHECK
+      this.emitPush(Kind.Int, "i32[" + this.pop(Kind.Reference) + " + " + Constants.ARRAY_LENGTH_OFFSET + " >> 2]", Precedence.Member);
     }
 
     emitNewObjectArray(cpi: number) {
@@ -1111,7 +1136,7 @@ module J2ME {
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      this.emitPush(Kind.Reference, "NA(" + this.localClassConstant(classInfo) + "," + length + ")", Precedence.Call);
+      this.emitPush(Kind.Reference, "J2ME.newArray(" +  this.localClassConstant(classInfo) + ".klass, " + length + ")", Precedence.Call);
     }
 
     emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {

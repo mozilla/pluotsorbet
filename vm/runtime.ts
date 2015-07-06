@@ -1719,7 +1719,6 @@ module J2ME {
    * Compiles method and links it up at runtime.
    */
   export function compileAndLinkMethod(methodInfo: MethodInfo) {
-    return;
     // Don't do anything if we're past the compiled state.
     if (methodInfo.state >= MethodState.Compiled) {
       return;
@@ -1856,23 +1855,26 @@ module J2ME {
     return from.display[to.depth] === to;
   }
 
-  export function instanceOfKlass(object: java.lang.Object, klass: Klass): boolean {
-    return object !== null && isAssignableTo(object.klass, klass);
+  export function instanceOfKlass(objectAddr: number, klassId: number): boolean {
+    debugger;
+    return objectAddr !== Constants.NULL && isAssignableTo(klassIdMap[i32[objectAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]], klassIdMap[klassId]);
   }
 
-  export function instanceOfInterface(object: java.lang.Object, klass: Klass): boolean {
-    release || assert(klass.isInterfaceKlass);
-    return object !== null && isAssignableTo(object.klass, klass);
+  export function instanceOfInterface(objectAddr: number, klassId: number): boolean {
+    debugger;
+    release || assert(klassIdMap[klassId].isInterfaceKlass);
+    return objectAddr !== Constants.NULL && isAssignableTo(klassIdMap[i32[objectAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]], klassIdMap[klassId]);
   }
 
-  export function checkCastKlass(object: java.lang.Object, klass: Klass) {
-    if (object !== null && !isAssignableTo(object.klass, klass)) {
+  export function checkCastKlass(objectAddr: number, klassId: number) {
+    debugger;
+    if (objectAddr !== Constants.NULL && !isAssignableTo(klassIdMap[i32[objectAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]], klassIdMap[klassId])) {
       throw $.newClassCastException();
     }
   }
 
-  export function checkCastInterface(object: java.lang.Object, klass: Klass) {
-    if (object !== null && !isAssignableTo(object.klass, klass)) {
+  export function checkCastInterface(objectAddr: number, klassId: number) {
+    if (objectAddr !== Constants.NULL && !isAssignableTo(klassIdMap[i32[objectAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]], klassIdMap[klassId])) {
       throw $.newClassCastException();
     }
   }
