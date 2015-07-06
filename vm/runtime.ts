@@ -1987,16 +1987,20 @@ module J2ME {
     return arrayAddr;
   }
 
+  export var JavaRuntimeException = function(message) {
+    this.message = message;
+  };
+
+  JavaRuntimeException.prototype = Object.create(Error.prototype);
+  JavaRuntimeException.prototype.name = "JavaRuntimeException";
+  JavaRuntimeException.prototype.constructor = JavaRuntimeException;
+
   export function throwNegativeArraySizeException() {
     throw $.newNegativeArraySizeException();
   }
 
   export function throwNullPointerException() {
     throw $.newNullPointerException();
-  }
-
-  export function throwRuntimeException(msg) {
-    throw $.newRuntimeException(msg);
   }
 
   export function newObjectArray(size: number): number {
@@ -2165,6 +2169,8 @@ module J2ME {
     if (e.name === "TypeError") {
       // JavaScript's TypeError is analogous to a NullPointerException.
       return $.newNullPointerException(e.message);
+    } else if (e.name === "JavaRuntimeException") {
+      return $.newRuntimeException(e.message);
     }
     return e;
   }
