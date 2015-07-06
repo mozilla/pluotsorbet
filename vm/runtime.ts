@@ -675,26 +675,6 @@ module J2ME {
       $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
     }
 
-    yield(reason: string) {
-      unwindCount ++;
-      threadWriter && threadWriter.writeLn("yielding " + reason);
-      runtimeCounter && runtimeCounter.count("yielding " + reason);
-      this.ctx.U = VMState.Yielding;
-      profile && $.ctx.pauseMethodTimeline();
-    }
-
-    pause(reason: string) {
-      unwindCount ++;
-      threadWriter && threadWriter.writeLn("pausing " + reason);
-      runtimeCounter && runtimeCounter.count("pausing " + reason);
-      this.ctx.U = VMState.Pausing;
-      profile && $.ctx.pauseMethodTimeline();
-    }
-
-    stop() {
-      this.ctx.U = VMState.Stopping;
-    }
-
     constructor(jvm: JVM) {
       super(jvm);
       this.id = Runtime._nextId ++;
@@ -1977,7 +1957,7 @@ module J2ME {
 
   export function preempt() {
     if (Scheduler.shouldPreempt()) {
-      $.yield("preemption");
+      $.ctx.yield("preemption");
     }
   }
 

@@ -114,7 +114,7 @@ var currentlyFocusedTextEditor;
             window.requestAnimationFrame(gotNewFrame);
         } else {
             ctxs.unshift($.ctx);
-            $.pause(asyncImplStringAsync);
+            $.ctx.pause(asyncImplStringAsync);
         }
     }
 

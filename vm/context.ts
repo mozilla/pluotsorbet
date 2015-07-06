@@ -551,7 +551,7 @@ module J2ME {
     block(obj, queue, lockLevel) {
       obj._lock[queue].push(this);
       this.lockLevel = lockLevel;
-      $.pause("block");
+      this.pause("block");
     }
 
     unblock(obj, queue, notifyAll) {
@@ -707,6 +707,27 @@ module J2ME {
       if (profiling) {
         this.methodTimeline.leave(key, MethodType[methodType]);
       }
+    }
+
+
+    yield(reason: string) {
+      unwindCount ++;
+      threadWriter && threadWriter.writeLn("yielding " + reason);
+      runtimeCounter && runtimeCounter.count("yielding " + reason);
+      this.U = VMState.Yielding;
+      profile && this.pauseMethodTimeline();
+    }
+
+    pause(reason: string) {
+      unwindCount ++;
+      threadWriter && threadWriter.writeLn("pausing " + reason);
+      runtimeCounter && runtimeCounter.count("pausing " + reason);
+      this.U = VMState.Pausing;
+      profile && this.pauseMethodTimeline();
+    }
+
+    stop() {
+      this.U = VMState.Stopping;
     }
   }
 }
