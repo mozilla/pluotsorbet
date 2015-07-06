@@ -636,7 +636,7 @@ module J2ME {
               r = classInfo.getMethodByName(name, type);
             }
             if (!r) {
-              throw $.newRuntimeException(classInfo.getClassNameSlow() + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found");
+              throw classInfo.getClassNameSlow() + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found";
             }
             // Set the method/field as resolved only if it was actually found, otherwise a new attempt to
             // resolve this method/field will not fail with a RuntimeException.

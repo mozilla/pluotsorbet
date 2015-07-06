@@ -444,6 +444,9 @@ module J2ME {
         case ExceptionType.NullPointerException:
           throwNullPointerException();
           break;
+        case ExceptionType.RuntimeException:
+          throwRuntimeException(a);
+          break;
       }
     }
   }
@@ -503,7 +506,8 @@ module J2ME {
     ArithmeticException,
     ArrayIndexOutOfBoundsException,
     NegativeArraySizeException,
-    NullPointerException
+    NullPointerException,
+    RuntimeException,
   }
 
   /**
@@ -1433,7 +1437,11 @@ module J2ME {
           case Bytecodes.GETFIELD:
           case Bytecodes.GETSTATIC:
             index = code[pc++] << 8 | code[pc++];
-            fieldInfo = cp.resolved[index] || cp.resolveField(index, op === Bytecodes.GETSTATIC);
+            try {
+              fieldInfo = cp.resolved[index] || cp.resolveField(index, op === Bytecodes.GETSTATIC);
+            } catch (e) {
+              thread.throwException(fp, sp, opPC, ExceptionType.RuntimeException, e);
+            }
             if (op === Bytecodes.GETSTATIC) {
               thread.classInitAndUnwindCheck(fp, sp, opPC, fieldInfo.classInfo);
               if (U) {
@@ -1696,7 +1704,13 @@ module J2ME {
             isStatic = (op === Bytecodes.INVOKESTATIC);
 
             // Resolve method and do the class init check if necessary.
-            var calleeMethodInfo = cp.resolved[index] || cp.resolveMethod(index, isStatic);
+            var calleeMethodInfo: MethodInfo;
+            try {
+              calleeMethodInfo = cp.resolved[index] || cp.resolveMethod(index, isStatic);
+            } catch (e) {
+              thread.throwException(fp, sp, opPC, ExceptionType.RuntimeException, e);
+            }
+
             var calleeTargetMethodInfo: MethodInfo = null;
 
             var callee = null;

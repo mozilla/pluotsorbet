@@ -1995,6 +1995,10 @@ module J2ME {
     throw $.newNullPointerException();
   }
 
+  export function throwRuntimeException(msg) {
+    throw $.newRuntimeException(msg);
+  }
+
   export function newObjectArray(size: number): number {
     return newArray(Klasses.java.lang.Object, size);
   }
