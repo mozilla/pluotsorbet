@@ -915,48 +915,48 @@ module J2ME {
             sp -= 2;
             continue;
           case Bytecodes.DUP: // ... a -> ... a, a
-            i32[sp] = i32[sp - 1];          i32[sp] = i32[sp - 1];
+            i32[sp] = i32[sp - 1];
             sp++;
             continue;
           case Bytecodes.DUP2: // ... b, a -> ... b, a, b, a
-            i32[sp    ] = i32[sp - 2];      i32[sp    ] = i32[sp - 2]; // b
-            i32[sp + 1] = i32[sp - 1];      i32[sp + 1] = i32[sp - 1]; // a
+            i32[sp    ] = i32[sp - 2]; // b
+            i32[sp + 1] = i32[sp - 1]; // a
             sp += 2;
             continue;
           case Bytecodes.DUP_X1: // ... b, a -> ... a, b, a
-            i32[sp    ] = i32[sp - 1];      i32[sp    ] = i32[sp - 1]; // a
-            i32[sp - 1] = i32[sp - 2];      i32[sp - 1] = i32[sp - 2]; // b
-            i32[sp - 2] = i32[sp];          i32[sp - 2] = i32[sp];     // a
+            i32[sp    ] = i32[sp - 1]; // a
+            i32[sp - 1] = i32[sp - 2]; // b
+            i32[sp - 2] = i32[sp];     // a
             sp++;
             continue;
           case Bytecodes.DUP_X2: // ... c, b, a -> ... a, c, b, a
-            i32[sp    ] = i32[sp - 1];      i32[sp    ] = i32[sp - 1]; // a
-            i32[sp - 1] = i32[sp - 2];      i32[sp - 1] = i32[sp - 2]; // b
-            i32[sp - 2] = i32[sp - 3];      i32[sp - 2] = i32[sp - 3]; // c
-            i32[sp - 3] = i32[sp];          i32[sp - 3] = i32[sp];     // a
+            i32[sp    ] = i32[sp - 1]; // a
+            i32[sp - 1] = i32[sp - 2]; // b
+            i32[sp - 2] = i32[sp - 3]; // c
+            i32[sp - 3] = i32[sp];     // a
             sp++;
             continue;
           case Bytecodes.DUP2_X1: // ... c, b, a -> ... b, a, c, b, a
-            i32[sp + 1] = i32[sp - 1];      i32[sp + 1] = i32[sp - 1]; // a
-            i32[sp    ] = i32[sp - 2];      i32[sp    ] = i32[sp - 2]; // b
-            i32[sp - 1] = i32[sp - 3];      i32[sp - 1] = i32[sp - 3]; // c
-            i32[sp - 2] = i32[sp + 1];      i32[sp - 2] = i32[sp + 1]; // a
-            i32[sp - 3] = i32[sp    ];      i32[sp - 3] = i32[sp    ]; // b
+            i32[sp + 1] = i32[sp - 1]; // a
+            i32[sp    ] = i32[sp - 2]; // b
+            i32[sp - 1] = i32[sp - 3]; // c
+            i32[sp - 2] = i32[sp + 1]; // a
+            i32[sp - 3] = i32[sp    ]; // b
             sp += 2;
             continue;
           case Bytecodes.DUP2_X2: // ... d, c, b, a -> ... b, a, d, c, b, a
-            i32[sp + 1] = i32[sp - 1];      i32[sp + 1] = i32[sp - 1]; // a
-            i32[sp    ] = i32[sp - 2];      i32[sp    ] = i32[sp - 2]; // b
-            i32[sp - 1] = i32[sp - 3];      i32[sp - 1] = i32[sp - 3]; // c
-            i32[sp - 2] = i32[sp - 4];      i32[sp - 2] = i32[sp - 4]; // d
-            i32[sp - 3] = i32[sp + 1];      i32[sp - 3] = i32[sp + 1]; // a
-            i32[sp - 4] = i32[sp    ];      i32[sp - 4] = i32[sp    ]; // b
+            i32[sp + 1] = i32[sp - 1]; // a
+            i32[sp    ] = i32[sp - 2]; // b
+            i32[sp - 1] = i32[sp - 3]; // c
+            i32[sp - 2] = i32[sp - 4]; // d
+            i32[sp - 3] = i32[sp + 1]; // a
+            i32[sp - 4] = i32[sp    ]; // b
             sp += 2;
             continue;
           case Bytecodes.SWAP:
-            ia = i32[sp - 1];               address = ref[sp - 1];
-            i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
-            i32[sp - 2] = ia;               ref[sp - 2] = address;
+            ia = i32[sp - 1];
+            i32[sp - 1] = i32[sp - 2];
+            i32[sp - 2] = ia;
             continue;
           case Bytecodes.IINC:
             index = code[pc++];
