@@ -39,7 +39,7 @@ module J2ME {
    * the Klass in the ASM heap?
    */
   export var generateKlassId = (function() {
-    var nextId = 0;
+    var nextId = 1;
     return function() {
       return nextId++;
     }
