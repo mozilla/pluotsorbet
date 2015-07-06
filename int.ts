@@ -555,7 +555,7 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, arrayAddr: number, object, klass, offset, buffer, tag: TAGS, targetPC;
+    var value, index, arrayAddr: number, klass, offset, buffer, tag: TAGS, targetPC;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
@@ -950,9 +950,9 @@ module J2ME {
             sp += 2;
             continue;
           case Bytecodes.SWAP:
-            ia = i32[sp - 1];               object = ref[sp - 1];
+            ia = i32[sp - 1];               address = ref[sp - 1];
             i32[sp - 1] = i32[sp - 2];      ref[sp - 1] = ref[sp - 2];
-            i32[sp - 2] = ia;               ref[sp - 2] = object;
+            i32[sp - 2] = ia;               ref[sp - 2] = address;
             continue;
           case Bytecodes.IINC:
             index = code[pc++];
@@ -1702,19 +1702,10 @@ module J2ME {
             var callee = null;
 
             if (isStatic) {
-              object = null;
+              address = Constants.NULL;
             } else {
               address = ref[sp - calleeMethodInfo.argumentSlots];
-              if (address === null || address === Constants.NULL) {
-                object = null;
-                klass = null;
-              } else if (typeof address === "number") {
-                object = getHandle(address);
-                klass = klassIdMap[i32[address >> 2]];
-              } else {
-                object = address;
-                klass = object["klass"];
-              }
+              klass = (address !== Constants.NULL) ? klassIdMap[i32[address >> 2]] : null;
             }
 
             if (isStatic) {
@@ -1726,7 +1717,7 @@ module J2ME {
 
             switch (op) {
               case Bytecodes.INVOKESPECIAL:
-                if (!object) {
+                if (address === Constants.NULL) {
                   thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
                 }
               case Bytecodes.INVOKESTATIC:
@@ -1758,7 +1749,7 @@ module J2ME {
 
                 thread.set(fp, sp, opPC);
 
-                returnValue = callee(object ? object._address : Constants.NULL);
+                returnValue = callee(address);
               } else {
                 args.length = 0;
 
@@ -1784,18 +1775,7 @@ module J2ME {
                       args.unshift(i32[--sp]);
                       break;
                     case Kind.Reference:
-                      // XXX Update natives to expect addresses and stop passing
-                      // handles.
-                      address = ref[--sp];
-                      if (typeof address === "number") {
-                        if (address === Constants.NULL) {
-                          args.unshift(null);
-                        } else {
-                          args.unshift(address);
-                        }
-                      } else {
-                        args.unshift(address);
-                      }
+                      args.unshift(ref[--sp]);
                       break;
                     default:
                       release || assert(false, "Invalid Kind: " + Kind[kind]);
@@ -1812,7 +1792,7 @@ module J2ME {
                   // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
                 }
 
-                args.unshift(object ? object._address : Constants.NULL);
+                args.unshift(address);
                 returnValue = callee.apply(null, args);
               }
 
@@ -1885,7 +1865,7 @@ module J2ME {
             if (calleeTargetMethodInfo.isSynchronized) {
               monitor = calleeTargetMethodInfo.isStatic
                 ? calleeTargetMethodInfo.classInfo.getClassObject()
-                : getMonitor(object);
+                : getMonitor(address);
               ref[fp + FrameLayout.MonitorOffset] = monitor;
               $.ctx.monitorEnter(monitor);
               release || assert(U !== VMState.Yielding, "Monitors should never yield.");

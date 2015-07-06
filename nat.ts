@@ -112,19 +112,16 @@ module J2ME {
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(addr: number, timeoutL: number, timeoutH: number) {
-    var self = getHandle(addr);
-    $.ctx.wait(self, longToNumber(timeoutL, timeoutH));
+    $.ctx.wait(addr, longToNumber(timeoutL, timeoutH));
     $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
   Native["java/lang/Object.notify.()V"] = function(addr: number) {
-    var self = getHandle(addr);
-    $.ctx.notify(self, false);
+    $.ctx.notify(addr, false);
   };
 
   Native["java/lang/Object.notifyAll.()V"] = function(addr: number) {
-    var self = getHandle(addr);
-    $.ctx.notify(self, true);
+    $.ctx.notify(addr, true);
   };
 
   Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function(addr: number) {

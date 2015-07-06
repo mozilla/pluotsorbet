@@ -1963,7 +1963,6 @@ module J2ME {
     i32[addr + Constants.ARRAY_LENGTH_OFFSET >> 2] = size;
     // XXX: To remove
     (<any>arr).klass = constructor;
-    (<any>arr)._address = addr;
     arrayMap[addr] = arr;
 
     return addr;
