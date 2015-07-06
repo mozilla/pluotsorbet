@@ -1169,13 +1169,7 @@ module J2ME {
       switch (classInfo.getClassNameSlow()) {
         case "java/lang/Object": Klasses.java.lang.Object = klass; break;
         case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
-        case "java/lang/String": Klasses.java.lang.String = klass;
-          Object.defineProperty(klass.prototype, "viewString", {
-            get: function () {
-              return fromJavaString(this);
-            }
-          });
-          break;
+        case "java/lang/String": Klasses.java.lang.String = klass; break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
         case "java/lang/InstantiationException": Klasses.java.lang.InstantiationException = klass; break;
@@ -2055,11 +2049,14 @@ module J2ME {
     return "[" + value.klass.classInfo.getClassNameSlow() + hashcode + "]";
   }
 
-  export function fromJavaString(value: java.lang.String): string {
-    if (!value) {
+  export function fromStringAddr(stringAddr: number): string {
+    if (!stringAddr) {
       return null;
     }
-    return util.fromJavaChars(getArrayFromAddr(value.value), value.offset, value.count);
+    // XXX Retrieve the characters directly from memory, without indirecting
+    // through getHandle and getArrayFromAddr.
+    var javaString = <java.lang.String>getHandle(stringAddr);
+    return util.fromJavaChars(getArrayFromAddr(javaString.value), javaString.offset, javaString.count);
   }
 
   export function checkDivideByZero(value: number) {

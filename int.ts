@@ -36,7 +36,7 @@ module J2ME {
       return "[" + getObjectInfo(o) + "] " + o.runtimeKlass.templateKlass.classInfo.getClassNameSlow();
     }
     if (o && o.klass === Klasses.java.lang.String) {
-      return "[" + getObjectInfo(o) + "] \"" + fromJavaString(o) + "\"";
+      return "[" + getObjectInfo(o) + "] \"" + fromStringAddr(o._address) + "\"";
     }
     return o ? ("[" + getObjectInfo(o) + "]") : "null";
   }
@@ -1791,7 +1791,7 @@ module J2ME {
                         if (address === Constants.NULL) {
                           args.unshift(null);
                         } else {
-                          args.unshift(getHandle(address));
+                          args.unshift(address);
                         }
                       } else {
                         args.unshift(address);
