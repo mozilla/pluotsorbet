@@ -419,7 +419,7 @@ var currentlyFocusedTextEditor;
             defaultFont = new classInfo.klass();
             var methodInfo = classInfo.getMethodByNameString("<init>", "(III)V", false);
             J2ME.preemptionLockLevel++;
-            J2ME.getLinkedMethod(methodInfo).call(defaultFont, 0, 0, 0);
+            J2ME.getLinkedMethod(methodInfo)(defaultFont._address, 0, 0, 0);
             release || J2ME.Debug.assert(!U, "Unexpected unwind during createException.");
             J2ME.preemptionLockLevel--;
         }

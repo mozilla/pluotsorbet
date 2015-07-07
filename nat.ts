@@ -130,8 +130,7 @@ module J2ME {
 
   Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
-    var thread = <java.lang.Thread>getHandle($.mainThread);
-    getLinkedMethod(methodInfo).call(thread, J2ME.newString("main"));
+    getLinkedMethod(methodInfo)($.mainThread, J2ME.newString("main"));
 
     // We've already set this in JVM.createIsolateCtx, but calling the instance
     // initializer above resets it, so we set it again here.
@@ -143,6 +142,7 @@ module J2ME {
     //
     // XXX Figure out a less hacky approach.
     //
+    var thread = <java.lang.Thread>getHandle($.mainThread);
     thread.nativeAlive = true;
   };
 
@@ -158,8 +158,7 @@ module J2ME {
       throw new Error("Could not find isolate main.");
 
     var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
-
-    getLinkedMethod(entryPoint).call(null, isolate._mainArgs);
+    getLinkedMethod(entryPoint)(Constants.NULL, isolate._mainArgs);
   };
 
   Native["org/mozilla/internal/Sys.forceCollection.()V"] = function(addr: number) {
