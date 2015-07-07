@@ -70,7 +70,9 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getListOfLocationProvider
 
 addUnimplementedNative("com/sun/j2me/location/CriteriaImpl.initNativeClass.()V");
 
-Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteriaImpl.(Lcom/sun/j2me/location/CriteriaImpl;)Z"] = function(addr, criteria) {
+Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteriaImpl.(Lcom/sun/j2me/location/CriteriaImpl;)Z"] =
+function(addr, criteriaAddr) {
+    var criteria = getHandle(criteriaAddr);
     criteria.providerName = J2ME.newString(Location.PROVIDER_NAME);
     return 1;
 };
@@ -78,7 +80,7 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteria
 addUnimplementedNative("com/sun/j2me/location/LocationProviderInfo.initNativeClass.()V");
 addUnimplementedNative("com/sun/j2me/location/LocationInfo.initNativeClass.()V");
 
-Native["com/sun/j2me/location/PlatformLocationProvider.open.(Ljava/lang/String;)I"] = function(addr, name) {
+Native["com/sun/j2me/location/PlatformLocationProvider.open.(Ljava/lang/String;)I"] = function(addr, nameAddr) {
     var provider = new LocationProvider();
     provider.start();
     var id = Location.Providers.nextId;
@@ -93,7 +95,9 @@ Native["com/sun/j2me/location/PlatformLocationProvider.resetImpl.(I)V"] = functi
     Location.Providers[providerId] = null;
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.getCriteria.(Ljava/lang/String;Lcom/sun/j2me/location/LocationProviderInfo;)Z"] = function(addr, name, criteria) {
+Native["com/sun/j2me/location/PlatformLocationProvider.getCriteria.(Ljava/lang/String;Lcom/sun/j2me/location/LocationProviderInfo;)Z"] =
+function(addr, nameAddr, criteriaAddr) {
+    var criteria = getHandle(criteriaAddr);
     criteria.canReportAltitude = 1;
     criteria.canReportSpeedCource = 1;
     criteria.averageResponseTime = 10000;
@@ -104,7 +108,9 @@ Native["com/sun/j2me/location/PlatformLocationProvider.setUpdateIntervalImpl.(II
     console.warn("com/sun/j2me/location/PlatformLocationProvider.setUpdateIntervalImpl.(II)V not implemented");
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILcom/sun/j2me/location/LocationInfo;)Z"] = function(addr, providerId, locationInfo) {
+Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILcom/sun/j2me/location/LocationInfo;)Z"] =
+function(addr, providerId, locationInfoAddr) {
+    var locationInfo = getHandle(locationInfoAddr);
     var provider = Location.Providers[providerId];
     var pos = provider.position;
     locationInfo.isValid = 1;
