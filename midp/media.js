@@ -1073,7 +1073,7 @@ Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(addr, hand
     var bufferSize = player.getBufferSize();
 
     // Check the parameters.
-    if (bufferAddr === null || size === 0) {
+    if (bufferAddr === J2ME.Constants.NULL || size === 0) {
         return bufferSize >>> 1;
     }
 

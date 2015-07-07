@@ -44,7 +44,7 @@ function(addr, x, y, maxFps, maxPps, listenerAddr) {
     throw $.newIllegalStateException("FrameAnimator already registered");
   }
 
-  if (!listenerAddr) {
+  if (listenerAddr === J2ME.Constants.NULL) {
     throw $.newNullPointerException("listener is null");
   }
 

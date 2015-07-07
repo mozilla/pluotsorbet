@@ -2057,7 +2057,7 @@ module J2ME {
   }
 
   export function fromStringAddr(stringAddr: number): string {
-    if (!stringAddr) {
+    if (stringAddr === Constants.NULL) {
       return null;
     }
     // XXX Retrieve the characters directly from memory, without indirecting

@@ -81,7 +81,7 @@ var Content = (function() {
       console.warn("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String; expected mode = 0");
     }
 
-    if (callerIdAddr) {
+    if (callerIdAddr !== J2ME.Constants.NULL) {
       console.warn("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String; expected callerIdAddr = null");
     }
 

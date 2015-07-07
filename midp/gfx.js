@@ -799,7 +799,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawRegion.(Ljavax/microedition/lcdui/Image;IIIIIIII)V"] =
     function(addr, srcAddr, x_src, y_src, width, height, transform, x_dest, y_dest, anchor) {
-        if (srcAddr === null) {
+        if (srcAddr === J2ME.Constants.NULL) {
             throw $.newNullPointerException("src image is null");
         }
 
@@ -810,7 +810,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawImage.(Ljavax/microedition/lcdui/Image;III)V"] =
     function(addr, imageAddr, x, y, anchor) {
-        if (imageAddr === null) {
+        if (imageAddr === J2ME.Constants.NULL) {
             throw $.newNullPointerException("image is null");
         }
 
@@ -1649,7 +1649,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/GaugeLFImpl.createNativeResource0.(ILjava/lang/String;IZII)I"] =
     function(addr, ownerId, labelAddr, layout, interactive, maxValue, initialValue) {
-        if (labelAddr !== null) {
+        if (labelAddr !== J2ME.Constants.NULL) {
             console.error("Expected null label");
         }
 
@@ -1742,7 +1742,7 @@ var currentlyFocusedTextEditor;
             document.getElementById("sidebar").querySelector("nav ul").innerHTML = "";
         }
 
-        if (!commandsAddr) {
+        if (commandsAddr === J2ME.Constants.NULL) {
             return;
         }
 

@@ -52,7 +52,7 @@ function(addr, inBufAddr, inOff, inLen, outBufAddr, outOff, stateAddr, numAddr, 
     var data = J2ME.getArrayFromAddr(dataAddr);
     var hasher = MIDP.getMD5Hasher(data);
 
-    if (inBufAddr) {
+    if (inBufAddr !== J2ME.Constants.NULL) {
         // digest passes `null` for inBuf, and there are no other callers,
         // so this should never happen; but I'm including it for completeness
         // (and in case a subclass ever uses it).

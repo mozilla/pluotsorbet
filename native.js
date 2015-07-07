@@ -45,7 +45,7 @@ function deleteNative(javaObj) {
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] =
 function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
-    if (!srcAddr || !dstAddr) {
+    if (srcAddr === J2ME.Constants.NULL || dstAddr === J2ME.Constants.NULL) {
         throw $.newNullPointerException("Cannot copy to/from a null array.");
     }
 
@@ -362,8 +362,9 @@ Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(addr) {
 Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(addr, nameAddr) {
   var classInfo = null;
   try {
-    if (!nameAddr)
+    if (nameAddr === J2ME.Constants.NULL) {
       throw new J2ME.ClassNotFoundException();
+    }
     var className = J2ME.fromStringAddr(nameAddr).replace(/\./g, "/");
     classInfo = CLASSES.getClass(className);
   } catch (e) {
@@ -426,7 +427,7 @@ Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(addr,
 
 Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(addr, objAddr) {
     var self = getHandle(addr);
-    return objAddr && J2ME.isAssignableTo(getHandle(objAddr).klass, self.runtimeKlass.templateKlass) ? 1 : 0;
+    return objAddr !== J2ME.Constants.NULL && J2ME.isAssignableTo(getHandle(objAddr).klass, self.runtimeKlass.templateKlass) ? 1 : 0;
 };
 
 Native["java/lang/Float.floatToIntBits.(F)I"] = function(addr, f) {
@@ -667,8 +668,7 @@ Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)
 };
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) {
-    var targetAddr = NativeMap.get(addr);
-    return targetAddr ? targetAddr : J2ME.Constants.NULL;
+    return NativeMap.has(addr) ? NativeMap.get(addr) : J2ME.Constants.NULL;
 };
 
 Native["java/lang/ref/WeakReference.clear.()V"] = function(addr) {
