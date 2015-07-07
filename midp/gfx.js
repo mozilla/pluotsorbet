@@ -5,15 +5,24 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
-    var offscreenCanvas = document.createElement("canvas");
-    offscreenCanvas.width = MIDP.deviceContext.canvas.width;
-    offscreenCanvas.height = MIDP.deviceContext.canvas.height;
-    var offscreenContext2D = offscreenCanvas.getContext("2d");
+    var offscreenCanvas, offscreenContext2D;
+    if (config.useOffscreenCanvas) {
+        offscreenCanvas = document.createElement("canvas");
+        offscreenCanvas.width = MIDP.deviceContext.canvas.width;
+        offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+        offscreenContext2D = offscreenCanvas.getContext("2d");
+    } else {
+        offscreenCanvas = MIDP.deviceContext.canvas;
+        offscreenContext2D = MIDP.deviceContext;
+    }
+
     var screenContextInfo = new ContextInfo(offscreenContext2D);
 
     MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
-        offscreenCanvas.width = MIDP.deviceContext.canvas.width;
-        offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+        if (config.useOffscreenCanvas) {
+            offscreenCanvas.width = MIDP.deviceContext.canvas.width;
+            offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+        }
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });

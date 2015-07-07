@@ -24,6 +24,8 @@ var config = {
   // to which midlets write frequently but never read.  Specify one by adding
   // the string pathname to the set via config.ignoredFiles.add().
   ignoredFiles: new Set(),
+
+  useOffscreenCanvas: false,
 };
 
 // The base directory of the app, relative to the current page.  Normally this
