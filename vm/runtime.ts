@@ -1305,8 +1305,8 @@ module J2ME {
         if (true || release) {
           switch (field.kind) {
             case Kind.Reference:
-              setter = new Function("value", "ref[this._address + " + field.byteOffset + " >> 2] = value;");
-              getter = new Function("return ref[this._address + " + field.byteOffset + " >> 2];");
+              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
+              getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
               break;
             case Kind.Boolean:
               setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value ? 1 : 0;");
@@ -1981,6 +1981,14 @@ module J2ME {
     return arrayAddr;
   }
 
+  export var JavaRuntimeException = function(message) {
+    this.message = message;
+  };
+
+  JavaRuntimeException.prototype = Object.create(Error.prototype);
+  JavaRuntimeException.prototype.name = "JavaRuntimeException";
+  JavaRuntimeException.prototype.constructor = JavaRuntimeException;
+
   export function throwNegativeArraySizeException() {
     throw $.newNegativeArraySizeException();
   }
@@ -2158,6 +2166,8 @@ module J2ME {
     if (e.name === "TypeError") {
       // JavaScript's TypeError is analogous to a NullPointerException.
       return $.newNullPointerException(e.message);
+    } else if (e.name === "JavaRuntimeException") {
+      return $.newRuntimeException(e.message);
     }
     return e;
   }
