@@ -559,6 +559,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.reset.()V"] = function() {
         this.info.reset(0, 0, this.info.contextInfo.context.canvas.width, this.info.contextInfo.context.canvas.height);
+        // this.info.reset(0, 0, this.info.contextInfo.context.canvas.logicalWidth, this.info.contextInfo.context.canvas.logicalHeight);
     };
 
     Native["javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V"] = function(x_src, y_src, width, height, x_dest, y_dest, anchor) {
@@ -586,10 +587,12 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
         return this.info.contextInfo.context.canvas.width;
+        // return this.info.contextInfo.context.canvas.logicalWidth;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function() {
         return this.info.contextInfo.context.canvas.height;
+        // return this.info.contextInfo.context.canvas.logicalHeight;
     };
 
     Native["javax/microedition/lcdui/Graphics.getCreator.()Ljava/lang/Object;"] = function() {
@@ -812,6 +815,8 @@ var currentlyFocusedTextEditor;
         this.clipY1 = 0;
         this.clipX2 = contextInfo.context.canvas.width;
         this.clipY2 = contextInfo.context.canvas.height;
+        // this.clipX2 = contextInfo.context.canvas.logicalWidth;
+        // this.clipY2 = contextInfo.context.canvas.logicalHeight;
 
         // GC info
         this.currentFont = getDefaultFont();
@@ -860,6 +865,7 @@ var currentlyFocusedTextEditor;
     GraphicsInfo.prototype.resetNonGC = function(x1, y1, x2, y2) {
         this.translate(-this.transX, -this.transY);
         this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, this.contextInfo.context.canvas.width, this.contextInfo.context.canvas.height);
+        // this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, this.contextInfo.context.canvas.logicalWidth, this.contextInfo.context.canvas.logicalHeight);
     }
 
     GraphicsInfo.prototype.translate = function(x, y) {
@@ -953,6 +959,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
         this.info.setClip(x, y, w, h, 0, 0, this.info.contextInfo.context.canvas.width, this.info.contextInfo.context.canvas.height);
+        // this.info.setClip(x, y, w, h, 0, 0, this.info.contextInfo.context.canvas.logicalWidth, this.info.contextInfo.context.canvas.logicalHeight);
     };
 
     function drawString(g, str, x, y, anchor) {
