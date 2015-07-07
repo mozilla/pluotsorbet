@@ -137,8 +137,7 @@ module J2ME {
 
   Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
-    var thread = <java.lang.Thread>getHandle($.mainThread);
-    getLinkedMethod(methodInfo).call(thread, J2ME.newString("main"));
+    getLinkedMethod(methodInfo)($.mainThread, J2ME.newString("main"));
     if (U) {
       $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESPECIAL);
     }
@@ -153,6 +152,7 @@ module J2ME {
     //
     // XXX Figure out a less hacky approach.
     //
+    var thread = <java.lang.Thread>getHandle($.mainThread);
     thread.nativeAlive = true;
   };
 
@@ -169,7 +169,7 @@ module J2ME {
 
     var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
 
-    getLinkedMethod(entryPoint).call(null, isolate._mainArgs);
+    getLinkedMethod(entryPoint)(Constants.NULL, isolate._mainArgs);
     if (U) {
       $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
     }

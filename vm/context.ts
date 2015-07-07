@@ -247,7 +247,7 @@ module J2ME {
       var exception = new classInfo.klass();
       var methodInfo = classInfo.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
       preemptionLockLevel++;
-      getLinkedMethod(methodInfo).call(exception, message ? newString(message) : null);
+      getLinkedMethod(methodInfo)(exception._address, message ? newString(message) : null);
       release || Debug.assert(!U, "Unexpected unwind during createException.");
       preemptionLockLevel--;
       return exception;
