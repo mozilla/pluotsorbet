@@ -388,8 +388,8 @@ module J2ME {
       this.unblock(monitor, "ready", false);
     }
 
-    wait(object: java.lang.Object, timeout: number) {
-      var monitor = getMonitor(object);
+    wait(objectAddr: number, timeout: number) {
+      var monitor = getMonitor(objectAddr);
       var lock = monitor._lock;
       if (timeout < 0)
         throw $.newIllegalArgumentException();
@@ -416,8 +416,8 @@ module J2ME {
       this.block(monitor, "waiting", lockLevel);
     }
 
-    notify(object: java.lang.Object, notifyAll: boolean) {
-      var monitor = getMonitor(object);
+    notify(objectAddr: number, notifyAll: boolean) {
+      var monitor = getMonitor(objectAddr);
       if (!monitor._lock || monitor._lock.threadAddress !== this.threadAddress)
         throw $.newIllegalMonitorStateException();
       // TODO Unblock can call wakeup on a different ctx which in turn calls monitorEnter and can cause unwinds

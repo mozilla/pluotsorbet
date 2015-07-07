@@ -17,7 +17,7 @@ var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
 var f32: Float32Array = ASM.HEAPF32;
 var f64: Float64Array = ASM.HEAPF64;
-var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, 0 /* J2ME.Constants.NULL */);
+var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
 
 var aliasedI32 = J2ME.IntegerUtilities.i32;
 var aliasedF32 = J2ME.IntegerUtilities.f32;
@@ -72,7 +72,7 @@ module J2ME {
           break;
         case Kind.Reference:
           release || assert(l !== "number", "async native return value is a number");
-          ref[sp++] = l;
+          i32[sp++] = l;
           break;
         case Kind.Void:
           break;
@@ -113,23 +113,20 @@ module J2ME {
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(addr: number, timeoutL: number, timeoutH: number) {
-    var self = getHandle(addr);
-    $.ctx.wait(self, longToNumber(timeoutL, timeoutH));
+    $.ctx.wait(addr, longToNumber(timeoutL, timeoutH));
     if (U) {
       $.nativeBailout(Kind.Void);
     }
   };
 
   Native["java/lang/Object.notify.()V"] = function(addr: number) {
-    var self = getHandle(addr);
-    $.ctx.notify(self, false);
+    $.ctx.notify(addr, false);
     // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify..
     release || assert(!U, "Unexpected unwind in java/lang/Object.notify.()V.");
   };
 
   Native["java/lang/Object.notifyAll.()V"] = function(addr: number) {
-    var self = getHandle(addr);
-    $.ctx.notify(self, true);
+    $.ctx.notify(addr, true);
     // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify.
     release || assert(!U, "Unexpected unwind in java/lang/Object.notifyAll.()V.");
   };

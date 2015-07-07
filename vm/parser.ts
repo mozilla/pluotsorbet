@@ -638,7 +638,7 @@ module J2ME {
               r = classInfo.getMethodByName(name, type);
             }
             if (!r) {
-              throw $.newRuntimeException(classInfo.getClassNameSlow() + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found");
+              throw new JavaRuntimeException(classInfo.getClassNameSlow() + "." + fromUTF8(name) + "." + fromUTF8(type) + " not found");
             }
             // Set the method/field as resolved only if it was actually found, otherwise a new attempt to
             // resolve this method/field will not fail with a RuntimeException.
@@ -698,7 +698,7 @@ module J2ME {
         case Kind.Int:
           return i32[object._address + this.byteOffset >> 2];
         case Kind.Reference:
-          return ref[object._address + this.byteOffset >> 2];
+          return i32[object._address + this.byteOffset >> 2];
         case Kind.Float:
           return f32[object._address + this.byteOffset >> 2];
         default:
@@ -712,7 +712,7 @@ module J2ME {
           i32[object._address + this.byteOffset >> 2] = value;
           break;
         case Kind.Reference:
-          ref[object._address + this.byteOffset >> 2] = value._address;
+          i32[object._address + this.byteOffset >> 2] = value._address;
           break;
         default:
           Debug.assert(false, Kind[this.kind]);
