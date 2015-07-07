@@ -587,10 +587,12 @@ var currentlyFocusedTextEditor;
         return self.creator;
     };
 
-    Native["javax/microedition/lcdui/Graphics.setCreator.(Ljava/lang/Object;)V"] = function(addr, creator) {
+    Native["javax/microedition/lcdui/Graphics.setCreator.(Ljava/lang/Object;)V"] = function(addr, creatorAddr) {
         var self = getHandle(addr);
-        if (!self.creator) {
-            self.creator = creator;
+        // Per the original, non-native implementation of this method,
+        // ignore repeated attempts to set creator.
+        if (self.creator === J2ME.Constants.NULL) {
+            self.creator = creatorAddr;
         }
     };
 
@@ -957,7 +959,7 @@ var currentlyFocusedTextEditor;
         var self = getHandle(addr);
         self.displayId = displayId;
         NativeMap.set(addr, new GraphicsInfo(screenContextInfo));
-        self.creator = null;
+        self.creator = J2ME.Constants.NULL;
     };
 
     Native["javax/microedition/lcdui/Graphics.initImage0.(Ljavax/microedition/lcdui/Image;)V"] =
@@ -966,7 +968,7 @@ var currentlyFocusedTextEditor;
         var img = getHandle(imgAddr);
         self.displayId = -1;
         NativeMap.set(addr, new GraphicsInfo(getNative(getHandle(img.imageData))));
-        self.creator = null;
+        self.creator = J2ME.Constants.NULL;
     };
 
     function isScreenGraphics(g) {
