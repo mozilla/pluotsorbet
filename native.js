@@ -368,8 +368,9 @@ Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(addr, nameAd
     var className = J2ME.fromStringAddr(nameAddr).replace(/\./g, "/");
     classInfo = CLASSES.getClass(className);
   } catch (e) {
-    if (e instanceof (J2ME.ClassNotFoundException))
+    if (e instanceof (J2ME.ClassNotFoundException)) {
       throw $.newClassNotFoundException("'" + e.message + "' not found.");
+    }
     throw e;
   }
   // The following can trigger an unwind.

@@ -2060,6 +2060,7 @@ module J2ME {
     if (stringAddr === Constants.NULL) {
       return null;
     }
+
     // XXX Retrieve the characters directly from memory, without indirecting
     // through getHandle and getArrayFromAddr.
     var javaString = <java.lang.String>getHandle(stringAddr);
