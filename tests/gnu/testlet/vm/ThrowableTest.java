@@ -15,5 +15,7 @@ public class ThrowableTest implements Testlet {
 		s = t.getClass().getName() + ": " + t.getMessage();
 		th.check(t.getMessage().equals("test"));
 		th.check(t.toString().equals(s));
+
+		t.printStackTrace();
 	}
 }
