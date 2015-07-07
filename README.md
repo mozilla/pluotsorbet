@@ -277,7 +277,7 @@ We use `Native` object in JS to handle creation and registration of `native` fun
 
 e.g.:
 
-    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(addr, src, srcOffset, dst, dstOffset, length) {...};
+    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {...};
 
 The first parameter of every native, *addr*, is the address in memory of the object on which the native is being called. If the native is static, then the value of *addr* is `Constants.NULL`. Call `getHandle(addr)` to get a handle to a JavaScript object that wraps the Java object with getters/setters for its fields.
 

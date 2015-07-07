@@ -1037,8 +1037,8 @@ var localmsgServerWait = null;
 // XXX Consolidate the objects we store in this map with those in NativeMap.
 NativeConnectionMap = Object.create(null);
 
-Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(addr, jName) {
-    var name = J2ME.fromJavaString(jName);
+Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = function(addr, nameAddr) {
+    var name = J2ME.fromStringAddr(nameAddr);
 
     var info = {
       server: (name[2] == ":"),
@@ -1100,7 +1100,8 @@ Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function(addr) 
     asyncImpl("V", connection.waitConnection());
 };
 
-Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(addr, data, offset, length) {
+Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(addr, dataAddr, offset, length) {
+    var data = J2ME.getArrayFromAddr(dataAddr);
     var connection = NativeConnectionMap[addr];
     var info = NativeMap.get(addr);
 
@@ -1116,7 +1117,8 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(addr, da
     }
 };
 
-Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(addr, data) {
+Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(addr, dataAddr) {
+    var data = J2ME.getArrayFromAddr(dataAddr);
     var connection = NativeConnectionMap[addr];
     var info = NativeMap.get(addr);
 

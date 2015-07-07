@@ -11,7 +11,8 @@ var SOCKET_OPT = {
   SNDBUF: 4,
 };
 
-Native["com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)I"] = function(addr, host, ipBytes) {
+Native["com/sun/midp/io/j2me/socket/Protocol.getIpNumber0.(Ljava/lang/String;[B)I"] =
+function(addr, hostAddr, ipBytesAddr) {
     // We're supposed to write the IP address of the host into ipBytes,
     // but we don't actually have to do that, because we can defer resolution
     // until Protocol.open0 (and delegate it to the native socket impl).
@@ -25,10 +26,10 @@ Native["com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;"] = 
     // and we might avoid an exception if the socket hasn't been opened yet
     // (so the native socket doesn't exist).
     // var self = getHandle(addr);
-    // var host = J2ME.fromJavaString(getHandle(self.host));
+    // var host = J2ME.fromStringAddr(self.host);
 
     var socket = NativeMap.get(addr);
-    return local ? "127.0.0.1" : socket.host;
+    return J2ME.newString(local ? "127.0.0.1" : socket.host);
 };
 
 function Socket(host, port, ctx, resolve, reject) {
@@ -100,9 +101,9 @@ Socket.prototype.close = function() {
     this.sender({ type: "close" });
 }
 
-Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(addr, ipBytes, port) {
+Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(addr, ipBytesAddr, port) {
     var self = getHandle(addr);
-    var host = J2ME.fromJavaString(getHandle(self.host));
+    var host = J2ME.fromStringAddr(self.host);
     // console.log("Protocol.open0: " + host + ":" + port);
     asyncImpl("V", new Promise(function(resolve, reject) {
         NativeMap.set(addr, new Socket(host, port, $.ctx, resolve, reject));
@@ -115,7 +116,8 @@ Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function(addr) {
     return socket.dataLen;
 };
 
-Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(addr, data, offset, length) {
+Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(addr, dataAddr, offset, length) {
+    var data = J2ME.getArrayFromAddr(dataAddr);
     var socket = NativeMap.get(addr);
     // console.log("Protocol.read0: " + socket.isClosed);
 
@@ -164,7 +166,8 @@ Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(addr, da
     }));
 };
 
-Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(addr, data, offset, length) {
+Native["com/sun/midp/io/j2me/socket/Protocol.write0.([BII)I"] = function(addr, dataAddr, offset, length) {
+    var data = J2ME.getArrayFromAddr(dataAddr);
     var socket = NativeMap.get(addr);
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
