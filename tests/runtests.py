@@ -11,9 +11,11 @@ import platform
 (system, node, release, version, machine, processor) = platform.uname()
 
 httpsServer = ['node', 'httpsServer.js']
+sslEchoServer = ['node', 'sslEchoServer.js']
 
 if system == "Darwin":
   httpsServer = './httpsServer.py'
+  sslEchoServer = './sslEchoServer.py'
 
 # The test automation scripts to run via casperjs/slimerjs.
 automation_scripts = [
@@ -52,7 +54,7 @@ server_processes = [
     # to the tests/ subdirectory, since they load cert/key files relative to it.
     subprocess.Popen(httpsServer, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                      bufsize=1, cwd='tests'),
-    subprocess.Popen('./sslEchoServer.py', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    subprocess.Popen(sslEchoServer, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                      bufsize=1, cwd='tests'),
 ]
 
