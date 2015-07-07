@@ -5,6 +5,23 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+    MIDP.devicePixelRatio = window.devicePixelRatio || 1;
+
+    function scaleCanvas(canvas) {
+        canvas.logicalWidth = canvas.width;
+        canvas.logicalHeight = canvas.height;
+        if (MIDP.devicePixelRatio !== 1) {
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
+            canvas.width *= MIDP.devicePixelRatio;
+            canvas.height *= MIDP.devicePixelRatio;
+        }
+    }
+
+    scaleCanvas(MIDP.deviceContext.canvas);
+    MIDP.deviceContext.setTransform(MIDP.devicePixelRatio, 0, 0, MIDP.devicePixelRatio, 0, 0);
+    // XXX if config.useOffscreenCanvas, then scale that canvas too.
+
     var offscreenCanvas, offscreenContext2D;
     if (config.useOffscreenCanvas) {
         offscreenCanvas = document.createElement("canvas");
@@ -23,6 +40,11 @@ var currentlyFocusedTextEditor;
             offscreenCanvas.width = MIDP.deviceContext.canvas.width;
             offscreenCanvas.height = MIDP.deviceContext.canvas.height;
         }
+
+        scaleCanvas(MIDP.deviceContext.canvas);
+        MIDP.deviceContext.setTransform(MIDP.devicePixelRatio, 0, 0, MIDP.devicePixelRatio, 0, 0);
+        // XXX if config.useOffscreenCanvas, then scale that canvas too.
+
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
@@ -71,11 +93,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return offscreenCanvas.width;
+        return MIDP.deviceContext.canvas.logicalWidth;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return offscreenCanvas.height;
+        return MIDP.deviceContext.canvas.logicalHeight;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
@@ -128,6 +150,13 @@ var currentlyFocusedTextEditor;
     }
 
     Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
+        if (!config.useOffscreenCanvas) {
+            return;
+        }
+
+        // XXX Update this to take HiDPI scaling into account.  Presumably we
+        // should multiple the specified coordinates by the device pixel ratio.
+
         x1 = Math.max(0, x1);
         y1 = Math.max(0, y1);
         x2 = Math.max(0, x2);
