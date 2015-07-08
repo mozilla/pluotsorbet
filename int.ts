@@ -36,7 +36,7 @@ module J2ME {
       return "[" + getObjectInfo(o) + "] " + o.runtimeKlass.templateKlass.classInfo.getClassNameSlow();
     }
     if (o && o.klass === Klasses.java.lang.String) {
-      return "[" + getObjectInfo(o) + "] \"" + fromJavaString(o) + "\"";
+      return "[" + getObjectInfo(o) + "] \"" + fromStringAddr(o._address) + "\"";
     }
     return o ? ("[" + getObjectInfo(o) + "]") : "null";
   }
@@ -1775,9 +1775,7 @@ module J2ME {
                       args.unshift(i32[--sp]);
                       break;
                     case Kind.Reference:
-                      // XXX Update natives to expect addresses and stop passing
-                      // handles.
-                      args.unshift(getHandle(i32[--sp]));
+                      args.unshift(i32[--sp]);
                       break;
                     default:
                       release || assert(false, "Invalid Kind: " + Kind[kind]);
