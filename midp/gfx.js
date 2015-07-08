@@ -666,8 +666,9 @@ var currentlyFocusedTextEditor;
         return NativeMap.get(addr).currentFont._address;
     };
 
-    Native["javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(addr, font) {
-        NativeMap.get(addr).setFont(font);
+    Native["javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(addr, fontAddr) {
+        // XXX Consider storing the address instead of a handle in the native.
+        NativeMap.get(addr).setFont(getHandle(fontAddr));
     };
 
     var SOLID = 0;
