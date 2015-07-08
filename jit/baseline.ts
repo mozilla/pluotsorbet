@@ -1022,6 +1022,9 @@ module J2ME {
       var value = this.pop(stackKind(kind), Precedence.Sequence);
       var index = this.pop(Kind.Int, Precedence.Sequence);
       var array = this.pop(Kind.Reference, Precedence.Sequence);
+      if (kind === Kind.Reference) {
+        this.emitNullPointerCheck(array);
+      }
       this.emitBoundsCheck(array, index);
       if (kind === Kind.Reference) {
         this.emitArrayStoreCheck(array, value);
