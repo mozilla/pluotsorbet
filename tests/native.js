@@ -41,12 +41,11 @@ Native["gnu/testlet/vm/NativeTest.nonStatic.(I)I"] = function(addr, val) {
   return val + 40;
 };
 
-Native["gnu/testlet/vm/NativeTest.fromStringAddr.(Ljava/lang/String;)I"] = function(addr, stringAddr) {
-  return J2ME.fromStringAddr(stringAddr).length;
+Native["gnu/testlet/vm/NativeTest.fromJavaString.(Ljava/lang/String;)I"] = function(addr, str) {
+  return J2ME.fromJavaString(str).length;
 };
 
-Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(addr, strAddr) {
-  var str = J2ME.getArrayFromAddr(strAddr);
+Native["gnu/testlet/vm/NativeTest.decodeUtf8.([B)I"] = function(addr, str) {
   return util.decodeUtf8(str).length;
 };
 
@@ -91,14 +90,13 @@ Native["javax/microedition/lcdui/TestAlert.isTextEditorReallyFocused.()Z"] = fun
   return (currentlyFocusedTextEditor && currentlyFocusedTextEditor.focused) ? 1 : 0;
 };
 
-Native["javax/microedition/lcdui/TestTextEditorFocus.isTextEditorReallyFocused.(Lcom/nokia/mid/ui/TextEditor;)Z"] =
-function(addr, textEditorAddr) {
-  var nativeTextEditor = NativeMap.get(textEditorAddr);
+Native["javax/microedition/lcdui/TestTextEditorFocus.isTextEditorReallyFocused.(Lcom/nokia/mid/ui/TextEditor;)Z"] = function(addr, textEditor) {
+  var nativeTextEditor = getNative(textEditor);
   return (currentlyFocusedTextEditor == nativeTextEditor && currentlyFocusedTextEditor.focused) ? 1 : 0;
 };
 
-Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = function(addr, referenceImagePathAddr) {
-  var path = J2ME.fromStringAddr(referenceImagePathAddr);
+Native["gnu/testlet/TestHarness.getNumDifferingPixels.(Ljava/lang/String;)I"] = function(addr, pathStr) {
+  var path = J2ME.fromJavaString(pathStr);
   asyncImpl("I", new Promise(function(resolve, reject) {
     var gotCanvas = document.getElementById("canvas");
     var gotPixels = new Uint32Array(gotCanvas.getContext("2d").getImageData(0, 0, gotCanvas.width, gotCanvas.height).data.buffer);
@@ -155,8 +153,7 @@ Native["org/mozilla/io/TestNokiaPhoneStatusServer.sendFakeOfflineEvent.()V"] = f
   window.dispatchEvent(new CustomEvent("offline"));
 };
 
-Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(addr, dataAddr) {
-  var data = J2ME.getArrayFromAddr(dataAddr);
+Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = function(addr, data) {
   var converted = Media.convert3gpToAmr(new Uint8Array(data));
   var resultAddr = J2ME.newByteArray(converted.length);
   var result = J2ME.getArrayFromAddr(resultAddr);
@@ -164,16 +161,16 @@ Native["javax/microedition/media/TestAudioRecorder.convert3gpToAmr.([B)[B"] = fu
   return resultAddr;
 };
 
-Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)V"] = function(addr, languageAddr) {
+Native["com/sun/midp/i18n/TestResourceConstants.setLanguage.(Ljava/lang/String;)V"] = function(addr, language) {
   MIDP.localizedStrings = null;
-  config.language = J2ME.fromStringAddr(languageAddr);
+  config.language = J2ME.fromJavaString(language);
 }
 
 // Many tests create FileConnection objects to files with the "/" root,
 // so add it to the list of valid roots.
 MIDP.fsRoots.push("/");
 
-Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(addr, labelAddr) {
+Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(addr, label) {
   if (typeof Benchmark !== "undefined") {
     asyncImpl("V", Benchmark.sampleMemory().then(function(memory) {
       var keys = ["totalSize", "domSize", "styleSize", "jsObjectsSize", "jsStringsSize", "jsOtherSize", "otherSize"];
@@ -182,7 +179,7 @@ Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = functio
       rows.push(keys.map(function(k) { return memory[k] }));
       var RIGHT = Benchmark.RIGHT;
       var alignment = [RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT];
-      console.log((J2ME.fromStringAddr(labelAddr) || "Memory sample") + ":\n" + Benchmark.prettyTable(rows, alignment));
+      console.log((J2ME.fromJavaString(label) || "Memory sample") + ":\n" + Benchmark.prettyTable(rows, alignment));
     }));
   }
 };
@@ -262,9 +259,8 @@ Native["tests/background/DestroyMIDlet.maybePrintDone.()V"] = function(addr) {
   }
 };
 
-Native["javax/microedition/content/TestContentHandler.addInvocation.(Ljava/lang/String;Ljava/lang/String;)V"] =
-function(addr, argumentAddr, actionAddr) {
-  Content.addInvocation(J2ME.fromStringAddr(argumentAddr), J2ME.fromStringAddr(actionAddr));
+Native["javax/microedition/content/TestContentHandler.addInvocation.(Ljava/lang/String;Ljava/lang/String;)V"] = function(addr, argument, action) {
+  Content.addInvocation(J2ME.fromJavaString(argument), J2ME.fromJavaString(action));
 };
 
 var ContentHandlerMIDletStarted = 0;

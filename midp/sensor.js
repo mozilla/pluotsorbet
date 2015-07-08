@@ -198,13 +198,11 @@ Native["com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I"] = functi
     return 1;
 };
 
-Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V"] =
-function(addr, number, modelAddr) {
+Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V"] = function(addr, number, model) {
     if (number !== 0) {
         console.error("Invalid sensor number: " + number);
         return;
     }
-    var model = getHandle(modelAddr);
     var m = AccelerometerSensor.model;
     model.description = J2ME.newString(m.description);
     model.model = J2ME.newString(m.model);
@@ -227,8 +225,7 @@ function(addr, number, modelAddr) {
     model.properties = pAddr;
 };
 
-Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] =
-function(addr, sensorsNumber, number, modelAddr) {
+Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] = function(addr, sensorsNumber, number, model) {
     if (sensorsNumber !== 0) {
         console.error("Invalid sensor number: " + sensorsNumber);
         return;
@@ -237,7 +234,6 @@ function(addr, sensorsNumber, number, modelAddr) {
         console.error("Invalid channel number: " + number);
         return;
     }
-    var model = getHandle(modelAddr);
     var c = AccelerometerSensor.channels[number];
     model.scale = c.scale;
     model.name = J2ME.newString(c.name);

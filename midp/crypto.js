@@ -3,8 +3,8 @@
 
 'use strict';
 
-Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(addr, bAddr, nbytes) {
-    window.crypto.getRandomValues(J2ME.getArrayFromAddr(bAddr).subarray(0, nbytes));
+Native["com/sun/midp/crypto/PRand.getRandomBytes.([BI)Z"] = function(addr, b, nbytes) {
+    window.crypto.getRandomValues(b.subarray(0, nbytes));
     return 1;
 };
 
@@ -38,25 +38,17 @@ MIDP.bin2String = function(array) {
   return bin2StringResult.join("");
 };
 
-Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] =
-function(addr, inBufAddr, inOff, inLen, stateAddr, numAddr, countAddr, dataAddr) {
-    var inBuf = J2ME.getArrayFromAddr(inBufAddr);
-    var data = J2ME.getArrayFromAddr(dataAddr);
+Native["com/sun/midp/crypto/MD5.nativeUpdate.([BII[I[I[I[I)V"] = function(addr, inBuf, inOff, inLen, state, num, count, data) {
     MIDP.getMD5Hasher(data).update(MIDP.bin2String(new Int8Array(inBuf.subarray(inOff, inOff + inLen))));
 };
 
-Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] =
-function(addr, inBufAddr, inOff, inLen, outBufAddr, outOff, stateAddr, numAddr, countAddr, dataAddr) {
-    var inBuf;
-    var outBuf = J2ME.getArrayFromAddr(outBufAddr);
-    var data = J2ME.getArrayFromAddr(dataAddr);
+Native["com/sun/midp/crypto/MD5.nativeFinal.([BII[BI[I[I[I[I)V"] = function(addr, inBuf, inOff, inLen, outBuf, outOff, state, num, count, data) {
     var hasher = MIDP.getMD5Hasher(data);
 
-    if (inBufAddr !== J2ME.Constants.NULL) {
+    if (inBuf) {
         // digest passes `null` for inBuf, and there are no other callers,
         // so this should never happen; but I'm including it for completeness
         // (and in case a subclass ever uses it).
-        inBuf = J2ME.getArrayFromAddr(inBufAddr);
         hasher.update(MIDP.bin2String(inBuf.subarray(inOff, inOff + inLen)));
     }
 
@@ -72,8 +64,7 @@ function(addr, inBufAddr, inOff, inLen, outBufAddr, outOff, stateAddr, numAddr, 
     MIDP.hashers.delete(data);
 };
 
-Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(addr, dataAddr) {
-    var data = J2ME.getArrayFromAddr(dataAddr);
+Native["com/sun/midp/crypto/MD5.nativeClone.([I)V"] = function(addr, data) {
     for (var key of MIDP.hashers.keys()) {
         if (util.compareTypedArrays(key, data)) {
             var value = MIDP.hashers.get(key);
@@ -116,15 +107,10 @@ function hexStringToBytes(hex) {
     return bytes;
 }
 
-Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(addr, dataAddr, exponentAddr, modulusAddr, resultAddr) {
+Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(addr, data, exponent, modulus, result) {
     // The jsbn library doesn't work well with typed arrays, so we're using this
     // hack of translating the numbers to hexadecimal strings before handing
     // them to jsbn (and we're getting the result back in a hex string).
-
-    var data = J2ME.getArrayFromAddr(dataAddr);
-    var exponent = J2ME.getArrayFromAddr(exponentAddr);
-    var modulus = J2ME.getArrayFromAddr(modulusAddr);
-    var result = J2ME.getArrayFromAddr(resultAddr);
 
     var bnBase = new BigInteger(bytesToHexString(data), 16);
     var bnExponent = new BigInteger(bytesToHexString(exponent), 16);
@@ -136,14 +122,7 @@ Native["com/sun/midp/crypto/RSA.modExp.([B[B[B[B)I"] = function(addr, dataAddr, 
     return remainder.length;
 };
 
-Native["com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V"] =
-function(addr, SAddr, XAddr, YAddr, inbufAddr, inoff, inlen, outbufAddr, outoff) {
-    var S = J2ME.getArrayFromAddr(SAddr);
-    var X = J2ME.getArrayFromAddr(XAddr);
-    var Y = J2ME.getArrayFromAddr(YAddr);
-    var inbuf = J2ME.getArrayFromAddr(inbufAddr);
-    var outbuf = J2ME.getArrayFromAddr(outbufAddr);
-
+Native["com/sun/midp/crypto/ARC4.nativetx.([B[I[I[BII[BI)V"] = function(addr, S, X, Y, inbuf, inoff, inlen, outbuf, outoff) {
     var x = X[0];
     var y = Y[0];
 
