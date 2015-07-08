@@ -249,15 +249,15 @@ module J2ME {
   function primitiveArrayValue(kind: Kind, arrayAddr: String, index: String): string {
     switch (kind) {
       case Kind.Byte:
-        return "i8[" + arrayAddr + "+" + Constants.ARRAY_HDR_SIZE + "+" + index + "]";
+        return "i8[" + arrayAddr + "+" + Constants.ARRAY_HDR_SIZE + "+(" + index + ")]";
       case Kind.Char:
-        return "u16[(" + arrayAddr + "+" + Constants.ARRAY_HDR_SIZE + " >> 1)+" + index + "]";
+        return "u16[(" + arrayAddr + "+" + Constants.ARRAY_HDR_SIZE + " >> 1)+(" + index + ")]";
       case Kind.Short:
-        return "i16[(" + arrayAddr + "+" + Constants.ARRAY_HDR_SIZE + " >> 1)+" + index + "]";
+        return "i16[(" + arrayAddr + "+" + Constants.ARRAY_HDR_SIZE + " >> 1)+(" + index + ")]";
       case Kind.Int:
       case Kind.Float:
       case Kind.Reference:
-        return "i32[(" + arrayAddr + "+" + Constants.ARRAY_HDR_SIZE + " >> 2)+" + index + "]";
+        return "i32[(" + arrayAddr + "+" + Constants.ARRAY_HDR_SIZE + " >> 2)+(" + index + ")]";
       default:
         Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
         break;
