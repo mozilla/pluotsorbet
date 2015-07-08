@@ -318,6 +318,11 @@ module J2ME {
     id: number;
 
     /**
+     * Are we currently unwinding the stack because of a Yield?
+     */
+    U: J2ME.VMState = J2ME.VMState.Running;
+
+    /**
      * Whether or not the context is currently paused.  The profiler uses this
      * to distinguish execution time from paused time in an async method.
      */
@@ -433,6 +438,8 @@ module J2ME {
       release || assert (Frame.isMarker(marker));
     }
 
+    // NB: This does not set this Context as the current context. This must only
+    // be called on the current context.
     executeFrame(frame: Frame) {
       var frames = this.frames;
       frames.push(Frame.Marker);
@@ -440,7 +447,7 @@ module J2ME {
 
       try {
         var returnValue = VM.execute();
-        if (U) {
+        if (this.U) {
           // Prepend all frames up until the first marker to the bailout frames.
           while (true) {
             var frame = frames.pop();
@@ -466,13 +473,13 @@ module J2ME {
       message = "" + message;
       var classInfo = CLASSES.loadAndLinkClass(className);
       classInitCheck(classInfo);
-      release || Debug.assert(!U, "Unexpected unwind during createException.");
+      release || Debug.assert(!this.U, "Unexpected unwind during createException.");
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exception = new classInfo.klass();
       var methodInfo = classInfo.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
       preemptionLockLevel++;
       getLinkedMethod(methodInfo).call(exception, message ? newString(message) : null);
-      release || Debug.assert(!U, "Unexpected unwind during createException.");
+      release || Debug.assert(!this.U, "Unexpected unwind during createException.");
       preemptionLockLevel--;
       return exception;
     }
@@ -511,13 +518,13 @@ module J2ME {
       profile && this.resumeMethodTimeline();
       do {
         VM.execute();
-        if (U) {
+        if (this.U) {
           if (this.bailoutFrames.length) {
             Array.prototype.push.apply(this.frames, this.bailoutFrames);
             this.bailoutFrames = [];
           }
           var frames = this.frames;
-          switch (U) {
+          switch (this.U) {
             case VMState.Yielding:
               this.resume();
               break;
@@ -528,7 +535,7 @@ module J2ME {
               this.kill();
               return;
           }
-          U = VMState.Running;
+          this.U = VMState.Running;
           this.clearCurrentContext();
           return;
         }
@@ -544,7 +551,7 @@ module J2ME {
     block(obj, queue, lockLevel) {
       obj._lock[queue].push(this);
       this.lockLevel = lockLevel;
-      $.pause("block");
+      this.pause("block");
     }
 
     unblock(obj, queue, notifyAll) {
@@ -568,7 +575,7 @@ module J2ME {
       } else {
         while (this.lockLevel-- > 0) {
           this.monitorEnter(obj);
-          if (U === VMState.Pausing || U === VMState.Stopping) {
+          if (this.U === VMState.Pausing || this.U === VMState.Stopping) {
             return;
           }
         }
@@ -700,6 +707,27 @@ module J2ME {
       if (profiling) {
         this.methodTimeline.leave(key, MethodType[methodType]);
       }
+    }
+
+
+    yield(reason: string) {
+      unwindCount ++;
+      threadWriter && threadWriter.writeLn("yielding " + reason);
+      runtimeCounter && runtimeCounter.count("yielding " + reason);
+      this.U = VMState.Yielding;
+      profile && this.pauseMethodTimeline();
+    }
+
+    pause(reason: string) {
+      unwindCount ++;
+      threadWriter && threadWriter.writeLn("pausing " + reason);
+      runtimeCounter && runtimeCounter.count("pausing " + reason);
+      this.U = VMState.Pausing;
+      profile && this.pauseMethodTimeline();
+    }
+
+    stop() {
+      this.U = VMState.Stopping;
     }
   }
 }

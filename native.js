@@ -22,7 +22,7 @@ function asyncImpl(returnKind, promise) {
     ctx.pushFrame(Frame.create(methodInfo, [exception]));
     J2ME.Scheduler.enqueue(ctx);
   });
-  $.pause(asyncImplStringAsync);
+  $.ctx.pause(asyncImplStringAsync);
 }
 
 function preemptingImpl(returnKind, returnValue) {
@@ -563,7 +563,7 @@ Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
 };
 
 Native["java/lang/Thread.yield.()V"] = function() {
-    $.yield("Thread.yield");
+    $.ctx.yield("Thread.yield");
 };
 
 Native["java/lang/Thread.activeCount.()I"] = function() {

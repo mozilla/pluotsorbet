@@ -334,9 +334,9 @@ module J2ME {
     static localNames = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"];
 
     /**
-     * Make sure that none of these shadow global names, like "U" and "O".
+     * Make sure that none of these shadow global names, like "O".
      */
-    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "R", "S", "T", "_U", "V", "W", "X", "Y", "Z"];
+    static stackNames = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "_O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"];
 
     /**
      * Indicates whether a unwind throw was emitted.
@@ -466,7 +466,7 @@ module J2ME {
         if (this.hasUnwindThrow) {
           var local = this.local.join(",");
           var stack = this.stack.join(",");
-          this.bodyEmitter.writeLn("if(U){$.T(ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+          this.bodyEmitter.writeLn("if($.ctx.U){$.T(ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
         }
         this.bodyEmitter.writeLn(this.getStackName(0) + "=TE(ex);");
         this.blockStack = [this.getStackName(0)];
@@ -1096,25 +1096,25 @@ module J2ME {
           this.stack.length < 8) {
         this.flushBlockStack();
         if (<any>nextPC - <any>pc === 3) {
-          emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
+          emitter.writeLn("$.ctx.U&&B" + this.sp + "(" + pc + ");");
         } else {
-          emitter.writeLn("U&&B" + this.sp + "(" + pc + "," + nextPC + ");");
+          emitter.writeLn("$.ctx.U&&B" + this.sp + "(" + pc + "," + nextPC + ");");
         }
         this.hasUnwindThrow = true;
       } else {
         var local = this.local.join(",");
         var stack = this.blockStack.slice(0, this.sp).join(",");
-        emitter.writeLn("if(U){$.B(" + pc + "," + nextPC + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+        emitter.writeLn("if($.ctx.U){$.B(" + pc + "," + nextPC + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
       }
       baselineCounter && baselineCounter.count("emitUnwind");
     }
 
     emitNoUnwindAssertion() {
-      this.blockEmitter.writeLn("if(U){J2ME.Debug.assert(false,'Unexpected unwind.');}");
+      this.blockEmitter.writeLn("if($.ctx.U){J2ME.Debug.assert(false,'Unexpected unwind.');}");
     }
 
     emitUndefinedReturnAssertion() {
-      this.blockEmitter.writeLn("if (U && re !== undefined) { J2ME.Debug.assert(false, 'Unexpected return value during unwind.'); }");
+      this.blockEmitter.writeLn("if($.ctx.U && re !== undefined) { J2ME.Debug.assert(false, 'Unexpected return value during unwind.'); }");
     }
 
     private emitMonitorEnter(emitter: Emitter, nextPC: number, object: string) {

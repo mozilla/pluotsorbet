@@ -705,7 +705,7 @@ var MIDP = (function() {
   };
 
   function exit(code) {
-    $.stop();
+    $.ctx.stop();
     DumbPipe.open("exit", null, function(message) {});
     showExitScreen();
   }
