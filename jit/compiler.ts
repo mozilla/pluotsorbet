@@ -98,7 +98,6 @@ module J2ME {
     //emitFields(classInfo.fTable, false);
     writer.leave("}");
     writer.writeLn(mangledClassName + ".id = " + klassId + ";");
-    writer.writeLn("J2ME.klassIdMap[" + klassId + "] = " + mangledClassName + ";");
 
     if (emitter.klassHeaderOnly) {
       return;

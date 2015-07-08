@@ -58,7 +58,7 @@ module J2ME {
   /**
    * Turns on onStackReplacement
    */
-  export var enableOnStackReplacement = true;
+  export var enableOnStackReplacement = false;
 
   /**
    * Turns on caching of JIT-compiled methods.
@@ -737,6 +737,7 @@ module J2ME {
   }
 
   export var klassIdMap = Object.create(null);
+  export var klassSingles = Object.create(null);
 
   /**
    * A map from addresses to monitors, which are JS objects that we use to track
@@ -1060,6 +1061,11 @@ module J2ME {
       J2ME.linkKlass(classInfo.superClass);
     }
 
+    if (!klass.id) {
+      klass.id = generateKlassId();
+    }
+    klassIdMap[klass.id] = klass;
+
     var superKlass = getKlass(classInfo.superClass);
 
     enterTimeline("extendKlass");
@@ -1210,6 +1216,9 @@ module J2ME {
 
     if (klass === Klasses.java.lang.Object) {
       extendKlass(classInfo, <Klass><any>Array, Klasses.java.lang.Object);
+    }
+    if (!classInfo.isInterface && !(classInfo instanceof PrimitiveClassInfo) && !klass.isArrayKlass) {
+      klassSingles[klass.id] = new klass(-1);
     }
   }
 
@@ -1850,24 +1859,25 @@ module J2ME {
   }
 
   export function instanceOfKlass(objectAddr: number, klassId: number): boolean {
-    debugger;
+    release || assert(typeof klassId === "number", "Klass id must be a number.");
     return objectAddr !== Constants.NULL && isAssignableTo(klassIdMap[i32[objectAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]], klassIdMap[klassId]);
   }
 
   export function instanceOfInterface(objectAddr: number, klassId: number): boolean {
-    debugger;
+    release || assert(typeof klassId === "number", "Klass id must be a number.");
     release || assert(klassIdMap[klassId].isInterfaceKlass);
     return objectAddr !== Constants.NULL && isAssignableTo(klassIdMap[i32[objectAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]], klassIdMap[klassId]);
   }
 
   export function checkCastKlass(objectAddr: number, klassId: number) {
-    debugger;
+    release || assert(typeof klassId === "number", "Klass id must be a number.");
     if (objectAddr !== Constants.NULL && !isAssignableTo(klassIdMap[i32[objectAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]], klassIdMap[klassId])) {
       throw $.newClassCastException();
     }
   }
 
   export function checkCastInterface(objectAddr: number, klassId: number) {
+    release || assert(typeof klassId === "number", "Klass id must be a number.");
     if (objectAddr !== Constants.NULL && !isAssignableTo(klassIdMap[i32[objectAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]], klassIdMap[klassId])) {
       throw $.newClassCastException();
     }

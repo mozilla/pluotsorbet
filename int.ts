@@ -953,7 +953,6 @@ module J2ME {
             if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-
             i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
             continue;
           case Bytecodes.DALOAD:
@@ -2196,8 +2195,6 @@ module J2ME {
                     case Kind.Float:
                     case Kind.Short:
                     case Kind.Boolean:
-                      args.unshift(i32[--sp]);
-                      break;
                     case Kind.Reference:
                       args.unshift(i32[--sp]);
                       break;
