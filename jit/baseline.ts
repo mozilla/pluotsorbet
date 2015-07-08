@@ -833,6 +833,7 @@ module J2ME {
       }
       var kind = getSignatureKind(fieldInfo.utf8Signature);
       var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) + "._address" : this.pop(Kind.Reference);
+      this.emitNullPointerCheck(objectAddr);
       var address = objectAddr + "+" + fieldInfo.byteOffset;
       // XXX the push kind is wrong here.
       this.emitPush(Kind.Int, "i32[" + address + ">>2]", Precedence.Member);
@@ -851,6 +852,7 @@ module J2ME {
         h = this.pop(Kind.Int, Precedence.Sequence);
       }
       var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) + "._address" : this.pop(Kind.Reference);
+      this.emitNullPointerCheck(objectAddr);
       var address = objectAddr + "+" + fieldInfo.byteOffset;
       this.blockEmitter.writeLn("i32[" + address + ">>2]=" + l + ";");
       if (isTwoSlot(fieldInfo.kind)) {
@@ -1071,8 +1073,9 @@ module J2ME {
     }
 
     emitThrow(pc: number) {
-      var object = this.peek(Kind.Reference);
-      this.blockEmitter.writeLn("throw J2ME.getHandle(" + object + ");");
+      var objectAddr = this.peek(Kind.Reference);
+      this.emitNullPointerCheck(objectAddr);
+      this.blockEmitter.writeLn("throw J2ME.getHandle(" + objectAddr + ");");
     }
 
     emitNewInstance(cpi: number) {
@@ -1127,9 +1130,13 @@ module J2ME {
       this.emitPush(Kind.Int, call, Precedence.BitwiseOR);
     }
 
+    emitNullPointerCheck(addr) {
+      this.blockEmitter.writeLn(addr + "===" + Constants.NULL + "&&TN();");
+    }
+
     emitArrayLength() {
       var arrayAddr = this.pop(Kind.Reference);
-      this.blockEmitter.writeLn(arrayAddr + "===" + Constants.NULL + "&&TN();");
+      this.emitNullPointerCheck(arrayAddr);
       this.emitPush(Kind.Int, "i32[" + arrayAddr + " + " + Constants.ARRAY_LENGTH_OFFSET + " >> 2]", Precedence.Member);
     }
 
