@@ -42,7 +42,7 @@ module J2ME {
         Frame.create(isolateClassInfo.getMethodByNameString("<init>", "(Ljava/lang/String;[Ljava/lang/String;)V"),
                                        [ isolate, J2ME.newString(className.replace(/\./g, "/")), array ])
       ]);
-      release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
+      release || Debug.assert(!ctx.U, "Unexpected unwind during isolate initialization.");
     }
 
     startIsolate(isolate: Isolate) {
@@ -81,7 +81,7 @@ module J2ME {
                                [ runtime.mainThread, J2ME.newString("main") ]));
 
       ctx.start(frames);
-      release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
+      release || Debug.assert(!ctx.U, "Unexpected unwind during isolate initialization.");
     }
 
   }

@@ -19,6 +19,7 @@
 ///<reference path='vm/runtime.ts' />
 ///<reference path='interpreter.ts' />
 ///<reference path='vm/context.ts' />
+///<reference path='contextQueue.ts' />
 
 // JIT
 

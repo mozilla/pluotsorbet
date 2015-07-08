@@ -22,7 +22,7 @@ function asyncImpl(returnKind, promise) {
     ctx.pushFrame(Frame.create(methodInfo, [exception]));
     J2ME.Scheduler.enqueue(ctx);
   });
-  $.pause(asyncImplStringAsync);
+  $.ctx.pause(asyncImplStringAsync);
 }
 
 function preemptingImpl(returnKind, returnValue) {
@@ -534,6 +534,9 @@ Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function() {
 };
 
 Native["java/lang/Thread.setPriority0.(II)V"] = function(oldPriority, newPriority) {
+    if (this.ctx) {
+        this.ctx.priority = newPriority;
+    }
 };
 
 Native["java/lang/Thread.start0.()V"] = function() {
@@ -546,6 +549,8 @@ Native["java/lang/Thread.start0.()V"] = function() {
     // Create a context for the thread and start it.
     var newCtx = new Context($.ctx.runtime);
     newCtx.thread = this;
+    this.ctx = newCtx;
+    newCtx.priority = this.priority;
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
@@ -563,7 +568,7 @@ Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
 };
 
 Native["java/lang/Thread.yield.()V"] = function() {
-    $.yield("Thread.yield");
+    $.ctx.yield("Thread.yield");
 };
 
 Native["java/lang/Thread.activeCount.()I"] = function() {
