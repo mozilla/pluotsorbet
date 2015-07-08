@@ -151,8 +151,7 @@ module J2ME {
     return isolate._mainClass;
   };
 
-  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(addr: number, mainAddr: number) {
-    var main = <java.lang.Class>getHandle(mainAddr);
+  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(addr: number, main: java.lang.Class) {
     var entryPoint = CLASSES.getEntryPoint(main.runtimeKlass.templateKlass.classInfo);
     if (!entryPoint)
       throw new Error("Could not find isolate main.");

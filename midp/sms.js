@@ -124,19 +124,18 @@ function promptForMessageText() {
     }, MIDlet.SMSDialogTimeout);
 }
 
-Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(addr, hostAddr, msid, port) {
+Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(addr, host, msid, port) {
     MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
-      host: J2ME.fromStringAddr(hostAddr),
+      host: J2ME.fromJavaString(host),
     };
 
     return ++MIDP.lastSMSConnection;
 };
 
 Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] =
-function(addr, port, msid, handle, smsPacketAddr) {
-    var smsPacket = getHandle(smsPacketAddr);
+function(addr, port, msid, handle, smsPacket) {
     asyncImpl("I", new Promise(function(resolve, reject) {
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
@@ -180,22 +179,20 @@ Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(addr, port,
     return 0;
 };
 
-Native["com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I"] =
-function(addr, msgBufferAddr, msgLen, msgType, hasPort) {
+Native["com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I"] = function(addr, msgBuffer, msgLen, msgType, hasPort) {
     console.warn("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I not implemented");
     return 1;
 };
 
 Native["com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I"] =
-function(addr, handle, type, hostAddr, destPort, sourcePort, messageAddr) {
-    var message = J2ME.getArrayFromAddr(messageAddr);
+function(addr, handle, type, host, destPort, sourcePort, message) {
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
         var pipe = DumbPipe.open("mozActivity", {
             name: "new",
             data: {
                 type: "websms/sms",
-                number: J2ME.fromStringAddr(hostAddr),
+                number: J2ME.fromJavaString(host),
                 body: new TextDecoder('utf-16be').decode(message),
             },
         }, function(message) {

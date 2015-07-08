@@ -37,14 +37,13 @@ Native["com/nokia/mid/ui/frameanimator/FrameAnimator.init.()V"] = function(addr)
   NativeMap.set(addr, new FrameAnimator());
 };
 
-Native["com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mid/ui/frameanimator/FrameAnimatorListener;)Z"] =
-function(addr, x, y, maxFps, maxPps, listenerAddr) {
+Native["com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mid/ui/frameanimator/FrameAnimatorListener;)Z"] = function(addr, x, y, maxFps, maxPps, listener) {
   var nativeObject = NativeMap.get(addr);
   if (nativeObject.isRegistered()) {
     throw $.newIllegalStateException("FrameAnimator already registered");
   }
 
-  if (listenerAddr === J2ME.Constants.NULL) {
+  if (!listener) {
     throw $.newNullPointerException("listener is null");
   }
 
@@ -54,7 +53,6 @@ function(addr, x, y, maxFps, maxPps, listenerAddr) {
 
   // XXX return false if FrameAnimator.numRegistered >= FRAME_ANIMATOR_MAX_CONCURRENT
 
-  var listener = getHandle(listenerAddr);
   nativeObject.register(x, y, maxFps, maxPps, listener);
   return 1;
 };

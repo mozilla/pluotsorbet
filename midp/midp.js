@@ -127,13 +127,12 @@ var MIDP = (function() {
     FullscreenInfo.set(displayId, mode);
   };
 
-  Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] =
-  function(addr, severity, channelID, messageAddr) {
-    console.info(J2ME.fromStringAddr(messageAddr));
+  Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(addr, severity, channelID, message) {
+    console.info(J2ME.fromJavaString(message));
   };
 
-  Native["com/sun/midp/midlet/MIDletPeer.platformRequest.(Ljava/lang/String;)Z"] = function(addr, requestAddr) {
-    request = J2ME.fromStringAddr(requestAddr);
+  Native["com/sun/midp/midlet/MIDletPeer.platformRequest.(Ljava/lang/String;)Z"] = function(addr, request) {
+    request = J2ME.fromJavaString(request);
     if (request.startsWith("http://") || request.startsWith("https://")) {
       if (request.endsWith(".jad")) {
         // The download will start after the MIDlet has terminated its execution.
@@ -167,9 +166,7 @@ var MIDP = (function() {
     return 0;
   };
 
-  Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] =
-  function(addr, stateAddr) {
-    var state = getHandle(stateAddr);
+  Native["com/sun/midp/main/CommandState.restoreCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(addr, state) {
     var suiteId = (config.midletClassName === "internal") ? -1 : 1;
     state.suiteId = suiteId;
     state.midletClassName = J2ME.newString(config.midletClassName);
@@ -247,11 +244,9 @@ var MIDP = (function() {
   Native["com/sun/midp/main/MIDletSuiteUtils.vmEndStartUp.(I)V"] = function(addr, midletIsolateId) {
   };
 
-  Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] =
-  function(addr, keyAddr) {
-    var key = J2ME.fromStringAddr(keyAddr);
+  Native["com/sun/midp/main/Configuration.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(addr, key) {
     var value;
-    switch (key) {
+    switch (J2ME.fromJavaString(key)) {
       case "com.sun.midp.publickeystore.WebPublicKeyStore":
         if (config.midletClassName == "RunTestsMIDlet" ||
             config.midletClassName.startsWith("benchmark")) {
@@ -291,16 +286,15 @@ var MIDP = (function() {
         value = null;
         break;
       default:
-        console.warn("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + key);
+        console.warn("UNKNOWN PROPERTY (com/sun/midp/main/Configuration): " + J2ME.fromJavaString(key));
         value = null;
         break;
     }
     return J2ME.newString(value);
   };
 
-  Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(addr, fileAddr) {
-    var fileName = "assets/0/" +
-                   J2ME.fromStringAddr(fileAddr).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
+  Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(addr, file) {
+    var fileName = "assets/0/" + J2ME.fromJavaString(file).replace("_", ".").replace("_png", ".png").replace("_raw", ".raw");
     var data = JARStore.loadFile(fileName);
     if (!data) {
       console.warn("ResourceHandler::loadRomizedResource0: file " + fileName + " not found");
@@ -619,8 +613,7 @@ var MIDP = (function() {
     return arrAddr;
   };
 
-  Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] =
-  function(addr, imageDataAddr, suiteId, fileNameAddr) {
+  Native["javax/microedition/lcdui/SuiteImageCacheImpl.loadAndCreateImmutableImageDataFromCache0.(Ljavax/microedition/lcdui/ImageData;ILjava/lang/String;)Z"] = function(addr, imageData, suiteId, fileName) {
     // We're not implementing the cache because looks like it isn't used much.
     // In a MIDlet I've been testing for a few minutes, there's been only one hit.
     return 0;
@@ -629,8 +622,8 @@ var MIDP = (function() {
   var interIsolateMutexes = [];
   var lastInterIsolateMutexID = -1;
 
-  Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(addr, mutexNameAddr) {
-    var name = J2ME.fromStringAddr(mutexNameAddr);
+  Native["com/sun/midp/util/isolate/InterIsolateMutex.getID0.(Ljava/lang/String;)I"] = function(addr, jName) {
+    var name = J2ME.fromJavaString(jName);
 
     var mutex;
     for (var i = 0; i < interIsolateMutexes.length; i++) {
@@ -928,47 +921,44 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
-    function(addr, eventAddr, isolateId) {
-      var event = getHandle(eventAddr);
-      var e = { type: event.type };
+    function(addr, obj, isolateId) {
+      var e = { type: obj.type };
 
-      var fields = event.klass.classInfo.fields;
+      var fields = obj.klass.classInfo.fields;
       for (var i = 0; i < fields.length; i++) {
         var field = fields[i];
-        e[J2ME.fromUTF8(field.utf8Name)] = field.get(event);
+        e[J2ME.fromUTF8(field.utf8Name)] = field.get(obj);
       }
 
       sendNativeEvent(e, isolateId);
     };
 
   Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
-    function(addr, eventAddr) {
-      var event = getHandle(eventAddr);
+    function(addr, nativeEvent) {
       var isolateId = $.ctx.runtime.isolateId;
       var nativeEventQueue = nativeEventQueues[isolateId];
 
       if (nativeEventQueue.length !== 0) {
-        copyEvent(nativeEventQueue.shift(), event);
+        copyEvent(nativeEventQueue.shift(), nativeEvent);
         return nativeEventQueue.length;
       }
 
       asyncImpl("I", new Promise(function(resolve, reject) {
         waitingNativeEventQueue[isolateId] = {
           resolve: resolve,
-          nativeEvent: event,
+        nativeEvent: nativeEvent,
         };
       }));
     };
 
   Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
-    function(addr, eventAddr) {
+    function(addr, obj) {
       var isolateId = $.ctx.runtime.isolateId;
       var nativeEventQueue = nativeEventQueues[isolateId];
       if (!nativeEventQueue.length) {
         return 0;
       }
-      var event = getHandle(eventAddr);
-      copyEvent(nativeEventQueue.shift(), event);
+      copyEvent(nativeEventQueue.shift(), obj);
       return 1;
     };
 
@@ -1006,8 +996,7 @@ var MIDP = (function() {
     sendNativeEvent({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolateId);
   };
 
-  Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] =
-  function(addr, commandStateAddr) {
+  Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(addr, commandState) {
     console.warn("CommandState.saveCommandState.(L...CommandState;)V not implemented (" + commandState + ")");
   };
 
@@ -1090,8 +1079,7 @@ var MIDP = (function() {
     return gameKeys[keyCode] || 0;
   };
 
-  Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] =
-  function(addr, canvasAddr, shouldSuppress) {
+  Native["javax/microedition/lcdui/game/GameCanvas.setSuppressKeyEvents.(Ljavax/microedition/lcdui/Canvas;Z)V"] = function(addr, canvas, shouldSuppress) {
     suppressKeyEvents = shouldSuppress;
   };
 
@@ -1155,8 +1143,8 @@ var MIDP = (function() {
     }));
   };
 
-  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"] = function(addr, connectionAddr) {
-    var values = J2ME.fromStringAddr(connectionAddr).split(',');
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.add0.(Ljava/lang/String;)I"] = function(addr, connection) {
+    var values = J2ME.fromJavaString(connection).split(',');
 
     console.warn("ConnectionRegistry.add0.(IL...String;)I isn't completely implemented");
 
@@ -1170,10 +1158,8 @@ var MIDP = (function() {
     return 0;
   };
 
-  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] =
-  function(addr, midletAddr, jTimeLow, jTimeHigh) {
-    var midlet = util.decodeUtf8(J2ME.getArrayFromAddr(midletAddr));
-    var time = J2ME.longToNumber(jTimeLow, jTimeHigh);
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.addAlarm0.([BJ)J"] = function(addr, jMidlet, jTimeLow, jTimeHigh) {
+    var time = J2ME.longToNumber(jTimeLow, jTimeHigh), midlet = util.decodeUtf8(jMidlet);
 
     var lastAlarm = 0;
     var id = null;
@@ -1213,9 +1199,7 @@ var MIDP = (function() {
     return J2ME.returnLongValue(lastAlarm);
   };
 
-  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] =
-  function(addr, handle, regentryAddr, entrysz) {
-    var regentry = J2ME.getArrayFromAddr(regentryAddr);
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.getMIDlet0.(I[BI)I"] = function(addr, handle, regentry, entrysz) {
     var reg;
     var alarms = connectionRegistry.alarms;
     for (var i = 0; i < alarms.length; i++) {
@@ -1254,14 +1238,11 @@ var MIDP = (function() {
     return 0;
   };
 
-  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] =
-  function(addr, suiteId, classNameAddr) {
-    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" +
-                 suiteId + ", " + J2ME.fromStringAddr(classNameAddr) + ")");
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByMidlet0.(ILjava/lang/String;)V"] = function(addr, suiteId, className) {
+    console.warn("ConnectionRegistry.checkInByMidlet0.(IL...String;)V not implemented (" + suiteId + ", " + J2ME.fromJavaString(className) + ")");
   };
 
-  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(addr, nameAddr) {
-    var name = J2ME.getArrayFromAddr(nameAddr);
+  Native["com/sun/midp/io/j2me/push/ConnectionRegistry.checkInByName0.([B)I"] = function(addr, name) {
     console.warn("ConnectionRegistry.checkInByName0.([B)V not implemented (" + util.decodeUtf8(name) + ")");
     return 0;
   };
@@ -1280,19 +1261,16 @@ var MIDP = (function() {
   addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V");
   addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
 
-  Native["com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/mid/ui/CustomKeyboardControl;"] =
-  function(addr) {
-    throw $.newIllegalArgumentException("VirtualKeyboard::getCustomKeyboardControl() not implemented");
+  Native["com/nokia/mid/ui/VirtualKeyboard.getCustomKeyboardControl.()Lcom/nokia/mid/ui/CustomKeyboardControl;"] = function(addr) {
+    throw $.newIllegalArgumentException("VirtualKeyboard::getCustomKeyboardControl() not implemented")
   };
 
   var keyboardVisibilityListener = J2ME.Constants.NULL;
-  Native["com/nokia/mid/ui/VirtualKeyboard.setVisibilityListener.(Lcom/nokia/mid/ui/KeyboardVisibilityListener;)V"] =
-  function(addr, listenerAddr) {
-    keyboardVisibilityListener = listenerAddr ? listenerAddr : J2ME.Constants.NULL;
+  Native["com/nokia/mid/ui/VirtualKeyboard.setVisibilityListener.(Lcom/nokia/mid/ui/KeyboardVisibilityListener;)V"] = function(addr, listener) {
+    keyboardVisibilityListener = listener ? listener._address : J2ME.Constants.NULL;
   };
 
-  Native["javax/microedition/lcdui/Display.getKeyboardVisibilityListener.()Lcom/nokia/mid/ui/KeyboardVisibilityListener;"] =
-  function(addr) {
+  Native["javax/microedition/lcdui/Display.getKeyboardVisibilityListener.()Lcom/nokia/mid/ui/KeyboardVisibilityListener;"] = function(addr) {
     return keyboardVisibilityListener;
   };
 

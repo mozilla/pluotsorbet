@@ -133,9 +133,8 @@ Media.convert3gpToAmr = function(inBuffer) {
     return outBuffer.subarray(0, outOffset);
 };
 
-Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I"] =
-function(addr, protocolAddr) {
-    var protocol = J2ME.fromStringAddr(protocolAddr);
+Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesOpen.(Ljava/lang/String;)I"] = function(addr, jProtocol) {
+    var protocol = J2ME.fromJavaString(jProtocol);
     var types = [];
     if (protocol) {
         types = Media.ContentTypes[protocol].slice();
@@ -172,8 +171,8 @@ Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesClose.(I)V"] = func
     Media.ListCache.remove(hdlr);
 };
 
-Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsOpen.(Ljava/lang/String;)I"] = function(addr, mimeAddr) {
-    var mime = J2ME.fromStringAddr(mimeAddr);
+Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsOpen.(Ljava/lang/String;)I"] = function(addr, jMime) {
+    var mime = J2ME.fromJavaString(jMime);
     var protocols = [];
     for (var protocol in Media.ContentTypes) {
         if (!mime || Media.ContentTypes[protocol].indexOf(mime) >= 0) {
@@ -1018,8 +1017,8 @@ AudioRecorder.prototype.close = function() {
     }.bind(this));
 };
 
-Native["com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I"] = function(addr, appId, pId, URIAddr) {
-    var url = J2ME.fromStringAddr(URIAddr);
+Native["com/sun/mmedia/PlayerImpl.nInit.(IILjava/lang/String;)I"] = function(addr, appId, pId, jURI) {
+    var url = J2ME.fromJavaString(jURI);
     var id = pId + (appId << 15);
     Media.PlayerCache[id] = new PlayerContainer(url, pId);
     return id;
@@ -1052,8 +1051,8 @@ Native["com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z"] = function(addr, han
     return Media.PlayerCache[handle].isHandledByDevice() ? 1 : 0;
 };
 
-Native["com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z"] = function(addr, handle, mimeAddr) {
-    var mime = J2ME.fromStringAddr(mimeAddr);
+Native["com/sun/mmedia/PlayerImpl.nRealize.(ILjava/lang/String;)Z"] = function(addr, handle, jMime) {
+    var mime = J2ME.fromJavaString(jMime);
     var player = Media.PlayerCache[handle];
     asyncImpl("Z", player.realize(mime));
 };
@@ -1068,16 +1067,15 @@ Native["com/sun/mmedia/MediaDownload.nGetFirstPacketSize.(I)I"] = function(addr,
     return player.getBufferSize() >>> 1;
 };
 
-Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(addr, handle, bufferAddr, offset, size) {
+Native["com/sun/mmedia/MediaDownload.nBuffering.(I[BII)I"] = function(addr, handle, buffer, offset, size) {
     var player = Media.PlayerCache[handle];
     var bufferSize = player.getBufferSize();
 
     // Check the parameters.
-    if (bufferAddr === J2ME.Constants.NULL || size === 0) {
+    if (buffer === null || size === 0) {
         return bufferSize >>> 1;
     }
 
-    var buffer = J2ME.getArrayFromAddr(bufferAddr);
     player.writeBuffer(buffer.subarray(offset, offset + size));
 
     // Returns the package size and set it to the half of the java buffer size.
@@ -1234,7 +1232,7 @@ Native["com/sun/mmedia/DirectPlayer.nGetDuration.(I)I"] = function(addr, handle)
     }
 };
 
-Native["com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I"] = function(addr, handle, locatorAddr) {
+Native["com/sun/mmedia/DirectRecord.nSetLocator.(ILjava/lang/String;)I"] = function(addr, handle, locator) {
     // Let the DirectRecord class handle writing to files / uploading via HTTP
     return 0;
 };
@@ -1243,8 +1241,7 @@ Native["com/sun/mmedia/DirectRecord.nGetRecordedSize.(I)I"] = function(addr, han
     return Media.PlayerCache[handle].getRecordedSize();
 };
 
-Native["com/sun/mmedia/DirectRecord.nGetRecordedData.(III[B)I"] = function(addr, handle, offset, size, bufferAddr) {
-    var buffer = J2ME.getArrayFromAddr(bufferAddr);
+Native["com/sun/mmedia/DirectRecord.nGetRecordedData.(III[B)I"] = function(addr, handle, offset, size, buffer) {
     Media.PlayerCache[handle].getRecordedData(offset, size, buffer);
     return 1;
 };
@@ -1419,8 +1416,8 @@ Native["com/sun/mmedia/NativeTonePlayer.nStopTone.(I)Z"] = function(addr, appId)
     return 1;
 };
 
-Native["com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V"] = function(addr, handle, imageTypeAddr) {
-    Media.PlayerCache[handle].startSnapshot(J2ME.fromStringAddr(imageTypeAddr));
+Native["com/sun/mmedia/DirectPlayer.nStartSnapshot.(ILjava/lang/String;)V"] = function(addr, handle, imageType) {
+    Media.PlayerCache[handle].startSnapshot(J2ME.fromJavaString(imageType));
 };
 
 Native["com/sun/mmedia/DirectPlayer.nGetSnapshotData.(I)[B"] = function(addr, handle) {
@@ -1432,7 +1429,7 @@ Native["com/sun/amms/GlobalMgrImpl.nCreatePeer.()I"] = function(addr) {
     return 1;
 };
 
-Native["com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I"] = function(addr, typeNameAddr) {
+Native["com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I"] = function(addr, typeName) {
     console.warn("com/sun/amms/GlobalMgrImpl.nGetControlPeer.([B)I not implemented.");
     return 2;
 };
