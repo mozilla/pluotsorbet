@@ -281,3 +281,12 @@ Native["tests/midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function() {
 
   return 0;
 };
+
+Native["tests/midlets/background/ForegroundSMSMIDlet.startedBackgroundAlarm.()Z"] = function() {
+  asyncImpl("Z", new Promise(function(resolve, reject) {
+    var sender = DumbPipe.open("checkBackgroundCheck", {}, function(backgroundCheck) {
+      DumbPipe.close(sender);
+      resolve(backgroundCheck ? 1 : 0);
+    });
+  }));
+};

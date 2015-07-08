@@ -178,7 +178,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 37 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -304,7 +304,7 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/background1.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/background1.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Hello World from foreground MIDlet", function() {
             test.pass("First background test");
@@ -328,7 +328,7 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundExit.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log", function() {
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundExit.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log", function() {
       casper.evaluate(function() {
         window.close = function() {
           document.title = "window.close called";
@@ -343,7 +343,7 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/destroy.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/destroy.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("PAINTED", function() {
           casper.waitForSelector("#canvas", function() {
@@ -368,6 +368,51 @@ casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
             test.assertEquals(content.match(/Invocation args\[0\]: url=file:\/\/\/Private\/j2meshare\/j2mesharetestimage0\.jpg/g).length, 1, "ContentHandlerMIDlet test 3");
             test.assertEquals(content.match(/Invocation args\[0\]: url=file:\/\/\/Private\/j2meshare\/j2mesharetestimage1\.jpg/g).length, 1, "ContentHandlerMIDlet test 4");
             test.assertEquals(content.match(/Image exists/g).length, 2, "ContentHandlerMIDlet test 5");
+        });
+    });
+
+    // Remove the smsReg file that has been created by previous tests
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            casper.waitForText("SYNC FILESYSTEM");
+            casper.evaluate(function() {
+                fs.remove("/smsReg");
+                fs.syncStore(function() {
+                    console.log("SYNC FILESYSTEM");
+                });
+            });
+        });
+    });
+
+    // Test that the background alarm is started after the first received SMS.
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundSMS.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        this.waitForText("START", function() {
+            this.evaluate(function() {
+                promptForMessageText();
+            });
+            this.waitUntilVisible(".sms-listener-prompt", function() {
+                this.sendKeys(".sms-listener-prompt.visible input", "Prova SMS", { reset: true });
+                this.click(".sms-listener-prompt.visible button.recommend");
+                this.waitForText("DONE", function() {
+                    test.assertTextDoesntExist("FAIL");
+                    test.assertTextExists("START - Background alarm started: false");
+                    test.assertTextExists("DONE - Background alarm started: true");
+                });
+            });
+        });
+    });
+
+    // Test that the background alarm is started automatically when restarting a MIDlet (after a SMS has been
+    // received during the previous session).
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundSMS.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        this.waitForText("START", function() {
+          test.assertTextExists("START - Background alarm started: true");
         });
     });
 
