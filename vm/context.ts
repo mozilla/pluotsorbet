@@ -316,6 +316,10 @@ module J2ME {
     });
 
     id: number;
+    priority: number = NORMAL_PRIORITY;
+
+    private static waitStr: string = "wait";
+    private static monitorEnterStr: string = "monitorEnter";
 
     /**
      * Are we currently unwinding the stack because of a Yield?
@@ -351,7 +355,7 @@ module J2ME {
     private frames: Frame [];
     bailoutFrames: Frame [];
     lockTimeout: number;
-    lockLevel: number;
+    lockLevelOnAcquire: number = 1;
     thread: java.lang.Thread;
     writer: IndentingWriter;
     methodTimeline: any;
@@ -380,7 +384,7 @@ module J2ME {
     }
     public static currentContextPrefix() {
       if ($) {
-        return Context.color($.id) + "." + $.ctx.runtime.priority + ":" + Context.color($.ctx.id) + "." + $.ctx.getPriority();
+        return Context.color($.id) + "." + $.ctx.runtime.priority + ":" + Context.color($.ctx.id) + "." + $.ctx.priority;
       }
       return "";
     }
@@ -397,13 +401,6 @@ module J2ME {
       initWriter = writers & WriterFlags.Init ? writer : null;
       threadWriter = writers & WriterFlags.Thread ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
-    }
-
-    getPriority() {
-      if (this.thread) {
-        return this.thread.priority;
-      }
-      return NORMAL_PRIORITY;
     }
 
     kill() {
@@ -548,105 +545,104 @@ module J2ME {
       Scheduler.enqueue(this);
     }
 
-    block(obj, queue, lockLevel) {
-      obj._lock[queue].push(this);
-      this.lockLevel = lockLevel;
-      this.pause("block");
-    }
-
-    unblock(obj, queue, notifyAll) {
-      while (obj._lock[queue].length) {
-        var ctx = obj._lock[queue].pop();
-        if (!ctx)
-          continue;
-          ctx.wakeup(obj)
-        if (!notifyAll)
-          break;
-      }
-    }
-
     wakeup(obj) {
       if (this.lockTimeout !== null) {
         window.clearTimeout(this.lockTimeout);
         this.lockTimeout = null;
       }
-      if (obj._lock.level !== 0) {
-        obj._lock.ready.push(this);
-      } else {
-        while (this.lockLevel-- > 0) {
-          this.monitorEnter(obj);
-          if (this.U === VMState.Pausing || this.U === VMState.Stopping) {
-            return;
-          }
-        }
-        this.resume();
+
+      var lock = obj._lock;
+
+      if (lock.level !== 0) {
+        lock.ready.put(this);
+        return;
       }
+
+      this.acquire(lock);
+      this.resume();
+    }
+
+    // NB: Only call to acquire a lock for the first time, after checking
+    // that another thread does not already own it.
+    acquire(lock) {
+      lock.ctx = this;
+      lock.level = this.lockLevelOnAcquire;
+      this.lockLevelOnAcquire = 1;
     }
 
     monitorEnter(object: java.lang.Object) {
       var lock = object._lock;
-      if (lock && lock.level === 0) {
-        lock.thread = this.thread;
-        lock.level = 1;
-        return;
-      }
       if (!lock) {
-        object._lock = new Lock(this.thread, 1);
-        return;
-      }
-      if (lock.thread === this.thread) {
+        object._lock = new Lock(this, this.lockLevelOnAcquire);
+        this.lockLevelOnAcquire = 1;
+      } else if (lock.level === 0) {
+        this.acquire(lock);
+      } else if (lock.ctx === this) {
         ++lock.level;
-        return;
+      } else {
+        lock.ready.put(this);
+        this.pause(Context.monitorEnterStr);
       }
-      this.block(object, "ready", 1);
     }
 
     monitorExit(object: java.lang.Object) {
       var lock = object._lock;
-      if (lock.level === 1 && lock.ready.length === 0) {
-        lock.level = 0;
-        return;
-      }
-      if (lock.thread !== this.thread)
+      if (!lock || lock.ctx !== this || lock.level === 0) {
         throw $.newIllegalMonitorStateException();
-      if (--lock.level > 0) {
+      }
+
+      if (--lock.level > 0 || !lock.ready.hasMore()) {
         return;
       }
-      this.unblock(object, "ready", false);
+
+      lock.ready.get(performance.now()).wakeup(object);
     }
 
-    wait(object: java.lang.Object, timeout) {
-      var lock = object._lock;
-      if (timeout < 0)
+    wait(obj: java.lang.Object, timeout) {
+      if (timeout < 0) {
         throw $.newIllegalArgumentException();
-      if (!lock || lock.thread !== this.thread)
-        throw $.newIllegalMonitorStateException();
-      var lockLevel = lock.level;
-      for (var i = lockLevel; i > 0; i--) {
-        this.monitorExit(object);
       }
+
+      var lock = obj._lock;
+      if (!lock || lock.ctx !== this || lock.level === 0) {
+        throw $.newIllegalMonitorStateException();
+      }
+
+      this.lockLevelOnAcquire = lock.level;
+      lock.level = 1;
+      this.monitorExit(obj);
       if (timeout) {
         var self = this;
         this.lockTimeout = window.setTimeout(function () {
-          for (var i = 0; i < lock.waiting.length; i++) {
-            var ctx = lock.waiting[i];
-            if (ctx === self) {
-              lock.waiting[i] = null;
-              ctx.wakeup(object);
-            }
-          }
+          lock.waiting.remove(self);
+          self.wakeup(obj);
         }, timeout);
       } else {
         this.lockTimeout = null;
       }
-      this.block(object, "waiting", lockLevel);
+      lock.waiting.put(this);
+      this.pause(Context.waitStr);
     }
 
     notify(obj, notifyAll) {
-      if (!obj._lock || obj._lock.thread !== this.thread)
+      var lock = obj._lock;
+      if (!lock || lock.ctx !== this || lock.level === 0) {
         throw $.newIllegalMonitorStateException();
+      }
 
-      this.unblock(obj, "waiting", notifyAll);
+      if (!lock.waiting.hasMore()) {
+        return;
+      }
+
+      if (!notifyAll) {
+        lock.waiting.get(performance.now()).wakeup(obj);
+        return;
+      }
+
+      var ctxs = lock.waiting.getAll();
+      while (ctxs.length) {
+        ctxs.pop().wakeup(obj)
+      }
     }
 
     bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {

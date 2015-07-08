@@ -774,12 +774,10 @@ module J2ME {
   }
 
   export class Lock {
-    ready: Context [];
-    waiting: Context [];
+    ready: ContextQueue = new ContextQueue();
+    waiting: ContextQueue = new ContextQueue();
 
-    constructor(public thread: java.lang.Thread, public level: number) {
-      this.ready = [];
-      this.waiting = [];
+    constructor(public ctx: Context, public level: number) {
     }
   }
 

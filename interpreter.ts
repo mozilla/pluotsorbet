@@ -177,12 +177,11 @@ module J2ME {
 
     if (ctx.current() === Frame.Start) {
       ctx.kill();
-      if (ctx.thread && ctx.thread._lock && ctx.thread._lock.waiting.length > 0) {
+      if (ctx.thread && ctx.thread._lock && ctx.thread._lock.waiting.hasMore()) {
         console.error(buildExceptionLog(e, stackTrace));
-        for (var i = 0; i < ctx.thread._lock.waiting.length; i++) {
-          var waitingCtx = ctx.thread._lock.waiting[i];
-          ctx.thread._lock.waiting[i] = null;
-          waitingCtx.wakeup(ctx.thread);
+        var ctxs = ctx.thread._lock.waiting.getAll();
+        for (var i = ctxs.length - 1; i >= 0; i--) {
+          ctxs[i].wakeup(ctx.thread);
         }
       }
       throw new Error(buildExceptionLog(e, stackTrace));
