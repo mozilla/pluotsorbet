@@ -40,6 +40,10 @@ function receiveSms(text, addr) {
  * the app.
  */
 function promptForMessageText() {
+    fs.create("/smsReg", new Blob());
+
+    startBackgroundAlarm();
+
     var smsTemplateNode = document.getElementById('sms-listener-prompt');
     var el = smsTemplateNode.cloneNode(true);
     el.style.display = 'block';

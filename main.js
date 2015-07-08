@@ -65,7 +65,7 @@ function processJAD(data) {
 }
 
 if (config.jad) {
-  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
+  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD));
 }
 
 function performDownload(url, callback) {
@@ -130,7 +130,11 @@ if (config.downloadJAD) {
         });
       });
     });
-  }).then(backgroundCheck));
+  }));
+}
+
+if (config.jad || config.downloadJAD) {
+  Promise.all(loadingMIDletPromises).then(backgroundCheck);
 }
 
 var loadingFGPromises = [ emoji.loadData() ];

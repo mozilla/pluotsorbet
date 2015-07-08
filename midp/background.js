@@ -54,7 +54,18 @@ function backgroundCheck() {
   fgMidletNumber = (bgServer == 2) ? 1 : 2;
   fgMidletClass = MIDP.manifest["MIDlet-" + fgMidletNumber].split(",")[2];
 
-  DumbPipe.close(DumbPipe.open("backgroundCheck", {}));
+  if (fs.exists("/smsReg")) {
+    startBackgroundAlarm();
+  }
+}
+
+var backgroundAlarmStarted = false;
+
+function startBackgroundAlarm() {
+  if (!backgroundAlarmStarted) {
+    backgroundAlarmStarted = true;
+    DumbPipe.close(DumbPipe.open("backgroundCheck", {}));
+  }
 }
 
 Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function() {
