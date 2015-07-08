@@ -995,7 +995,7 @@ module J2ME {
       if (this.isPrivileged) {
         return;
       }
-      this.blockEmitter.writeLn(length + "<0&&TN();");
+      this.blockEmitter.writeLn(length + "<0&&TS();");
     }
 
     emitBoundsCheck(array: string, index: string) {
@@ -1128,8 +1128,9 @@ module J2ME {
     }
 
     emitArrayLength() {
-      // XXX EMIT NULL CHECK
-      this.emitPush(Kind.Int, "i32[" + this.pop(Kind.Reference) + " + " + Constants.ARRAY_LENGTH_OFFSET + " >> 2]", Precedence.Member);
+      var arrayAddr = this.pop(Kind.Reference);
+      this.blockEmitter.writeLn(arrayAddr + "===" + Constants.NULL + "&&TN();");
+      this.emitPush(Kind.Int, "i32[" + arrayAddr + " + " + Constants.ARRAY_LENGTH_OFFSET + " >> 2]", Precedence.Member);
     }
 
     emitNewObjectArray(cpi: number) {

@@ -2436,7 +2436,8 @@ var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
 var TI = J2ME.throwArrayIndexOutOfBoundsException;
 var TA = J2ME.throwArithmeticException;
-var TN = J2ME.throwNegativeArraySizeException;
+var TS = J2ME.throwNegativeArraySizeException;
+var TN = J2ME.throwNullPointerException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
