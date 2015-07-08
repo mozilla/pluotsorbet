@@ -1006,10 +1006,7 @@ var MIDP = (function() {
     sendNativeEvent({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolateId);
   };
 
-  Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] =
-  function(addr, commandStateAddr) {
-    console.warn("CommandState.saveCommandState.(L...CommandState;)V not implemented (" + commandState + ")");
-  };
+  addUnimplementedNative("com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V");
 
   Native["com/sun/midp/main/CommandState.exitInternal.(I)V"] = function(addr, status) {
     console.info("Exit: " + status);
