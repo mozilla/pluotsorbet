@@ -443,9 +443,9 @@ module J2ME {
         frame.setParameter(kinds[i], index++, arguments[i]);
       }
       if (methodInfo.isSynchronized) {
-        var monitor = methodInfo.isStatic ? methodInfo.classInfo.getClassObject()._address : arguments[0];
-        frame.monitor = monitor; // XXX This doesn't seem to be used; delete?
-        $.ctx.monitorEnter(getMonitor(monitor));
+        var monitorAddr = methodInfo.isStatic ? methodInfo.classInfo.getClassObject()._address : arguments[0];
+        frame.monitor = monitorAddr; // XXX This doesn't seem to be used; delete?
+        $.ctx.monitorEnter(getMonitor(monitorAddr));
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
           return;
@@ -539,7 +539,7 @@ module J2ME {
     var classInfo: ClassInfo;
     var fieldInfo: FieldInfo;
 
-    var monitor: number;
+    var monitorAddr: number;
 
     // HEAD
 
@@ -1839,11 +1839,11 @@ module J2ME {
             opPC = pc = 0;
 
             if (calleeTargetMethodInfo.isSynchronized) {
-              monitor = calleeTargetMethodInfo.isStatic
-                          ? calleeTargetMethodInfo.classInfo.getClassObject()._address
-                          : address;
-              i32[fp + FrameLayout.MonitorOffset] = monitor;
-              $.ctx.monitorEnter(getMonitor(monitor));
+              monitorAddr = calleeTargetMethodInfo.isStatic
+                              ? calleeTargetMethodInfo.classInfo.getClassObject()._address
+                              : address;
+              i32[fp + FrameLayout.MonitorOffset] = monitorAddr;
+              $.ctx.monitorEnter(getMonitor(monitorAddr));
               release || assert(U !== VMState.Yielding, "Monitors should never yield.");
               if (U === VMState.Pausing || U === VMState.Stopping) {
                 thread.set(fp, sp, opPC);
