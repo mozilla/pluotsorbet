@@ -751,7 +751,7 @@ module J2ME {
 
   // XXX Figure out correct return type(s).
   export function getMonitor(ref: number): any {
-    release || assert(typeof ref === "number", "monitor reference is not a number");
+    release || assert(typeof ref === "number", "monitor reference is a number");
 
     return monitorMap[ref] || (monitorMap[ref] = Object.create(null));
   }
