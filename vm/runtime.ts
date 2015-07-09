@@ -470,7 +470,7 @@ module J2ME {
         var runtimeKlass = this.getRuntimeKlass(preInit[i].klass);
         preemptionLockLevel++;
         var methodInfo = runtimeKlass.classObject.klass.classInfo.getMethodByNameString("initialize", "()V");
-        runtimeKlass.classObject[methodInfo.virtualName]();
+        runtimeKlass.classObject[methodInfo.virtualName](runtimeKlass.classObject._address);
         // runtimeKlass.classObject.initialize();
         release || Debug.assert(!U, "Unexpected unwind during preInitializeClasses.");
         preemptionLockLevel-- ;
@@ -2183,7 +2183,7 @@ module J2ME {
     if (!initializeMethodInfo) {
       initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
     }
-    runtimeKlass.classObject[initializeMethodInfo.virtualName]();
+    runtimeKlass.classObject[initializeMethodInfo.virtualName](runtimeKlass.classObject._address);
   }
 
   export function preempt() {

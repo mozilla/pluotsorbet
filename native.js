@@ -405,7 +405,7 @@ Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, oA
   if (!methodInfo) {
     throw $.newInstantiationException("Can't instantiate classes without a nullary constructor");
   }
-  J2ME.getLinkedMethod(methodInfo).call(o);
+  J2ME.getLinkedMethod(methodInfo)(oAddr);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function(addr) {
