@@ -470,7 +470,7 @@ module J2ME {
         var runtimeKlass = this.getRuntimeKlass(preInit[i].klass);
         preemptionLockLevel++;
         var methodInfo = runtimeKlass.classObject.klass.classInfo.getMethodByNameString("initialize", "()V");
-        runtimeKlass.classObject[methodInfo.virtualName]();
+        runtimeKlass.classObject[methodInfo.virtualName](runtimeKlass.classObject._address);
         // runtimeKlass.classObject.initialize();
         release || Debug.assert(!U, "Unexpected unwind during preInitializeClasses.");
         preemptionLockLevel-- ;
@@ -1146,13 +1146,7 @@ module J2ME {
       switch (classInfo.getClassNameSlow()) {
         case "java/lang/Object": Klasses.java.lang.Object = klass; break;
         case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
-        case "java/lang/String": Klasses.java.lang.String = klass;
-          Object.defineProperty(klass.prototype, "viewString", {
-            get: function () {
-              return fromJavaString(this);
-            }
-          });
-          break;
+        case "java/lang/String": Klasses.java.lang.String = klass; break;
         case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
         case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
         case "java/lang/InstantiationException": Klasses.java.lang.InstantiationException = klass; break;
@@ -2039,11 +2033,15 @@ module J2ME {
     return "[" + value.klass.classInfo.getClassNameSlow() + hashcode + "]";
   }
 
-  export function fromJavaString(value: java.lang.String): string {
-    if (!value) {
+  export function fromStringAddr(stringAddr: number): string {
+    if (stringAddr === Constants.NULL) {
       return null;
     }
-    return util.fromJavaChars(getArrayFromAddr(value.value), value.offset, value.count);
+
+    // XXX Retrieve the characters directly from memory, without indirecting
+    // through getHandle and getArrayFromAddr.
+    var javaString = <java.lang.String>getHandle(stringAddr);
+    return util.fromJavaChars(getArrayFromAddr(javaString.value), javaString.offset, javaString.count);
   }
 
   export function checkDivideByZero(value: number) {
@@ -2162,7 +2160,7 @@ module J2ME {
     if (!initializeMethodInfo) {
       initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
     }
-    runtimeKlass.classObject[initializeMethodInfo.virtualName]();
+    runtimeKlass.classObject[initializeMethodInfo.virtualName](runtimeKlass.classObject._address);
   }
 
   export function preempt() {

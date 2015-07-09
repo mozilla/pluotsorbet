@@ -139,30 +139,30 @@ Native["com/nokia/mid/s40/codec/DataEncoder.init.()V"] = function(addr) {
   NativeMap.set(addr, new DataEncoder());
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V"] = function(addr, tag, name) {
-  NativeMap.get(addr).putStart(tag, J2ME.fromJavaString(name));
+Native["com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V"] = function(addr, tag, nameAddr) {
+  NativeMap.get(addr).putStart(tag, J2ME.fromStringAddr(nameAddr));
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V"] = function(addr, tag, name, value) {
-  NativeMap.get(addr).put(tag, J2ME.fromJavaString(name), J2ME.fromJavaString(value));
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V"] = function(addr, tag, nameAddr, valueAddr) {
+  NativeMap.get(addr).put(tag, J2ME.fromStringAddr(nameAddr), J2ME.fromStringAddr(valueAddr));
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(addr, tag, name, valueLow, valueHigh) {
-  NativeMap.get(addr).put(tag, J2ME.fromJavaString(name), J2ME.longToNumber(valueLow, valueHigh));
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(addr, tag, nameAddr, valueLow, valueHigh) {
+  NativeMap.get(addr).put(tag, J2ME.fromStringAddr(nameAddr), J2ME.longToNumber(valueLow, valueHigh));
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(addr, tag, name, value) {
-  NativeMap.get(addr).put(tag, J2ME.fromJavaString(name), value);
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(addr, tag, nameAddr, value) {
+  NativeMap.get(addr).put(tag, J2ME.fromStringAddr(nameAddr), value);
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(Ljava/lang/String;[BI)V"] = function(addr, name, data, length) {
-  var array = Array.prototype.slice.call(data.subarray(0, length));
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(Ljava/lang/String;[BI)V"] = function(addr, nameAddr, dataAddr, length) {
+  var array = Array.prototype.slice.call(J2ME.getArrayFromAddr(dataAddr).subarray(0, length));
   array.constructor = Array;
-  NativeMap.get(addr).putNoTag(J2ME.fromJavaString(name), array);
+  NativeMap.get(addr).putNoTag(J2ME.fromStringAddr(nameAddr), array);
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = function(addr, tag, name) {
-  NativeMap.get(addr).putEnd(tag, J2ME.fromJavaString(name));
+Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = function(addr, tag, nameAddr) {
+  NativeMap.get(addr).putEnd(tag, J2ME.fromStringAddr(nameAddr));
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function(addr) {
@@ -177,8 +177,8 @@ Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function(addr) {
   return arrayAddr;
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(addr, data, offset, length) {
-  NativeMap.set(addr, new DataDecoder(data, offset, length));
+Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(addr, dataAddr, offset, length) {
+  NativeMap.set(addr, new DataDecoder(J2ME.getArrayFromAddr(dataAddr), offset, length));
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V"] = function(addr, tag) {

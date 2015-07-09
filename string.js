@@ -9,7 +9,8 @@
 // * Any missing methods have been noted in comments.
 // *
 // * XXX If you reuse this code at some point, update it to work with the new
-// * way that natives associated with Java objects are stored in NativeMap.
+// * way that natives associated with Java objects are stored in NativeMap
+// * and object/array references are passed as addresses.
 // */
 //
 ////################################################################
@@ -311,7 +312,7 @@
 //var internedStrings = J2ME.internedStrings;
 //
 //Native["java/lang/String.intern.()Ljava/lang/String;"] = function(addr) {
-//    var string = J2ME.fromJavaString(this);
+//    var string = J2ME.fromStringAddr(this._address);
 //
 //    var internedString = internedStrings.get(string);
 //

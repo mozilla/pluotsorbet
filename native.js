@@ -43,10 +43,14 @@ function deleteNative(javaObj) {
     NativeMap.delete(javaObj._address);
 }
 
-Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] = function(addr, src, srcOffset, dst, dstOffset, length) {
-    if (!src || !dst) {
+Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] =
+function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
+    if (srcAddr === J2ME.Constants.NULL || dstAddr === J2ME.Constants.NULL) {
         throw $.newNullPointerException("Cannot copy to/from a null array.");
     }
+
+    var src = getHandle(srcAddr);
+    var dst = getHandle(dstAddr);
 
     var srcKlass = src.klass;
     var dstKlass = dst.klass;
@@ -105,8 +109,8 @@ var stubProperties = {
   "com.nokia.mid.imei": "",
 };
 
-Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(addr, key) {
-    key = J2ME.fromJavaString(key);
+Native["java/lang/System.getProperty0.(Ljava/lang/String;)Ljava/lang/String;"] = function(addr, keyAddr) {
+    var key = J2ME.fromStringAddr(keyAddr);
     var value;
     switch (key) {
     case "microedition.encoding":
@@ -280,15 +284,25 @@ Native["java/lang/System.currentTimeMillis.()J"] = function(addr) {
     return J2ME.returnLongValue(Date.now());
 };
 
-Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] = function(addr, src, srcOffset, dst, dstOffset, length) {
+Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] =
+function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
+  var src = J2ME.getArrayFromAddr(srcAddr);
+  var dst = J2ME.getArrayFromAddr(dstAddr);
   dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
 };
 
-Native["com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V"] = function(addr, src, srcOffset, dst, dstOffset, length) {
+Native["com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V"] =
+function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
+  var src = J2ME.getArrayFromAddr(srcAddr);
+  var dst = J2ME.getArrayFromAddr(dstAddr);
   dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
 };
 
-Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V"] = function(addr, src, srcOffset, dst, dstOffset, length) {
+Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V"] =
+function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
+    var src = J2ME.getArrayFromAddr(srcAddr);
+    var dst = J2ME.getArrayFromAddr(dstAddr);
+
     if (dst !== src || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n) {
             dst[dstOffset++] = src[srcOffset++];
@@ -345,24 +359,26 @@ Native["java/lang/Class.getName.()Ljava/lang/String;"] = function(addr) {
     return J2ME.newString(self.runtimeKlass.templateKlass.classInfo.getClassNameSlow().replace(/\//g, "."));
 };
 
-Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(addr, name) {
+Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(addr, nameAddr) {
   var classInfo = null;
   try {
-    if (!name)
+    if (nameAddr === J2ME.Constants.NULL) {
       throw new J2ME.ClassNotFoundException();
-    var className = J2ME.fromJavaString(name).replace(/\./g, "/");
+    }
+    var className = J2ME.fromStringAddr(nameAddr).replace(/\./g, "/");
     classInfo = CLASSES.getClass(className);
   } catch (e) {
-    if (e instanceof (J2ME.ClassNotFoundException))
+    if (e instanceof (J2ME.ClassNotFoundException)) {
       throw $.newClassNotFoundException("'" + e.message + "' not found.");
+    }
     throw e;
   }
   // The following can trigger an unwind.
   J2ME.classInitCheck(classInfo);
 };
 
-Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(addr, name) {
-  var className = J2ME.fromJavaString(name).replace(/\./g, "/");
+Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(addr, nameAddr) {
+  var className = J2ME.fromStringAddr(nameAddr).replace(/\./g, "/");
   var classInfo = CLASSES.getClass(className);
   var classObject = classInfo.getClassObject();
   return classObject._address;
@@ -382,13 +398,14 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function(addr) {
   return (new self.runtimeKlass.templateKlass)._address;
 };
 
-Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, o) {
+Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, oAddr) {
+  var o = getHandle(oAddr);
   // The following can trigger an unwind.
   var methodInfo = o.klass.classInfo.getLocalMethodByNameString("<init>", "()V", false);
   if (!methodInfo) {
     throw $.newInstantiationException("Can't instantiate classes without a nullary constructor");
   }
-  J2ME.getLinkedMethod(methodInfo).call(o);
+  J2ME.getLinkedMethod(methodInfo)(oAddr);
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function(addr) {
@@ -401,16 +418,17 @@ Native["java/lang/Class.isArray.()Z"] = function(addr) {
     return self.runtimeKlass.templateKlass.classInfo instanceof J2ME.ArrayClassInfo ? 1 : 0;
 };
 
-Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(addr, fromClass) {
+Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(addr, fromClassAddr) {
     var self = getHandle(addr);
+    var fromClass = getHandle(fromClassAddr);
     if (!fromClass)
         throw $.newNullPointerException();
     return J2ME.isAssignableTo(fromClass.runtimeKlass.templateKlass, self.runtimeKlass.templateKlass) ? 1 : 0;
 };
 
-Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(addr, obj) {
+Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(addr, objAddr) {
     var self = getHandle(addr);
-    return obj && J2ME.isAssignableTo(obj.klass, self.runtimeKlass.templateKlass) ? 1 : 0;
+    return objAddr !== J2ME.Constants.NULL && J2ME.isAssignableTo(getHandle(objAddr).klass, self.runtimeKlass.templateKlass) ? 1 : 0;
 };
 
 Native["java/lang/Float.floatToIntBits.(F)I"] = function(addr, f) {
@@ -589,8 +607,8 @@ Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(addr, ch) 
     console.print(ch);
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(addr, name) {
-    var fileName = J2ME.fromJavaString(name);
+Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(addr, nameAddr) {
+    var fileName = J2ME.fromStringAddr(nameAddr);
     var data = JARStore.loadFile(fileName);
     var obj = null;
     if (data) {
@@ -603,7 +621,8 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
     return obj ? obj._address : J2ME.Constants.NULL;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(addr, source) {
+Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(addr, sourceAddr) {
+    var source = getHandle(sourceAddr);
     var obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
     var sourceDecoder = getNative(source);
     setNative(obj, {
@@ -613,18 +632,20 @@ Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang
     return obj._address;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(addr, fileDecoder) {
-    var handle = getNative(fileDecoder);
+Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(addr, fileDecoderAddr) {
+    var handle = NativeMap.get(fileDecoderAddr);
     return handle.data.length - handle.pos;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(addr, fileDecoder) {
-    var handle = getNative(fileDecoder);
+Native["com/sun/cldc/io/ResourceInputStream.readByte.(Ljava/lang/Object;)I"] = function(addr, fileDecoderAddr) {
+    var handle = NativeMap.get(fileDecoderAddr);
     return (handle.data.length - handle.pos > 0) ? handle.data[handle.pos++] : -1;
 };
 
-Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] = function(addr, fileDecoder, b, off, len) {
-    var handle = getNative(fileDecoder);
+Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"] =
+function(addr, fileDecoderAddr, bAddr, off, len) {
+    var b = J2ME.getArrayFromAddr(bAddr);
+    var handle = NativeMap.get(fileDecoderAddr);
     var data = handle.data;
     var remaining = data.length - handle.pos;
     if (len > remaining)
@@ -635,14 +656,20 @@ Native["com/sun/cldc/io/ResourceInputStream.readBytes.(Ljava/lang/Object;[BII)I"
     return (len > 0) ? len : -1;
 };
 
-Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr, target) {
+Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr, targetAddr) {
+    // Store the (not actually) weak reference in NativeMap.
+    //
+    // This is technically a misuse of NativeMap, which is intended to store
+    // native objects associated with Java objects, whereas here we're storing
+    // the address of a Java object associated with another Java object.
+    //
     // XXX Make these real weak references.
-    NativeMap.set(addr, target);
+    //
+    NativeMap.set(addr, targetAddr);
 };
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) {
-    var target = NativeMap.get(addr);
-    return target ? target._address : J2ME.Constants.NULL;
+    return NativeMap.has(addr) ? NativeMap.get(addr) : J2ME.Constants.NULL;
 };
 
 Native["java/lang/ref/WeakReference.clear.()V"] = function(addr) {
@@ -700,12 +727,12 @@ Native["com/sun/cldc/isolate/Isolate.setPriority0.(I)V"] = function(addr, newPri
     // XXX Figure out if there's anything to do here.  If not, say so.
 };
 
-Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(addr, suiteId, className) {
+Native["com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V"] = function(addr, suiteId, classNameAddr) {
   console.warn("com/sun/j2me/content/AppProxy.midletIsAdded.(ILjava/lang/String;)V not implemented");
 };
 
-Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V"] = function(addr, content) {
-    var fileName = J2ME.fromJavaString(content);
+Native["com/nokia/mid/impl/jms/core/Launcher.handleContent.(Ljava/lang/String;)V"] = function(addr, contentAddr) {
+    var fileName = J2ME.fromStringAddr(contentAddr);
 
     var ext = fileName.split('.').pop().toLowerCase();
     // https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img#Supported_image_formats
@@ -766,9 +793,9 @@ function addUnimplementedNative(signature, returnValue) {
     Native[signature] = function(addr) { return warnOnce() };
 }
 
-Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(addr, src) {
+Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(addr, srcAddr) {
     if (!release) {
-        eval(J2ME.fromJavaString(src));
+        eval(J2ME.fromStringAddr(srcAddr));
     }
 };
 

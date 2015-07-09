@@ -36,7 +36,7 @@ module J2ME {
       return "[" + getObjectInfo(o) + "] " + o.runtimeKlass.templateKlass.classInfo.getClassNameSlow();
     }
     if (o && o.klass === Klasses.java.lang.String) {
-      return "[" + getObjectInfo(o) + "] \"" + fromJavaString(o) + "\"";
+      return "[" + getObjectInfo(o) + "] \"" + fromStringAddr(o._address) + "\"";
     }
     return o ? ("[" + getObjectInfo(o) + "]") : "null";
   }
@@ -71,30 +71,6 @@ module J2ME {
     aliasedI32[0] = l;
     aliasedI32[1] = h;
     return aliasedF64[0];
-  }
-
-  /**
-   * Given a reference, returns its canonical representation, which is ideally
-   * its address in the ASM heap.  This is an intermediate solution until we
-   * start storing all objects in that heap and referencing them via addresses.
-   */
-  export function canonicalizeRef(reference: any): number {
-    // The reference is the address itself, so just return it.
-    if (typeof reference === "number") {
-      return reference;
-    }
-
-    if (reference === null) {
-      return Constants.NULL;
-    }
-
-    // XXX Also check that |reference instanceof java.lang.Object|?
-    if ("_address" in reference) {
-      return reference._address;
-    }
-
-    // XXX Should we return the reference itself here and hope for the best?
-    assert(false, "unknown reference type");
   }
 
   /**
@@ -461,13 +437,13 @@ module J2ME {
       var kinds = methodInfo.signatureKinds;
       var index = 0;
       if (!methodInfo.isStatic) {
-        frame.setParameter(Kind.Reference, index++, canonicalizeRef(this));
+        frame.setParameter(Kind.Reference, index++, arguments[0]);
       }
       for (var i = 1; i < kinds.length; i++) {
-        frame.setParameter(kinds[i], index++, canonicalizeRef(arguments[i - 1]));
+        frame.setParameter(kinds[i], index++, arguments[i]);
       }
       if (methodInfo.isSynchronized) {
-        var monitor = methodInfo.isStatic ? methodInfo.classInfo.getClassObject()._address : canonicalizeRef(this);
+        var monitor = methodInfo.isStatic ? methodInfo.classInfo.getClassObject()._address : arguments[0];
         frame.monitor = monitor; // XXX This doesn't seem to be used; delete?
         $.ctx.monitorEnter(getMonitor(monitor));
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
@@ -1775,9 +1751,7 @@ module J2ME {
                       args.unshift(i32[--sp]);
                       break;
                     case Kind.Reference:
-                      // XXX Update natives to expect addresses and stop passing
-                      // handles.
-                      args.unshift(getHandle(i32[--sp]));
+                      args.unshift(i32[--sp]);
                       break;
                     default:
                       release || assert(false, "Invalid Kind: " + Kind[kind]);

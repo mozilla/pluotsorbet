@@ -57,12 +57,13 @@ Native["com/sun/j2me/pim/PIMProxy.getListNamesCount0.(I)I"] = function(addr, lis
   return 0;
 };
 
-Native["com/sun/j2me/pim/PIMProxy.getListNames0.([Ljava/lang/String;)V"] = function(addr, names) {
+Native["com/sun/j2me/pim/PIMProxy.getListNames0.([Ljava/lang/String;)V"] = function(addr, namesAddr) {
+  var names = J2ME.getArrayFromAddr(namesAddr);
   console.warn("PIMProxy.getListNames0.([Ljava/lang/String;)V incomplete");
   names[0] = J2ME.newString("ContactList");
 };
 
-Native["com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I"] = function(addr, listType, listName, mode) {
+Native["com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I"] = function(addr, listType, listNameAddr, mode) {
   console.warn("PIMProxy.listOpen0.(ILjava/lang/String;I)I incomplete");
 
   if (mode !== PIM.READ_ONLY) {
@@ -78,7 +79,8 @@ Native["com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I"] = function
   return 0;
 };
 
-Native["com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z"] = function(addr, listHandle, description) {
+Native["com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z"] = function(addr, listHandle, descriptionAddr) {
+  var description = J2ME.getArrayFromAddr(descriptionAddr);
   console.warn("PIMProxy.getNextItemDescription0.(I[I)Z incomplete");
 
   asyncImpl("Z", new Promise(function(resolve, reject) {
@@ -105,7 +107,8 @@ Native["com/sun/j2me/pim/PIMProxy.getNextItemDescription0.(I[I)Z"] = function(ad
   }));
 };
 
-Native["com/sun/j2me/pim/PIMProxy.getNextItemData0.(I[BI)Z"] = function(addr, itemHandle, data, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getNextItemData0.(I[BI)Z"] = function(addr, itemHandle, dataAddr, dataHandle) {
+  var data = J2ME.getArrayFromAddr(dataAddr);
   console.warn("PIMProxy.getNextItemData0.(I[BI)Z incomplete");
   data.set(PIM.curVcard);
   return 1;
@@ -141,7 +144,7 @@ Native["com/sun/j2me/pim/PIMProxy.getDefaultListName.(I)Ljava/lang/String;"] = f
   return J2ME.Constants.NULL;
 };
 
-Native["com/sun/j2me/pim/PIMProxy.getFieldsCount0.(I[I)I"] = function(addr, listHandle, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getFieldsCount0.(I[I)I"] = function(addr, listHandle, dataHandleAddr) {
   return PIM.supportedFields.length;
 };
 
@@ -150,7 +153,9 @@ Native["com/sun/j2me/pim/PIMProxy.getFieldLabelsCount0.(III)I"] = function(addr,
   return 1;
 };
 
-Native["com/sun/j2me/pim/PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescriptor;I)V"] = function(addr, listHandle, desc, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescriptor;I)V"] =
+function(addr, listHandle, descAddr, dataHandle) {
+  var desc = J2ME.getArrayFromAddr(descAddr);
   console.warn("PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescriptor;I)V incomplete");
 
   PIM.supportedFields.forEach(function(field, i) {
@@ -161,11 +166,12 @@ Native["com/sun/j2me/pim/PIMProxy.getFields0.(I[Lcom/sun/j2me/pim/PIMFieldDescri
   });
 };
 
-Native["com/sun/j2me/pim/PIMProxy.getAttributesCount0.(I[I)I"] = function(addr, listHandle, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getAttributesCount0.(I[I)I"] = function(addr, listHandle, dataHandleAddr) {
   console.warn("PIMProxy.getAttributesCount0.(I[I)I not implemented");
   return 0;
 };
 
-Native["com/sun/j2me/pim/PIMProxy.getAttributes0.(I[Lcom/sun/j2me/pim/PIMAttribute;I)V"] = function(addr, listHandle, attr, dataHandle) {
+Native["com/sun/j2me/pim/PIMProxy.getAttributes0.(I[Lcom/sun/j2me/pim/PIMAttribute;I)V"] =
+function(addr, listHandle, attrAddr, dataHandle) {
   console.warn("PIMProxy.getAttributes0.(I[Lcom/sun/j2me/pim/PIMAttribute;I)V not implemented");
 };
