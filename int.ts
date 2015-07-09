@@ -178,14 +178,6 @@ module J2ME {
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo;
     }
 
-    set monitor(objectAddr: number) {
-      i32[this.fp + FrameLayout.MonitorOffset] = objectAddr;
-    }
-
-    get monitor(): number {
-      return i32[this.fp + FrameLayout.MonitorOffset];
-    }
-
     get parameterOffset() {
       return this.methodInfo ? -this.methodInfo.codeAttribute.max_locals : 0;
     }
@@ -444,7 +436,6 @@ module J2ME {
       }
       if (methodInfo.isSynchronized) {
         var monitorAddr = methodInfo.isStatic ? methodInfo.classInfo.getClassObject()._address : arguments[0];
-        frame.monitor = monitorAddr; // XXX This doesn't seem to be used; delete?
         $.ctx.monitorEnter(getMonitor(monitorAddr));
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
