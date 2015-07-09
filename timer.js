@@ -33,10 +33,11 @@
       return;
     }
 
+    ev.stopPropagation();
     cbs.shift()();
   }
 
-  window.addEventListener("message", recv, false);
+  window.addEventListener("message", recv, true);
 
   window.nextTickDuringEvents = nextTickDuringEvents;
 })();
