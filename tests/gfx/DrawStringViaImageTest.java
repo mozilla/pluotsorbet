@@ -1,7 +1,10 @@
 package gfx;
 
-import javax.microedition.lcdui.*;
-import javax.microedition.midlet.*;
+import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Display;
+import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.Image;
+import javax.microedition.midlet.MIDlet;
 import com.nokia.mid.ui.*;
 
 public class DrawStringViaImageTest extends MIDlet {
@@ -9,17 +12,19 @@ public class DrawStringViaImageTest extends MIDlet {
 
     class TestCanvas extends Canvas {
         protected void paint(Graphics graphics) {
-            Image image = DirectUtils.createImage(150, 150, 0);
-            Graphics g = image.getGraphics();
+            // Color the background so we can see the image on top of it.
+            graphics.setColor(0x00FF0000);
+            graphics.fillRect(0, 0, getWidth(), getHeight());
 
+            Image image = Image.createImage(150, 150);
+
+            Graphics g = image.getGraphics();
             g.setColor(0x00FFFFFF);
-            g.fillRect(0, 0, getWidth(), getHeight());
+            g.fillRect(0, 0, 150, 150);
             g.setColor(0);
             g.setStrokeStyle(Graphics.SOLID);
             g.drawString("Roxors", 50, 50, Graphics.TOP | Graphics.LEFT);
 
-            graphics.setColor(0x00FF0000);
-            graphics.fillRect(0, 0, getWidth(), getHeight());
             graphics.drawImage(image, 50, 50, Graphics.TOP | Graphics.LEFT);
 
             System.out.println("PAINTED");
@@ -42,4 +47,3 @@ public class DrawStringViaImageTest extends MIDlet {
     public void destroyApp(boolean unconditional) {
     }
 }
-
