@@ -19,7 +19,7 @@ var currentlyFocusedTextEditor;
     }
 
     scaleCanvas(MIDP.deviceContext.canvas);
-    MIDP.deviceContext.setTransform(MIDP.devicePixelRatio, 0, 0, MIDP.devicePixelRatio, 0, 0);
+    // MIDP.deviceContext.setTransform(MIDP.devicePixelRatio, 0, 0, MIDP.devicePixelRatio, 0, 0);
     // XXX if config.useOffscreenCanvas, then scale that canvas too.
 
     var offscreenCanvas, offscreenContext2D;
@@ -42,7 +42,7 @@ var currentlyFocusedTextEditor;
         }
 
         scaleCanvas(MIDP.deviceContext.canvas);
-        MIDP.deviceContext.setTransform(MIDP.devicePixelRatio, 0, 0, MIDP.devicePixelRatio, 0, 0);
+        // MIDP.deviceContext.setTransform(MIDP.devicePixelRatio, 0, 0, MIDP.devicePixelRatio, 0, 0);
         // XXX if config.useOffscreenCanvas, then scale that canvas too.
 
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
