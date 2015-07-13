@@ -50,7 +50,7 @@ var DumbPipe = {
 
     if (!this.isRunningSendQueue) {
       this.isRunningSendQueue = true;
-      window.setZeroTimeout(this.runSendQueue.bind(this));
+      window.nextTickBeforeEvents(this.runSendQueue.bind(this));
     }
   },
 
@@ -58,7 +58,7 @@ var DumbPipe = {
     alert(JSON.stringify(this.sendQueue.shift()));
 
     if (this.sendQueue.length > 0) {
-      window.setZeroTimeout(this.runSendQueue.bind(this));
+      window.nextTickBeforeEvents(this.runSendQueue.bind(this));
     } else {
       this.isRunningSendQueue = false;
     }

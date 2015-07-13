@@ -229,7 +229,7 @@ var contact2vcard = (function() {
     function processContact(ct) {
       if (navigator.mozContact && !(ct instanceof navigator.mozContact)) {
         console.error('An instance of mozContact was expected');
-        setZeroTimeout(function() { appendVCard(''); });
+        nextTickBeforeEvents(function() { appendVCard(''); });
         return;
       }
 
@@ -257,7 +257,7 @@ var contact2vcard = (function() {
 
       // vCard standard does not accept contacts without 'n' or 'fn' fields.
       if (n === 'n:;;;;;' || !ct.name) {
-        setZeroTimeout(function() { appendVCard(''); });
+        nextTickBeforeEvents(function() { appendVCard(''); });
         return;
       }
 
@@ -324,7 +324,7 @@ var contact2vcard = (function() {
           appendVCard(joinFields(allFields));
         });
       } else {
-        setZeroTimeout(function() { appendVCard(joinFields(allFields)); });
+        nextTickBeforeEvents(function() { appendVCard(joinFields(allFields)); });
       }
     }
 

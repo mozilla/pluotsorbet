@@ -55,7 +55,7 @@ var DumbPipe = {
       return;
     }
 
-    window.setZeroTimeout(this.handlePipeEvent.bind(this, event));
+    window.nextTickBeforeEvents(this.handlePipeEvent.bind(this, event));
   },
 
   handlePipeEvent: function(event) {
@@ -120,7 +120,7 @@ var DumbPipe = {
   },
 
   receiveMessage: function(pipeID, message, detail) {
-    window.setZeroTimeout(function() {
+    window.nextTickBeforeEvents(function() {
       if (!this.recipients[pipeID]) {
         console.warn("nonexistent pipe " + pipeID + " received message " + JSON.stringify(message));
         return;

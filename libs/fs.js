@@ -219,7 +219,7 @@ var fs = (function() {
     // If there are no changes to sync, merely call the callback
     // (in a timeout so the callback always gets called asynchronously).
     if (this.changesToSync.size == 0) {
-      setZeroTimeout(cb);
+      nextTickBeforeEvents(cb);
       return;
     }
 
@@ -445,12 +445,12 @@ var fs = (function() {
 
     var record = store.getItem(path);
     if (record == null || record.isDir) {
-      setZeroTimeout(function() { cb(-1) });
+      nextTickBeforeEvents(function() { cb(-1) });
     } else {
       var reader = new FileReader();
       reader.addEventListener("error", function() {
         console.error("Failed to read blob data from: " + path);
-        setZeroTimeout(function() { cb(-1) });
+        nextTickBeforeEvents(function() { cb(-1) });
       });
       reader.addEventListener("load", function() {
         openedFiles.set(++lastId, {
