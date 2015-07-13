@@ -866,7 +866,7 @@ module J2ME {
     // isRuntimeKlass: boolean;
 
     constructor(templateKlass: Klass) {
-      this._address = ASM._gcMalloc(Constants.OBJ_HDR_SIZE + templateKlass.classInfo.sizeOfStaticFields);
+      this._address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + templateKlass.classInfo.sizeOfStaticFields);
 
       // XXX Should we set the ID of this instance to java.lang.Class's ID?
       // i32[this._address >> 2] = Klasses.java.lang.Class.id | 0;
@@ -1866,6 +1866,14 @@ module J2ME {
     return new klass();
   }
 
+  export function allocUncollectableObject(klass: Klass): number {
+    // This could be implemented via a call to newObject, at the cost
+    // of creating a temporary object: return newObject(klass)._address;
+    var address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + klass.classInfo.sizeOfFields);
+    i32[address >> 2] = klass.id | 0;
+    return address;
+  }
+
   export function allocObject(klass: Klass): number {
     // This could be implemented via a call to newObject, at the cost
     // of creating a temporary object: return newObject(klass)._address;
@@ -1954,7 +1962,7 @@ module J2ME {
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
-      addr = ASM._gcMalloc(Constants.ARRAY_HDR_SIZE + size * 4);
+      addr = ASM._gcMallocUncollectable(Constants.ARRAY_HDR_SIZE + size * 4);
       // XXX: To remove
       arr = new Int32Array(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
     }

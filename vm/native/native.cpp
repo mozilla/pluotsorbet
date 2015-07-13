@@ -1,3 +1,5 @@
+//#define GC_DEBUG
+
 #include "gc.h"
 #include <stdio.h>
 #include <stdint.h>
@@ -45,8 +47,12 @@ extern "C" {
     }
   }
 
-  uintptr_t gcMalloc(int32_t size) {
+  uintptr_t gcMallocUncollectable(int32_t size) {
     return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
+  }
+
+  uintptr_t gcMalloc(int32_t size) {
+    return (uintptr_t)GC_MALLOC(size);
   }
 
   uintptr_t gcMallocAtomic(int32_t size) {

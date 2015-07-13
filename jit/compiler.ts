@@ -85,7 +85,7 @@ module J2ME {
     writer.writeLn("  this._address = address;");
     // writer.writeLn("  this._hashCode = i32[this._address + " + Constants.HASH_CODE_OFFSET + " >> 2];");
     writer.writeLn("} else {");
-    writer.writeLn("  this._address = ASM._gcMalloc(" + (Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields) + ");");
+    writer.writeLn("  this._address = ASM._gcMallocUncollectable(" + (Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields) + ");");
     writer.writeLn("  i32[this._address >> 2] = " + klassId + " | 0;");
     // writer.writeLn("  this._hashCode = i32[this._address + " + Constants.HASH_CODE_OFFSET + " >> 2] = $.nextHashCode();");
     writer.writeLn("  this._hashCode = i32[this._address + 4 >> 2] = 0;");
