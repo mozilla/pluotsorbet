@@ -291,7 +291,7 @@ module J2ME {
     view: FrameView;
 
     constructor(ctx: Context) {
-      this.tp = ASM._gcMalloc(1024 * 128) >> 2;
+      this.tp = ASM._gcMallocUncollectable(1024 * 256) >> 2;
       this.bp = this.tp;
       this.fp = this.bp;
       this.sp = this.fp;
