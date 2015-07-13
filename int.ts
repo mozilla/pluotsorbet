@@ -178,14 +178,6 @@ module J2ME {
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo;
     }
 
-    set monitor(object: java.lang.Object) {
-      ref[this.fp + FrameLayout.MonitorOffset] = object;
-    }
-
-    get monitor(): java.lang.Object {
-      return ref[this.fp + FrameLayout.MonitorOffset];
-    }
-
     get parameterOffset() {
       return this.methodInfo ? -this.methodInfo.codeAttribute.max_locals : 0;
     }
@@ -339,7 +331,7 @@ module J2ME {
       i32[this.fp + FrameLayout.CallerRAOffset] = this.pc;    // Caller RA
       i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo; // Callee
-      ref[this.fp + FrameLayout.MonitorOffset] = null; // Monitor
+      i32[this.fp + FrameLayout.MonitorOffset] = Constants.NULL; // Monitor
       this.sp = this.fp + FrameLayout.CallerSaveSize;
       this.pc = 0;
     }
@@ -390,7 +382,7 @@ module J2ME {
           return;
         }
         if (mi.isSynchronized) {
-          this.ctx.monitorExit(getMonitor(ref[this.fp + FrameLayout.MonitorOffset]));
+          this.ctx.monitorExit(getMonitor(i32[this.fp + FrameLayout.MonitorOffset]));
         }
         mi = this.popFrame(mi);
         release || traceWriter && traceWriter.outdent();
@@ -443,9 +435,8 @@ module J2ME {
         frame.setParameter(kinds[i], index++, arguments[i]);
       }
       if (methodInfo.isSynchronized) {
-        var monitor = methodInfo.isStatic ? methodInfo.classInfo.getClassObject() : getMonitor(arguments[0]);
-        frame.monitor = monitor; // XXX This doesn't seem to be used; delete?
-        $.ctx.monitorEnter(monitor);
+        var monitorAddr = methodInfo.isStatic ? methodInfo.classInfo.getClassObject()._address : arguments[0];
+        $.ctx.monitorEnter(getMonitor(monitorAddr));
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
           return;
@@ -539,7 +530,7 @@ module J2ME {
     var classInfo: ClassInfo;
     var fieldInfo: FieldInfo;
 
-    var monitor: java.lang.Object;
+    var monitorAddr: number;
 
     // HEAD
 
@@ -1616,7 +1607,7 @@ module J2ME {
             var lastMI = mi;
             var lastOP = op;
             if (lastMI.isSynchronized) {
-              $.ctx.monitorExit(getMonitor(ref[fp + FrameLayout.MonitorOffset]));
+              $.ctx.monitorExit(getMonitor(i32[fp + FrameLayout.MonitorOffset]));
             }
             opPC = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - maxLocals;
@@ -1833,17 +1824,17 @@ module J2ME {
             i32[fp + FrameLayout.CallerRAOffset] = opPC;
             i32[fp + FrameLayout.CallerFPOffset] = callerFPOffset;
             ref[fp + FrameLayout.CalleeMethodInfoOffset] = mi;
-            ref[fp + FrameLayout.MonitorOffset] = null; // Monitor
+            i32[fp + FrameLayout.MonitorOffset] = Constants.NULL; // Monitor
 
             // Reset PC.
             opPC = pc = 0;
 
             if (calleeTargetMethodInfo.isSynchronized) {
-              monitor = calleeTargetMethodInfo.isStatic
-                ? calleeTargetMethodInfo.classInfo.getClassObject()
-                : getMonitor(address);
-              ref[fp + FrameLayout.MonitorOffset] = monitor;
-              $.ctx.monitorEnter(monitor);
+              monitorAddr = calleeTargetMethodInfo.isStatic
+                              ? calleeTargetMethodInfo.classInfo.getClassObject()._address
+                              : address;
+              i32[fp + FrameLayout.MonitorOffset] = monitorAddr;
+              $.ctx.monitorEnter(getMonitor(monitorAddr));
               release || assert(U !== VMState.Yielding, "Monitors should never yield.");
               if (U === VMState.Pausing || U === VMState.Stopping) {
                 thread.set(fp, sp, opPC);

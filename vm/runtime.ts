@@ -750,33 +750,10 @@ module J2ME {
   export var monitorMap = Object.create(null);
 
   // XXX Figure out correct return type(s).
-  export function getMonitor(ref: any): any {
-    // An numerical reference is an address.
-    if (typeof ref === "number") {
-      return monitorMap[ref] || (monitorMap[ref] = Object.create(null));
-    }
+  export function getMonitor(ref: number): any {
+    release || assert(typeof ref === "number", "monitor reference is a number");
 
-    // A java.lang.Class object is its own monitor.
-    if (ref.klass === CLASSES.java_lang_Class.klass) {
-      return ref;
-    }
-
-    // An object with an _address property is a handle to a Java object.
-    // XXX Also check that ref instanceof java.lang.Object?
-    if ("_address" in ref) {
-      release || assert(!("_lock" in ref), "monitor reference with _address doesn't have lock");
-      return monitorMap[ref._address] || (monitorMap[ref._address] = Object.create(null));
-    }
-
-    // An object with a _lock property is itself a monitor.
-    // XXX Seems dicey, warn or assert?
-    if ("_lock" in ref) {
-      return ref;
-    }
-
-    // Return the reference itself and hope for the best.
-    release || assert(false, "monitor reference is unknown type");
-    return ref;
+    return monitorMap[ref] || (monitorMap[ref] = Object.create(null));
   }
 
   /**
