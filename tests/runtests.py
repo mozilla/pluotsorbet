@@ -133,7 +133,19 @@ for line in iter(p.stdout.readline, b''):
         shell_success = True
     sys.stdout.write(line)
 
-if exit_code == 0 and not shell_success:
+if not shell_success:
+    sys.stdout.write("FAIL - Basic shell test failed\n")
+    exit_code = 1
+
+p = subprocess.Popen(['js', os.path.join('tests','gctests.js')], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+gc_tests_success = True
+for line in iter(p.stdout.readline, b''):
+    if "fail" in line:
+        gc_tests_success = False
+    sys.stdout.write(line)
+
+if not gc_tests_success:
+    sys.stdout.write("FAIL - GC tests failed\n")
     exit_code = 1
 
 sys.exit(exit_code)
