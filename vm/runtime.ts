@@ -1882,6 +1882,9 @@ module J2ME {
     return address;
   }
 
+  export function onFinalize(addr: number): void {
+  }
+
   /**
    * Get a handle for an object in the ASM heap.
    *

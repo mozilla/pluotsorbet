@@ -10,6 +10,14 @@ if (!jsGlobal.performance.now) {
   jsGlobal.performance.now = typeof dateNow !== 'undefined' ? dateNow : Date.now;
 }
 
+console.info = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
+console.error = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
 declare var load: (string) => void;
 
 load("libs/relooper.js"); // Load before we polyfill the window object.
