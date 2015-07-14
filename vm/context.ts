@@ -312,7 +312,7 @@ module J2ME {
     private createIsolateCtx(): Context {
       var runtime = new Runtime(this);
       var ctx = new Context(runtime);
-      ctx.threadAddress = runtime.mainThread = allocObject(CLASSES.java_lang_Thread.klass); // Just use newObject.
+      ctx.threadAddress = runtime.mainThread = allocUncollectableObject(CLASSES.java_lang_Thread.klass); // Just use newObject.
       var thread = <java.lang.Thread>getHandle(ctx.threadAddress);
       // XXX thread.pid seems to be unused, so remove it.
       thread.pid = util.id();
