@@ -27,17 +27,15 @@ function MozActivity(obj) {
 
       case "webcontacts/contact":
         lastAddContactParams = obj.data.params;
-
       break;
 
       default:
         throw new Error("MozActivity with type " + obj.data.type + " not supported");
     }
 
-    nextTickBeforeEvents((function() {
+    setZeroTimeout((function() {
       this.onsuccess();
     }).bind(this));
-
   } else {
     throw new Error("MozActivity " + obj.name + " not supported");
   }
