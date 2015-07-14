@@ -6,6 +6,7 @@
 var MIDP = (function() {
   var deviceCanvas = document.getElementById("canvas");
   var deviceContext = deviceCanvas.getContext("2d");
+  var devicePixelRatio = window.devicePixelRatio || 1;
 
   // The foreground isolate will get the user events (keypresses, etc.)
   var FG = (function() {
@@ -94,7 +95,10 @@ var MIDP = (function() {
     var newHeight = physicalScreenHeight - headerHeight;
     var newWidth = physicalScreenWidth;
 
-    if (newHeight != deviceCanvas.height || newWidth != deviceCanvas.width) {
+    // The canvas height/width have been scaled by the pixel ratio, so we have
+    // to scale the new height/width before comparing them.
+    // XXX Factor out scaling the canvas here and in scaleCanvas.
+    if ((newHeight * devicePixelRatio | 0) != deviceCanvas.height || (newWidth * devicePixelRatio | 0) != deviceCanvas.width) {
       deviceCanvas.height = newHeight;
       deviceCanvas.width = newWidth;
       deviceCanvas.style.height = deviceCanvas.height + "px";
@@ -423,8 +427,8 @@ var MIDP = (function() {
         (event.changedTouches && event.changedTouches[0]) || // touchend
         event); // mousedown, mouseup, mousemove
     return {
-      x: item.pageX - (canvasRect.left | 0),
-      y: item.pageY - (canvasRect.top | 0)
+      x: (item.pageX - (canvasRect.left | 0)) * devicePixelRatio | 0,
+      y: (item.pageY - (canvasRect.top | 0)) * devicePixelRatio | 0
     };
   }
 
@@ -1302,7 +1306,9 @@ var MIDP = (function() {
     setDestroyedForRestart: setDestroyedForRestart,
     registerDestroyedListener: registerDestroyedListener,
     sendExecuteMIDletEvent: sendExecuteMIDletEvent,
+    deviceCanvas: deviceCanvas,
     deviceContext: deviceContext,
+    devicePixelRatio: devicePixelRatio,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
     updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,

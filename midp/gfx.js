@@ -5,15 +5,43 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+    function scaleCanvas(canvas) {
+      if (MIDP.devicePixelRatio !== 1) {
+        canvas.style.width = canvas.width + 'px';
+        canvas.style.height = canvas.height + 'px';
+        canvas.width *= MIDP.devicePixelRatio;
+        canvas.height *= MIDP.devicePixelRatio;
+      }
+    }
+
+    function scaleContext(context) {
+      if (MIDP.devicePixelRatio !== 1) {
+        context.scale(MIDP.devicePixelRatio, MIDP.devicePixelRatio);
+      }
+    }
+
     var offscreenCanvas = document.createElement("canvas");
-    offscreenCanvas.width = MIDP.deviceContext.canvas.width;
-    offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+    offscreenCanvas.width = MIDP.deviceCanvas.width;
+    offscreenCanvas.height = MIDP.deviceCanvas.height;
     var offscreenContext2D = offscreenCanvas.getContext("2d");
+
+    scaleCanvas(MIDP.deviceCanvas);
+    scaleCanvas(offscreenCanvas);
+
+    // scaleContext(MIDP.deviceContext);
+
     var screenContextInfo = new ContextInfo(offscreenContext2D);
 
     MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
-        offscreenCanvas.width = MIDP.deviceContext.canvas.width;
-        offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+        offscreenCanvas.width = MIDP.deviceCanvas.width;
+        offscreenCanvas.height = MIDP.deviceCanvas.height;
+        scaleCanvas(MIDP.deviceCanvas);
+        scaleCanvas(offscreenCanvas);
+
+        // Resizing a canvas "resets" its existing contexts, so we need
+        // to rescale them.
+        // scaleContext(MIDP.deviceContext);
+
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
@@ -229,8 +257,9 @@ var currentlyFocusedTextEditor;
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
+        var context = canvas.getContext("2d");
 
-        imageData.contextInfo = new ContextInfo(canvas.getContext("2d"));
+        imageData.contextInfo = new ContextInfo(context);
 
         imageData.width = width;
         imageData.height = height;
@@ -346,7 +375,7 @@ var currentlyFocusedTextEditor;
     var SIZE_LARGE = 16;
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
-        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (offscreenCanvas.height / 35) | 0);
+        var defaultSize = config.fontSize ? config.fontSize : 18;
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
@@ -728,6 +757,7 @@ var currentlyFocusedTextEditor;
 
         tempContext.canvas.width = width;
         tempContext.canvas.height = height;
+
         var imageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(imageData.data.buffer);
 
