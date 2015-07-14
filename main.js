@@ -111,21 +111,19 @@ if (config.downloadJAD) {
   loadingMIDletPromises.push(new Promise(function(resolve, reject) {
     JARStore.loadJAR("midlet.jar").then(function(loaded) {
       if (loaded) {
-        if (!document.hidden) {
-          // Show the splash screen as soon as possible.
-          showSplashScreen();
-        }
+        // Show the splash screen as soon as possible.
+        showSplashScreen();
+
         processJAD(JARStore.getJAD());
         resolve();
         return;
       }
 
       performDownload(config.downloadJAD, function(data) {
-        if (!document.hidden) {
-          // Show the splash screen as soon as possible after showing
-          // the download screen while downloading the JAD/JAR files.
-          showSplashScreen();
-        }
+        // Show the splash screen as soon as possible after showing
+        // the download screen while downloading the JAD/JAR files.
+        showSplashScreen();
+
         JARStore.installJAR("midlet.jar", data.jarData, data.jadData).then(function() {
           processJAD(data.jadData);
           resolve();
@@ -134,6 +132,8 @@ if (config.downloadJAD) {
     });
   }).then(backgroundCheck));
 }
+
+var loadingFGPromises = [ emoji.loadData() ];
 
 if (jars.indexOf("tests/tests.jar") !== -1) {
   loadingPromises.push(loadScript("tests/native.js"),
@@ -150,6 +150,7 @@ function toggle(button) {
 }
 
 var bigBang = 0;
+var profiling = false;
 
 function startTimeline() {
   jsGlobal.START_TIME = performance.now();
@@ -182,29 +183,50 @@ function stopTimeline(cb) {
 
 function stopAndSaveTimeline() {
   console.log("Saving profile, please wait ...");
+  var traceFormat = Shumway.Tools.Profiler.TraceFormat[profileFormat.toUpperCase()];
   var output = [];
   var writer = new J2ME.IndentingWriter(false, function (s) {
     output.push(s);
   });
+  if (traceFormat === Shumway.Tools.Profiler.TraceFormat.CSV) {
+    writer.writeLn("Name,Count,Self (ms),Total (ms)");
+  }
   stopTimeline(function (buffers) {
     var snapshots = [];
     for (var i = 0; i < buffers.length; i++) {
       snapshots.push(buffers[i].createSnapshot());
     }
-    // Trace Statistcs
+    // Trace Statistics
     for (var i = 0; i < snapshots.length; i++) {
-      writer.writeLn("Timeline Statistics: " + i);
-      snapshots[i].traceStatistics(writer, 1); // Don't trace any totals below 1 ms.
+      writer.writeLn("Timeline Statistics: " + snapshots[i].name);
+      snapshots[i].traceStatistics(writer, 1, traceFormat); // Don't trace any totals below 1 ms.
     }
+    // Trace Aggregate Method Statistics
+    writer.writeLn("Timeline Statistics: All Threads");
+    var methodSnapshots = snapshots.slice(2);
+    new Shumway.Tools.Profiler.TimelineBufferSnapshotSet(methodSnapshots).traceStatistics(writer, 1, traceFormat);
     // Trace Events
     for (var i = 0; i < snapshots.length; i++) {
-      writer.writeLn("Timeline Events: " + i);
+      writer.writeLn("Timeline Events: " + snapshots[i].name);
       snapshots[i].trace(writer, 0.1); // Don't trace anything below 0.1 ms.
     }
   });
   var text = output.join("\n");
-  var profileFilename = "profile.txt";
-  var blob = new Blob([text], {type : 'text/html'});
+
+  var fileExtension, mediaType;
+  switch (traceFormat) {
+    case Shumway.Tools.Profiler.TraceFormat.CSV:
+      fileExtension = "csv";
+      mediaType = "text/csv";
+      break;
+    case Shumway.Tools.Profiler.PLAIN:
+    default:
+      fileExtension = "txt";
+      mediaType = "text/plain";
+      break;
+  }
+  var profileFilename = "profile." + fileExtension;
+  var blob = new Blob([text], {type : mediaType});
   saveAs(blob, profileFilename);
   console.log("Saved profile in: adb pull /sdcard/downloads/" + profileFilename);
 }
@@ -231,7 +253,7 @@ function start() {
 }
 
 // If we're not running a MIDlet, we need to wait everything to be loaded.
-if (!config.midletClassName || config.midletClassName == "RunTests") {
+if (!config.midletClassName) {
   loadingPromises = loadingPromises.concat(loadingMIDletPromises);
 }
 
@@ -264,11 +286,23 @@ if (typeof Benchmark !== "undefined") {
 }
 
 window.onload = function() {
- document.getElementById("deleteDatabase").onclick = function() {
-   fs.deleteStore().then(function() {
-     console.log("Delete file system completed.");
-   }, function() {
-     console.log("Failed to delete file system.");
+ document.getElementById("deleteDatabases").onclick = function() {
+   fs.deleteDatabase().then(function() {
+     console.log("Deleted fs database.");
+   }).catch(function(error) {
+     console.log("Error deleting fs database: " + error);
+   });
+
+   CompiledMethodCache.deleteDatabase().then(function() {
+     console.log("Deleted CompiledMethodCache database.");
+   }).catch(function(error) {
+     console.log("Error deleting CompiledMethodCache database: " + error);
+   });
+
+   JARStore.deleteDatabase().then(function() {
+     console.log("Deleted JARStore database.");
+   }).catch(function(error) {
+     console.log("Error deleting JARStore database: " + error);
    });
  };
  document.getElementById("exportstorage").onclick = function() {
@@ -421,6 +455,8 @@ window.onload = function() {
 
 function requestTimelineBuffers(fn) {
   if (J2ME.timeline) {
+    // If you change the position at which method timelines begin in this array,
+    // then also update the method timeline aggregation in stopAndSaveTimeline.
     var activeTimeLines = [
       J2ME.threadTimeline,
       J2ME.timeline,

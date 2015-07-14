@@ -5,34 +5,22 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
-    var screenContextInfo = new ContextInfo(MIDP.context2D);
-    MIDP.context2D.canvas.addEventListener("canvasresize", function() {
+    var offscreenCanvas = document.createElement("canvas");
+    offscreenCanvas.width = MIDP.deviceContext.canvas.width;
+    offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+    var offscreenContext2D = offscreenCanvas.getContext("2d");
+    var screenContextInfo = new ContextInfo(offscreenContext2D);
+
+    MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
+        offscreenCanvas.width = MIDP.deviceContext.canvas.width;
+        offscreenCanvas.height = MIDP.deviceContext.canvas.height;
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
-        MIDP.context2D.save();
+        offscreenContext2D.save();
     });
 
     var tempContext = document.createElement("canvas").getContext("2d");
     tempContext.canvas.width = 0;
     tempContext.canvas.height = 0;
-
-    var NativeDisplay = function() {
-        this.fullScreen = 1;
-    };
-
-    var NativeDisplays = {
-        get: function(id) {
-            var d = this._map.get(id);
-            if (!d) {
-                d = new NativeDisplay();
-                this._map.set(id, d);
-            }
-            return d;
-        },
-
-        _map: new Map(),
-
-        foreground: -1
-    };
 
     Native["com/sun/midp/lcdui/DisplayDeviceContainer.getDisplayDevicesIds0.()[I"] = function() {
         var ids = J2ME.newIntArray( 1);
@@ -74,35 +62,25 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return MIDP.context2D.canvas.width;
+        return offscreenCanvas.width;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return MIDP.context2D.canvas.height;
+        return offscreenCanvas.height;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
         console.warn("DisplayDevice.displayStateChanged0.(II)V not implemented (" + hardwareId + ", " + state + ")");
     };
 
-    Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
-        var d = NativeDisplays.get(displayId);
-        d.fullScreen = mode;
-        if (NativeDisplays.foreground === displayId) {
-            MIDP.setFullScreen(mode);
-        }
-    };
-
     Native["com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V"] = function(hardwareId, displayId) {
-        hideBackgroundScreen();
         hideSplashScreen();
-        var d = NativeDisplays.get(displayId);
-        NativeDisplays.foreground = displayId;
-        MIDP.setFullScreen(d.fullScreen);
 
-        asyncImpl("V", emoji.loadData());
+        if (!emoji.loaded) {
+          asyncImpl("V", Promise.all(loadingFGPromises));
+        }
 
-        if (profile === 2) {
+        if (profile === 2 || profile === 3) {
           // Use setTimeout to make sure our profiling enter/leave stack is not unpaired.
           setTimeout(function () {
             stopAndSaveTimeline();
@@ -124,7 +102,7 @@ var currentlyFocusedTextEditor;
         if (ctxs.length > 0) {
             var ctx = ctxs.pop();
             window.requestAnimationFrame(gotNewFrame);
-            ctx.execute();
+            J2ME.Scheduler.enqueue(ctx, true);
         } else {
             hasNewFrame = true;
         }
@@ -140,9 +118,26 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function() {
-        // This is a no-op: The foreground display gets drawn directly
-        // to the screen.
+    Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
+        x1 = Math.max(0, x1);
+        y1 = Math.max(0, y1);
+        x2 = Math.max(0, x2);
+        y2 = Math.max(0, y2);
+
+        var maxX = Math.min(offscreenCanvas.width, MIDP.deviceContext.canvas.width);
+        x1 = Math.min(maxX, x1);
+        x2 = Math.min(maxX, x2);
+
+        var maxY = Math.min(offscreenCanvas.height, MIDP.deviceContext.canvas.height);
+        y1 = Math.min(maxY, y1);
+        y2 = Math.min(maxY, y2);
+
+        var width = x2 - x1;
+        var height = y2 - y1;
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        MIDP.deviceContext.drawImage(offscreenCanvas, x1, y1, width, height, x1, y1, width, height);
     };
 
     function swapRB(pixel) {
@@ -351,7 +346,7 @@ var currentlyFocusedTextEditor;
     var SIZE_LARGE = 16;
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
-        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (MIDP.context2D.canvas.height / 35) | 0);
+        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (offscreenCanvas.height / 35) | 0);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
@@ -403,7 +398,10 @@ var currentlyFocusedTextEditor;
             var classInfo = CLASSES.loadAndLinkClass("javax/microedition/lcdui/Font");
             defaultFont = new classInfo.klass();
             var methodInfo = classInfo.getMethodByNameString("<init>", "(III)V", false);
+            J2ME.preemptionLockLevel++;
             J2ME.getLinkedMethod(methodInfo).call(defaultFont, 0, 0, 0);
+            release || J2ME.Debug.assert(!U, "Unexpected unwind during createException.");
+            J2ME.preemptionLockLevel--;
         }
         return defaultFont;
     }

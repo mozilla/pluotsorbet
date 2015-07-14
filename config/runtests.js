@@ -1,2 +1,3 @@
 config.jars = "tests/tests.jar";
-config.midletClassName = "RunTests";
+config.jad = "tests/runtests.jad";
+config.midletClassName = "RunTestsMIDlet";

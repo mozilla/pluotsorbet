@@ -5,14 +5,14 @@ package com.sun.midp.ssl;
 
 import com.sun.midp.publickeystore.WebPublicKeyStore;
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import javax.microedition.io.Connector;
 import javax.microedition.io.StreamConnection;
 
-public class TestSSLStreamConnection implements Testlet {
+public class TestSSLStreamConnection implements MIDletTestlet {
     public int getExpectedPass() { return 203; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

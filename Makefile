@@ -1,9 +1,10 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks package
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build package
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
 RELEASE ?= 0
 PROFILE ?= 0
+PROFILE_FORMAT ?= PLAIN
 BENCHMARK ?= 0
 CONSOLE ?= 1
 
@@ -17,7 +18,7 @@ VERBOSE ?= 0
 export VERBOSE
 
 # An extra configuration script to load.  Use this to configure the project
-# to run a particular midlet.  By default, it runs the test midlet RunTests.
+# to run a particular midlet.  By default, it runs the test midlet RunTestsMIDlet.
 CONFIG ?= config/runtests.js
 export CONFIG
 
@@ -32,10 +33,10 @@ ifeq ($(PACKAGE_TESTS),1)
   TESTS_JAR = tests/tests.jar
 endif
 
-NAME ?= j2me.js
+NAME ?= PluotSorbet
 MIDLET_NAME ?= midlet
-DESCRIPTION ?= j2me interpreter for firefox os
-ORIGIN ?= app://j2mejs.mozilla.org
+DESCRIPTION ?= a J2ME-compatible virtual machine written in JavaScript
+ORIGIN ?= app://pluotsorbet.mozilla.org
 VERSION ?= $(shell date +%s)
 
 ICON_128 ?= img/default-icon-128.png
@@ -53,12 +54,19 @@ export JSR_082
 JSR_179 ?= 1
 export JSR_179
 
-# Closure optimization level J2ME_OPTIMIZATIONS breaks the profiler somehow,
-# so we revert to level SIMPLE if the profiler is enabled.
+# Content handler support
+CONTENT_HANDLER_FILTER ?= '["image/*", "video/*", "audio/*"]'
+export CONTENT_HANDLER_FILTER
+
 ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
 else
+  # Closure optimization level J2ME_OPTIMIZATIONS breaks the profiler somehow,
+  # so we revert to level SIMPLE if the profiler is enabled.
   J2ME_JS_OPTIMIZATION_LEVEL = SIMPLE
+
+  # Add dependency on shumway when the profiler is enabled.
+  PROFILE_DEP = shumway
 endif
 
 # Closure is really chatty, so we shush it by default to reduce log lines
@@ -67,6 +75,12 @@ ifeq ($(VERBOSE),1)
   CLOSURE_WARNING_LEVEL = VERBOSE
 else
   CLOSURE_WARNING_LEVEL = QUIET
+endif
+
+ifeq ($(RELEASE),1)
+	CLOSURE_FLAGS = 
+else
+	CLOSURE_FLAGS = --formatting PRETTY_PRINT
 endif
 
 MAIN_JS_SRCS = \
@@ -113,6 +127,7 @@ MAIN_JS_SRCS = \
   midp/device_control.js \
   midp/background.js \
   midp/media.js \
+  midp/content.js \
   game-ui.js \
   $(NULL)
 
@@ -139,7 +154,7 @@ MAIN_JS_SRCS += main.js
 # If the configuration has changed, we update the checksum file to let the files
 # which depend on it to regenerate.
 
-CHECKSUM := "$(RELEASE)$(PROFILE)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(CONFIG)$(NAME)$(DESCRIPTION)$(ORIGIN)"
+CHECKSUM := "$(RELEASE)$(PROFILE)$(PROFILE_FORMAT)$(BENCHMARK)$(CONSOLE)$(JSR_256)$(JSR_082)$(JSR_179)$(CONFIG)$(NAME)$(DESCRIPTION)$(ORIGIN)"
 OLD_CHECKSUM := "$(shell [ -f .checksum ] && cat .checksum)"
 $(shell [ $(CHECKSUM) != $(OLD_CHECKSUM) ] && echo $(CHECKSUM) > .checksum)
 
@@ -147,10 +162,12 @@ toBool = $(if $(findstring 1,$(1)),true,false)
 PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D RELEASE=$(call toBool,$(RELEASE)) \
              -D PROFILE=$(PROFILE) \
+             -D PROFILE_FORMAT=$(PROFILE_FORMAT) \
              -D BENCHMARK=$(call toBool,$(BENCHMARK)) \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
+             -D CONTENT_HANDLER_FILTER=$(CONTENT_HANDLER_FILTER) \
              -D CONFIG=$(CONFIG) \
              -D NAME="$(NAME)" \
              -D MIDLET_NAME="$(MIDLET_NAME)" \
@@ -161,7 +178,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
+all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -181,25 +198,37 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
-PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
+SPIDERMONKEY_VERSION=38.1.0esr
+OLD_SPIDERMONKEY_VERSION := $(shell [ -f build_tools/.spidermonkey_version ] && cat build_tools/.spidermonkey_version)
+$(shell [ "$(SPIDERMONKEY_VERSION)" != "$(OLD_SPIDERMONKEY_VERSION)" ] && echo $(SPIDERMONKEY_VERSION) > build_tools/.spidermonkey_version)
+
+PATH := build_tools/spidermonkey:build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_S),Linux)
-	XULRUNNER_PLATFORM=linux-$(UNAME_M)
+	PLATFORM=linux-$(UNAME_M)
 	XULRUNNER_PATH=xulrunner/xulrunner
+	XULRUNNER_EXT=tar.bz2
+	BOOTCLASSPATH_SEPARATOR=:
 endif
 ifeq ($(UNAME_S),Darwin)
-	XULRUNNER_PLATFORM=mac
+	PLATFORM=mac
 	XULRUNNER_PATH=XUL.framework/Versions/Current/xulrunner
+	XULRUNNER_EXT=tar.bz2
+	BOOTCLASSPATH_SEPARATOR=:
 endif
-ifneq (,$(findstring MINGW,$(uname_S)))
-	XULRUNNER_PLATFORM=win32
-	XULRUNNER_PATH=xulrunner/xulrunner
+ifneq (,$(findstring MINGW,$(UNAME_S)))
+	PLATFORM=win32
+	XULRUNNER_PATH=xulrunner
+	XULRUNNER_EXT=zip
+	BOOTCLASSPATH_SEPARATOR=;
 endif
-ifneq (,$(findstring CYGWIN,$(uname_S)))
-	XULRUNNER_PLATFORM=win32
-	XULRUNNER_PATH=xulrunner/xulrunner
+ifneq (,$(findstring CYGWIN,$(UNAME_S)))
+	PLATFORM=win32
+	XULRUNNER_PATH=xulrunner
+	XULRUNNER_EXT=zip
+	BOOTCLASSPATH_SEPARATOR=;
 endif
 
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
@@ -213,18 +242,31 @@ build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 
 build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	rm -rf build_tools/XUL* build_tools/xul*
-	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2
-	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2 -m
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT)
+ifeq ($(XULRUNNER_EXT),tar.bz2)
+	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT) -m
+else
+	unzip -o -d build_tools build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT)
+endif
 
 build_tools/soot-trunk.jar: build_tools/.soot_version
 	rm -f build_tools/soot-trunk.jar
-	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
+	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-$(SOOT_VERSION)/soot-trunk.jar
 	touch build_tools/soot-trunk.jar
 
 build_tools/closure.jar: build_tools/.closure_compiler_version
 	rm -f build_tools/closure.jar
 	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
+
+JS=build_tools/spidermonkey/js
+
+$(JS): build_tools/.spidermonkey_version
+	rm -rf build_tools/spidermonkey build_tools/jsshell*
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/$(SPIDERMONKEY_VERSION)-candidates/build1/jsshell-$(PLATFORM).zip
+	unzip -o -d build_tools/spidermonkey build_tools/jsshell-$(PLATFORM).zip
+	chmod +x build_tools/spidermonkey/*
+	touch $(JS)
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
@@ -256,13 +298,13 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 # out-language) in order for Closure to compile them, even though for now
 # we're optimizing "WHITESPACE_ONLY".
 bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
-	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+	java -jar build_tools/closure.jar $(CLOSURE_FLAGS) --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
 j2me: bld/j2me.js bld/jsc.js
 
 aot: bld/classes.jar.js
-bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar .checksum
+bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar $(JS) .checksum
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
 ifeq ($(RELEASE),1)
@@ -270,10 +312,10 @@ ifeq ($(RELEASE),1)
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 endif
 
-bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
+bld/tests.jar.js: tests/tests.jar bld/jsc.js $(JS) aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 
-bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
+bld/program.jar.js: program.jar bld/jsc.js $(JS) aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
 
 shumway: bld/shumway.js
@@ -314,15 +356,21 @@ img/icon-512.png: $(ICON_512)
 icon: img/icon-128.png img/icon-512.png
 
 # Makes an output/ directory containing the packaged open web app files.
-app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR)
+app: config-build java certs j2me aot bld/main-all.js icon $(TESTS_JAR) $(PROFILE_DEP)
 	tools/package.sh
 
 package: app
 	rm -f '$(NAME)-$(VERSION).zip'
 	cd $(PACKAGE_DIR) && zip -r '../$(NAME)-$(VERSION).zip' *
 
-benchmarks: java tests
-	make -C bench
+BENCHMARK_SRCS=$(shell find bench -name "*.java")
+
+bench/benchmark.jar: $(BENCHMARK_SRCS) java/classes.jar tests/tests.jar
+	rm -rf bench/build
+	mkdir bench/build
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath "java/classes.jar$(BOOTCLASSPATH_SEPARATOR)tests/tests.jar" -extdirs "" -d bench/build $(BENCHMARK_SRCS) > /dev/null
+	cd bench/build && jar cf0 ../benchmark.jar *
+	rm -rf bench/build
 
 clean:
 	rm -rf bld $(PACKAGE_DIR)
@@ -332,6 +380,6 @@ clean:
 	make -C java clean
 	rm -rf java/l10n/
 	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
-	make -C bench clean
+	rm -f bench/benchmark.jar
 	rm -f img/icon-128.png img/icon-512.png
 	rm -f package.zip

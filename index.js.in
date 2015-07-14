@@ -8,7 +8,8 @@
  */
 (function() {
   var loadingPromises = [];
-  if (config.midletClassName == "RunTests") {
+  if (config.midletClassName === "RunTestsMIDlet" ||
+      config.midletClassName.startsWith("tests.midlets")) {
     loadingPromises.push(loadScript("tests/contacts.js"),
                          loadScript("tests/index.js"),
                          loadScript("tests/mozactivitymock.js"));
@@ -54,7 +55,7 @@ var DumbPipe = {
       return;
     }
 
-    window.setZeroTimeout(this.handlePipeEvent.bind(this, event));
+    window.nextTickBeforeEvents(this.handlePipeEvent.bind(this, event));
   },
 
   handlePipeEvent: function(event) {
@@ -119,7 +120,7 @@ var DumbPipe = {
   },
 
   receiveMessage: function(pipeID, message, detail) {
-    window.setZeroTimeout(function() {
+    window.nextTickBeforeEvents(function() {
       if (!this.recipients[pipeID]) {
         console.warn("nonexistent pipe " + pipeID + " received message " + JSON.stringify(message));
         return;
@@ -752,4 +753,39 @@ DumbPipe.registerOpener("mozActivity", function(message, sender) {
   activity.onsuccess = sender.bind(null, { type: "onsuccess" });
 
   activity.onerror = sender.bind(null, { type: "onerror" });
+});
+
+DumbPipe.registerOpener("mozActivityHandler", function(message, sender) {
+  if (!navigator.mozSetMessageHandler) {
+    return;
+  }
+
+  navigator.mozSetMessageHandler('activity', function(activityRequest) {
+    if (activityRequest.source.name !== 'share') {
+      return;
+    }
+
+    /* The data attribute looks like this:
+         {
+           "type":"image/*",
+           "number":1,
+           "blobs":[{}],
+           "filenames":["IMG_0001.jpg"],
+           "filepaths":["/sdcard/DCIM/100MZLLA/IMG_0001.jpg"]
+         }
+    */
+
+    var blob = activityRequest.source.data.blobs[0];
+
+    var fileReader = new FileReader();
+
+    fileReader.onload = function(data) {
+      sender({
+        fileName: activityRequest.source.data.filenames[0],
+        data: fileReader.result
+      });
+    }
+
+    fileReader.readAsArrayBuffer(blob);
+  });
 });

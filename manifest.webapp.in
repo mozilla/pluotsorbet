@@ -55,5 +55,16 @@
   "messages": [
     { "alarm": "/index.html" }
   ],
+  // #ifdef CONTENT_HANDLER_FILTER
+  "activities": {
+    "share": {
+      "href": "/index.html",
+      "disposition": "window",
+      "filters": {
+        "type": @CONTENT_HANDLER_FILTER@
+      }
+    }
+  },
+  // #endif
   "type": "privileged"
 }

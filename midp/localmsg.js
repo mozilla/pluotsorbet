@@ -10,6 +10,7 @@ var LocalMsgConnectionMessage = function(data, offset, length) {
 }
 
 var LocalMsgConnection = function() {
+    this.clientConnected = false;
     this.waitingForConnection = null;
     this.serverWaiting = [];
     this.clientWaiting = [];
@@ -17,7 +18,23 @@ var LocalMsgConnection = function() {
     this.clientMessages = [];
 }
 
+LocalMsgConnection.prototype.reset = function() {
+    var ctx = $.ctx;
+
+    this.clientConnected = false;
+    this.clientWaiting = [];
+    this.clientMessages = [];
+    while (this.serverWaiting.length > 0) {
+        this.serverWaiting.shift()(false);
+    }
+    this.serverMessages = [];
+
+    ctx.setAsCurrentContext();
+}
+
 LocalMsgConnection.prototype.notifyConnection = function() {
+    this.clientConnected = true;
+
     if (this.waitingForConnection) {
         this.waitingForConnection();
     }
@@ -50,39 +67,43 @@ LocalMsgConnection.prototype.sendMessageToClient = function(data, offset, length
     }
 }
 
-LocalMsgConnection.prototype.clientReceiveMessage = function(data) {
-    return new Promise((function(resolve, reject) {
-        if (this.clientMessages.length == 0) {
-            this.clientWaiting.push(function() {
-                resolve(this.copyMessage(this.clientMessages, data));
-            }.bind(this));
+LocalMsgConnection.prototype.getClientMessage = function(data) {
+  return this.copyMessage(this.clientMessages, data);
+}
 
-            return;
-        }
-
-        resolve(this.copyMessage(this.clientMessages, data));
-    }).bind(this));
+LocalMsgConnection.prototype.waitClientMessage = function(data) {
+    asyncImpl("I", new Promise((function(resolve, reject) {
+        this.clientWaiting.push(function() {
+            resolve(this.getClientMessage(data));
+        }.bind(this));
+    }).bind(this)));
 }
 
 LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
     this.serverMessages.push(new LocalMsgConnectionMessage(data, offset, length));
 
     if (this.serverWaiting.length > 0) {
-        this.serverWaiting.shift()();
+        this.serverWaiting.shift()(true);
     }
 }
 
-LocalMsgConnection.prototype.serverReceiveMessage = function(data) {
-    return new Promise((function(resolve, reject) {
-        if (this.serverMessages.length == 0) {
-            this.serverWaiting.push(function() {
-                resolve(this.copyMessage(this.serverMessages, data));
-            }.bind(this));
-            return;
-        }
+LocalMsgConnection.prototype.getServerMessage = function(data) {
+  return this.copyMessage(this.serverMessages, data);
+}
 
-        resolve(this.copyMessage(this.serverMessages, data));
-    }).bind(this));
+LocalMsgConnection.prototype.waitServerMessage = function(data) {
+    var ctx = $.ctx;
+
+    asyncImpl("I", new Promise((function(resolve, reject) {
+        this.serverWaiting.push(function(successful) {
+            if (successful) {
+                resolve(this.getServerMessage(data));
+            } else {
+                ctx.setAsCurrentContext();
+                reject($.newIOException("Client disconnected"));
+            }
+        }.bind(this));
+    }).bind(this)));
 }
 
 var NokiaMessagingLocalMsgConnection = function() {
@@ -720,7 +741,15 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
         return;
       }
 
-      var imgData = fs.getBlob("/" + fileName);
+      if (fileName.startsWith("file:///")) {
+        fileName = fileName.substring("file:///".length);
+      }
+
+      if (!fileName.startsWith("/")) {
+        fileName = "/" + fileName;
+      }
+
+      var imgData = fs.getBlob(fileName);
       var img = new Image();
       img.src = URL.createObjectURL(imgData);
 
@@ -766,6 +795,13 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
           return;
         }
 
+        // Keep the aspect ratio of the image.
+        var ratioX = max_hres / img.naturalWidth;
+        var ratioY = max_vres / img.naturalHeight;
+        var ratio = ratioX < ratioY ? ratioX : ratioY;
+        max_hres = ratio * img.naturalWidth;
+        max_vres = ratio * img.naturalHeight;
+
         function _imageToBlob(aCanvas, aImage, aHeight, aWidth, aQuality) {
           aCanvas.width = aWidth;
           aCanvas.height = aHeight;
@@ -789,10 +825,10 @@ NokiaImageProcessingLocalMsgConnection.prototype.sendMessageToServer = function(
           var imgSizeInKb = blob.size / 1024;
 
           // Roughly recalc max_vres and max_hres based on the max_kb and the real resolution.
-          var ratio = Math.sqrt(max_kb / imgSizeInKb);
-          max_hres = Math.min(img.naturalWidth * ratio,
+          var sizeRatio = Math.sqrt(max_kb / imgSizeInKb);
+          max_hres = Math.min(img.naturalWidth * sizeRatio,
             max_hres <= 0 ? img.naturalWidth : max_hres);
-          max_vres = Math.min(img.naturalHeight * ratio,
+          max_vres = Math.min(img.naturalHeight * sizeRatio,
             max_vres <=0 ? img.naturalHeight : max_vres);
 
           return _imageToBlob(canvas, img, Math.min(img.naturalHeight, max_vres),
@@ -913,7 +949,7 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(da
       var replyData = new TextEncoder().encode(encoder.getData());
       this.sendMessageToClient(replyData, 0, replyData.length);
 
-      setZeroTimeout((function() {
+      nextTickBeforeEvents((function() {
         var encoder = new DataEncoder();
 
         encoder.putStart(DataType.STRUCT, "event");
@@ -1003,47 +1039,55 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
 
     this.server = (name[2] == ":");
     this.protocolName = name.slice((name[2] == ':') ? 3 : 2);
-    asyncImpl("V", new Promise((function(resolve, reject) {
-        if (this.server) {
-            // It seems that one server only serves on client at a time, let's
-            // store an object instead of the constructor.
-            this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
-            if (localmsgServerWait) {
-              localmsgServerWait();
-            }
-        } else {
-            if (!MIDP.LocalMsgConnections[this.protocolName]) {
-                if (this.protocolName.startsWith("nokia")) {
-                    console.error("localmsg server (" + this.protocolName + ") unimplemented");
-                    // Return without resolving the promise, we want the thread that is connecting
-                    // to this unimplemented server to stop indefinitely.
-                    return;
-                }
 
-                localmsgServerWait = function() {
-                    localmsgServerWait = null;
-                    this.connection = MIDP.LocalMsgConnections[this.protocolName];
-                    this.connection.notifyConnection();
-                    resolve();
-                }.bind(this);
-
-                return;
-            }
-
-            if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
-                console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
-            }
-
-            this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
-              new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
-            this.connection.notifyConnection();
+    if (this.server) {
+        // It seems that one server only serves on client at a time, let's
+        // store an object instead of the constructor.
+        this.connection = MIDP.LocalMsgConnections[this.protocolName] = new LocalMsgConnection();
+        if (localmsgServerWait) {
+            localmsgServerWait();
         }
 
-        resolve();
-    }).bind(this)));
+        return;
+    }
+
+    if (!MIDP.LocalMsgConnections[this.protocolName]) {
+        if (this.protocolName.startsWith("nokia")) {
+            console.error("localmsg server (" + this.protocolName + ") unimplemented");
+            // Return without resolving the promise, we want the thread that is connecting
+            // to this unimplemented server to stop indefinitely.
+            return;
+        }
+
+        asyncImpl("V", new Promise((function(resolve, reject) {
+            localmsgServerWait = function() {
+                localmsgServerWait = null;
+                this.connection = MIDP.LocalMsgConnections[this.protocolName];
+                this.connection.notifyConnection();
+                resolve();
+            }.bind(this);
+        }).bind(this)));
+
+        return;
+    }
+
+    if (MIDP.FakeLocalMsgServers.indexOf(this.protocolName) != -1) {
+        console.warn("connect to an unimplemented localmsg server (" + this.protocolName + ")");
+    }
+
+    this.connection = typeof MIDP.LocalMsgConnections[this.protocolName] === 'function' ?
+        new MIDP.LocalMsgConnections[this.protocolName]() : MIDP.LocalMsgConnections[this.protocolName];
+
+    this.connection.reset();
+
+    this.connection.notifyConnection();
 };
 
 Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function() {
+    if (this.connection.clientConnected) {
+        return;
+    }
+
     asyncImpl("V", this.connection.waitConnection());
 };
 
@@ -1061,7 +1105,11 @@ Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(data, of
 
 Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
     if (this.server) {
-        asyncImpl("I", this.connection.serverReceiveMessage(data));
+        if (this.connection.serverMessages.length > 0) {
+          return this.connection.getServerMessage(data);
+        }
+
+        this.connection.waitServerMessage(data);
         return;
     }
 
@@ -1069,12 +1117,9 @@ Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(data) {
         console.warn("receiveData from an unimplemented localmsg server (" + this.protocolName + ")");
     }
 
-    asyncImpl("I", this.connection.clientReceiveMessage(data));
-};
-
-Native["org/mozilla/io/LocalMsgConnection.closeConnection.()V"] = function() {
-    if (this.server) {
-        delete MIDP.LocalMsgConnections[this.protocolName];
+    if (this.connection.clientMessages.length > 0) {
+      return this.connection.getClientMessage(data);
     }
-    delete this.connection;
+
+    this.connection.waitClientMessage(data);
 };

@@ -1,10 +1,10 @@
 'use strict';
 
-if (config.midletClassName !== "RunTests" && navigator && !navigator.mozContacts) {
+if (config.midletClassName !== "RunTestsMIDlet" && navigator && !navigator.mozContacts) {
   navigator.mozContacts = {
     getAll: function () {
       var req = {};
-      setZeroTimeout(function() {
+      nextTickBeforeEvents(function() {
         if (req.onsuccess) {
           req.result = null;
           req.onsuccess();

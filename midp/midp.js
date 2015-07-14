@@ -4,14 +4,78 @@
 'use strict';
 
 var MIDP = (function() {
-  var canvas = document.getElementById("canvas");
-  var context2D = canvas.getContext("2d");
+  var deviceCanvas = document.getElementById("canvas");
+  var deviceContext = deviceCanvas.getContext("2d");
 
-  var isFullScreen = true;
-  function setFullScreen(isFS) {
-    isFullScreen = isFS;
-    updateCanvas();
-  };
+  // The foreground isolate will get the user events (keypresses, etc.)
+  var FG = (function() {
+    var isolateId = -1;
+    var displayId = -1;
+    var isValid = false;
+
+    function reset() {
+      isValid = false;
+    }
+
+    function set(i, d) {
+      isolateId = i;
+      displayId = d;
+      isValid = true;
+    }
+
+    function sendNativeEventToForeground(e, shouldIncludeDisplayId) {
+      if (!isValid) {
+        return;
+      }
+
+      if (shouldIncludeDisplayId) {
+        e.intParam4 = displayId;
+      }
+
+      sendNativeEvent(e, isolateId);
+    }
+
+    function isFGDisplay(d) {
+      return isValid && displayId === d;
+    }
+
+    function isFullscreen() {
+      return !isValid || FullscreenInfo.isFullscreen(displayId);
+    }
+
+    return {
+      reset: reset,
+      set: set,
+      sendNativeEventToForeground: sendNativeEventToForeground,
+      isFullscreen: isFullscreen,
+      isFGDisplay: isFGDisplay,
+    }
+  })();
+
+  var FullscreenInfo = (function() {
+    var map = new Map();
+
+    function set(id, isFullscreen) {
+      var oldVal = map.get(id);
+      if (oldVal === isFullscreen) {
+        return;
+      }
+
+      map.set(id, isFullscreen);
+      if (FG.isFGDisplay(id)) {
+        updateCanvas();
+      }
+    }
+
+    function isFullscreen(id) {
+      return (0 !== map.get(id));
+    }
+
+    return {
+      set: set,
+      isFullscreen: isFullscreen,
+    }
+  })();
 
   function updatePhysicalScreenSize() {
     if (!config.autosize || /no|0/.test(config.autosize)) {
@@ -23,19 +87,20 @@ var MIDP = (function() {
   function updateCanvas() {
     var sidebar = document.getElementById("sidebar");
     var header = document.getElementById("drawer").querySelector("header");
+    var isFullscreen = FG.isFullscreen();
     sidebar.style.display = header.style.display =
-        isFullScreen ? "none" : "block";
-    var headerHeight = isFullScreen ? 0 : header.offsetHeight;
+        isFullscreen ? "none" : "block";
+    var headerHeight = isFullscreen ? 0 : header.offsetHeight;
     var newHeight = physicalScreenHeight - headerHeight;
     var newWidth = physicalScreenWidth;
 
-    if (newHeight != canvas.height || newWidth != canvas.width) {
-      canvas.height = newHeight;
-      canvas.width = newWidth;
-      canvas.style.height = canvas.height + "px";
-      canvas.style.width = canvas.width + "px";
-      canvas.style.top = headerHeight + "px";
-      canvas.dispatchEvent(new Event("canvasresize"));
+    if (newHeight != deviceCanvas.height || newWidth != deviceCanvas.width) {
+      deviceCanvas.height = newHeight;
+      deviceCanvas.width = newWidth;
+      deviceCanvas.style.height = deviceCanvas.height + "px";
+      deviceCanvas.style.width = deviceCanvas.width + "px";
+      deviceCanvas.style.top = headerHeight + "px";
+      deviceCanvas.dispatchEvent(new Event("canvasresize"));
     }
   };
 
@@ -58,16 +123,12 @@ var MIDP = (function() {
 
   var manifest = {};
 
+  Native["com/sun/midp/lcdui/DisplayDevice.setFullScreen0.(IIZ)V"] = function(hardwareId, displayId, mode) {
+    FullscreenInfo.set(displayId, mode);
+  };
+
   Native["com/sun/midp/log/LoggingBase.report.(IILjava/lang/String;)V"] = function(severity, channelID, message) {
     console.info(J2ME.fromJavaString(message));
-  };
-
-  Native["com/sun/midp/security/Permissions.getDefaultValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    return 1;
-  };
-
-  Native["com/sun/midp/security/Permissions.getMaxValue.(Ljava/lang/String;Ljava/lang/String;)B"] = function(domain, group) {
-    return 1;
   };
 
   Native["com/sun/midp/midlet/MIDletPeer.platformRequest.(Ljava/lang/String;)Z"] = function(request) {
@@ -80,14 +141,22 @@ var MIDP = (function() {
       } else {
         DumbPipe.close(DumbPipe.open("windowOpen", request));
       }
-    } else if (request.startsWith("x-contacts:add?number=")) {
+    } else if (request.startsWith("x-contacts:add?")) {
+      var params = {};
+
+      var args = request.substring(request.indexOf("?") + 1).split("&");
+      args.forEach(function(arg) {
+        var numberIdx = arg.indexOf("number=");
+        if (numberIdx != -1) {
+          params.tel = arg.substring(numberIdx + 7);
+        }
+      });
+
       DumbPipe.close(DumbPipe.open("mozActivity", {
         name: "new",
         data: {
           type: "webcontacts/contact",
-          params: {
-            tel: request.substring(22),
-          },
+          params: params,
         },
       }));
     } else {
@@ -111,27 +180,63 @@ var MIDP = (function() {
     return $.ctx.runtime.isolate.id;
   };
 
-  var AMSIsolateId;
+  var AMS = (function() {
+    var isolateId = -1;
+
+    function set(id) {
+      isolateId = id;
+    }
+
+    function reset() {
+      isolateId = -1;
+    }
+
+    function get() {
+      return isolateId;
+    }
+
+    function isAMSIsolate(id) {
+      return (id === isolateId);
+    }
+
+    function sendNativeEventToAMSIsolate(e) {
+      if (-1 === isolateId) {
+        console.warn("Dropping native event sent to AMS isolate");
+        return;
+      }
+
+      sendNativeEvent(e, isolateId);
+    }
+
+    return {
+      set: set,
+      get: get,
+      reset: reset,
+      isAMSIsolate: isAMSIsolate,
+      sendNativeEventToAMSIsolate: sendNativeEventToAMSIsolate,
+    }
+  })();
+
   Native["com/sun/midp/main/MIDletSuiteUtils.registerAmsIsolateId.()V"] = function() {
-    AMSIsolateId = $.ctx.runtime.isolate.id;
+    AMS.set($.ctx.runtime.isolate.id);
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getAmsIsolateId.()I"] = function() {
-    return AMSIsolateId;
+    return AMS.get();
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.isAmsIsolate.()Z"] = function() {
-    return AMSIsolateId == $.ctx.runtime.isolate.id ? 1 : 0;
+    return AMS.isAMSIsolate($.ctx.runtime.isolate.id) ? 1 : 0;
   };
 
   // This function is called before a MIDlet is created (in MIDletStateListener::midletPreStart).
+  var loadingMIDletPromisesResolved = false;
   Native["com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V"] = function(midletIsolateId) {
-    // See DisplayContainer::createDisplayId, called by the LCDUIEnvironment constructor,
-    // called by CldcMIDletSuiteLoader::createSuiteEnvironment.
-    // The formula depens on the ID of the isolate that calls createDisplayId, that is
-    // the same isolate that calls vmBeginStartUp. So this is a good place to calculate
-    // the display ID.
-    displayId = ((midletIsolateId & 0xff)<<24) | (1 & 0x00ffffff);
+    if (loadingMIDletPromisesResolved) {
+      return;
+    }
+
+    loadingMIDletPromisesResolved = true;
 
     asyncImpl("V", Promise.all(loadingMIDletPromises));
   };
@@ -143,7 +248,7 @@ var MIDP = (function() {
     var value;
     switch (J2ME.fromJavaString(key)) {
       case "com.sun.midp.publickeystore.WebPublicKeyStore":
-        if (config.midletClassName == "RunTests" ||
+        if (config.midletClassName == "RunTestsMIDlet" ||
             config.midletClassName.startsWith("benchmark")) {
           value = "_test.ks";
         } else {
@@ -209,6 +314,7 @@ var MIDP = (function() {
   var physicalScreenHeight;
   var lastWindowInnerHeight;
   var isVKVisible;
+
   if (config.autosize && !/no|0/.test(config.autosize)) {
     document.documentElement.classList.add('autosize');
 
@@ -270,22 +376,20 @@ var MIDP = (function() {
   }
 
   function sendPenEvent(pt, whichType) {
-    sendNativeEvent({
+    FG.sendNativeEventToForeground({
       type: PEN_EVENT,
       intParam1: whichType,
       intParam2: pt.x,
       intParam3: pt.y,
-      intParam4: displayId
-    }, foregroundIsolateId);
+    }, true);
   }
 
   function sendGestureEvent(pt, distancePt, whichType, aFloatParam1, aIntParam7, aIntParam8, aIntParam9) {
-    sendNativeEvent({
+    FG.sendNativeEventToForeground({
       type: GESTURE_EVENT,
       intParam1: whichType,
       intParam2: distancePt && distancePt.x || 0,
       intParam3: distancePt && distancePt.y || 0,
-      intParam4: displayId,
       intParam5: pt.x,
       intParam6: pt.y,
       floatParam1: Math.fround(aFloatParam1 || 0.0),
@@ -299,7 +403,7 @@ var MIDP = (function() {
       intParam14: 0,
       intParam15: 0,
       intParam16: 0
-    }, foregroundIsolateId);
+    }, true);
   }
 
   // In the simulator and on device, use touch events; in desktop
@@ -308,9 +412,9 @@ var MIDP = (function() {
   var supportsTouch = ("ontouchstart" in document.documentElement);
 
   // Cache the canvas position for future computation.
-  var canvasRect = canvas.getBoundingClientRect();
-  canvas.addEventListener("canvasresize", function() {
-    canvasRect = canvas.getBoundingClientRect();
+  var canvasRect = deviceCanvas.getBoundingClientRect();
+  deviceCanvas.addEventListener("canvasresize", function() {
+    canvasRect = deviceCanvas.getBoundingClientRect();
     sendRotationEvent();
   });
 
@@ -335,7 +439,7 @@ var MIDP = (function() {
   var longPressTimeoutID = null;
   var longPressDetected = false;
 
-  canvas.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
+  deviceCanvas.addEventListener(supportsTouch ? "touchstart" : "mousedown", function(event) {
     event.preventDefault(); // Prevent unnecessary fake mouse events.
     var pt = getEventPoint(event);
     sendPenEvent(pt, PRESSED);
@@ -348,7 +452,7 @@ var MIDP = (function() {
     }, LONG_PRESS_TIMEOUT);
   });
 
-  canvas.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
+  deviceCanvas.addEventListener(supportsTouch ? "touchmove" : "mousemove", function(event) {
     if (!mouseDownInfo) {
       return; // Mousemove on desktop; ignored.
     }
@@ -489,15 +593,6 @@ var MIDP = (function() {
     console.warn("MIDletSuiteImpl.unlockMIDletSuite.(I)V not implemented (" + suiteId + ")");
   };
 
-  Native["com/sun/midp/midletsuite/SuiteSettings.load.()V"] = function() {
-    this.pushInterruptSetting = 1;
-    console.warn("com/sun/midp/midletsuite/SuiteSettings.load.()V incomplete");
-  };
-
-  Native["com/sun/midp/midletsuite/SuiteSettings.save0.(IBI[B)V"] = function(suiteId, pushInterruptSetting, pushOptions, permissions) {
-    console.warn("SuiteSettings.save0.(IBI[B)V not implemented (" + suiteId + ", " + pushInterruptSetting + ", " + pushOptions + ", " + permissions + ")");
-  };
-
   Native["com/sun/midp/midletsuite/InstallInfo.load.()V"] = function() {
     // The MIDlet has to be trusted for opening SSL connections using port 443.
     this.trusted = 1;
@@ -615,10 +710,37 @@ var MIDP = (function() {
     showExitScreen();
   }
 
-  var pendingMIDletUpdate = null;
+  // If the user kills the app willingly, we will close it.
+  // In some cases instead we want to kill the FG MIDlet only
+  // to restart it.
+  var destroyedForRestart = false;
+  function setDestroyedForRestart(val) {
+    destroyedForRestart = val;
+  }
 
+  var destroyedListener = null;
+  function registerDestroyedListener(func) {
+    destroyedListener = func;
+  }
+
+  var pendingMIDletUpdate = null;
   Native["com/sun/cldc/isolate/Isolate.stop.(II)V"] = function(code, reason) {
-    console.info("Isolate stops with code " + code + " and reason " + reason);
+    if (destroyedForRestart) {
+      destroyedForRestart = false;
+      if (destroyedListener) {
+        destroyedListener();
+      }
+      FG.reset();
+      return;
+    }
+
+    var isolateId = $.ctx.runtime.isolate.id;
+    console.info("Isolate " + isolateId + " stops with code " + code + " and reason " + reason);
+
+    if (AMS.isAMSIsolate(isolateId)) {
+      AMS.reset();
+    }
+
     if (!pendingMIDletUpdate) {
       exit();
       return;
@@ -637,9 +759,6 @@ var MIDP = (function() {
     });
   };
 
-  // The foreground isolate will get the user events (keypresses, etc.)
-  var foregroundIsolateId;
-  var displayId = -1;
   var nativeEventQueues = {};
   var waitingNativeEventQueue = {};
 
@@ -664,63 +783,65 @@ var MIDP = (function() {
   }
 
   function sendVirtualKeyboardEvent() {
-    if (-1 != displayId && undefined != foregroundIsolateId) {
-      sendNativeEvent({
-        type: VIRTUAL_KEYBOARD_EVENT,
-        intParam1: 0,
-        intParam2: 0,
-        intParam3: 0,
-        intParam4: displayId,
-      }, foregroundIsolateId);
-    }
-  };
+    FG.sendNativeEventToForeground({
+      type: VIRTUAL_KEYBOARD_EVENT,
+      intParam1: 0,
+      intParam2: 0,
+      intParam3: 0,
+    }, true);
+  }
 
   function sendRotationEvent() {
-    if (-1 != displayId && undefined != foregroundIsolateId) {
-      sendNativeEvent({
-        type: ROTATION_EVENT,
-        intParam1: 0,
-        intParam2: 0,
-        intParam3: 0,
-        intParam4: displayId,
-      }, foregroundIsolateId);
-    }
+    FG.sendNativeEventToForeground({
+      type: ROTATION_EVENT,
+      intParam1: 0,
+      intParam2: 0,
+      intParam3: 0,
+    }, true);
   }
 
   function sendCommandEvent(id) {
-    if (-1 != displayId && undefined != foregroundIsolateId) {
-      sendNativeEvent({
-        type: COMMAND_EVENT,
-        intParam1: id,
-        intParam2: 0,
-        intParam3: 0,
-        intParam4: displayId,
-      }, foregroundIsolateId);
-    }
+    FG.sendNativeEventToForeground({
+      type: COMMAND_EVENT,
+      intParam1: id,
+      intParam2: 0,
+      intParam3: 0,
+    }, true);
   }
 
   function sendEndOfMediaEvent(pId, duration) {
-    if (undefined != foregroundIsolateId) {
-      sendNativeEvent({
-        type: MMAPI_EVENT,
-        intParam1: pId,
-        intParam2: duration,
-        intParam3: 0,
-        intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
-      }, foregroundIsolateId);
-    }
+    FG.sendNativeEventToForeground({
+      type: MMAPI_EVENT,
+      intParam1: pId,
+      intParam2: duration,
+      intParam3: 0,
+      intParam4: Media.EVENT_MEDIA_END_OF_MEDIA
+    }, false);
   }
 
   function sendMediaSnapshotFinishedEvent(pId) {
-    if (undefined != foregroundIsolateId) {
-      sendNativeEvent({
-        type: MMAPI_EVENT,
-        intParam1: pId,
-        intParam2: 0,
-        intParam3: 0,
-        intParam4: Media.EVENT_MEDIA_SNAPSHOT_FINISHED,
-      }, foregroundIsolateId);
-    }
+    FG.sendNativeEventToForeground({
+      type: MMAPI_EVENT,
+      intParam1: pId,
+      intParam2: 0,
+      intParam3: 0,
+      intParam4: Media.EVENT_MEDIA_SNAPSHOT_FINISHED,
+    }, false);
+  }
+
+  function sendExecuteMIDletEvent(midletNumber, midletClassName) {
+    AMS.sendNativeEventToAMSIsolate({
+      type: NATIVE_MIDLET_EXECUTE_REQUEST,
+      intParam1: midletNumber || fgMidletNumber,
+      stringParam1: midletClassName || J2ME.newString(fgMidletClass),
+    });
+  }
+
+  function sendDestroyMIDletEvent(midletClassName) {
+    FG.sendNativeEventToForeground({
+      type: DESTROY_MIDLET_EVENT,
+      stringParam1: midletClassName,
+    }, false);
   }
 
   var KEY_EVENT = 1;
@@ -729,10 +850,11 @@ var MIDP = (function() {
   var RELEASED = 2;
   var DRAGGED = 3;
   var COMMAND_EVENT = 3;
+  var NATIVE_MIDLET_EXECUTE_REQUEST = 36;
+  var DESTROY_MIDLET_EVENT = 14;
   var EVENT_QUEUE_SHUTDOWN = 31;
   var ROTATION_EVENT = 43;
   var MMAPI_EVENT = 45;
-  var SCREEN_REPAINT_EVENT = 47;
   var VIRTUAL_KEYBOARD_EVENT = 58;
   var GESTURE_EVENT = 71;
   var GESTURE_TAP = 0x1;
@@ -748,24 +870,34 @@ var MIDP = (function() {
 
   var suppressKeyEvents = false;
 
-  function keyPress(keyCode) {
+  function sendKeyPress(keyCode) {
     if (!suppressKeyEvents) {
-      sendNativeEvent({ type: KEY_EVENT, intParam1: PRESSED, intParam2: keyCode, intParam3: 0, intParam4: displayId }, foregroundIsolateId);
+      FG.sendNativeEventToForeground({
+        type: KEY_EVENT,
+        intParam1: PRESSED,
+        intParam2: keyCode,
+        intParam3: 0
+      }, true);
+    }
+  }
+
+  function sendKeyRelease(keyCode) {
+    if (!suppressKeyEvents) {
+      FG.sendNativeEventToForeground({
+        type: KEY_EVENT,
+        intParam1: RELEASED,
+        intParam2: keyCode,
+        intParam3: 0,
+      }, true);
     }
   };
 
-  function keyRelease(keyCode) {
-    if (!suppressKeyEvents) {
-      sendNativeEvent({ type: KEY_EVENT, intParam1: RELEASED, intParam2: keyCode, intParam3: 0, intParam4: displayId }, foregroundIsolateId);
-    }
-  };
-
-  window.addEventListener("keypress", function(ev) {
-    keyPress(ev.which);
+  window.addEventListener("keydown", function(ev) {
+    sendKeyPress(ev.which);
   });
 
   window.addEventListener("keyup", function(ev) {
-    keyRelease(ev.which);
+    sendKeyRelease(ev.which);
   });
 
   Native["com/sun/midp/events/EventQueue.getNativeEventQueueHandle.()I"] = function() {
@@ -940,12 +1072,11 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/main/MIDletProxyList.resetForegroundInNativeState.()V"] = function() {
-    displayId = -1;
+    FG.reset();
   };
 
   Native["com/sun/midp/main/MIDletProxyList.setForegroundInNativeState.(II)V"] = function(isolateId, dispId) {
-    displayId = dispId;
-    foregroundIsolateId = isolateId;
+    FG.set(isolateId, dispId);
   };
 
   var connectionRegistry = {
@@ -1111,44 +1242,10 @@ var MIDP = (function() {
 
   addUnimplementedNative("com/nokia/mid/ui/gestures/GestureInteractiveZone.getGestures.()I", 0);
 
-  Native["com/sun/midp/security/SecurityHandler.checkPermission0.(II)Z"] = function(suiteId, permission) {
-    return 1;
-  };
-
-  Native["com/sun/midp/security/SecurityHandler.checkPermissionStatus0.(II)I"] = function(suiteId, permission) {
-    return 1;
-  };
-
   Native["com/sun/midp/io/NetworkConnectionBase.initializeInternal.()V"] = function() {
     console.warn("NetworkConnectionBase.initializeInternal.()V not implemented");
   };
 
-  Native["com/sun/j2me/content/RegistryStore.init.()Z"] = function() {
-    console.warn("com/sun/j2me/content/RegistryStore.init.()Z not implemented");
-    return 1;
-  };
-
-  Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
-    console.warn("com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String; not implemented");
-    return J2ME.newString("");
-  };
-
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
-
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z", 0);
-
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", null);
-
-  Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
-    // We are in MVM mode (multiple MIDlets running concurrently)
-    return 0;
-  };
-
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.setCleanup0.(ILjava/lang/String;Z)V");
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I", 0);
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.getByTid0.(Lcom/sun/j2me/content/InvocationImpl;II)I", 0);
-  addUnimplementedNative("com/sun/j2me/content/InvocationStore.resetFlags0.(I)V");
-  addUnimplementedNative("com/sun/j2me/content/AppProxy.midletIsRemoved.(ILjava/lang/String;)V");
   addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.hideOpenKeypadCommand.(Z)V");
   addUnimplementedNative("com/nokia/mid/ui/VirtualKeyboard.suppressSizeChanged.(Z)V");
 
@@ -1176,7 +1273,7 @@ var MIDP = (function() {
   Native["com/nokia/mid/ui/VirtualKeyboard.getYPosition.()I"] = function() {
     // We should return the number of pixels between the top of the
     // screen and the top of the keyboard
-    return canvas.height - getKeyboardHeight();
+    return deviceCanvas.height - getKeyboardHeight();
   };
 
   Native["com/nokia/mid/ui/VirtualKeyboard.getWidth.()I"] = function() {
@@ -1194,16 +1291,18 @@ var MIDP = (function() {
 
   return {
     isVKVisible: isVKVisible,
-    setFullScreen: setFullScreen,
     manifest: manifest,
     sendCommandEvent: sendCommandEvent,
     sendVirtualKeyboardEvent: sendVirtualKeyboardEvent,
     sendEndOfMediaEvent: sendEndOfMediaEvent,
     sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
-    keyPress: keyPress,
-    keyRelease: keyRelease,
-    displayId: displayId,
-    context2D: context2D,
+    sendKeyPress: sendKeyPress,
+    sendKeyRelease: sendKeyRelease,
+    sendDestroyMIDletEvent: sendDestroyMIDletEvent,
+    setDestroyedForRestart: setDestroyedForRestart,
+    registerDestroyedListener: registerDestroyedListener,
+    sendExecuteMIDletEvent: sendExecuteMIDletEvent,
+    deviceContext: deviceContext,
     updatePhysicalScreenSize: updatePhysicalScreenSize,
     updateCanvas: updateCanvas,
     localizedStrings: localizedStrings,

@@ -78,7 +78,7 @@ AccelerometerSensor.simulator = {
     start: function() {
         var currentMouseX = -1;
         var currentMouseY = -1;
-        var c = MIDP.context2D.canvas;
+        var c = MIDP.deviceContext.canvas;
         c.onmousemove = function(ev) {
             currentMouseX =ev.layerX;
             currentMouseY =ev.layerY;
@@ -113,7 +113,7 @@ AccelerometerSensor.simulator = {
     },
 
     stop: function() {
-        MIDP.context2D.canvas.onmousemove = null;
+        MIDP.deviceContext.canvas.onmousemove = null;
         clearInterval(this._interalId);
     }
 };

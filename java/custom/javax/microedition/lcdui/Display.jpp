@@ -2096,46 +2096,9 @@ public class Display {
      * @return <code>true</code>, if sound was played.
      */
     boolean playAlertSound(AlertType t) {
-        
-        if (!paintSuspended && hasForeground) {
-            int note = 9 + 3 * t.getType();
-            int duration = 1000;
-            int volume = 80;
-// #ifndef ENABLE_CDC
-            // SYNC NOTE: playing tones in parallel is okay, no locking
-            // necessary
-            try
-            {
-                Manager.playTone(ToneControl.C4 + note, duration, volume);
-            }
-            catch( MediaException me )
-            {
-                return false;
-            }
-            return true;
-// #else
-            Class managerClass = null;
-            Class toneControlClass = null;
-            Method playToneMethod = null;
-	    try {
-                managerClass = Class.forName("javax.microedition.media.Manager");
-                playToneMethod = managerClass.getMethod("playTone", new Class[] { int.class, int.class, int.class });
-                toneControlClass = Class.forName("javax.microedition.media.control.ToneControl");
-                Field f = toneControlClass.getField("C4");
-                note += f.getInt(null);
-                playToneMethod.invoke(null, new Object[] { new Integer(note), new Integer(duration), new Integer(volume) });       
-                return true;
-            } catch (InvocationTargetException ite){
-            } catch (ClassNotFoundException cnfe) {
-            } catch (NoSuchFieldException nsf) {
-            } catch (NoSuchMethodException nsme) {
-            } catch (IllegalArgumentException iare) {
-            } catch (IllegalAccessException iace) {
-	    } 
-
-// #endif ENABLE_CDC
-        }
-
+        // We've removed the code to play tones when
+        // alerts are shown because they are annoying
+        // and out of place in our interface.
         return false;
     }
 

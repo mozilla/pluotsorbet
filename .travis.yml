@@ -7,21 +7,17 @@ before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
   - npm install typescript
-  - wget -P /tmp/j2me.js -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/37.0b7-candidates/build1/jsshell-linux-x86_64.zip
-  - unzip -d /tmp/js /tmp/j2me.js/jsshell-linux-x86_64.zip
-  - export PATH=$PATH:/tmp/js
 script:
   - make test
 sudo: false
 cache:
   directories:
     - node_modules
-    - /tmp/j2me.js
     - build_tools
 notifications:
   irc:
     channels:
-      - "irc.mozilla.org#j2me.js"
+      - "irc.mozilla.org#pluotsorbet"
     template:
       - "%{repository_slug} - %{commit_subject} - %{result} - %{build_url}"
     use_notice: true

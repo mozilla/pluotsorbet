@@ -16,7 +16,7 @@ casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 80000;
+casper.options.waitTimeout = 90000;
 casper.options.verbose = true;
 casper.options.viewportSize = { width: 240, height: 320 };
 casper.options.clientScripts = [
@@ -29,8 +29,8 @@ casper.options.onWaitTimeout = function() {
 };
 
 var gfxTests = [
-  { name: "gfx/AlertTest", maxDifferentLinux: 1266, maxDifferentMac: 2029 },
-  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1403, maxDifferentMac: 2186 },
+  { name: "gfx/AlertTest", maxDifferentLinux: 1401, maxDifferentMac: 1889 },
+  { name: "gfx/AlertTwoCommandsTest", maxDifferentLinux: 1538, maxDifferentMac: 2046 },
   { name: "gfx/CanvasTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/CanvasWithHeaderTest", maxDifferentLinux: 823, maxDifferentMac: 1351 },
   { name: "gfx/ImageRenderingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
@@ -50,6 +50,7 @@ var gfxTests = [
   { name: "gfx/GetRGBDrawRGBNoAlphaTest", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
   { name: "gfx/ClippingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/ImageProcessingTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/ImageProcessingTest2", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/DrawSubstringTest", maxDifferentLinux: 205, maxDifferentMac: 295 },
   { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferentLinux: 0, maxDifferentMac: 788 },
@@ -177,7 +178,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 33 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -237,33 +238,42 @@ casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-            test.assertTextExists("I m\n" +
-                                  "I a ma\n" +
-                                  "I 3\n" +
-                                  "I ma\n" +
-                                  "I 3\n" +
-                                  "I 1 isolate\n" +
-                                  "I Isolate ID correct\n" +
-                                  "I 5\n" +
-                                  "I 6\n" +
-                                  "I 1 isolate\n" +
-                                  "I ma\n" +
-                                  "I ma\n" +
-                                  "I 3 isolates\n" +
-                                  "I 1 m1\n" +
-                                  "I 5\n" +
-                                  "I 2 m2\n" +
-                                  "I 6\n" +
-                                  "I ma\n" +
-                                  "I 1 isolate\n" +
-                                  "I Isolates terminated\n" +
-                                  "I r mar\n" +
-                                  "I 3\n" +
-                                  "I mar\n" +
-                                  "I c marc\n" +
-                                  "I 3\n" +
-                                  "I marc\n" +
-                                  "I Main isolate still running");
+          var output = this.fetchText('#raw-console');
+          var expectedOutput = ["I 0: m",
+            "I 3 0 a ma",
+            "I 1: ma",
+            "I 2: 3",
+            "I 3: 1 isolate",
+            "I 4: Isolate ID correct",
+            "I 5: 5",
+            "I 6: 6",
+            "I 7: 1 isolate",
+            "I 8: ma",
+            "I 9: ma",
+            "I 10: 3 isolates",
+            "I 6 0 2 m2",
+            "I 5 0 1 m1",
+            "I 11: ma",
+            "I 12: 1 isolate",
+            "I 13: Isolates terminated",
+            "I 3 1 r mar",
+            "I 14: mar",
+            "I 3 2 c marc",
+            "I 15: marc",
+            "I 16: Main isolate still running",
+            "I DONE",
+            ""];
+          output = output.split("\n").sort();
+          expectedOutput.sort();
+          test.assert(expectedOutput.length === output.length, "Same number of lines output.");
+          var allMatch = true;
+          for (var i = 0; i < expectedOutput.length; i++) {
+            if (expectedOutput[i] !== output[i]) {
+              allMatch = false;
+              break;
+            }
+          }
+          test.assert(allMatch, "All lines are contained within output.");
         });
     });
 
@@ -297,7 +307,7 @@ casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/background1.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Hello World from foreground MIDlet", function() {
-            test.pass();
+            test.pass("First background test");
         });
     });
 
@@ -305,7 +315,7 @@ casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet2&jad=tests/midlets/background/background2.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("Hello World from foreground MIDlet", function() {
-            test.pass();
+            test.pass("Second background test");
         });
     });
 
@@ -330,6 +340,35 @@ casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
       }, function() {
         test.assertEquals(this.getTitle(), "window.close called", "window.close called");
       });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.background.BackgroundMIDlet1&jad=tests/midlets/background/destroy.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("PAINTED", function() {
+          casper.waitForSelector("#canvas", function() {
+            this.click("#canvas");
+          });
+
+          casper.waitForText("DONE", function() {
+            var content = this.getPageContent();
+            test.assertEquals(content.match(/startApp1/g).length, 2, "Two startApp1");
+            test.assertEquals(content.match(/destroyApp/g).length, 1, "One destroyApp");
+          });
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.ContentHandlerStarterMIDlet&jad=tests/midlets/ContentHandlerMIDlet/contenthandler.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("Test finished", function() {
+            var content = this.getPageContent();
+            test.assertEquals(content.match(/Hello World from starter MIDlet/g).length, 1, "ContentHandlerMIDlet test 1");
+            test.assertEquals(content.match(/Invocation action: share/g).length, 2, "ContentHandlerMIDlet test 2");
+            test.assertEquals(content.match(/Invocation args\[0\]: url=file:\/\/\/Private\/j2meshare\/j2mesharetestimage0\.jpg/g).length, 1, "ContentHandlerMIDlet test 3");
+            test.assertEquals(content.match(/Invocation args\[0\]: url=file:\/\/\/Private\/j2meshare\/j2mesharetestimage1\.jpg/g).length, 1, "ContentHandlerMIDlet test 4");
+            test.assertEquals(content.match(/Image exists/g).length, 2, "ContentHandlerMIDlet test 5");
+        });
     });
 
     casper
@@ -511,7 +550,7 @@ casper.test.begin("unit tests", 25 + gfxTests.length, function(test) {
         casper.waitFor(function() {
             return !!alertText;
         }, function() {
-            test.assertEquals(alertText, "Update completed!");
+            test.assertEquals(alertText, "Update completed!", "Update alert shown");
             syncFS();
         });
     });

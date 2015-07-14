@@ -37,13 +37,6 @@ function hideDownloadScreen() {
   }
 }
 
-function showBackgroundScreen() {
-  document.getElementById("background-screen").style.display = "block";
-}
-function hideBackgroundScreen() {
-  document.getElementById("background-screen").style.display = "none";
-}
-
 // The exit screen is hidden by default, and we only ever show it,
 // so we don't need a hideExitScreen function.
 function showExitScreen() {
@@ -54,7 +47,6 @@ function backgroundCheck() {
   var bgServer = MIDP.manifest["Nokia-MIDlet-bg-server"];
   if (!bgServer) {
     showSplashScreen();
-    hideBackgroundScreen();
     return;
   }
 
@@ -75,36 +67,11 @@ Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
 
 MIDP.additionalProperties = {};
 
-Native["com/nokia/mid/s40/bg/BGUtils.addSystemProperties.(Ljava/lang/String;)V"] = function(args) {
+Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] = function(midletSuiteVendor, midletName, midletNumber, startupNoteText, args) {
   J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
     var elems = arg.split("=");
     MIDP.additionalProperties[elems[0]] = elems[1];
   });
+
+  return 1;
 };
-
-Native["com/nokia/mid/s40/bg/BGUtils.waitUserInteraction.()V"] = function() {
-  asyncImpl("V", new Promise(function(resolve, reject) {
-    // If the page is visible, just start the FG MIDlet
-    if (!document.hidden) {
-      resolve();
-      return;
-    }
-
-    // Otherwise, wait until the page becomes visible, then start the FG MIDlet
-    document.addEventListener("visibilitychange", function onVisible() {
-      if (!document.hidden) {
-        document.removeEventListener("visibilitychange", onVisible, false);
-        resolve();
-      }
-    }, false);
-  }).then(function() {
-    showSplashScreen();
-    hideBackgroundScreen();
-  }));
-};
-
-// If the document is hidden, then we've been started by an alarm and are in
-// the background, so we show the background screen.
-if (document.hidden) {
-  showBackgroundScreen();
-}

@@ -6,6 +6,16 @@ import socket
 import subprocess
 import sys
 import time
+import platform
+
+(system, node, release, version, machine, processor) = platform.uname()
+
+httpsServer = ['node', 'httpsServer.js']
+sslEchoServer = ['node', 'sslEchoServer.js']
+
+if system == "Darwin":
+  httpsServer = './httpsServer.py'
+  sslEchoServer = './sslEchoServer.py'
 
 # The test automation scripts to run via casperjs/slimerjs.
 automation_scripts = [
@@ -42,9 +52,9 @@ server_processes = [
 
     # The SSL-based servers need to have their current working directory set
     # to the tests/ subdirectory, since they load cert/key files relative to it.
-    subprocess.Popen('./httpsServer.py', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    subprocess.Popen(httpsServer, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                      bufsize=1, cwd='tests'),
-    subprocess.Popen('./sslEchoServer.py', stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    subprocess.Popen(sslEchoServer, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                      bufsize=1, cwd='tests'),
 ]
 
@@ -70,7 +80,7 @@ def run_test(script_path):
   global exit_code
 
   args = ['casperjs', '--engine=slimerjs']
-  if os.environ['VERBOSE'] != '0':
+  if 'VERBOSE' in os.environ and os.environ['VERBOSE'] != '0':
     args.append('--log-level=debug')
   args.extend(['test', script_path])
 

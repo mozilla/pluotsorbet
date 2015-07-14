@@ -72,6 +72,10 @@ Native["gnu/testlet/vm/NativeTest.dumbPipe.()Z"] = function() {
   }));
 };
 
+Native["org/mozilla/regression/TestVectorNull.nativeThatReturnsNull.()Ljava/lang/Object;"] = function() {
+  return null;
+};
+
 Native["com/nokia/mid/ui/TestVirtualKeyboard.hideKeyboard.()V"] = function() {
   MIDP.isVKVisible = function() { return false; };
   MIDP.sendVirtualKeyboardEvent();
@@ -227,4 +231,47 @@ Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function() {
       writerWroteWaiting = resolve;
     }
   }));
+};
+
+Native["tests/background/DestroyMIDlet.sendDestroyMIDletEvent.()V"] = function() {
+  MIDP.setDestroyedForRestart(true);
+  MIDP.sendDestroyMIDletEvent(J2ME.newString("tests.background.DestroyMIDlet"));
+};
+
+Native["tests/background/DestroyMIDlet.sendExecuteMIDletEvent.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendExecuteMIDletEvent();
+  }, 0);
+};
+
+var called = 0;
+Native["tests/background/DestroyMIDlet.maybePrintDone.()V"] = function() {
+  if (++called === 2) {
+    console.log("DONE");
+  }
+};
+
+Native["javax/microedition/content/TestContentHandler.addInvocation.(Ljava/lang/String;Ljava/lang/String;)V"] = function(argument, action) {
+  Content.addInvocation(J2ME.fromJavaString(argument), J2ME.fromJavaString(action));
+};
+
+var ContentHandlerMIDletStarted = 0;
+
+Native["tests/midlets/ContentHandlerMIDlet.sendShareMessage.()V"] =
+Native["tests/midlets/ContentHandlerStarterMIDlet.sendShareMessage.()V"] = function() {
+  DumbPipe.close(DumbPipe.open("callShareActivityMessageHandler", { num: ContentHandlerMIDletStarted }));
+};
+
+Native["tests/midlets/ContentHandlerStarterMIDlet.startMIDlet.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendExecuteMIDletEvent(1, J2ME.newString("tests.midlets.ContentHandlerMIDlet"));
+  }, 0);
+};
+
+Native["tests/midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function() {
+  if (++ContentHandlerMIDletStarted === 3) {
+    return 1;
+  }
+
+  return 0;
 };

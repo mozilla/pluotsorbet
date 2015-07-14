@@ -15,14 +15,22 @@ function asyncImpl(returnKind, promise) {
     } else {
       // void, do nothing
     }
-    ctx.execute();
+    J2ME.Scheduler.enqueue(ctx);
   }, function(exception) {
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V", true);
     ctx.pushFrame(Frame.create(methodInfo, [exception]));
-    ctx.execute();
+    J2ME.Scheduler.enqueue(ctx);
   });
   $.pause(asyncImplStringAsync);
+}
+
+function preemptingImpl(returnKind, returnValue) {
+  if (J2ME.Scheduler.shouldPreempt()) {
+      asyncImpl(returnKind, Promise.resolve(returnValue));
+      return;
+  }
+  return returnValue;
 }
 
 var Native = {};
@@ -309,6 +317,7 @@ Native["java/lang/Class.invoke_clinit.()V"] = function() {
     var classInfo = this.runtimeKlass.templateKlass.classInfo;
     var className = classInfo.getClassNameSlow();
     var clinit = classInfo.staticInitializer;
+    J2ME.preemptionLockLevel++;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
         $.ctx.executeFrame(Frame.create(clinit, []));
     }
@@ -320,6 +329,7 @@ Native["java/lang/Class.invoke_verify.()V"] = function() {
 
 Native["java/lang/Class.init9.()V"] = function() {
     $.setClassInitialized(this.runtimeKlass);
+    J2ME.preemptionLockLevel--;
 };
 
 Native["java/lang/Class.getName.()Ljava/lang/String;"] = function() {
@@ -933,6 +943,32 @@ function addUnimplementedNative(signature, returnValue) {
 Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(src) {
     if (!release) {
         eval(J2ME.fromJavaString(src));
+    }
+};
+
+var profileStarted = false;
+Native["org/mozilla/internal/Sys.startProfile.()V"] = function() {
+    if (profile === 4) {
+        if (!profileStarted) {
+            profileStarted = true;
+
+            console.log("Start profile at: " + performance.now());
+            startTimeline();
+        }
+    }
+};
+
+var profileSaved = false;
+Native["org/mozilla/internal/Sys.stopProfile.()V"] = function() {
+    if (profile === 4) {
+        if (!profileSaved) {
+            profileSaved = true;
+
+            console.log("Stop profile at: " + performance.now());
+            setZeroTimeout(function() {
+                stopAndSaveTimeline();
+            });
+        }
     }
 };
 
