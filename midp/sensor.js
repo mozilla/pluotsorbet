@@ -220,11 +220,11 @@ function(addr, number, modelAddr) {
 
     var n = m.properties.length;
     var pAddr = J2ME.newStringArray(n);
+    model.properties = pAddr;
     var p = J2ME.getArrayFromAddr(pAddr);
     for (var i = 0; i < n; i++) {
         p[i] = J2ME.newString(m.properties[i]);
     }
-    model.properties = pAddr;
 };
 
 Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] =

@@ -1923,6 +1923,14 @@ module J2ME {
     return arrayMap[addr];
   }
 
+  var uncollectableAddress = ASM._gcMallocUncollectable(4);
+  export function setUncollectable(addr: number) {
+    i32[uncollectableAddress >> 2] = addr;
+  }
+  export function unsetUncollectable(addr: number) {
+    i32[uncollectableAddress >> 2] = 0;
+  }
+
   export function newArray(klass: Klass, size: number): number {
     if (size < 0) {
       throwNegativeArraySizeException();
@@ -1942,7 +1950,7 @@ module J2ME {
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
-      addr = ASM._gcMallocUncollectable(Constants.ARRAY_HDR_SIZE + size * 4);
+      addr = ASM._gcMalloc(Constants.ARRAY_HDR_SIZE + size * 4);
       // XXX: To remove
       arr = new Int32Array(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
     }
@@ -1959,6 +1967,7 @@ module J2ME {
   export function newMultiArray(klass: Klass, lengths: number[]): number {
     var length = lengths[0];
     var arrayAddr = newArray(klass.elementKlass, length);
+    setUncollectable(arrayAddr);
     var array = arrayMap[arrayAddr];
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
@@ -1966,6 +1975,7 @@ module J2ME {
         array[i] = newMultiArray(klass.elementKlass, lengths);
       }
     }
+    unsetUncollectable(arrayAddr);
     return arrayAddr;
   }
 
