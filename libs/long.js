@@ -45,6 +45,7 @@
     function Long(low, high) {
         this.low_ = low | 0; // force into 32 signed bits.
         this.high_ = high | 0; // force into 32 signed bits.
+        this.string_ = null;
     }
 
     var IntCache = {};
@@ -89,6 +90,11 @@
         }
     };
 
+    var LongCache = new Array(4093);
+    for (var i = 0; i < LongCache.length; i++) {
+      LongCache[i] = null;
+    }
+
     /**
     * Returns a Long representing the 64-bit integer that comes by concatenating
     * the given high and low bits.  Each is assumed to use 32 bits.
@@ -97,7 +103,30 @@
     * @return {!Long} The corresponding Long value.
     */
     function fromBits(lowBits, highBits) {
-        return new Long(lowBits, highBits);
+        // Don't allocate Long objects for -1, 0, 1, 2, 3, 4. These low/high bit patterns occur
+        // frequently in computations.
+        if (highBits === 0) {
+            switch (lowBits) {
+                case 0: return ZERO;
+                case 1: return ONE;
+                case 2: return TWO;
+                case 3: return THREE;
+                case 4: return FOUR;
+            }
+        } else if (highBits === -1 && lowBits === -1) {
+            return NEG_ONE;
+        }
+        // Cache recently used Longs by hashing low/high bits to the range 0 -> 4092.  Most
+        // Long objects are redundant temporarily computed values so they benefit from this
+        // caching scheme.
+        var index = (((((lowBits * 32) | 0) + highBits) | 0) & 0x7fffffff) % 4093;
+        var entry = LongCache[index];
+        if (entry && entry.high_ === highBits && entry.low_ === lowBits) {
+            return entry;
+        } else {
+            // Update the cache entry on a miss, thus adapting to new computation phases.
+            return (LongCache[index] = new Long(lowBits, highBits));
+        }
     };
 
     /**
@@ -161,7 +190,9 @@
         if (radix < 2 || 36 < radix) {
             throw Error('radix out of range: ' + radix);
         }
-
+        if (radix === 10 && this.string_) {
+            return this.string_;
+        }
         if (this.isZero()) {
             return '0';
         }
@@ -175,7 +206,11 @@
                 var rem = div.multiply(radixLong).subtract(this);
                 return div.toString(radix) + rem.toInt().toString(radix);
             } else {
-                return '-' + this.negate().toString(radix);
+                var result = '-' + this.negate().toString(radix);
+                if (radix === 10) {
+                    this.string_ = result;
+                }
+                return result;
             }
         }
 
@@ -192,7 +227,11 @@
 
             rem = remDiv;
             if (rem.isZero()) {
-                return digits + result;
+                result = digits + result;
+                if (radix === 10) {
+                    this.string_ = result;
+                }
+                return result;
             } else {
                 while (digits.length < 6) {
                     digits = '0' + digits;
@@ -309,6 +348,15 @@
     *     if the given one is greater.
     */
     Long.prototype.compare = function (other) {
+        if (other.isZero()) {
+            if (this.isZero()) {
+                return 0;
+            } else if (this.high_ < 0) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
         if (this.equals(other)) {
             return 0;
         }
@@ -345,6 +393,16 @@
     * @return {!Long} The sum of this and the given Long.
     */
     Long.prototype.add = function (other) {
+        // 1 + 0, 1 + 1, 1 + 2, 1 + 3 are frequently occuring operations, special
+        // case them to avoid extra computations.
+        if (other === ONE && this.high_ === 0) {
+            switch (this.low_) {
+                case 0: return ONE;
+                case 1: return TWO;
+                case 2: return THREE;
+                case 3: return FOUR;
+            }
+        }
         // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
         var a48 = this.high_ >>> 16;
         var a32 = this.high_ & 0xFFFF;
@@ -620,6 +678,9 @@
     *     zeros placed into the new leading bits.
     */
     Long.prototype.shiftRightUnsigned = function (numBits) {
+        if (this === ZERO) {
+            return this;
+        }
         numBits &= 63;
         if (numBits == 0) {
             return this;
@@ -638,6 +699,10 @@
 
     var ZERO = fromInt(0);
     var ONE = fromInt(1);
+    var TWO = fromInt(2);
+    var THREE = fromInt(3);
+    var FOUR = fromInt(4);
+
     var NEG_ONE = fromInt(-1);
     var MAX_VALUE = fromBits(0xFFFFFFFF, 0x7FFFFFFF);
     var MIN_VALUE = fromBits(0, 0x80000000);
