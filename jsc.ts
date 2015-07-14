@@ -29,7 +29,7 @@ var CC = {};
 // but are unavailable in the shell environment.
 
 jsGlobal.window = {
-  nextTickBeforeEvents: function(callback) {
+  setZeroTimeout: function(callback) {
     callback();
   },
   addEventListener: function() {

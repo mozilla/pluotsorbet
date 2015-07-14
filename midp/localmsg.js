@@ -949,7 +949,7 @@ NokiaActiveStandbyLocalMsgConnection.prototype.sendMessageToServer = function(da
       var replyData = new TextEncoder().encode(encoder.getData());
       this.sendMessageToClient(replyData, 0, replyData.length);
 
-      nextTickBeforeEvents((function() {
+      setZeroTimeout((function() {
         var encoder = new DataEncoder();
 
         encoder.putStart(DataType.STRUCT, "event");
