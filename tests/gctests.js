@@ -118,6 +118,22 @@ tests.push(function() {
   next();
 });
 
+tests.push(function() {
+  var addr = ASM._gcMallocUncollectable(4);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  i32[addr >> 2] = objAddr;
+  ASM._forceCollection();
+  isNot(freedAddr, addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
+  isNot(freedAddr, objAddr, "Object referenced by someone isn't freed");
+
+  i32[addr >> 2] = 0;
+
+  ASM._forceCollection();
+  is(freedAddr, objAddr, "Object that isn't referenced by anyone anymore is freed");
+
+  next();
+});
+
 // XXX: Replace ASM._gcMalloc with J2ME.newArray when J2ME.newArray will
 //      use _gcMalloc and not _gcMallocUncollectable.
 tests.push(function() {
