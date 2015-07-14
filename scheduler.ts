@@ -145,7 +145,7 @@ module J2ME {
         return;
       }
       processQueueScheduled = true;
-      (<any>window).setTimeout(run);
+      (<any>window).nextTickDuringEvents(run);
     }
 
     private static updateMinVirtualRuntime() {

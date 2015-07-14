@@ -100,11 +100,11 @@ var fs = (function() {
   Store.prototype.getItem = function(key, cb) {
     if (this.map.has(key)) {
       var value = this.map.get(key);
-      window.setZeroTimeout(function() { cb(value) });
+      window.nextTickBeforeEvents(function() { cb(value) });
     } else if (this.transientPaths.has(key)) {
       var value = null;
       this.map.set(key, value);
-      window.setZeroTimeout(function() { cb(value) });
+      window.nextTickBeforeEvents(function() { cb(value) });
     } else {
       var transaction = this.db.transaction(Store.DBSTORENAME, "readonly");
       if (DEBUG_FS) { console.log("get " + key + " initiated"); }
@@ -173,7 +173,7 @@ var fs = (function() {
     // If there are no changes to sync, merely call the callback
     // (in a timeout so the callback always gets called asynchronously).
     if (this.changesToSync.size == 0) {
-      setZeroTimeout(cb);
+      nextTickBeforeEvents(cb);
       return;
     }
 
@@ -503,7 +503,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs remove " + path); }
 
     if (openedFiles.findIndex(function(file) { return file && file.path === path; }) != -1) {
-      setZeroTimeout(function() { cb(false); });
+      nextTickBeforeEvents(function() { cb(false); });
       return;
     }
 
@@ -651,7 +651,7 @@ var fs = (function() {
     if (DEBUG_FS) { console.log("fs rename " + oldPath + " -> " + newPath); }
 
     if (openedFiles.findIndex(function(file) { return file && file.path === oldPath; }) != -1) {
-      setZeroTimeout(function() { cb(false); });
+      nextTickBeforeEvents(function() { cb(false); });
       return;
     }
 
@@ -695,7 +695,7 @@ var fs = (function() {
         mtime: file.record.mtime,
         size: file.record.size,
       };
-      setZeroTimeout(function() { cb(stat); });
+      nextTickBeforeEvents(function() { cb(stat); });
       return;
     }
 

@@ -83,8 +83,6 @@ if (files.length !== 1) {
   quit(1);
 }
 
-var callbacks = [];
-
 var navigator = {
   language: "en-US",
 };
@@ -138,7 +136,9 @@ var window = {
   },
 };
 
-this.setZeroTimeout = window.setZeroTimeout = window.setTimeout = this.setTimeout = function (fn, interval) {
+this.nextTickBeforeEvents = window.nextTickBeforeEvents =
+this.nextTickDuringEvents = window.nextTickDuringEvents =
+this.setTimeout = window.setTimeout = function (fn, interval) {
   var args = arguments.length > 2 ? Array.prototype.slice.call(arguments, 2) : [];
   var task = microTaskQueue.scheduleInterval(fn, args, interval, false);
   return task.id;
