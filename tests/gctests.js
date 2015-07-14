@@ -54,9 +54,6 @@ function ok(a, msg) {
 var tests = [];
 
 function next() {
-  for (var i = 0; i < 100; i++) {
-    ASM._forceCollection;
-  }
   freedAddr = 0;
 
   if (tests.length == 0) {
