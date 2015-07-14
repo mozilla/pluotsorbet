@@ -134,10 +134,8 @@ tests.push(function() {
   next();
 });
 
-// XXX: Replace ASM._gcMalloc with J2ME.newArray when J2ME.newArray will
-//      use _gcMalloc and not _gcMallocUncollectable.
 tests.push(function() {
-  var addr = ASM._gcMalloc(4);
+  var addr = J2ME.newArray(CLASSES.java_lang_Object.klass, 1);
   var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
   i32[addr >> 2] = objAddr;
   ASM._forceCollection();
