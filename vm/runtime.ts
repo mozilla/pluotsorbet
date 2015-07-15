@@ -545,6 +545,9 @@ module J2ME {
       if (javaString !== null) {
         return javaString._address;
       }
+
+      setUncollectable(utf16ArrayAddr);
+
       // It's ok to create and intern an object here, because we only return it
       // to ConstantPool.resolve, which itself is only called by a few callers,
       // which should be able to convert it into an address if needed.  But we
@@ -554,6 +557,9 @@ module J2ME {
       javaString.offset = 0;
       javaString.count = utf16Array.length;
       internedStrings.put(utf16Array, javaString);
+
+      unsetUncollectable(utf16ArrayAddr);
+
       return javaString._address;
     }
 
