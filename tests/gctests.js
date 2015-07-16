@@ -89,12 +89,59 @@ tests.push(function() {
   next();
 });
 
-// TODO: Test gcMallocAtomic (make sure values inside the allocated area aren't considered pointers)
+// Test gcMallocAtomic
+tests.push(function() {
+  var addr = ASM._gcMallocAtomic(4);
+  ASM._forceCollection();
+  is(freedAddr, addr, "Object allocated with gcMallocAtomic is freed");
 
+  next();
+});
+
+// Make sure values inside the gcMallocAtomic allocated area aren't considered pointers
+tests.push(function() {
+  var uncollectableAddr = ASM._gcMallocUncollectable(4);
+  var addr = ASM._gcMallocAtomic(4);
+  i32[uncollectableAddr >> 2] = addr;
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  i32[addr >> 2] = objAddr;
+  ASM._forceCollection();
+  is(freedAddr, objAddr, "Values in an area allocated via gcMallocAtomic aren't considered references");
+
+  ASM._gcFree(uncollectableAddr);
+
+  ASM._forceCollection();
+  is(freedAddr, addr, "Object not referenced by anyone anymore is freed");
+
+  ASM._forceCollection();
+  is(freedAddr, uncollectableAddr, "Finalizer is called for a freed object");
+
+  next();
+});
+
+// Test allocObject
 tests.push(function() {
   var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
   ASM._forceCollection();
   is(freedAddr, objAddr, "An object not referenced by anyone is freed");
+
+  next();
+});
+
+// Test newArray (primitive)
+tests.push(function() {
+  var objAddr = J2ME.newIntArray(7);
+  ASM._forceCollection();
+  is(freedAddr, objAddr, "A primitive array not referenced by anyone is freed");
+
+  next();
+});
+
+// Test newArray (composite)
+tests.push(function() {
+  var objAddr = J2ME.newObjectArray(7);
+  ASM._forceCollection();
+  is(freedAddr, objAddr, "A composite array not referenced by anyone is freed");
 
   next();
 });
@@ -135,9 +182,25 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  var addr = ASM._gcMallocUncollectable(4);
+  var objAddr = J2ME.newByteArray(7);
+  i32[addr >> 2] = objAddr;
+  ASM._forceCollection();
+  isNot(freedAddr, addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
+  isNot(freedAddr, objAddr, "Object referenced by someone isn't freed");
+
+  i32[addr >> 2] = 0;
+
+  ASM._forceCollection();
+  is(freedAddr, objAddr, "Object that isn't referenced by anyone anymore is freed");
+
+  next();
+});
+
+tests.push(function() {
   var addr = J2ME.newArray(CLASSES.java_lang_Object.klass, 1);
   var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
-  i32[addr >> 2] = objAddr;
+  i32[addr + J2ME.Constants.ARRAY_HDR_SIZE >> 2] = objAddr;
   ASM._forceCollection();
   is(freedAddr, addr, "Object not referenced by anyone is freed");
   ASM._forceCollection();
@@ -146,7 +209,26 @@ tests.push(function() {
   next();
 });
 
-// TODO: Test J2ME.newArray with a primitive array (similar to the _gcMallocAtomic test)
+// Make sure values inside the gcMallocAtomic allocated area aren't considered pointers
+tests.push(function() {
+  var uncollectableAddr = ASM._gcMallocUncollectable(4);
+  var addr = J2ME.newIntArray(4);
+  i32[uncollectableAddr >> 2] = addr;
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  i32[addr + J2ME.Constants.ARRAY_HDR_SIZE >> 2] = objAddr;
+  ASM._forceCollection();
+  is(freedAddr, objAddr, "Values in an area allocated via newArray (primitive) aren't considered references");
+
+  ASM._gcFree(uncollectableAddr);
+
+  ASM._forceCollection();
+  is(freedAddr, addr, "Object not referenced by anyone anymore is freed");
+
+  ASM._forceCollection();
+  is(freedAddr, uncollectableAddr, "Finalizer is called for a freed object");
+
+  next();
+});
 
 try {
   load("polyfill/promise.js", "bld/native.js", "bld/j2me.js", "libs/zipfile.js",
