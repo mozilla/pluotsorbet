@@ -220,8 +220,9 @@ module J2ME {
   };
 
   function Int64Array(buffer: ArrayBuffer, offset: number, length: number) {
-    this.value = new Int32Array(buffer, offset, length * 2);
     this.length = length;
+    this.byteOffset = offset;
+    this.buffer = buffer;
   }
   Int64Array.prototype.BYTES_PER_ELEMENT = 8;
 
@@ -1969,7 +1970,7 @@ module J2ME {
 
     return addr;
   }
-  
+
   export function newMultiArray(klass: Klass, lengths: number[]): number {
     var length = lengths[0];
     var arrayAddr = newArray(klass.elementKlass, length);
