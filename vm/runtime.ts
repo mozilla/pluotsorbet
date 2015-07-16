@@ -1954,6 +1954,9 @@ module J2ME {
       addr = ASM._gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * constructor.prototype.BYTES_PER_ELEMENT);
       // XXX: To remove
       arr = new constructor(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
+      for (var i = 0; i < size; i++) {
+        arr[i] = 0;
+      }
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
