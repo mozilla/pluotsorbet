@@ -179,6 +179,7 @@ AccelerometerSensor.readBuffer = (function() {
         write_float32(result, 0);
         // Set sensor data.
         write_double64(result, this.acceleration[channelNumber]);
+
         return resultAddr;
     };
 })();
@@ -288,8 +289,13 @@ Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(ad
         return J2ME.newByteArray(0);
     }
 
+    var resultHolder = ASM._gcMallocUncollectable(4);
+
     asyncImpl("[B", new Promise(function(resolve, reject) {
-        var result = AccelerometerSensor.readBuffer(channelNumber);
-        setTimeout(resolve.bind(null, result), 50);
-    }));
+        var resultAddr = AccelerometerSensor.readBuffer(channelNumber);
+        i32[resultHolder >> 2] = resultAddr;
+        setTimeout(resolve.bind(null, resultAddr), 50);
+    }), function() {
+        ASM._gcFree(resultHolder);
+    });
 };
