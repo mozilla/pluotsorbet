@@ -86,6 +86,7 @@ var JARStore = (function() {
             directory: zip.directory,
             isBuiltIn: false,
           });
+          jad = jadData;
           resolve();
         };
       });
