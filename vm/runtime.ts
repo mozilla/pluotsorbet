@@ -1296,12 +1296,17 @@ module J2ME {
     return arrayObject;
   }
 
-  var uncollectableAddress = ASM._gcMallocUncollectable(4);
+  var uncollectableAddress = ASM._gcMallocUncollectable(16);
+  var uncollectableMaxNumber = 4;
+  var uncollectableNumber = -1;
   export function setUncollectable(addr: number) {
-    i32[uncollectableAddress >> 2] = addr;
+    uncollectableNumber++;
+    release || assert(uncollectableNumber < uncollectableMaxNumber, "Max " + uncollectableMaxNumber + " calls to setUncollectable at a time");
+    i32[(uncollectableAddress >> 2) + uncollectableNumber] = addr;
   }
   export function unsetUncollectable(addr: number) {
-    i32[uncollectableAddress >> 2] = 0;
+    i32[(uncollectableAddress >> 2) + uncollectableNumber] = 0;
+    uncollectableNumber--;
   }
   export function newArray(elementClassInfo: ClassInfo, size: number): number {
     release || assert(elementClassInfo instanceof ClassInfo);
