@@ -510,7 +510,7 @@ module J2ME {
       // to ConstantPool.resolve, which itself is only called by a few callers,
       // which should be able to convert it into an address if needed.  But we
       // should confirm that all callers of ConstantPool.resolve really do that.
-      javaString = <java.lang.String>getHandle(allocObject(CLASSES.java_lang_String));
+      javaString = <java.lang.String>getHandle(allocUncollectableObject(CLASSES.java_lang_String));
       javaString.value = utf16ArrayAddr;
       javaString.offset = 0;
       javaString.count = utf16Array.length;

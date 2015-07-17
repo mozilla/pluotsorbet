@@ -416,7 +416,7 @@ var currentlyFocusedTextEditor;
     function getDefaultFontAddress() {
         if (!defaultFontAddress) {
             var classInfo = CLASSES.loadClass("javax/microedition/lcdui/Font");
-            defaultFontAddress = J2ME.allocObject(classInfo);
+            defaultFontAddress = J2ME.allocUncollectableObject(classInfo);
             var methodInfo = classInfo.getMethodByNameString("<init>", "(III)V", false);
             J2ME.preemptionLockLevel++;
             J2ME.getLinkedMethod(methodInfo)(defaultFontAddress, 0, 0, 0);
