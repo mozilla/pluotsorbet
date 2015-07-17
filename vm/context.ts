@@ -328,15 +328,18 @@ module J2ME {
 
       var sys = CLASSES.getClass("org/mozilla/internal/Sys");
 
+      ctx.nativeThread.pushFrame(null);
+      ctx.nativeThread.pushFrame(sys.getMethodByNameString("isolate0Entry", "(Ljava/lang/String;[Ljava/lang/String;)V"));
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newString(className.replace(/\./g, "/")));
+
       var arrayAddr = newStringArray(args.length);
+      setUncollectable(arrayAddr);
       var array = getArrayFromAddr(arrayAddr);
       for (var n = 0; n < args.length; ++n) {
         array[n] = args[n] ? J2ME.newString(args[n]) : Constants.NULL;
       }
+      unsetUncollectable(arrayAddr);
 
-      ctx.nativeThread.pushFrame(null);
-      ctx.nativeThread.pushFrame(sys.getMethodByNameString("isolate0Entry", "(Ljava/lang/String;[Ljava/lang/String;)V"));
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newString(className.replace(/\./g, "/")));
       ctx.nativeThread.frame.setParameter(Kind.Reference, 1, arrayAddr);
       ctx.start();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");

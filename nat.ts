@@ -28,8 +28,8 @@ module J2ME {
   import Bytecodes = Bytecode.Bytecodes;
   import toHEX = IntegerUtilities.toHEX;
 
-  export function asyncImplOld(returnKind: string, promise: Promise<any>) {
-    return asyncImpl(kindCharacterToKind(returnKind), promise);
+  export function asyncImplOld(returnKind: string, promise: Promise<any>, cleanup?: Function) {
+    return asyncImpl(kindCharacterToKind(returnKind), promise, cleanup);
   }
 
   /**
@@ -41,7 +41,7 @@ module J2ME {
    *
    * |onRejected| is called with a java.lang.Exception object.
    */
-  export function asyncImpl(returnKind: Kind, promise: Promise<any>) {
+  export function asyncImpl(returnKind: Kind, promise: Promise<any>, cleanup?: Function) {
     var ctx = $.ctx;
 
     promise.then(function onFulfilled(l: any, h?: number) {
@@ -83,12 +83,18 @@ module J2ME {
           release || J2ME.Debug.assert(false, "Invalid Kind: " + Kind[returnKind]);
       }
       thread.sp = sp;
-      J2ME.Scheduler.enqueue(ctx);
+
+      cleanup && cleanup();
+
+      Scheduler.enqueue(ctx);
     }, function onRejected(exception: java.lang.Exception) {
       var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
       var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
       ctx.nativeThread.pushFrame(methodInfo);
       ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
+
+      cleanup && cleanup();
+
       Scheduler.enqueue(ctx);
     });
 

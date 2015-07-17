@@ -71,9 +71,9 @@ extern "C" {
   }
 
   uintptr_t gcMallocAtomic(int32_t size) {
-    // TODO:
-    // return (uintptr_t)GC_MALLOC_ATOMIC(size);
-    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
+    uintptr_t p = (uintptr_t)GC_MALLOC_ATOMIC(size);
+    GC_REGISTER_FINALIZER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
+    return p;
   }
 
   void forceCollection(void) {

@@ -172,8 +172,9 @@ module J2ME {
   }
 
   function Int64Array(buffer: ArrayBuffer, offset: number, length: number) {
-    this.value = new Int32Array(buffer, offset, length * 2);
     this.length = length;
+    this.byteOffset = offset;
+    this.buffer = buffer;
   }
   Int64Array.prototype.BYTES_PER_ELEMENT = 8;
 
@@ -502,6 +503,9 @@ module J2ME {
       if (javaString !== null) {
         return javaString._address;
       }
+
+      setUncollectable(utf16ArrayAddr);
+
       // It's ok to create and intern an object here, because we only return it
       // to ConstantPool.resolve, which itself is only called by a few callers,
       // which should be able to convert it into an address if needed.  But we
@@ -511,6 +515,9 @@ module J2ME {
       javaString.offset = 0;
       javaString.count = utf16Array.length;
       internedStrings.put(utf16Array, javaString);
+
+      unsetUncollectable(utf16ArrayAddr);
+
       return javaString._address;
     }
 
@@ -1289,6 +1296,13 @@ module J2ME {
     return arrayObject;
   }
 
+  var uncollectableAddress = ASM._gcMallocUncollectable(4);
+  export function setUncollectable(addr: number) {
+    i32[uncollectableAddress >> 2] = addr;
+  }
+  export function unsetUncollectable(addr: number) {
+    i32[uncollectableAddress >> 2] = 0;
+  }
   export function newArray(elementClassInfo: ClassInfo, size: number): number {
     release || assert(elementClassInfo instanceof ClassInfo);
     if (size < 0) {
@@ -1303,7 +1317,7 @@ module J2ME {
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
-      addr = ASM._gcMallocUncollectable(Constants.ARRAY_HDR_SIZE + size * 4);
+      addr = ASM._gcMalloc(Constants.ARRAY_HDR_SIZE + size * 4);
     }
 
     i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] = arrayClassInfo.id;
@@ -1311,10 +1325,11 @@ module J2ME {
 
     return addr;
   }
-  
+
   export function newMultiArray(classInfo: ClassInfo, lengths: number[]): number {
     var length = lengths[0];
     var arrayAddr = newArray(classInfo.elementClass, length);
+    setUncollectable(arrayAddr);
     var array = getHandle(arrayAddr);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
@@ -1322,6 +1337,7 @@ module J2ME {
         array[i] = newMultiArray(classInfo.elementClass, lengths);
       }
     }
+    unsetUncollectable(arrayAddr);
     return arrayAddr;
   }
 
