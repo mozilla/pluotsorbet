@@ -39,6 +39,12 @@ function setNative(javaObj, nativeObj) {
     return nativeObj;
 }
 
+// XXX: Replace setNative with setNativeWithAddr everywhere
+function setNativeWithAddr(javaObjAddr, nativeObj) {
+    NativeMap.set(javaObjAddr, nativeObj);
+    return nativeObj;
+}
+
 function deleteNative(javaObj) {
     NativeMap.delete(javaObj._address);
 }
@@ -610,26 +616,26 @@ Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(addr, ch) 
 Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(addr, nameAddr) {
     var fileName = J2ME.fromStringAddr(nameAddr);
     var data = JARStore.loadFile(fileName);
-    var obj = null;
+    var objAddr = Constants.NULL;
     if (data) {
-        obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
-        setNative(obj, {
+        objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+        setNativeWithAddr(objAddr, {
             data: data,
             pos: 0,
         });
     }
-    return obj ? obj._address : J2ME.Constants.NULL;
+    return objAddr;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(addr, sourceAddr) {
     var source = getHandle(sourceAddr);
-    var obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
+    var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
     var sourceDecoder = getNative(source);
-    setNative(obj, {
+    setNativeWithAddr(objAddr, {
         data: new Uint8Array(sourceDecoder.data),
         pos: sourceDecoder.pos,
     });
-    return obj._address;
+    return objAddr;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(addr, fileDecoderAddr) {
