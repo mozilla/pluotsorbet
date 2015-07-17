@@ -25,7 +25,7 @@
 
   function nextTickDuringEvents(fn) {
     cbs.push(fn);
-    window.postMessage(msg, window.location.origin);
+    window.postMessage(msg, "*");
   }
 
   function recv(ev) {
