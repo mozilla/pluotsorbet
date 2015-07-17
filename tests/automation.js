@@ -524,7 +524,7 @@ casper.test.begin("unit tests", 31 + gfxTests.length, function(test) {
     });
 
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?jad=&downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Download");
@@ -534,7 +534,7 @@ casper.test.begin("unit tests", 31 + gfxTests.length, function(test) {
 
     // Run the test a second time to ensure loading the JAR stored in the JARStore works correctly.
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?jad=&downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=1.0.0&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Load");
@@ -545,7 +545,7 @@ casper.test.begin("unit tests", 31 + gfxTests.length, function(test) {
 
     // Run the test that updates the MIDlet
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDletUpdater&logConsole=web,page&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?jad=&downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDletUpdater&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         var alertText = null;
         casper.on('remote.alert', function onAlert(message) {
@@ -563,7 +563,7 @@ casper.test.begin("unit tests", 31 + gfxTests.length, function(test) {
 
     // Verify that the update has been applied
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=3.0.0&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?jad=&downloadJAD=http://localhost:8000/tests/Manifest1.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=3.0.0&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Load after update");
@@ -577,7 +577,7 @@ casper.test.begin("unit tests", 31 + gfxTests.length, function(test) {
     .waitForText("DONE");
 
     casper
-    .thenOpen("http://localhost:8000/index.html?downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=2.0.0&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?jad=&downloadJAD=http://localhost:8000/tests/Manifest2.jad&midletClassName=tests.jaddownloader.AMIDlet&logConsole=web,page&args=2.0.0&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
             test.assertTextExists("SUCCESS 3/3", "test JAD downloader - Download with absolute URL");
