@@ -215,7 +215,7 @@ function(addr, number, modelAddr) {
     model.availabilityPush = m.availabilityPush;
     model.conditionPush = m.conditionPush;
     model.channelCount = m.channelCount;
-    model.errorCodes = J2ME.newArray(J2ME.PrimitiveClassInfo.I.klass, 0);
+    model.errorCodes = J2ME.newArray(J2ME.PrimitiveClassInfo.I, 0);
     model.errorMsgs = J2ME.newStringArray(0);
 
     var n = m.properties.length;
@@ -247,7 +247,7 @@ function(addr, sensorsNumber, number, modelAddr) {
     model.mrangeCount = c.mrangeArray.length;
 
     var n = c.mrangeArray.length;
-    var arrayAddr = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, n);
+    var arrayAddr = J2ME.newArray(J2ME.PrimitiveClassInfo.J, n);
     var array = J2ME.getArrayFromAddr(arrayAddr);
     for (var i = 0; i < n; i++) {
         array[i * 2] = c.mrangeArray[i].low_;

@@ -20,7 +20,8 @@ module J2ME {
     "java/lang/Class": {
       fields: {
         instanceSymbols: {
-          "status": "I"
+          "status": "I",
+          "vmClass": "Ljava/lang/Object;"
         }
       },
       methods: {
@@ -332,9 +333,9 @@ module J2ME {
   export module java.lang {
     export interface Object {
       /**
-       * Reference to the runtime klass.
+       * Reference to the class info.
        */
-      klass: Klass
+      classInfo: ClassInfo
 
       /**
        * All objects have an address.
@@ -365,12 +366,9 @@ module J2ME {
     }
 
     export interface Class extends java.lang.Object {
-      /**
-       * RuntimeKlass associated with this Class object.
-       */
-      runtimeKlass: RuntimeKlass;
       status: number;
       initialize(): void;
+      vmClass: number;
     }
 
     export interface String extends java.lang.Object {

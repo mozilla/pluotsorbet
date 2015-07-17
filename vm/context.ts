@@ -312,7 +312,7 @@ module J2ME {
     private createIsolateCtx(): Context {
       var runtime = new Runtime(this);
       var ctx = new Context(runtime);
-      ctx.threadAddress = runtime.mainThread = allocUncollectableObject(CLASSES.java_lang_Thread.klass); // Just use newObject.
+      ctx.threadAddress = runtime.mainThread = allocUncollectableObject(CLASSES.java_lang_Thread); // Just use newObject.
       var thread = <java.lang.Thread>getHandle(ctx.threadAddress);
       // XXX thread.pid seems to be unused, so remove it.
       thread.pid = util.id();
@@ -484,22 +484,22 @@ module J2ME {
       // return returnValue;
     }
 
-    createException(className: string, message?: string) {
+    createException(className: string, message?: string): java.lang.Object {
       if (!message) {
         message = "";
       }
       message = "" + message;
-      var classInfo = CLASSES.loadAndLinkClass(className);
+      var classInfo = CLASSES.loadClass(className);
       classInitCheck(classInfo);
       release || Debug.assert(!U, "Unexpected unwind during createException.");
       runtimeCounter && runtimeCounter.count("createException " + className);
-      var exception = new classInfo.klass();
+      var exceptionAddress = allocObject(classInfo);
       var methodInfo = classInfo.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
       preemptionLockLevel++;
-      getLinkedMethod(methodInfo)(exception._address, message ? newString(message) : Constants.NULL);
+      getLinkedMethod(methodInfo)(exceptionAddress, message ? newString(message) : Constants.NULL);
       release || Debug.assert(!U, "Unexpected unwind during createException.");
       preemptionLockLevel--;
-      return exception;
+      return getHandle(exceptionAddress);
     }
 
     setAsCurrentContext() {
@@ -537,7 +537,7 @@ module J2ME {
         this.kill();
         this.clearCurrentContext();
         // Rethrow so the exception is not silent.
-        throw "klass" in e ? e.klass : e;
+        throw "classInfo" in e ? e.classInfo : e;
       }
       if (U) {
         //if (this.bailoutFrames.length) {

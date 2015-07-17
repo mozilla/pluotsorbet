@@ -92,7 +92,7 @@ tests.push(function() {
 // TODO: Test gcMallocAtomic (make sure values inside the allocated area aren't considered pointers)
 
 tests.push(function() {
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   ASM._forceCollection();
   is(freedAddr, objAddr, "An object not referenced by anyone is freed");
 
@@ -101,7 +101,7 @@ tests.push(function() {
 
 tests.push(function() {
   var addr = ASM._gcMallocUncollectable(4);
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   i32[addr >> 2] = objAddr;
   ASM._forceCollection();
   isNot(freedAddr, addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
@@ -120,7 +120,7 @@ tests.push(function() {
 
 tests.push(function() {
   var addr = ASM._gcMallocUncollectable(4);
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   i32[addr >> 2] = objAddr;
   ASM._forceCollection();
   isNot(freedAddr, addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
@@ -138,7 +138,7 @@ tests.push(function() {
 //      use _gcMalloc and not _gcMallocUncollectable.
 tests.push(function() {
   var addr = ASM._gcMalloc(4);
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   i32[addr >> 2] = objAddr;
   ASM._forceCollection();
   is(freedAddr, addr, "Object not referenced by anyone is freed");
