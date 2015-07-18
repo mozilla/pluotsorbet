@@ -1185,17 +1185,13 @@ module J2ME {
   var handleConstructors = Object.create(null);
 
   export function allocUncollectableObject(classInfo: ClassInfo): number {
-    // This could be implemented via a call to newObject, at the cost
-    // of creating a temporary object: return newObject(klass)._address;
     var address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
     i32[address >> 2] = classInfo.id | 0;
     return address;
   }
 
   export function allocObject(classInfo: ClassInfo): number {
-    // This could be implemented via a call to newObject, at the cost
-    // of creating a temporary object: return newObject(klass)._address;
-    var address = ASM._gcMalloc(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
+    var address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
     i32[address >> 2] = classInfo.id | 0;
     return address;
   }
@@ -1318,7 +1314,10 @@ module J2ME {
     var addr;
 
     if (elementClassInfo instanceof PrimitiveClassInfo) {
-      addr = ASM._gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * (<PrimitiveArrayClassInfo>arrayClassInfo).bytesPerElement);
+      var byteSize = Constants.ARRAY_HDR_SIZE + size * (<PrimitiveArrayClassInfo>arrayClassInfo).bytesPerElement;
+      for (var i = 0; i < byteSize; i++) {
+        i8[i] = 0;
+      }
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
