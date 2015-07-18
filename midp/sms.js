@@ -144,19 +144,19 @@ function(addr, port, msid, handle, smsPacketAddr) {
             var addr = sms.addr;
 
             var messageAddr = J2ME.newByteArray(text.length);
+            smsPacket.message = messageAddr;
             var message = J2ME.getArrayFromAddr(messageAddr);
             for (var i = 0; i < text.length; i++) {
                 message[i] = text.charCodeAt(i);
             }
 
             var addressAddr = J2ME.newByteArray(addr.length);
+            smsPacket.address = addressAddr;
             var address = J2ME.getArrayFromAddr(addressAddr);
             for (var i = 0; i < addr.length; i++) {
                 address[i] = addr.charCodeAt(i);
             }
 
-            smsPacket.message = messageAddr;
-            smsPacket.address = addressAddr;
             smsPacket.port = port;
             smsPacket.sentAt = Date.now();
             smsPacket.messageType = 0; // GSM_TEXT

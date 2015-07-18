@@ -537,7 +537,7 @@ function ImageRecorder(playerContainer) {
 
     this.realizeResolver = null;
 
-    this.snapshotDataAddr = J2ME.Constants.NULL;
+    this.snapshotData = null;
     this.ctx = $.ctx;
 }
 
@@ -572,9 +572,8 @@ ImageRecorder.prototype.recipient = function(message) {
             break;
 
         case "snapshot":
-            this.snapshotDataAddr = J2ME.newByteArray(message.data.byteLength);
-            var snapshotData = J2ME.getArrayFromAddr(this.snapshotDataAddr);
-            snapshotData.set(new Int8Array(message.data));
+            this.snapshotData = new Int8Array(message.data.byteLength);
+            this.snapshotData.set(new Int8Array(message.data));
             MIDP.sendMediaSnapshotFinishedEvent(this.playerContainer.pId);
             break;
     }
@@ -627,7 +626,7 @@ ImageRecorder.prototype.startSnapshot = function(imageType) {
 }
 
 ImageRecorder.prototype.getSnapshotData = function(imageType) {
-    return this.snapshotDataAddr;
+    return this.snapshotData;
 }
 
 function PlayerContainer(url, pId) {
@@ -792,8 +791,7 @@ PlayerContainer.prototype.isVolumeControlSupported = function() {
 
 PlayerContainer.prototype.writeBuffer = function(buffer) {
     if (this.contentSize === 0) {
-        var dataAddr = J2ME.newByteArray(this.getBufferSize());
-        this.data = J2ME.getArrayFromAddr(dataAddr);
+        this.data = new Int8Array(this.getBufferSize());
     }
 
     this.data.set(buffer, this.contentSize);
@@ -859,7 +857,14 @@ PlayerContainer.prototype.startSnapshot = function(imageType) {
 }
 
 PlayerContainer.prototype.getSnapshotData = function() {
-    return this.player.getSnapshotData();
+    var arr = this.player.getSnapshotData();
+    if (!arr) {
+        return Constants.NULL;
+    }
+
+    var retArr = J2ME.newByteArray(arr.length);
+    J2ME.getArrayFromAddr(retArr).set(arr);
+    return retArr;
 }
 
 PlayerContainer.prototype.getDuration = function() {
