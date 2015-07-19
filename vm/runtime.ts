@@ -1870,9 +1870,9 @@ module J2ME {
    * Will we ever want to map multiple natives to an address?  If so, we'll need
    * to do something more sophisticated here.
    */
-  export var NativeMap = new Map();
+  export var NativeMap = new Map<number,Object|number>();
 
-  export function getNative(javaObj: java.lang.Object): any {
+  export function getNative(javaObj: java.lang.Object): Object|number {
       return NativeMap.get(javaObj._address);
   }
 
