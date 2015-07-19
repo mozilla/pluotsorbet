@@ -312,7 +312,7 @@ module J2ME {
     private createIsolateCtx(): Context {
       var runtime = new Runtime(this);
       var ctx = new Context(runtime);
-      ctx.threadAddress = runtime.mainThread = allocUncollectableObject(CLASSES.java_lang_Thread.klass); // Just use newObject.
+      ctx.threadAddress = runtime.mainThread = allocObject(CLASSES.java_lang_Thread.klass); // Just use newObject.
       var thread = <java.lang.Thread>getHandle(ctx.threadAddress);
       // XXX thread.pid seems to be unused, so remove it.
       thread.pid = util.id();
@@ -398,7 +398,7 @@ module J2ME {
     lockTimeout: number;
     lockLevel: number;
     nativeThread: Thread;
-    threadAddress: number;
+    threadData: Int32Array;
     writer: IndentingWriter;
     methodTimeline: any;
     virtualRuntime: number;
@@ -415,6 +415,16 @@ module J2ME {
         this.methodTimeline = new Shumway.Tools.Profiler.TimelineBuffer("Thread " + this.runtime.id + ":" + this.id);
         methodTimelines.push(this.methodTimeline);
       }
+
+      this.threadData = new Int32Array(ASM.buffer, ASM._gcMallocUncollectable(4), 1);
+    }
+
+    public set threadAddress(addr: number) {
+      this.threadData[0] = addr
+    }
+
+    public get threadAddress() {
+      return this.threadData[0];
     }
 
     public static color(id) {
@@ -459,6 +469,8 @@ module J2ME {
         thread.nativeAlive = false;
       }
       this.runtime.removeContext(this);
+
+      ASM._gcFree(this.threadData.byteOffset);
     }
 
     executeMethod(methodInfo: MethodInfo) {

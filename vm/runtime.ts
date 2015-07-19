@@ -1850,14 +1850,6 @@ module J2ME {
     return new klass();
   }
 
-  export function allocUncollectableObject(klass: Klass): number {
-    // This could be implemented via a call to newObject, at the cost
-    // of creating a temporary object: return newObject(klass)._address;
-    var address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + klass.classInfo.sizeOfFields);
-    i32[address >> 2] = klass.id | 0;
-    return address;
-  }
-
   export function allocObject(klass: Klass): number {
     // This could be implemented via a call to newObject, at the cost
     // of creating a temporary object: return newObject(klass)._address;
