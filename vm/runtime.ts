@@ -425,8 +425,6 @@ module J2ME {
   export class RuntimeTemplate {
     static all = new Set();
 
-    static isolateMap = Object.create(null);
-
     jvm: JVM;
     status: RuntimeStatus;
     waiting: any [];

@@ -654,7 +654,7 @@ Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(addr) {
 };
 
 Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(addr) {
-    var runtime = Runtime.isolateMap[addr];
+    var runtime = NativeMap.get(addr);
     return runtime ? runtime.status : J2ME.RuntimeStatus.New;
 };
 
@@ -664,7 +664,7 @@ Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(addr) {
 };
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(addr, status) {
-    var runtime = Runtime.isolateMap[addr];
+    var runtime = NativeMap.get(addr);
     asyncImpl("V", new Promise(function(resolve, reject) {
         if (runtime.status >= status) {
             resolve();
