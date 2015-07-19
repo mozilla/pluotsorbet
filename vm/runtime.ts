@@ -1875,7 +1875,7 @@ module J2ME {
    */
   export var NativeMap = new Map();
 
-  export function getNative(javaObj: java.lang.Object): any {
+  export function getNative(javaObj: java.lang.Object): Object|number {
       return NativeMap.get(javaObj._address);
   }
 
