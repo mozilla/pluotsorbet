@@ -478,6 +478,7 @@ Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
 };
 
 Native["java/lang/Runtime.gc.()V"] = function(addr) {
+    ASM._forceCollection();
 };
 
 Native["java/lang/Math.floor.(D)D"] = function(addr, val) {
