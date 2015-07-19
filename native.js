@@ -15,24 +15,6 @@ function preemptingImpl(returnKind, returnValue) {
 
 var Override = {};
 
-/**
- * A map from Java object addresses to native objects.
- *
- * Use getNative to simplify accessing this map. getNative takes a handle, so
- * callers don't need to dereference its address.
- *
- * Currently this only supports mapping an address to a single native.
- * Will we ever want to map multiple natives to an address?  If so, we'll need
- * to do something more sophisticated here.
- *
- * XXX Figure out how to collect a native when its Java object is collected.
- */
-var NativeMap = new Map();
-
-function getNative(javaObj) {
-    return NativeMap.get(javaObj._address);
-}
-
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] =
 function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
     if (srcAddr === J2ME.Constants.NULL || dstAddr === J2ME.Constants.NULL) {
