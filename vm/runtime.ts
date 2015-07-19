@@ -1859,6 +1859,23 @@ module J2ME {
   }
 
   export function onFinalize(addr: number): void {
+    NativeMap.delete(addr);
+  }
+
+  /**
+   * A map from Java object addresses to native objects.
+   *
+   * Use getNative to simplify accessing this map. getNative takes a handle, so
+   * callers don't need to dereference its address.
+   *
+   * Currently this only supports mapping an address to a single native.
+   * Will we ever want to map multiple natives to an address?  If so, we'll need
+   * to do something more sophisticated here.
+   */
+  export var NativeMap = new Map();
+
+  export function getNative(javaObj: java.lang.Object): any {
+      return NativeMap.get(javaObj._address);
   }
 
   /**
@@ -2349,3 +2366,6 @@ var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
 
 var getHandle = J2ME.getHandle;
+
+var NativeMap = J2ME.NativeMap;
+var getNative = J2ME.getNative;

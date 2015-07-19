@@ -311,6 +311,34 @@ tests.push(function() {
   next();
 });
 
+tests.push(function() {
+  var addr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  NativeMap.set(addr, { prop: "ciao" });
+
+  ok(NativeMap.has(addr), "Native object is in the NativeMap map");
+
+  ASM._forceCollection();
+  is(freedAddr, addr, "Object not referenced by anyone is freed");
+
+  ok(!NativeMap.has(addr), "Native object has been removed from the NativeMap map");
+
+  next();
+});
+
+tests.push(function() {
+  var addr = ASM._gcMallocUncollectable(4);
+  NativeMap.set(addr, { prop: "ciao" });
+
+  ok(NativeMap.has(addr), "Native object is in the NativeMap map");
+
+  ASM._forceCollection();
+  isNot(freedAddr, addr, "Uncollectable memory isn't freed");
+
+  ok(NativeMap.has(addr), "Native object is still in the NativeMap map");
+
+  next();
+});
+
 try {
   load("polyfill/promise.js", "bld/native.js", "bld/j2me.js", "libs/zipfile.js",
        "libs/jarstore.js", "native.js");
@@ -321,7 +349,9 @@ try {
 
   CLASSES.initializeBuiltinClasses();
 
+  var origOnFinalize = J2ME.onFinalize;
   J2ME.onFinalize = function(addr) {
+    origOnFinalize(addr);
     freedAddr = addr;
   };
 
