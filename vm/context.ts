@@ -416,7 +416,10 @@ module J2ME {
         methodTimelines.push(this.methodTimeline);
       }
 
-      this.threadData = new Int32Array(ASM.buffer, ASM._gcMallocUncollectable(4), 1);
+      setUncollectable(this.nativeThread.tp);
+      this.threadData = new Int32Array(ASM.buffer, ASM._gcMallocUncollectable(8), 2);
+      this.threadData[1] = this.nativeThread.tp;
+      unsetUncollectable(this.nativeThread.tp);
     }
 
     public set threadAddress(addr: number) {

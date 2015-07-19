@@ -190,7 +190,7 @@ module J2ME {
       var fp = this.fp;
       var sp = this.sp;
       var pc = this.pc;
-      while (this.fp > this.thread.tp) {
+      while (this.fp > (this.thread.tp >> 2)) {
         writer.writeLn((this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
         this.set(this.thread, i32[this.fp + FrameLayout.CallerFPOffset],
                  this.fp + this.parameterOffset,
@@ -283,14 +283,14 @@ module J2ME {
     view: FrameView;
 
     constructor(ctx: Context) {
-      this.tp = ASM._gcMallocUncollectable(1024 * 256) >> 2;
-      this.bp = this.tp;
+      this.tp = ASM._gcMallocUncollectable(1024 * 256);
+      this.bp = this.tp >> 2;
       this.fp = this.bp;
       this.sp = this.fp;
       this.pc = -1;
       this.view = new FrameView();
       this.ctx = ctx;
-      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp << 2) + " " + toHEX(i32.byteLength));
+      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp) + " " + toHEX(i32.byteLength));
     }
 
     set(fp: number, sp: number, pc: number) {
