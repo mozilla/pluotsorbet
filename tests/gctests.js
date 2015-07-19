@@ -231,6 +231,10 @@ tests.push(function() {
 });
 
 tests.push(function() {
+  // Since we can't control where the memory is allocated by Boehm, we allocate it multiple times
+  // hoping that within 1000 iterations the areas allocated by the gcMallocAtomic calls will
+  // collide (in my testing this happens within 2 iterations, so 1000 should be a safe bet).
+
   var zeroedOut = true;
   for (var i = 0; i < 1000; i++) {
     var addr = ASM._gcMallocAtomic(8);
