@@ -284,6 +284,33 @@ tests.push(function() {
   next();
 });
 
+tests.push(function() {
+  var zeroedOut = true;
+  for (var i = 0; i < 1000; i++) {
+    var addr = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, 1);
+    for (var j = 0; j < 8; j += 4) {
+      if (i32[addr + J2ME.Constants.ARRAY_HDR_SIZE + j >> 2] != 0) {
+        zeroedOut = false;
+        break;
+      }
+    }
+
+    if (!zeroedOut) {
+      break;
+    }
+
+    for (var j = 0; j < 8; j += 4) {
+      i32[addr + J2ME.Constants.ARRAY_HDR_SIZE + j >> 2] = 0xDEADBEEF;
+    }
+
+    ASM._forceCollection();
+  }
+
+  ok(zeroedOut, "newArray does zero-out allocated memory");
+
+  next();
+});
+
 try {
   load("polyfill/promise.js", "bld/native.js", "bld/j2me.js", "libs/zipfile.js",
        "libs/jarstore.js", "native.js");
