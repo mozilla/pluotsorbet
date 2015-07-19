@@ -18,9 +18,8 @@ var Override = {};
 /**
  * A map from Java object addresses to native objects.
  *
- * Use getNative and setNative to simplify accessing this map.  getNative takes
- * a handle, so callers don't need to dereference its address, while setNative
- * returns the native, so callers can chain it with a local variable assignment.
+ * Use getNative to simplify accessing this map. getNative takes a handle, so
+ * callers don't need to dereference its address.
  *
  * Currently this only supports mapping an address to a single native.
  * Will we ever want to map multiple natives to an address?  If so, we'll need
@@ -32,15 +31,6 @@ var NativeMap = new Map();
 
 function getNative(javaObj) {
     return NativeMap.get(javaObj._address);
-}
-
-function setNative(javaObj, nativeObj) {
-    NativeMap.set(javaObj._address, nativeObj);
-    return nativeObj;
-}
-
-function deleteNative(javaObj) {
-    NativeMap.delete(javaObj._address);
 }
 
 Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V"] =
@@ -610,26 +600,26 @@ Native["com/sun/cldchi/io/ConsoleOutputStream.write.(I)V"] = function(addr, ch) 
 Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/Object;"] = function(addr, nameAddr) {
     var fileName = J2ME.fromStringAddr(nameAddr);
     var data = JARStore.loadFile(fileName);
-    var obj = null;
+    var objAddr = J2ME.Constants.NULL;
     if (data) {
-        obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
-        setNative(obj, {
+        objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+        NativeMap.set(objAddr, {
             data: data,
             pos: 0,
         });
     }
-    return obj ? obj._address : J2ME.Constants.NULL;
+    return objAddr;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(addr, sourceAddr) {
     var source = getHandle(sourceAddr);
-    var obj = J2ME.newObject(CLASSES.java_lang_Object.klass);
+    var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
     var sourceDecoder = getNative(source);
-    setNative(obj, {
+    NativeMap.set(objAddr, {
         data: new Uint8Array(sourceDecoder.data),
         pos: sourceDecoder.pos,
     });
-    return obj._address;
+    return objAddr;
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.bytesRemain.(Ljava/lang/Object;)I"] = function(addr, fileDecoderAddr) {

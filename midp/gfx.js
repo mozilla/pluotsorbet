@@ -229,12 +229,15 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    function initImageData(imageData, width, height, isMutable) {
+    function initImageData(imageDataAddr, width, height, isMutable) {
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
 
-        var contextInfo = setNative(imageData, new ContextInfo(canvas.getContext("2d")));
+        var contextInfo = new ContextInfo(canvas.getContext("2d"))
+        NativeMap.set(imageDataAddr, contextInfo);
+
+        var imageData = getHandle(imageDataAddr);
 
         imageData.width = width;
         imageData.height = height;
@@ -246,7 +249,6 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeImage.(Ljavax/microedition/lcdui/ImageData;[BII)V"] =
     function(addr, imageDataAddr, bytesAddr, offset, length) {
-        var imageData = getHandle(imageDataAddr);
         var bytes = J2ME.getArrayFromAddr(bytesAddr);
         var ctx = $.ctx;
         asyncImpl("V", new Promise(function(resolve, reject) {
@@ -254,7 +256,7 @@ var currentlyFocusedTextEditor;
             var img = new Image();
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
-                var context = initImageData(imageData, img.naturalWidth, img.naturalHeight, 0);
+                var context = initImageData(imageDataAddr, img.naturalWidth, img.naturalHeight, 0);
                 context.drawImage(img, 0, 0);
 
                 URL.revokeObjectURL(img.src);
@@ -270,32 +272,28 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataRegion.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;IIIIIZ)V"] =
     function(addr, dataDestAddr, dataSourceAddr, x, y, width, height, transform, isMutable) {
-        var dataDest = getHandle(dataDestAddr);
-        var context = initImageData(dataDest, width, height, isMutable);
+        var context = initImageData(dataDestAddr, width, height, isMutable);
         renderRegion(context, NativeMap.get(dataSourceAddr).context.canvas, x, y, width, height, transform, 0, 0, TOP|LEFT);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(addr, destAddr, sourceAddr) {
-        var dest = getHandle(destAddr);
         var sourceCanvas = NativeMap.get(sourceAddr).context.canvas;
-        var context = initImageData(dest, sourceCanvas.width, sourceCanvas.height, 0);
+        var context = initImageData(destAddr, sourceCanvas.width, sourceCanvas.height, 0);
         context.drawImage(sourceCanvas, 0, 0);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createMutableImageData.(Ljavax/microedition/lcdui/ImageData;II)V"] =
     function(addr, imageDataAddr, width, height) {
-        var imageData = getHandle(imageDataAddr);
-        var context = initImageData(imageData, width, height, 1);
+        var context = initImageData(imageDataAddr, width, height, 1);
         context.fillStyle = "rgb(255,255,255)"; // white
         context.fillRect(0, 0, width, height);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
     function(addr, imageDataAddr, rgbDataAddr, width, height, processAlpha) {
-        var imageData = getHandle(imageDataAddr);
         var rgbData = J2ME.getArrayFromAddr(rgbDataAddr);
-        var context = initImageData(imageData, width, height, 0);
+        var context = initImageData(imageDataAddr, width, height, 0);
         var ctxImageData = context.createImageData(width, height);
         var abgrData = new Int32Array(ctxImageData.data.buffer);
 
