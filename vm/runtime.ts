@@ -220,8 +220,9 @@ module J2ME {
   };
 
   function Int64Array(buffer: ArrayBuffer, offset: number, length: number) {
-    this.value = new Int32Array(buffer, offset, length * 2);
     this.length = length;
+    this.byteOffset = offset;
+    this.buffer = buffer;
   }
   Int64Array.prototype.BYTES_PER_ELEMENT = 8;
 
@@ -545,6 +546,9 @@ module J2ME {
       if (javaString !== null) {
         return javaString._address;
       }
+
+      setUncollectable(utf16ArrayAddr);
+
       // It's ok to create and intern an object here, because we only return it
       // to ConstantPool.resolve, which itself is only called by a few callers,
       // which should be able to convert it into an address if needed.  But we
@@ -554,6 +558,9 @@ module J2ME {
       javaString.offset = 0;
       javaString.count = utf16Array.length;
       internedStrings.put(utf16Array, javaString);
+
+      unsetUncollectable(utf16ArrayAddr);
+
       return javaString._address;
     }
 
@@ -1923,6 +1930,19 @@ module J2ME {
     return arrayMap[addr];
   }
 
+  var uncollectableAddress = ASM._gcMallocUncollectable(16);
+  var uncollectableMaxNumber = 4;
+  var uncollectableNumber = -1;
+  export function setUncollectable(addr: number) {
+    uncollectableNumber++;
+    release || assert(uncollectableNumber < uncollectableMaxNumber, "Max " + uncollectableMaxNumber + " calls to setUncollectable at a time");
+    i32[(uncollectableAddress >> 2) + uncollectableNumber] = addr;
+  }
+  export function unsetUncollectable(addr: number) {
+    i32[(uncollectableAddress >> 2) + uncollectableNumber] = 0;
+    uncollectableNumber--;
+  }
+
   export function newArray(klass: Klass, size: number): number {
     if (size < 0) {
       throwNegativeArraySizeException();
@@ -1937,12 +1957,20 @@ module J2ME {
 
     if (klass.classInfo instanceof PrimitiveClassInfo) {
       addr = ASM._gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * constructor.prototype.BYTES_PER_ELEMENT);
+
+      // Zero-out memory because GC_MALLOC_ATOMIC doesn't do it automatically.
+      var off = Constants.ARRAY_HDR_SIZE + addr;
+      var end = off + size * constructor.prototype.BYTES_PER_ELEMENT
+      for (var i = off; i < end; i++) {
+        i8[i] = 0;
+      }
+
       // XXX: To remove
       arr = new constructor(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
-      addr = ASM._gcMallocUncollectable(Constants.ARRAY_HDR_SIZE + size * 4);
+      addr = ASM._gcMalloc(Constants.ARRAY_HDR_SIZE + size * 4);
       // XXX: To remove
       arr = new Int32Array(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
     }
@@ -1955,10 +1983,11 @@ module J2ME {
 
     return addr;
   }
-  
+
   export function newMultiArray(klass: Klass, lengths: number[]): number {
     var length = lengths[0];
     var arrayAddr = newArray(klass.elementKlass, length);
+    setUncollectable(arrayAddr);
     var array = arrayMap[arrayAddr];
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
@@ -1966,6 +1995,7 @@ module J2ME {
         array[i] = newMultiArray(klass.elementKlass, lengths);
       }
     }
+    unsetUncollectable(arrayAddr);
     return arrayAddr;
   }
 

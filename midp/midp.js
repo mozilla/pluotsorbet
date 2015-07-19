@@ -610,12 +610,14 @@ var MIDP = (function() {
   Native["com/sun/midp/midletsuite/SuiteProperties.load.()[Ljava/lang/String;"] = function(addr) {
     var keys = Object.keys(manifest);
     var arrAddr = J2ME.newStringArray(keys.length * 2);
+    J2ME.setUncollectable(arrAddr);
     var arr = J2ME.getArrayFromAddr(arrAddr);
     var i = 0;
     keys.forEach(function(key) {
       arr[i++] = J2ME.newString(key);
       arr[i++] = J2ME.newString(manifest[key]);
     });
+    J2ME.unsetUncollectable(arrAddr);
     return arrAddr;
   };
 

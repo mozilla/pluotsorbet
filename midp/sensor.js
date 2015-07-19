@@ -179,6 +179,7 @@ AccelerometerSensor.readBuffer = (function() {
         write_float32(result, 0);
         // Set sensor data.
         write_double64(result, this.acceleration[channelNumber]);
+
         return resultAddr;
     };
 })();
@@ -215,16 +216,16 @@ function(addr, number, modelAddr) {
     model.availabilityPush = m.availabilityPush;
     model.conditionPush = m.conditionPush;
     model.channelCount = m.channelCount;
-    model.errorCodes = J2ME.newArray(J2ME.PrimitiveClassInfo.I.klass, 0);
+    model.errorCodes = J2ME.newIntArray(0);
     model.errorMsgs = J2ME.newStringArray(0);
 
     var n = m.properties.length;
     var pAddr = J2ME.newStringArray(n);
+    model.properties = pAddr;
     var p = J2ME.getArrayFromAddr(pAddr);
     for (var i = 0; i < n; i++) {
         p[i] = J2ME.newString(m.properties[i]);
     }
-    model.properties = pAddr;
 };
 
 Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] =
@@ -249,9 +250,10 @@ function(addr, sensorsNumber, number, modelAddr) {
     var n = c.mrangeArray.length;
     var arrayAddr = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, n);
     var array = J2ME.getArrayFromAddr(arrayAddr);
+    var i32array = new Int32Array(array.buffer, array.byteOffset, array.length * 2);
     for (var i = 0; i < n; i++) {
-        array[i * 2] = c.mrangeArray[i].low_;
-        array[i * 2 + 1] = c.mrangeArray[i].high_;
+        i32array[i * 2] = c.mrangeArray[i].low_;
+        i32array[i * 2 + 1] = c.mrangeArray[i].high_;
     }
     model.mrageArray = arrayAddr;
 };
@@ -287,8 +289,13 @@ Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(ad
         return J2ME.newByteArray(0);
     }
 
+    var resultHolder = ASM._gcMallocUncollectable(4);
+
     asyncImpl("[B", new Promise(function(resolve, reject) {
-        var result = AccelerometerSensor.readBuffer(channelNumber);
-        setTimeout(resolve.bind(null, result), 50);
-    }));
+        var resultAddr = AccelerometerSensor.readBuffer(channelNumber);
+        i32[resultHolder >> 2] = resultAddr;
+        setTimeout(resolve.bind(null, resultAddr), 50);
+    }), function() {
+        ASM._gcFree(resultHolder);
+    });
 };
