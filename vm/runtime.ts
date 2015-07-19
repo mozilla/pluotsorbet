@@ -1957,11 +1957,16 @@ module J2ME {
 
     if (klass.classInfo instanceof PrimitiveClassInfo) {
       addr = ASM._gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * constructor.prototype.BYTES_PER_ELEMENT);
+
+      // Zero-out memory because GC_MALLOC_ATOMIC doesn't do it automatically.
+      var off = Constants.ARRAY_HDR_SIZE + addr;
+      var end = off + size * constructor.prototype.BYTES_PER_ELEMENT
+      for (var i = off; i < end; i++) {
+        i8[i] = 0;
+      }
+
       // XXX: To remove
       arr = new constructor(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
-      for (var i = 0; i < size; i++) {
-        arr[i] = 0;
-      }
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
