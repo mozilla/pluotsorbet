@@ -235,7 +235,7 @@ var currentlyFocusedTextEditor;
         canvas.height = height;
 
         var contextInfo = new ContextInfo(canvas.getContext("2d"))
-        NativeMap.set(imageDataAddr, contextInfo);
+        setNative(imageDataAddr, contextInfo);
 
         var imageData = getHandle(imageDataAddr);
 
@@ -386,7 +386,7 @@ var currentlyFocusedTextEditor;
         self.height = (size * 1.3) | 0;
 
         var context = document.createElement("canvas").getContext("2d");
-        NativeMap.set(addr, context);
+        setNative(addr, context);
         context.canvas.width = 0;
         context.canvas.height = 0;
         context.font = style + size + "px " + face;
@@ -957,7 +957,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.initScreen0.(I)V"] = function(addr, displayId) {
         var self = getHandle(addr);
         self.displayId = displayId;
-        NativeMap.set(addr, new GraphicsInfo(screenContextInfo));
+        setNative(addr, new GraphicsInfo(screenContextInfo));
         self.creator = J2ME.Constants.NULL;
     };
 
@@ -966,7 +966,7 @@ var currentlyFocusedTextEditor;
         var self = getHandle(addr);
         var img = getHandle(imgAddr);
         self.displayId = -1;
-        NativeMap.set(addr, new GraphicsInfo(getNative(getHandle(img.imageData))));
+        setNative(addr, new GraphicsInfo(getNative(getHandle(img.imageData))));
         self.creator = J2ME.Constants.NULL;
     };
 
@@ -1358,7 +1358,7 @@ var currentlyFocusedTextEditor;
         }
 
         var textEditor = TextEditorProvider.getEditor(constraints, null, ++textEditorId);
-        NativeMap.set(addr, textEditor);
+        setNative(addr, textEditor);
         textEditor.setBackgroundColor(0xFFFFFFFF | 0); // opaque white
         textEditor.setForegroundColor(0xFF000000 | 0); // opaque black
 
@@ -1435,7 +1435,7 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/TextEditor.setConstraints.(I)V"] = function(addr, constraints) {
         var textEditor = NativeMap.get(addr);
-        NativeMap.set(addr, TextEditorProvider.getEditor(constraints, textEditor, textEditor.id));
+        setNative(addr, TextEditorProvider.getEditor(constraints, textEditor, textEditor.id));
     };
 
     Native["com/nokia/mid/ui/TextEditor.getConstraints.()I"] = function(addr) {

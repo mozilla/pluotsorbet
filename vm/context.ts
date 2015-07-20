@@ -354,7 +354,7 @@ module J2ME {
       // so we cache it here.
       runtime.isolateId = isolate._id;
 
-      NativeMap.set(isolate._address, runtime);
+      setNative(isolate._address, runtime);
 
       var sys = CLASSES.getClass("org/mozilla/internal/Sys");
 

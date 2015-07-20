@@ -106,7 +106,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.open0.([BI)V"] = function(addr, ipB
     var host = J2ME.fromStringAddr(self.host);
     // console.log("Protocol.open0: " + host + ":" + port);
     asyncImpl("V", new Promise(function(resolve, reject) {
-        NativeMap.set(addr, new Socket(host, port, $.ctx, resolve, reject));
+        setNative(addr, new Socket(host, port, $.ctx, resolve, reject));
     }));
 };
 
