@@ -291,7 +291,7 @@ tests.push(function() {
 tests.push(function() {
   var zeroedOut = true;
   for (var i = 0; i < 1000; i++) {
-    var addr = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, 1);
+    var addr = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, 2);
     for (var j = 0; j < 8; j += 4) {
       if (i32[addr + J2ME.Constants.ARRAY_HDR_SIZE + j >> 2] != 0) {
         zeroedOut = false;
