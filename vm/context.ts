@@ -423,7 +423,7 @@ module J2ME {
     }
 
     public set threadAddress(addr: number) {
-      this.threadData[0] = addr
+      this.threadData[0] = addr;
     }
 
     public get threadAddress() {
