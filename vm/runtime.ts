@@ -1872,6 +1872,11 @@ module J2ME {
    */
   export var NativeMap = new Map<number,Object|number>();
 
+  export function setNative(addr: number, obj: Object|number): void {
+    NativeMap.set(addr, obj);
+    ASM._registerFinalizer(addr);
+  }
+
   export function getNative(javaObj: java.lang.Object): Object|number {
       return NativeMap.get(javaObj._address);
   }
@@ -2366,4 +2371,5 @@ var PS = 0; // Preemption samples.
 var getHandle = J2ME.getHandle;
 
 var NativeMap = J2ME.NativeMap;
+var setNative = J2ME.setNative;
 var getNative = J2ME.getNative;

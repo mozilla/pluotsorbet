@@ -136,7 +136,7 @@ DataDecoder.prototype.getType = function() {
 }
 
 Native["com/nokia/mid/s40/codec/DataEncoder.init.()V"] = function(addr) {
-  NativeMap.set(addr, new DataEncoder());
+  setNative(addr, new DataEncoder());
 };
 
 Native["com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V"] = function(addr, tag, nameAddr) {
@@ -178,7 +178,7 @@ Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function(addr) {
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(addr, dataAddr, offset, length) {
-  NativeMap.set(addr, new DataDecoder(J2ME.getArrayFromAddr(dataAddr), offset, length));
+  setNative(addr, new DataDecoder(J2ME.getArrayFromAddr(dataAddr), offset, length));
 };
 
 Native["com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V"] = function(addr, tag) {

@@ -1045,7 +1045,7 @@ Native["org/mozilla/io/LocalMsgConnection.init.(Ljava/lang/String;)V"] = functio
       protocolName: name.slice((name[2] == ':') ? 3 : 2),
     };
 
-    NativeMap.set(addr, info);
+    setNative(addr, info);
 
     if (info.server) {
         // It seems that one server only serves on client at a time, let's

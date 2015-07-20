@@ -425,7 +425,7 @@ Native["java/lang/Double.longBitsToDouble.(J)D"] = function(addr, l, h) {
 Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr) {
     J2ME.traceWriter && J2ME.traceWriter.writeLn("REDUX");
     //var stackTrace = [];
-    //NativeMap.set(addr, stackTrace);
+    //setNative(addr, stackTrace);
     //$.ctx.frames.forEach(function(frame) {
     //    if (!frame.methodInfo)
     //        return;
@@ -585,7 +585,7 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
     var objAddr = J2ME.Constants.NULL;
     if (data) {
         objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
-        NativeMap.set(objAddr, {
+        setNative(objAddr, {
             data: data,
             pos: 0,
         });
@@ -597,7 +597,7 @@ Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang
     var source = getHandle(sourceAddr);
     var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
     var sourceDecoder = getNative(source);
-    NativeMap.set(objAddr, {
+    setNative(objAddr, {
         data: new Uint8Array(sourceDecoder.data),
         pos: sourceDecoder.pos,
     });
@@ -637,7 +637,7 @@ Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)
     //
     // XXX Make these real weak references.
     //
-    NativeMap.set(addr, targetAddr);
+    setNative(addr, targetAddr);
 };
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) {

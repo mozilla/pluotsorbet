@@ -34,7 +34,7 @@ FrameAnimator.prototype.isRegistered = function() {
 };
 
 Native["com/nokia/mid/ui/frameanimator/FrameAnimator.init.()V"] = function(addr) {
-  NativeMap.set(addr, new FrameAnimator());
+  setNative(addr, new FrameAnimator());
 };
 
 Native["com/nokia/mid/ui/frameanimator/FrameAnimator.register.(IISSLcom/nokia/mid/ui/frameanimator/FrameAnimatorListener;)Z"] =
