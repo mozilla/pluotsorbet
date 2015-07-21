@@ -882,10 +882,10 @@ var currentlyFocusedTextEditor;
     }
 
     GraphicsInfo.prototype.setClip = function(x, y, width, height, minX, minY, maxX, maxY) {
-        var newX1 = x + this.transX;
-        var newY1 = y + this.transY;
-        var newX2 = newX1 + width;
-        var newY2 = newY1 + height;
+        var newX1 = x * MIDP.devicePixelRatio + this.transX;
+        var newY1 = y * MIDP.devicePixelRatio + this.transY;
+        var newX2 = newX1 + width * MIDP.devicePixelRatio;
+        var newY2 = newY1 + height * MIDP.devicePixelRatio;
 
         newX1 = Math.max(minX, newX1) & 0x7fff;
         newY1 = Math.max(minY, newY1) & 0x7fff;
@@ -1078,6 +1078,11 @@ var currentlyFocusedTextEditor;
 
         w = w || 1;
         h = h || 1;
+
+        x *= MIDP.devicePixelRatio;
+        y *= MIDP.devicePixelRatio;
+        w *= MIDP.devicePixelRatio;
+        h *= MIDP.devicePixelRatio;
 
         c.fillRect(x, y, w, h);
     };
