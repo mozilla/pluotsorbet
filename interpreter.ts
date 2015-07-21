@@ -22,7 +22,7 @@ module J2ME {
   }
 
   function traceArrayLoad(index: number, array: any []) {
-    assert(array[index] !== undefined);
+    assert(array[index] !== undefined, "Bad array value in traceArrayLoad");
     traceWriter.writeLn(toDebugString(array) + "[" + index + "] (" + toDebugString(array[index]) + ")");
   }
 
@@ -196,7 +196,7 @@ module J2ME {
 
     // These must always be kept up to date with the current frame.
     var frame = ctx.current();
-    release || assert (!Frame.isMarker(frame));
+    release || assert (!Frame.isMarker(frame), "interpret called on marker frame");
     var mi = frame.methodInfo;
     var ci = mi.classInfo;
     var rp = ci.constantPool.resolved;
@@ -1300,7 +1300,7 @@ module J2ME {
         }
         tryCatch(e);
         frame = ctx.current();
-        assert (!Frame.isMarker(frame));
+        assert (!Frame.isMarker(frame), "Unexpected marker frame in interpret");
         mi = frame.methodInfo;
         ci = mi.classInfo;
         rp = ci.constantPool.resolved;

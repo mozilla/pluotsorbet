@@ -246,7 +246,7 @@ module J2ME {
       return YieldReason.Cycle;
     }
     if (!methodInfo.codeAttribute) {
-      assert (methodInfo.isNative || methodInfo.isAbstract);
+      assert (methodInfo.isNative || methodInfo.isAbstract, "bad method type in canYield");
       yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " Abstract");
       return yieldMap[methodInfo.implKey] = YieldReason.None;
     }

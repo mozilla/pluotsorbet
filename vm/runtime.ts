@@ -303,7 +303,7 @@ module J2ME {
 
     if (!release) { // Check to see that no collisions have ever happened.
       if (hashMap[hash] && hashMap[hash] !== s) {
-        assert(false, "This is very bad.")
+        assert(false, "Collision detected!!!")
       }
       hashMap[hash] = s;
     }
@@ -315,7 +315,7 @@ module J2ME {
     var hash = HashUtilities.hashBytesTo32BitsMurmur(s, 0, s.length);
     if (!release) { // Check to see that no collisions have ever happened.
       if (hashMap[hash] && hashMap[hash] !== s) {
-        assert(false, "This is very bad.")
+        assert(false, "Collision detected in hashUTF8String!!!")
       }
       hashMap[hash] = s;
     }
@@ -661,7 +661,7 @@ module J2ME {
      */
     B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
-      release || assert(methodInfo !== undefined);
+      release || assert(methodInfo !== undefined, "methodInfo undefined in B");
       $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
     }
 
@@ -671,7 +671,7 @@ module J2ME {
      */
     T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
-      release || assert(methodInfo !== undefined);
+      release || assert(methodInfo !== undefined, "methodInfo undefined in T");
       $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
     }
 
@@ -805,7 +805,7 @@ module J2ME {
 
   function initializeClassObject(runtimeKlass: RuntimeKlass) {
     linkWriter && linkWriter.writeLn("Initializing Class Object For: " + runtimeKlass.templateKlass);
-    release || assert(!runtimeKlass.classObject);
+    release || assert(!runtimeKlass.classObject, "bad runtimeKlass in initializeClassObject");
     runtimeKlass.classObject = <java.lang.Class><any>new Klasses.java.lang.Class();
     runtimeKlass.classObject.runtimeKlass = runtimeKlass;
     var className = runtimeKlass.templateKlass.classInfo.getClassNameSlow();
@@ -849,7 +849,7 @@ module J2ME {
       configurable: true,
       get: function () {
         linkWriter && linkWriter.writeLn("Creating Runtime Klass: " + classInfo.getClassNameSlow());
-        release || assert(!(klass instanceof RuntimeKlass));
+        release || assert(!(klass instanceof RuntimeKlass), "klass shouldn't be RuntimeKlass in registerKlass");
         var runtimeKlass = new RuntimeKlass(klass);
         initializeClassObject(runtimeKlass);
         Object.defineProperty(this, classInfo.mangledName, {
@@ -933,7 +933,7 @@ module J2ME {
     // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.getClassNameSlow());
     // consoleWriter.writeLn(source);
     klass = <Klass>jsGlobal[mangledName];
-    release || assert(klass, mangledName);
+    release || assert(klass, "emitKlassConstructor failure: " + mangledName);
     klass.toString = function () {
       return "[Synthesized Klass " + classInfo.getClassNameSlow() + "]";
     };
@@ -955,7 +955,7 @@ module J2ME {
     if (klass) {
       release || assert (!classInfo.isInterface, "Interfaces should not be compiled.");
       linkWriter && linkWriter.greenLn("Found Compiled Klass: " + classInfo.getClassNameSlow());
-      release || assert(!classInfo.klass);
+      release || assert(!classInfo.klass, "bad classInfo in makeKlass");
       classInfo.klass = klass;
       klass.toString = function () {
         return "[Compiled Klass " + classInfo.getClassNameSlow() + "]";
@@ -965,7 +965,7 @@ module J2ME {
       }
     } else {
       klass = makeKlassConstructor(classInfo);
-      release || assert(!classInfo.klass);
+      release || assert(!classInfo.klass, "bad classInfo in makeKlass");
       classInfo.klass = klass;
     }
 
@@ -1044,7 +1044,7 @@ module J2ME {
         return "[Array of " + elementKlass + "]";
       };
     } else {
-      release || assert(!klass.prototype.hasOwnProperty("klass"));
+      release || assert(!klass.prototype.hasOwnProperty("klass"), "klass has klass property in makeArrayKlassConstructor");
       klass.prototype.klass = klass;
       klass.toString = function () {
         return "[Array of " + elementKlass + "]";
@@ -1374,7 +1374,7 @@ module J2ME {
       return methodInfo.fn;
     }
     linkKlassMethod(methodInfo.classInfo.klass, methodInfo);
-    assert (methodInfo.fn);
+    assert (methodInfo.fn, "bad fn in getLinkedMethod");
     return methodInfo.fn;
   }
 
@@ -1411,7 +1411,7 @@ module J2ME {
     klass.M[methodInfo.index] = methodInfo.fn = fn;
 
     if (!methodInfo.isStatic && methodInfo.virtualName) {
-      release || assert(klass.prototype.hasOwnProperty(methodInfo.virtualName));
+      release || assert(klass.prototype.hasOwnProperty(methodInfo.virtualName), "klass already has this method in linkKlassMethod");
       klass.prototype[methodInfo.virtualName] = fn;
       var classBindings = BindingsMap.get(klass.classInfo.utf8Name);
       if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
@@ -1437,7 +1437,7 @@ module J2ME {
       for (var i = 0; i < vTable.length; i++) {
         var methodInfo = vTable[i];
         if (methodInfo.implementsInterface) {
-          release || assert(methodInfo.mangledName);
+          release || assert(methodInfo.mangledName, "no mangledName in linkKlassMethods");
           klass.prototype[methodInfo.mangledName] = makeInterfaceMethodForwarder(methodInfo.vTableIndex);
         }
       }
@@ -1460,11 +1460,11 @@ module J2ME {
       display[i--] = klass;
       klass = klass.superKlass;
     }
-    release || assert(i === -1, i);
+    release || assert(i === -1, "bad i value in initializeKlassTables: " + i);
   }
 
   function initializeInterfaces(klass: Klass, classInfo: ClassInfo) {
-    release || assert (!klass.interfaces);
+    release || assert (!klass.interfaces, "no interfaces in initializeInterfaces");
     var interfaces = klass.interfaces = klass.superKlass ? klass.superKlass.interfaces.slice() : [];
 
     var interfaceClassInfos = classInfo.getAllInterfaces();
@@ -1487,7 +1487,7 @@ module J2ME {
     var methodInfo = classInfo.vTable[index];
     var methodKlass = methodInfo.classInfo.klass;
     linkKlassMethod(methodKlass, methodInfo);
-    release || assert(methodInfo.fn);
+    release || assert(methodInfo.fn, "bad fn in linkVirtualMethodByIndex");
     return methodInfo.fn;
   }
 
@@ -1523,7 +1523,7 @@ module J2ME {
   function linkMethodByIndex(klass: Klass, index: number) {
     var methodInfo = klass.classInfo.getMethodByIndex(index);
     linkKlassMethod(klass, methodInfo);
-    release || assert(methodInfo.fn);
+    release || assert(methodInfo.fn, "bad fn in linkMethodByIndex");
     return methodInfo.fn;
   }
 
@@ -1580,7 +1580,7 @@ module J2ME {
       if (isPrototypeOfFunctionMutable(klass)) {
         linkWriter && linkWriter.writeLn("Extending: " + klass + " -> " + superKlass);
         klass.prototype = Object.create(superKlass.prototype);
-        release || assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.prototype);
+        release || assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.prototype, "extendKlass prototypes don't match");
       } else {
         release || assert(!superKlass.superKlass, "Should not have a super-super-klass.");
         for (var key in superKlass.prototype) {
@@ -1766,7 +1766,7 @@ module J2ME {
   }
 
   export function instanceOfInterface(object: java.lang.Object, klass: Klass): boolean {
-    release || assert(klass.isInterfaceKlass);
+    release || assert(klass.isInterfaceKlass, "instanceOfInterface called on non interface");
     return object !== null && isAssignableTo(object.klass, klass);
   }
 
