@@ -42,7 +42,10 @@ var window = {
   setTimeout: function(callback) {
     callbacks.push(callback);
   },
-  setZeroTimeout: function(callback) {
+  nextTickBeforeEvents: function(callback) {
+    callbacks.push(callback);
+  },
+  nextTickDuringEvents: function(callback) {
     callbacks.push(callback);
   },
   addEventListener: function() {
