@@ -410,22 +410,22 @@ var currentlyFocusedTextEditor;
         return len + emojiLen;
     }
 
-    var defaultFont;
-    function getDefaultFont() {
-        if (!defaultFont) {
-            var classInfo = CLASSES.loadAndLinkClass("javax/microedition/lcdui/Font");
-            defaultFont = new classInfo.klass();
+    var defaultFontAddress;
+    function getDefaultFontAddress() {
+        if (!defaultFontAddress) {
+            var classInfo = CLASSES.loadClass("javax/microedition/lcdui/Font");
+            defaultFontAddress = J2ME.allocUncollectableObject(classInfo);
             var methodInfo = classInfo.getMethodByNameString("<init>", "(III)V", false);
             J2ME.preemptionLockLevel++;
-            J2ME.getLinkedMethod(methodInfo)(defaultFont._address, 0, 0, 0);
+            J2ME.getLinkedMethod(methodInfo)(defaultFontAddress, 0, 0, 0);
             release || J2ME.Debug.assert(!U, "Unexpected unwind during createException.");
             J2ME.preemptionLockLevel--;
         }
-        return defaultFont;
+        return defaultFontAddress;
     }
 
     Native["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function(addr) {
-        return getDefaultFont()._address;
+        return getDefaultFontAddress();
     };
 
     Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(addr, strAddr) {
@@ -833,7 +833,7 @@ var currentlyFocusedTextEditor;
         this.clipY2 = contextInfo.context.canvas.height;
 
         // GC info
-        this.currentFont = getDefaultFont();
+        this.currentFont = getHandle(getDefaultFontAddress());
         this.alpha = 0xFF;
         this.red = 0x00;
         this.green = 0x00;
@@ -842,7 +842,7 @@ var currentlyFocusedTextEditor;
 
     GraphicsInfo.prototype.setFont = function(font) {
         if (null === font) {
-            font = getDefaultFont();
+            font = getHandle(getDefaultFontAddress());
         }
 
         if (this.currentFont !== font) {
@@ -1573,12 +1573,12 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;"] = function(addr) {
         if (dirtyEditors.length) {
-            return dirtyEditors.shift();
+            return dirtyEditors.shift()._address;
         }
 
         asyncImpl("Lcom/nokia/mid/ui/TextEditor;", new Promise(function(resolve, reject) {
             textEditorResolve = function() {
-                resolve(dirtyEditors.shift());
+                resolve(dirtyEditors.shift()._address);
             }
         }));
     };

@@ -18,7 +18,7 @@ module J2ME {
         x.push(String.fromCharCode(o[i]));
       }
       var suffix = (o.length > 8 ? "..." : "");
-      return fromUTF8(o.klass.classInfo.utf8Name) +
+      return fromUTF8(o.classInfo.utf8Name) +
         ", length: " + o.length +
         ", values: [" + s.join(", ") + suffix + "]" +
         ", chars: \"" + x.join("") + suffix + "\"";
@@ -27,15 +27,15 @@ module J2ME {
       if (o.length !== undefined) {
         return getArrayInfo(o);
       }
-      return fromUTF8(o.klass.classInfo.utf8Name) + (o._address ? " " + toHEX(o._address) : "");
+      return fromUTF8(o.classInfo.utf8Name) + (o._address ? " " + toHEX(o._address) : "");
     }
-    if (o && !o.klass) {
+    if (o && !o.classInfo) {
       return o;
     }
-    if (o && o.klass === Klasses.java.lang.Class) {
-      return "[" + getObjectInfo(o) + "] " + o.runtimeKlass.templateKlass.classInfo.getClassNameSlow();
+    if (o && o.classInfo === CLASSES.java_lang_Class) {
+      return "[" + getObjectInfo(o) + "] " + classIdToClassInfoMap[o.vmClass].getClassNameSlow();
     }
-    if (o && o.klass === Klasses.java.lang.String) {
+    if (o && o.classInfo === CLASSES.java_lang_String) {
       return "[" + getObjectInfo(o) + "] \"" + fromStringAddr(o._address) + "\"";
     }
     return o ? ("[" + getObjectInfo(o) + "]") : "null";
@@ -366,8 +366,8 @@ module J2ME {
               break;
             } else {
               classInfo = resolveClass(exceptionEntryView.catch_type, mi.classInfo);
-              release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo.klass);
-              if (isAssignableTo(e.klass, classInfo.klass)) {
+              release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo);
+              if (isAssignableTo(e.classInfo, classInfo)) {
                 pc = exceptionEntryView.handler_pc;
                 break;
               }
@@ -435,7 +435,7 @@ module J2ME {
         frame.setParameter(kinds[i], index++, arguments[i]);
       }
       if (methodInfo.isSynchronized) {
-        var monitorAddr = methodInfo.isStatic ? methodInfo.classInfo.getClassObject()._address : arguments[0];
+        var monitorAddr = methodInfo.isStatic ? $.getClassObjectAddress(methodInfo.classInfo) : arguments[0];
         $.ctx.monitorEnter(getMonitor(monitorAddr));
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
@@ -459,9 +459,7 @@ module J2ME {
   }
 
   function resolveClass(index: number, classInfo: ClassInfo): ClassInfo {
-    var classInfo = classInfo.constantPool.resolveClass(index);
-    linkKlass(classInfo);
-    return classInfo;
+    return classInfo.constantPool.resolveClass(index);
   }
 
   var args = new Array(16);
@@ -522,12 +520,13 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, arrayAddr: number, klass, offset, buffer, tag: TAGS, targetPC;
+    var value, index, arrayAddr: number, offset, buffer, tag: TAGS, targetPC;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
 
     var classInfo: ClassInfo;
+    var otherCassInfo: ClassInfo;
     var fieldInfo: FieldInfo;
 
     var monitorAddr: number;
@@ -1374,7 +1373,7 @@ module J2ME {
             if (size < 0) {
               thread.throwException(fp, sp, opPC, ExceptionType.NegativeArraySizeException);
             }
-            i32[sp++] = newArray(classInfo.klass, size);
+            i32[sp++] = newArray(classInfo, size);
             continue;
           case Bytecodes.MULTIANEWARRAY:
             index = code[pc++] << 8 | code[pc++];
@@ -1387,7 +1386,7 @@ module J2ME {
                 thread.throwException(fp, sp, opPC, ExceptionType.NegativeArraySizeException);
               }
             }
-            i32[sp++] = J2ME.newMultiArray(classInfo.klass, lengths.reverse());
+            i32[sp++] = J2ME.newMultiArray(classInfo, lengths.reverse());
             continue;
           case Bytecodes.ARRAYLENGTH:
             arrayAddr = i32[--sp];
@@ -1395,7 +1394,7 @@ module J2ME {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
               continue;
             }
-            i32[sp++] = i32[(arrayAddr >> 2) + 1];
+            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2)];
             continue;
           case Bytecodes.GETFIELD:
           case Bytecodes.GETSTATIC:
@@ -1406,7 +1405,7 @@ module J2ME {
               if (U) {
                 return;
               }
-              address = fieldInfo.classInfo.getStaticObject($.ctx)._address + fieldInfo.byteOffset;
+              address = $.getStaticObjectAddress(fieldInfo.classInfo) + fieldInfo.byteOffset;
 
               if (address === Constants.NULL) {
                 thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
@@ -1454,7 +1453,7 @@ module J2ME {
               if (U) {
                 return;
               }
-              address = fieldInfo.classInfo.getStaticObject($.ctx)._address + fieldInfo.byteOffset;
+              address = $.getStaticObjectAddress(fieldInfo.classInfo) + fieldInfo.byteOffset;
             } else {
               address = i32[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
 
@@ -1497,7 +1496,7 @@ module J2ME {
             if (U) {
               return;
             }
-            i32[sp++] = allocObject(classInfo.klass);
+            i32[sp++] = allocObject(classInfo);
             continue;
           case Bytecodes.CHECKCAST:
             index = code[pc++] << 8 | code[pc++];
@@ -1508,12 +1507,12 @@ module J2ME {
               continue;
             }
 
-            klass = klassIdMap[i32[address >> 2]];
+            otherCassInfo = classIdToClassInfoMap[i32[address >> 2]];
 
-            if (!isAssignableTo(klass, classInfo.klass)) {
+            if (!isAssignableTo(otherCassInfo, classInfo)) {
               thread.set(fp, sp, opPC);
               throw $.newClassCastException (
-                klass.classInfo.getClassNameSlow() + " is not assignable to " + classInfo.getClassNameSlow()
+                otherCassInfo.getClassNameSlow() + " is not assignable to " + classInfo.getClassNameSlow()
               );
             }
             continue;
@@ -1525,8 +1524,8 @@ module J2ME {
             if (address === Constants.NULL) {
               i32[sp++] = 0;
             } else {
-              klass = klassIdMap[i32[address >> 2]];
-              i32[sp++] = isAssignableTo(klass, classInfo.klass) ? 1 : 0;
+              otherCassInfo = classIdToClassInfoMap[i32[address >> 2]];
+              i32[sp++] = isAssignableTo(otherCassInfo, classInfo) ? 1 : 0;
             }
             continue;
           case Bytecodes.ATHROW:
@@ -1595,7 +1594,7 @@ module J2ME {
             if (size < 0) {
               thread.throwException(fp, sp, opPC, ExceptionType.NegativeArraySizeException);
             }
-            i32[sp++] = newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]].klass, size);
+            i32[sp++] = newArray(PrimitiveClassInfo["????ZCFDBSIJ"[type]], size);
             continue;
           case Bytecodes.LRETURN:
           case Bytecodes.DRETURN:
@@ -1672,7 +1671,7 @@ module J2ME {
               address = Constants.NULL;
             } else {
               address = i32[sp - calleeMethodInfo.argumentSlots];
-              klass = (address !== Constants.NULL) ? klassIdMap[i32[address >> 2]] : null;
+              classInfo = (address !== Constants.NULL) ? classIdToClassInfoMap[i32[address >> 2]] : null;
             }
 
             if (isStatic) {
@@ -1691,10 +1690,10 @@ module J2ME {
                 calleeTargetMethodInfo = calleeMethodInfo;
                 break;
               case Bytecodes.INVOKEVIRTUAL:
-                calleeTargetMethodInfo = klass.classInfo.vTable[calleeMethodInfo.vTableIndex];
+                calleeTargetMethodInfo = classInfo.vTable[calleeMethodInfo.vTableIndex];
                 break;
               case Bytecodes.INVOKEINTERFACE:
-                calleeTargetMethodInfo = klass.classInfo.iTable[calleeMethodInfo.mangledName];
+                calleeTargetMethodInfo = classInfo.iTable[calleeMethodInfo.mangledName];
                 break;
               default:
                 release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
@@ -1831,7 +1830,7 @@ module J2ME {
 
             if (calleeTargetMethodInfo.isSynchronized) {
               monitorAddr = calleeTargetMethodInfo.isStatic
-                              ? calleeTargetMethodInfo.classInfo.getClassObject()._address
+                              ? $.getClassObjectAddress(calleeTargetMethodInfo.classInfo)
                               : address;
               i32[fp + FrameLayout.MonitorOffset] = monitorAddr;
               $.ctx.monitorEnter(getMonitor(monitorAddr));
@@ -1858,7 +1857,7 @@ module J2ME {
 
         thread.set(fp, sp, opPC);
         e = translateException(e);
-        if (!e.klass) {
+        if (!e.classInfo) {
           // A non-java exception was thrown. Rethrow so it is not handled by exceptionUnwind.
           throw e;
         }

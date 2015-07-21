@@ -248,7 +248,7 @@ function(addr, sensorsNumber, number, modelAddr) {
     model.mrangeCount = c.mrangeArray.length;
 
     var n = c.mrangeArray.length;
-    var arrayAddr = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, n);
+    var arrayAddr = J2ME.newArray(J2ME.PrimitiveClassInfo.J, n);
     var array = J2ME.getArrayFromAddr(arrayAddr);
     var i32array = new Int32Array(array.buffer, array.byteOffset, array.length * 2);
     for (var i = 0; i < n; i++) {
