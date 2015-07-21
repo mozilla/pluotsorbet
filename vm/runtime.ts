@@ -2346,7 +2346,6 @@ var CCI = J2ME.checkCastInterface;
 
 var AK = J2ME.getArrayKlass;
 
-// XXX These (or their callers) will need to be updated to handle addresses.
 var NA = J2ME.newArray;
 var NM = J2ME.newMultiArray;
 
