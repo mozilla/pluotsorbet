@@ -333,12 +333,12 @@ module J2ME.Bytecode {
           // Don't compile such methods for now, until we see a concrete case that allows checking for correctness.
           throw "Too many loops in method";
         }
-        assert (!block.loops, block.loops);
+        assert (!block.loops, "makeLoopHeader: block.loops");
         block.loops = 1 << this._nextLoop;
         block.loopID = this._nextLoop;
         this._nextLoop ++;
       }
-      assert (IntegerUtilities.bitCount(block.loops) === 1);
+      assert (IntegerUtilities.bitCount(block.loops) === 1, "bad loop count in makeLoopHeader");
     }
 
     // catch_type
