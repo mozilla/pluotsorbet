@@ -965,6 +965,9 @@ var currentlyFocusedTextEditor;
     };
 
     function drawString(g, str, x, y, anchor) {
+        x *= MIDP.devicePixelRatio;
+        y *= MIDP.devicePixelRatio;
+
         var c = g.info.getGraphicsContext();
 
         var finalText;
