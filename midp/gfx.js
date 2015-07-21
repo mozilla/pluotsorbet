@@ -265,8 +265,10 @@ var currentlyFocusedTextEditor;
 
     function initImageData(imageData, width, height, isMutable) {
         var canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+        canvas.logicalWidth = width;
+        canvas.logicalHeight = height;
+        canvas.width = width * MIDP.devicePixelRatio;
+        canvas.height = height * MIDP.devicePixelRatio;
 
         imageData.contextInfo = new ContextInfo(canvas.getContext("2d"));
 
@@ -317,7 +319,7 @@ var currentlyFocusedTextEditor;
     function(imageData, width, height) {
         var context = initImageData(imageData, width, height, 1);
         context.fillStyle = "rgb(255,255,255)"; // white
-        context.fillRect(0, 0, width, height);
+        context.fillRect(0, 0, context.canvas.width, context.canvas.height);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
@@ -1142,6 +1144,13 @@ var currentlyFocusedTextEditor;
     var TRANS_MIRROR_ROT90 = 7;
 
     function renderRegion(dstContext, srcCanvas, sx, sy, sw, sh, transform, absX, absY, anchor) {
+        sx *= MIDP.devicePixelRatio;
+        sy *= MIDP.devicePixelRatio;
+        sw *= MIDP.devicePixelRatio;
+        sh *= MIDP.devicePixelRatio;
+        absX *= MIDP.devicePixelRatio;
+        absY *= MIDP.devicePixelRatio;
+
         var w, h;
         switch (transform) {
             case TRANS_NONE:
