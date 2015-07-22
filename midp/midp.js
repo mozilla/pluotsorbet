@@ -32,7 +32,7 @@ var MIDP = (function() {
         e.intParam4 = displayId;
       }
 
-      sendNativeEvent(e, isolateId);
+      NativeEvents.send(e, isolateId);
     }
 
     function isFGDisplay(d) {
@@ -205,7 +205,7 @@ var MIDP = (function() {
         return;
       }
 
-      sendNativeEvent(e, isolateId);
+      NativeEvents.send(e, isolateId);
     }
 
     return {
@@ -759,28 +759,74 @@ var MIDP = (function() {
     });
   };
 
-  var nativeEventQueues = {};
-  var waitingNativeEventQueue = {};
+  var NativeEvents = (function() {
+    var queues = {};
+    var waiting = {};
 
-  function copyEvent(e, obj) {
-    var keys = Object.keys(e);
-    for (var i = 0; i < keys.length; i++) {
-      obj[keys[i]] = e[keys[i]];
-    }
-  }
-
-  function sendNativeEvent(e, isolateId) {
-    var elem = waitingNativeEventQueue[isolateId];
-    if (!elem) {
-      nativeEventQueues[isolateId].push(e);
-      return;
+    function copyEvent(e, obj) {
+      var keys = Object.keys(e);
+      for (var i = 0; i < keys.length; i++) {
+        obj[keys[i]] = e[keys[i]];
+      }
     }
 
-    copyEvent(e, elem.nativeEvent);
-    elem.resolve(nativeEventQueues[isolateId].length);
+    function reset(id) {
+      queues[id] = [];
+    }
 
-    delete waitingNativeEventQueue[isolateId];
-  }
+    // NB: It is the responsibility of the caller to use numWaiting
+    // to determine that there is indeed an event in the queue
+    function get(id, e) {
+      copyEvent(queues[id].shift(), e);
+    }
+
+    function numWaiting(id) {
+      var q = queues[id];
+
+      if (!q) {
+        return 0;
+      }
+
+      return q.length;
+    }
+
+    function wait(id, resolve, e) {
+      var q = queues[id];
+
+      if (q && q.length !== 0) {
+        copyEvent(q.shift(), e);
+        resolve(q.length);
+        return;
+      }
+
+      waiting[id] = { resolve: resolve, e: e };
+    }
+
+    function put(e, id) {
+      var waiter = waiting[id];
+      if (!waiter) {
+        if (queues[id]) {
+          queues[id].push(e);
+        } else {
+          queues[id] = [e];
+        }
+        return;
+      }
+
+      copyEvent(e, waiter.e);
+      waiter.resolve(queues[id] ? queues[id].length : 0);
+
+      delete waiting[id];
+    }
+
+    return {
+      send: put,
+      get: get,
+      reset: reset,
+      numWaiting: numWaiting,
+      wait: wait,
+    };
+  })();
 
   function sendVirtualKeyboardEvent() {
     FG.sendNativeEventToForeground({
@@ -905,7 +951,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() {
-    nativeEventQueues[$.ctx.runtime.isolate.id] = [];
+    NativeEvents.reset($.ctx.runtime.isolate.id);
   };
 
   Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
@@ -918,35 +964,30 @@ var MIDP = (function() {
         e[J2ME.fromUTF8(field.utf8Name)] = field.get(obj);
       }
 
-      sendNativeEvent(e, isolateId);
+      NativeEvents.send(e, isolateId);
     };
 
   Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
     function(nativeEvent) {
-      var isolateId = $.ctx.runtime.isolate.id;
-      var nativeEventQueue = nativeEventQueues[isolateId];
-
-      if (nativeEventQueue.length !== 0) {
-        copyEvent(nativeEventQueue.shift(), nativeEvent);
-        return nativeEventQueue.length;
+      var id = $.ctx.runtime.isolate.id;
+      if (NativeEvents.numWaiting(id) > 0) {
+        NativeEvents.get(id, nativeEvent);
+        return NativeEvents.numWaiting(id);
       }
 
       asyncImpl("I", new Promise(function(resolve, reject) {
-        waitingNativeEventQueue[isolateId] = {
-          resolve: resolve,
-        nativeEvent: nativeEvent,
-        };
+        NativeEvents.wait(id, resolve, nativeEvent);
       }));
     };
 
   Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
     function(obj) {
-      var isolateId = $.ctx.runtime.isolate.id;
-      var nativeEventQueue = nativeEventQueues[isolateId];
-      if (!nativeEventQueue.length) {
+      var id = $.ctx.runtime.isolate.id;
+      if (NativeEvents.numWaiting(id) === 0) {
         return 0;
       }
-      copyEvent(nativeEventQueue.shift(), obj);
+
+      NativeEvents.get(id, obj);
       return 1;
     };
 
@@ -981,7 +1022,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
-    sendNativeEvent({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
+    NativeEvents.send({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
   };
 
   Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {
