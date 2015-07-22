@@ -20,6 +20,26 @@ MIDlet.SMSDialogReceiveFilter = function(message) {
 MIDlet.SMSDialogInputType = "number";
 MIDlet.SMSDialogInputMaxLength = 6;
 
+MIDlet.shouldStartBackgroundService = function() {
+  // This file is created after verification.
+  if (fs.exists("/Private/crypto/0/ax_prekeys_self")) {
+    return true;
+  }
+
+  // The cdb directory is empty before registration, contains files after registration.
+  if (fs.exists("/Private/cdb") && fs.list("/Private/cdb").length > 0) {
+    return true;
+  }
+
+  // This file is created before the verification succeeds, so the other
+  // checks are more precise. If the other checks won't be applicable anymore
+  // at some point, we could use this check that seems more stable (this file
+  // has been there in all WhatsApp versions).
+  // return fs.exists("/Persistent/WhatsApp_token");
+
+  return false;
+};
+
 config.downloadJAD = "https://www.whatsapp.com/s40/WhatsApp.jad";
 config.midletClassName = "com.whatsapp.client.test.WhatsAppBG";
 
