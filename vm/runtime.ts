@@ -1856,8 +1856,16 @@ module J2ME {
     return address;
   }
 
+  export var weakReferences = new Map<number,number>();
+
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
+
+    var weakReferenceAddr = weakReferences.get(addr);
+    if (weakReferenceAddr) {
+      weakReferences.delete(addr);
+      NativeMap.delete(weakReferenceAddr);
+    }
   }
 
   /**
@@ -2372,3 +2380,5 @@ var getHandle = J2ME.getHandle;
 var NativeMap = J2ME.NativeMap;
 var setNative = J2ME.setNative;
 var getNative = J2ME.getNative;
+
+var weakReferences = J2ME.weakReferences;

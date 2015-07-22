@@ -629,15 +629,15 @@ function(addr, fileDecoderAddr, bAddr, off, len) {
 };
 
 Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr, targetAddr) {
-    // Store the (not actually) weak reference in NativeMap.
+    // Store the weak reference in NativeMap.
     //
     // This is technically a misuse of NativeMap, which is intended to store
     // native objects associated with Java objects, whereas here we're storing
     // the address of a Java object associated with another Java object.
-    //
-    // XXX Make these real weak references.
-    //
+
     setNative(addr, targetAddr);
+    weakReferences.set(targetAddr, addr);
+    ASM._registerFinalizer(targetAddr);
 };
 
 Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) {
@@ -645,6 +645,7 @@ Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) 
 };
 
 Native["java/lang/ref/WeakReference.clear.()V"] = function(addr) {
+    weakReferences.delete(NativeMap.get(addr));
     NativeMap.delete(addr);
 };
 
