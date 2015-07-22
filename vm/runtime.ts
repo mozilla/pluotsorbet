@@ -2380,5 +2380,3 @@ var getHandle = J2ME.getHandle;
 var NativeMap = J2ME.NativeMap;
 var setNative = J2ME.setNative;
 var getNative = J2ME.getNative;
-
-var weakReferences = J2ME.weakReferences;

@@ -130,6 +130,27 @@ module J2ME {
     $.ctx.notify(addr, true);
   };
 
+  Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr: number, targetAddr: number): void {
+      // Store the weak reference in NativeMap.
+      //
+      // This is technically a misuse of NativeMap, which is intended to store
+      // native objects associated with Java objects, whereas here we're storing
+      // the address of a Java object associated with another Java object.
+
+      setNative(addr, targetAddr);
+      weakReferences.set(targetAddr, addr);
+      ASM._registerFinalizer(targetAddr);
+  };
+
+  Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr: number): number {
+      return NativeMap.has(addr) ? <number>NativeMap.get(addr) : J2ME.Constants.NULL;
+  };
+
+  Native["java/lang/ref/WeakReference.clear.()V"] = function(addr: number): void {
+      weakReferences.delete(<number>NativeMap.get(addr));
+      NativeMap.delete(addr);
+  };
+
   Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function(addr: number) {
     return unwindCount;
   };

@@ -628,27 +628,6 @@ function(addr, fileDecoderAddr, bAddr, off, len) {
     return (len > 0) ? len : -1;
 };
 
-Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr, targetAddr) {
-    // Store the weak reference in NativeMap.
-    //
-    // This is technically a misuse of NativeMap, which is intended to store
-    // native objects associated with Java objects, whereas here we're storing
-    // the address of a Java object associated with another Java object.
-
-    setNative(addr, targetAddr);
-    weakReferences.set(targetAddr, addr);
-    ASM._registerFinalizer(targetAddr);
-};
-
-Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr) {
-    return NativeMap.has(addr) ? NativeMap.get(addr) : J2ME.Constants.NULL;
-};
-
-Native["java/lang/ref/WeakReference.clear.()V"] = function(addr) {
-    weakReferences.delete(NativeMap.get(addr));
-    NativeMap.delete(addr);
-};
-
 Native["com/sun/cldc/isolate/Isolate.registerNewIsolate.()V"] = function(addr) {
     var self = getHandle(addr);
     self._id = util.id();
