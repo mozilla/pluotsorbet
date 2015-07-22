@@ -762,6 +762,8 @@ var MIDP = (function() {
   var NativeEvents = (function() {
     var queues = {};
     var waiting = {};
+    var penDrag = {};
+    var gestureDrag = {};
 
     function copyEvent(e, obj) {
       var keys = Object.keys(e);
@@ -772,15 +774,27 @@ var MIDP = (function() {
 
     function reset(id) {
       queues[id] = [];
+      delete penDrag[id];
+      delete gestureDrag[id];
+      // Don't delete waiting[id]
     }
 
-    // NB: It is the responsibility of the caller to use numWaiting
-    // to determine that there is indeed an event in the queue
+    // NB: It is the responsibility of the caller to check that
+    // there is indeed an event in the queue
     function get(id, e) {
-      copyEvent(queues[id].shift(), e);
+      var ev = queues[id].shift();
+      copyEvent(ev, e);
+
+      if (ev === penDrag[id]) {
+        delete penDrag[id];
+      }
+
+      if (ev === gestureDrag[id]) {
+        delete gestureDrag[id];
+      }
     }
 
-    function numWaiting(id) {
+    function numEvents(id) {
       var q = queues[id];
 
       if (!q) {
@@ -790,40 +804,59 @@ var MIDP = (function() {
       return q.length;
     }
 
+    // NB: It is the caller's responsibility to check that the queue is
+    // actually empty first, and to get an event instead of calling this
+    // function otherwise
     function wait(id, resolve, e) {
-      var q = queues[id];
-
-      if (q && q.length !== 0) {
-        copyEvent(q.shift(), e);
-        resolve(q.length);
-        return;
-      }
-
       waiting[id] = { resolve: resolve, e: e };
     }
 
     function put(e, id) {
       var waiter = waiting[id];
-      if (!waiter) {
-        if (queues[id]) {
-          queues[id].push(e);
-        } else {
-          queues[id] = [e];
-        }
+      if (waiter) {
+        copyEvent(e, waiter.e);
+        waiter.resolve(0);
+        delete waiting[id];
         return;
       }
 
-      copyEvent(e, waiter.e);
-      waiter.resolve(queues[id] ? queues[id].length : 0);
+      if (!queues[id]) {
+        queues[id] = [];
+      }
 
-      delete waiting[id];
+      var q = queues[id];
+
+      if (e.type === PEN_EVENT && e.intParam1 === DRAGGED) {
+        if (penDrag[id]) {
+          penDrag[id].intParam2 = e.intParam2;
+          penDrag[id].intParam3 = e.intParam3;
+          return;
+        } else {
+          penDrag[id] = e;
+        }
+      } else if (e.type === GESTURE_EVENT && e.intParam1 === GESTURE_DRAG) {
+        if (gestureDrag[id]) {
+          gestureDrag[id].intParam2 += e.intParam2;
+          gestureDrag[id].intParam3 += e.intParam3;
+          gestureDrag[id].intParam5 = e.intParam5;
+          gestureDrag[id].intParam6 = e.intParam6;
+          return;
+        } else {
+          gestureDrag[id] = e;
+        }
+      } else {
+        delete gestureDrag[id];
+        delete penDrag[id];
+      }
+
+      q.push(e);
     }
 
     return {
       send: put,
       get: get,
       reset: reset,
-      numWaiting: numWaiting,
+      numEvents: numEvents,
       wait: wait,
     };
   })();
@@ -970,9 +1003,9 @@ var MIDP = (function() {
   Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
     function(nativeEvent) {
       var id = $.ctx.runtime.isolate.id;
-      if (NativeEvents.numWaiting(id) > 0) {
+      if (NativeEvents.numEvents(id) > 0) {
         NativeEvents.get(id, nativeEvent);
-        return NativeEvents.numWaiting(id);
+        return NativeEvents.numEvents(id);
       }
 
       asyncImpl("I", new Promise(function(resolve, reject) {
@@ -983,7 +1016,7 @@ var MIDP = (function() {
   Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
     function(obj) {
       var id = $.ctx.runtime.isolate.id;
-      if (NativeEvents.numWaiting(id) === 0) {
+      if (NativeEvents.numEvents(id) === 0) {
         return 0;
       }
 
