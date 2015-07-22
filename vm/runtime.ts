@@ -1201,6 +1201,12 @@ module J2ME {
 
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
+
+    try {
+      console.log("FINALIZE: " + addr);
+      console.log(getHandle(addr).classInfo.getClassNameSlow());
+      console.log(fromStringAddr(addr));
+    } catch(e) {}
   }
 
   /**
@@ -1261,6 +1267,23 @@ module J2ME {
   }
 
   export function newString(jsString: string): number {
+    if (jsString === null || jsString === undefined) {
+      return Constants.NULL;
+    }
+    var objectAddr = allocObject(CLASSES.java_lang_String);
+    setUncollectable(objectAddr);
+    var object = <java.lang.String>getHandle(objectAddr);
+    var asd = util.stringToCharArray(jsString);
+    console.log("ALLOC STRING: " + objectAddr);
+    console.log("ALLOC CHAR ARRAY: " + asd);
+    object.value = asd;
+    object.offset = 0;
+    object.count = getArrayFromAddr(object.value).length;
+    unsetUncollectable(objectAddr);
+    return objectAddr;
+  }
+
+  export function newUncollectableString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
       return Constants.NULL;
     }

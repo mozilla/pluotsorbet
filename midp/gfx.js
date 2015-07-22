@@ -1491,7 +1491,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.getContent.()Ljava/lang/String;"] = function(addr) {
-        return J2ME.newString(NativeMap.get(addr).getContent());
+        return J2ME.newUncollectableString(NativeMap.get(addr).getContent());
     };
 
     Native["com/nokia/mid/ui/TextEditor.setContent.(Ljava/lang/String;)V"] = function(addr, contentAddr) {

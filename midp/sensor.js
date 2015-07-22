@@ -207,10 +207,10 @@ function(addr, number, modelAddr) {
     }
     var model = getHandle(modelAddr);
     var m = AccelerometerSensor.model;
-    model.description = J2ME.newString(m.description);
-    model.model = J2ME.newString(m.model);
-    model.quantity = J2ME.newString(m.quantity);
-    model.contextType = J2ME.newString(m.contextType);
+    model.description = J2ME.newUncollectableString(m.description);
+    model.model = J2ME.newUncollectableString(m.model);
+    model.quantity = J2ME.newUncollectableString(m.quantity);
+    model.contextType = J2ME.newUncollectableString(m.contextType);
     model.connectionType = m.connectionType;
     model.maxBufferSize = m.maxBufferSize;
     model.availabilityPush = m.availabilityPush;
@@ -224,7 +224,7 @@ function(addr, number, modelAddr) {
     model.properties = pAddr;
     var p = J2ME.getArrayFromAddr(pAddr);
     for (var i = 0; i < n; i++) {
-        p[i] = J2ME.newString(m.properties[i]);
+        p[i] = J2ME.newUncollectableString(m.properties[i]);
     }
 };
 
@@ -241,8 +241,8 @@ function(addr, sensorsNumber, number, modelAddr) {
     var model = getHandle(modelAddr);
     var c = AccelerometerSensor.channels[number];
     model.scale = c.scale;
-    model.name = J2ME.newString(c.name);
-    model.unit = J2ME.newString(c.unit);
+    model.name = J2ME.newUncollectableString(c.name);
+    model.unit = J2ME.newUncollectableString(c.unit);
     model.dataType = c.dataType;
     model.accuracy = c.accuracy;
     model.mrangeCount = c.mrangeArray.length;

@@ -58,7 +58,7 @@ function backgroundCheck() {
 }
 
 Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function(addr) {
-  return J2ME.newString(fgMidletClass);
+  return J2ME.newUncollectableString(fgMidletClass);
 };
 
 Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function(addr) {

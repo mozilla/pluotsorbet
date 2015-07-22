@@ -1,0 +1,8 @@
+MIDlet-1: FrameAnimatorDemo,/appicon_list_example.png,com.nokia.example.frameanimdemo.Main
+MIDlet-Jar-Size: 12909
+MIDlet-Jar-URL: FrameAnimDemo_v1_1.jar
+MIDlet-Name: FrameAnimDemo
+MIDlet-Vendor: Nokia
+MIDlet-Version: 1.1.0
+MicroEdition-Configuration: CLDC-1.1
+MicroEdition-Profile: MIDP-2.1

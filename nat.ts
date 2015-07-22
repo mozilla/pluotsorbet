@@ -136,7 +136,7 @@ module J2ME {
 
   Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
-    getLinkedMethod(methodInfo)($.mainThread, J2ME.newString("main"));
+    getLinkedMethod(methodInfo)($.mainThread, J2ME.newUncollectableString("main"));
 
     // We've already set this in JVM.createIsolateCtx, but calling the instance
     // initializer above resets it, so we set it again here.

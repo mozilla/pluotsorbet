@@ -23,15 +23,15 @@ MIDP.fsRootNames = [
 ];
 
 Native["com/sun/midp/io/j2me/storage/File.initConfigRoot.(I)Ljava/lang/String;"] = function(addr, storageId) {
-    return J2ME.newString("assets/" + storageId + "/");
+    return J2ME.newUncollectableString("assets/" + storageId + "/");
 };
 
 Native["com/sun/midp/io/j2me/storage/File.initStorageRoot.(I)Ljava/lang/String;"] = function(addr, storageId) {
-    return J2ME.newString("assets/" + storageId + "/");
+    return J2ME.newUncollectableString("assets/" + storageId + "/");
 };
 
 Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getSecureFilenameBase.(I)Ljava/lang/String;"] = function(addr, id) {
-    return J2ME.newString("");
+    return J2ME.newUncollectableString("");
 };
 
 Native["com/sun/midp/rms/RecordStoreUtil.exists.(Ljava/lang/String;Ljava/lang/String;I)Z"] =
@@ -59,7 +59,7 @@ function(addr, filenameBaseAddr, namesAddr) {
     var path = RECORD_STORE_BASE + "/" + J2ME.fromStringAddr(filenameBaseAddr);
     var files = fs.list(path);
     for (var i = 0; i < files.length; i++) {
-        names[i] = J2ME.newString(files[i]);
+        names[i] = J2ME.newUncollectableString(files[i]);
     }
 };
 
@@ -729,7 +729,7 @@ function(addr, dirHandleLow, dirHandleHigh, includeHidden) {
     var iterator = MIDP.openDirs.get(J2ME.longToNumber(dirHandleLow, dirHandleHigh));
     var nextFile = iterator.files[++iterator.index];
     DEBUG_FS && console.log(iterator.index + " " + nextFile);
-    return nextFile ? J2ME.newString(nextFile) : J2ME.Constants.NULL;
+    return nextFile ? J2ME.newUncollectableString(nextFile) : J2ME.Constants.NULL;
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getNativePathForRoot.(Ljava/lang/String;)Ljava/lang/String;"] =
@@ -737,23 +737,22 @@ function(addr, rootAddr) {
     var root = J2ME.fromStringAddr(rootAddr);
     // XXX Ensure root is in MIDP.fsRoots?
     DEBUG_FS && console.log("getNativePathForRoot: " + root);
-    var nativePath = J2ME.newString("/" + root);
-    return nativePath;
+    return J2ME.newUncollectableString("/" + root);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.illegalFileNameChars0.()Ljava/lang/String;"] = function(addr) {
-    return J2ME.newString('<>:"\\|?');
+    return J2ME.newUncollectableString('<>:"\\|?');
 };
 
 addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.initialize.()V");
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getSuiteIdString.(I)Ljava/lang/String;"] = function(addr, id) {
 DEBUG_FS && console.log("getSuiteIdString: " + id);
-    // return J2ME.newString(id.toString());
+    // return J2ME.newUncollectableString(id.toString());
     // The implementation adds this to the path of the file, presumably
     // to segregate files by midlet, but we only run a single midlet
     // per installation, so presumably we don't have to do that.
-    return J2ME.newString("");
+    return J2ME.newUncollectableString("");
 };
 
 Native["com/sun/cdc/io/j2me/file/Protocol.available.()I"] = function(addr) {
@@ -847,7 +846,7 @@ Native["javax/microedition/io/file/FileSystemRegistry.getRoots.()[Ljava/lang/Str
     var array = J2ME.getArrayFromAddr(arrayAddr);
 
     for (var i = 0; i < MIDP.fsRoots.length; i++) {
-        array[i] = J2ME.newString(MIDP.fsRoots[i]);
+        array[i] = J2ME.newUncollectableString(MIDP.fsRoots[i]);
     }
     J2ME.unsetUncollectable(arrayAddr);
     return arrayAddr;

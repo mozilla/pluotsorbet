@@ -60,7 +60,7 @@ Native["com/sun/j2me/pim/PIMProxy.getListNamesCount0.(I)I"] = function(addr, lis
 Native["com/sun/j2me/pim/PIMProxy.getListNames0.([Ljava/lang/String;)V"] = function(addr, namesAddr) {
   var names = J2ME.getArrayFromAddr(namesAddr);
   console.warn("PIMProxy.getListNames0.([Ljava/lang/String;)V incomplete");
-  names[0] = J2ME.newString("ContactList");
+  names[0] = J2ME.newUncollectableString("ContactList");
 };
 
 Native["com/sun/j2me/pim/PIMProxy.listOpen0.(ILjava/lang/String;I)I"] = function(addr, listType, listNameAddr, mode) {
@@ -130,15 +130,15 @@ Native["com/sun/j2me/pim/PIMProxy.listClose0.(I)Z"] = function(addr, listHandle,
 
 Native["com/sun/j2me/pim/PIMProxy.getDefaultListName.(I)Ljava/lang/String;"] = function(addr, listType) {
   if (listType === PIM.CONTACT_LIST) {
-    return J2ME.newString("ContactList");
+    return J2ME.newUncollectableString("ContactList");
   }
 
   if (listType === PIM.EVENT_LIST) {
-    return J2ME.newString("EventList");
+    return J2ME.newUncollectableString("EventList");
   }
 
   if (listType === PIM.TODO_LIST) {
-    return J2ME.newString("TodoList");
+    return J2ME.newUncollectableString("TodoList");
   }
 
   return J2ME.Constants.NULL;
