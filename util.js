@@ -47,7 +47,6 @@ var util = (function () {
     return Long.fromNumber(d);
   }
 
-  var jStringEncoder = new TextEncoder('utf-16');
   var jStringDecoder = new TextDecoder('utf-16');
 
   function fromJavaChars(chars, offset, count) {
@@ -59,21 +58,6 @@ var util = (function () {
     if (typeof offset !== 'number')
       offset = 0;
     return jStringDecoder.decode(chars.subarray(offset, offset + count));
-  }
-
-  /**
-   * Returns an ArrayBufferView of the underlying code points
-   * represented by the given Java string.
-   *
-   * NOTE: Do not modify the ArrayBuffer; it may be shared between
-   * multiple string instances.
-   */
-  function stringToCharArray(str) {
-    var encoded = new Uint16Array(jStringEncoder.encode(str).buffer);
-    var arrayAddr = J2ME.newCharArray(encoded.length);
-    var array = J2ME.getArrayFromAddr(arrayAddr);
-    array.set(encoded);
-    return arrayAddr;
   }
 
   var id = (function() {
@@ -168,7 +152,6 @@ var util = (function () {
     double2int: double2int,
     double2long: double2long,
     fromJavaChars: fromJavaChars,
-    stringToCharArray: stringToCharArray,
     id: id,
     compareTypedArrays: compareTypedArrays,
     pad: pad,

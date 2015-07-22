@@ -1260,14 +1260,23 @@ module J2ME {
     return new handleConstructors[classId](address);
   }
 
+  var jStringEncoder = new TextEncoder('utf-16');
+
   export function newString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
       return Constants.NULL;
     }
-    var object = <java.lang.String>getHandle(allocUncollectableObject(CLASSES.java_lang_String));
-    object.value = util.stringToCharArray(jsString);
+
+    var objectAddr = allocUncollectableObject(CLASSES.java_lang_String);
+    var object = <java.lang.String>getHandle(objectAddr);
+
+    var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
+    var arrayAddr = newCharArray(encoded.length);
+    u16.set(encoded, Constants.ARRAY_HDR_SIZE + arrayAddr >> 1);
+
+    object.value = arrayAddr;
     object.offset = 0;
-    object.count = getArrayFromAddr(object.value).length;
+    object.count = encoded.length;
     return object._address;
   }
 
