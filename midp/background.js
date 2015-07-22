@@ -54,7 +54,8 @@ function backgroundCheck() {
   fgMidletNumber = (bgServer == 2) ? 1 : 2;
   fgMidletClass = MIDP.manifest["MIDlet-" + fgMidletNumber].split(",")[2];
 
-  if (fs.exists("/smsReg")) {
+  if (!MIDlet.shouldStartBackgroundService ||
+      MIDlet.shouldStartBackgroundService()) {
     startBackgroundAlarm();
   }
 }

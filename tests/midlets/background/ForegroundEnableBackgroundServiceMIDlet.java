@@ -1,18 +1,18 @@
 package tests.midlets.background;
 
+import java.io.IOException;
+import javax.microedition.io.file.FileConnection;
 import javax.microedition.io.Connector;
 import com.nokia.mid.s40.io.LocalMessageProtocolMessage;
 import com.nokia.mid.s40.io.LocalMessageProtocolConnection;
 import com.nokia.mid.s40.codec.DataEncoder;
 import javax.microedition.midlet.MIDlet;
 
-public class ForegroundSMSMIDlet extends MIDlet {
+public class ForegroundEnableBackgroundServiceMIDlet extends MIDlet {
     native boolean startedBackgroundAlarm();
 
     public void receiveSMS() {
         try {
-            System.out.println("START");
-
             LocalMessageProtocolConnection client = (LocalMessageProtocolConnection)Connector.open("localmsg://nokia.messaging");
 
             // Send protocol version message
@@ -61,6 +61,17 @@ public class ForegroundSMSMIDlet extends MIDlet {
         System.out.println("START - Background alarm started: " + startedBackgroundAlarm());
 
         receiveSMS();
+
+        try {
+            FileConnection file = (FileConnection)Connector.open("file:////startBackgroundService");
+            if (!file.exists()) {
+                file.create();
+            }
+            file.close();
+        } catch (IOException e) {
+            System.out.println("Unexpected exception: " + e);
+            return;
+        }
 
         System.out.println("DONE - Background alarm started: " + startedBackgroundAlarm());
     }

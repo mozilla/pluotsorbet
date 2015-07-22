@@ -1,5 +1,5 @@
 Manifest-Version: 1.0
-MIDlet-1: ForegroundSMSMIDlet,,tests.midlets.background.ForegroundSMSMIDlet
+MIDlet-1: ForegroundEnableBackgroundServiceMIDlet,,tests.midlets.background.ForegroundEnableBackgroundServiceMIDlet
 MIDlet-2: BackgroundMIDlet1,,tests.midlets.background.BackgroundMIDlet1
 MIDlet-Permissions: com.nokia.mid.s40.io.Connector.localmsg
 MIDlet-Vendor: Mozilla
