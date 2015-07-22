@@ -29,12 +29,12 @@ DumbPipe.registerOpener("locationprovider", function(message, sender) {
 });
 // #endif
 
-var backgroundCheck = false;
+var backgroundChecks = 0;
 
 DumbPipe.registerOpener("backgroundCheck", function() {
-  backgroundCheck = true;
+  backgroundChecks++;
 });
 
-DumbPipe.registerOpener("checkBackgroundCheck", function(message, sender) {
-  sender(backgroundCheck);
+DumbPipe.registerOpener("getBackgroundChecks", function(message, sender) {
+  sender(backgroundChecks);
 });

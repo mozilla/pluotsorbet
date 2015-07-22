@@ -178,7 +178,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 37 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -371,24 +371,9 @@ casper.test.begin("unit tests", 37 + gfxTests.length, function(test) {
         });
     });
 
-    // Remove the smsReg file that has been created by previous tests
+    // Test that the background alarm is started after a SMS is received.
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=midlets.InitMidlet&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
-    .withFrame(0, function() {
-        casper.waitForText("DONE", function() {
-            casper.waitForText("SYNC FILESYSTEM");
-            casper.evaluate(function() {
-                fs.remove("/smsReg");
-                fs.syncStore(function() {
-                    console.log("SYNC FILESYSTEM");
-                });
-            });
-        });
-    });
-
-    // Test that the background alarm is started after the first received SMS.
-    casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundSMS.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundEnableBackgroundService.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         this.waitForText("START", function() {
             this.evaluate(function() {
@@ -399,20 +384,32 @@ casper.test.begin("unit tests", 37 + gfxTests.length, function(test) {
                 this.click(".sms-listener-prompt.visible button.recommend");
                 this.waitForText("DONE", function() {
                     test.assertTextDoesntExist("FAIL");
-                    test.assertTextExists("START - Background alarm started: false");
-                    test.assertTextExists("DONE - Background alarm started: true");
+                    test.assertTextExists("START - Background alarm started: 0");
+                    test.assertTextExists("DONE - Background alarm started: 1");
                 });
             });
         });
     });
 
-    // Test that the background alarm is started automatically when restarting a MIDlet (after a SMS has been
-    // received during the previous session).
+    // Test that the background alarm is started automatically when restarting a MIDlet (after the background
+    // alarm has been activated during the previous session).
+    // Also double-check that receiving a second SMS doesn't start a second background alarm.
     casper
-    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundSMS.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests.midlets.background.BackgroundMIDlet1&jad=tests/midlets/background/foregroundEnableBackgroundService.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         this.waitForText("START", function() {
-          test.assertTextExists("START - Background alarm started: true");
+            this.evaluate(function() {
+                promptForMessageText();
+            });
+            this.waitUntilVisible(".sms-listener-prompt", function() {
+                this.sendKeys(".sms-listener-prompt.visible input", "Prova SMS", { reset: true });
+                this.click(".sms-listener-prompt.visible button.recommend");
+                this.waitForText("DONE", function() {
+                    test.assertTextDoesntExist("FAIL");
+                    test.assertTextExists("START - Background alarm started: 1");
+                    test.assertTextExists("DONE - Background alarm started: 1");
+                });
+            });
         });
     });
 

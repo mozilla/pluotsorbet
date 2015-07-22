@@ -9,7 +9,7 @@ import com.nokia.mid.s40.codec.DataEncoder;
 import javax.microedition.midlet.MIDlet;
 
 public class ForegroundEnableBackgroundServiceMIDlet extends MIDlet {
-    native boolean startedBackgroundAlarm();
+    native int startedBackgroundAlarm();
 
     public void receiveSMS() {
         try {
