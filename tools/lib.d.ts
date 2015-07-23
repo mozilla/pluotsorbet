@@ -12188,6 +12188,14 @@ interface AudioTrackList {
     onremovetrack: (ev: PluginArray) => any;
 }
 
+interface TextEncoder {
+    encode(str: string): Uint8Array;
+}
+declare var TextEncoder: {
+    prototype: TextEncoder;
+    new (encoding: string): TextEncoder;
+}
+
 interface HTMLObjectElement {
     /**
       * Gets or sets the path to the preferred media source. This enables the Play To target device to stream the media content, which can be DRM protected, from a different location, such as a cloud media server.

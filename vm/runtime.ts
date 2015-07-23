@@ -1200,6 +1200,8 @@ module J2ME {
     return address;
   }
 
+  export var weakReferences = new Map<number,number>();
+
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
 
@@ -1208,6 +1210,12 @@ module J2ME {
       console.log(getHandle(addr).classInfo.getClassNameSlow());
       console.log(fromStringAddr(addr));
     } catch(e) {}
+
+    var weakReferenceAddr = weakReferences.get(addr);
+    if (weakReferenceAddr) {
+      weakReferences.delete(addr);
+      NativeMap.delete(weakReferenceAddr);
+    }
   }
 
   /**
@@ -1266,32 +1274,44 @@ module J2ME {
     return new handleConstructors[classId](address);
   }
 
-  export function newString(jsString: string): number {
-    if (jsString === null || jsString === undefined) {
-      return Constants.NULL;
-    }
-    var objectAddr = allocObject(CLASSES.java_lang_String);
-    setUncollectable(objectAddr);
-    var object = <java.lang.String>getHandle(objectAddr);
-    var asd = util.stringToCharArray(jsString);
-    console.log("ALLOC STRING: " + objectAddr);
-    console.log("ALLOC CHAR ARRAY: " + asd);
-    object.value = asd;
-    object.offset = 0;
-    object.count = getArrayFromAddr(object.value).length;
-    unsetUncollectable(objectAddr);
-    return objectAddr;
-  }
+  var jStringEncoder = new TextEncoder('utf-16');
 
   export function newUncollectableString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
       return Constants.NULL;
     }
-    var object = <java.lang.String>getHandle(allocUncollectableObject(CLASSES.java_lang_String));
-    object.value = util.stringToCharArray(jsString);
+
+    var objectAddr = allocUncollectableObject(CLASSES.java_lang_String);
+    var object = <java.lang.String>getHandle(objectAddr);
+
+    var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
+    var arrayAddr = newCharArray(encoded.length);
+    u16.set(encoded, Constants.ARRAY_HDR_SIZE + arrayAddr >> 1);
+
+    object.value = arrayAddr;
     object.offset = 0;
-    object.count = getArrayFromAddr(object.value).length;
-    return object._address;
+    object.count = encoded.length;
+    return objectAddr;
+  }
+
+  export function newString(jsString: string): number {
+    if (jsString === null || jsString === undefined) {
+      return Constants.NULL;
+    }
+
+    var objectAddr = allocObject(CLASSES.java_lang_String);
+    setUncollectable(objectAddr);
+    var object = <java.lang.String>getHandle(objectAddr);
+
+    var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
+    var arrayAddr = newCharArray(encoded.length);
+    u16.set(encoded, Constants.ARRAY_HDR_SIZE + arrayAddr >> 1);
+
+    object.value = arrayAddr;
+    object.offset = 0;
+    object.count = encoded.length;
+    unsetUncollectable(objectAddr);
+    return objectAddr;
   }
 
   export function getArrayFromAddr(addr: number) {
@@ -1688,7 +1708,6 @@ var CCI = J2ME.checkCastInterface;
 
 //var AK = J2ME.getArrayKlass;
 
-// XXX These (or their callers) will need to be updated to handle addresses.
 var NA = J2ME.newArray;
 var NM = J2ME.newMultiArray;
 
