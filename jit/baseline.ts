@@ -247,7 +247,7 @@ module J2ME {
     if (classInfo.mangledName) {
       return classInfo.mangledName;
     }
-    release || assert(classInfo.mangledName);
+    release || assert(classInfo.mangledName, "bad classInfo in classConstant");
     return classInfo.mangledName;
   }
 
@@ -1235,7 +1235,7 @@ module J2ME {
         case Bytecodes.DDIV: v = x + "/" + y; break;
         case Bytecodes.DREM: v = x + "%" + y; break;
         default:
-          release || assert(false, Bytecodes[opcode]);
+          release || assert(false, "emitArithmeticOp: " + Bytecodes[opcode]);
       }
       this.emitPush(result, v, Precedence.Sequence); // TODO: Restrict precedence.
     }

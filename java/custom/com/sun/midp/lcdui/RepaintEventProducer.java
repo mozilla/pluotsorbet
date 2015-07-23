@@ -174,10 +174,6 @@ public class RepaintEventProducer implements EventListener {
         return true;
     }
 
-    // Called from `process` to ensure that we don't try to repaint
-    // more than once per animation frame
-    private native void waitForAnimationFrame();
-
     /**
      * Process an event.
      *
@@ -185,8 +181,6 @@ public class RepaintEventProducer implements EventListener {
      */
     public void process(Event genericEvent) {
         RepaintEvent event = (RepaintEvent)genericEvent;
-
-        waitForAnimationFrame();
 
         synchronized (this) {
             queuedEvent = null;

@@ -28,3 +28,13 @@ DumbPipe.registerOpener("locationprovider", function(message, sender) {
   };
 });
 // #endif
+
+var backgroundChecks = 0;
+
+DumbPipe.registerOpener("backgroundCheck", function() {
+  backgroundChecks++;
+});
+
+DumbPipe.registerOpener("getBackgroundChecks", function(message, sender) {
+  sender(backgroundChecks);
+});
