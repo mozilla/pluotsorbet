@@ -14,7 +14,12 @@ var MIDlet = {
   },
 
   wakeUpAlarm: 60000, // ms, i.e. 60 seconds
-  // By default, start the background alarm.
+  // For some MIDlets, we use a heuristic to guess when the background alarm
+  // should be started (for example, in messaging applications, we try to guess
+  // when the user is registered to the service).
+  // Note that this function is only called if the MIDlet has the
+  // Nokia-MIDlet-bg-server property in its manifest, so, even if it returns true,
+  // MIDlets that don't have this property will never be started in the background.
   shouldStartBackgroundService: function() {
     return true;
   },
