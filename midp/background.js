@@ -54,8 +54,7 @@ function backgroundCheck() {
   fgMidletNumber = (bgServer == 2) ? 1 : 2;
   fgMidletClass = MIDP.manifest["MIDlet-" + fgMidletNumber].split(",")[2];
 
-  if (!MIDlet.shouldStartBackgroundService ||
-      MIDlet.shouldStartBackgroundService()) {
+  if (MIDlet.shouldStartBackgroundService()) {
     startBackgroundAlarm();
   }
 }

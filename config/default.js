@@ -14,6 +14,10 @@ var MIDlet = {
   },
 
   wakeUpAlarm: 60000, // ms, i.e. 60 seconds
+  // By default, start the background alarm.
+  shouldStartBackgroundService: function() {
+    return true;
+  },
 };
 
 var config = {
