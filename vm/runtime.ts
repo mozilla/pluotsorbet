@@ -1200,8 +1200,16 @@ module J2ME {
     return address;
   }
 
+  export var weakReferences = new Map<number,number>();
+
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
+
+    var weakReferenceAddr = weakReferences.get(addr);
+    if (weakReferenceAddr) {
+      weakReferences.delete(addr);
+      NativeMap.delete(weakReferenceAddr);
+    }
   }
 
   /**
