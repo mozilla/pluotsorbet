@@ -784,9 +784,38 @@ var MIDP = (function() {
   var waitingNativeEventQueue = {};
 
   function copyEvent(e, obj) {
-    var keys = Object.keys(e);
-    for (var i = 0; i < keys.length; i++) {
-      obj[keys[i]] = e[keys[i]];
+    if (typeof e === "number") {
+      var event = getHandle(e);
+      obj.type = event.type;
+      obj.intParam1 = event.intParam1;
+      obj.intParam2 = event.intParam2;
+      obj.intParam3 = event.intParam3;
+      obj.intParam4 = event.intParam4;
+      obj.intParam5 = event.intParam5;
+      obj.intParam6 = event.intParam6;
+      obj.intParam7 = event.intParam7;
+      obj.intParam8 = event.intParam8;
+      obj.intParam9 = event.intParam9;
+      obj.intParam10 = event.intParam10;
+      obj.intParam11 = event.intParam11;
+      obj.intParam12 = event.intParam12;
+      obj.intParam13 = event.intParam13;
+      obj.intParam14 = event.intParam14;
+      obj.intParam15 = event.intParam15;
+      obj.intParam16 = event.intParam16;
+      obj.floatParam1 = event.floatParam1;
+      obj.stringParam1 = event.stringParam1;
+      obj.stringParam2 = event.stringParam2;
+      obj.stringParam3 = event.stringParam3;
+      obj.stringParam4 = event.stringParam4;
+      obj.stringParam5 = event.stringParam5;
+      obj.stringParam6 = event.stringParam6;
+      J2ME.unsetUncollectable(e);
+    } else {
+      var keys = Object.keys(e);
+      for (var i = 0; i < keys.length; i++) {
+        obj[keys[i]] = e[keys[i]];
+      }
     }
   }
 
@@ -931,16 +960,8 @@ var MIDP = (function() {
 
   Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
     function(addr, eventAddr, isolateId) {
-      var event = getHandle(eventAddr);
-      var e = { type: event.type };
-
-      var fields = event.classInfo.fields;
-      for (var i = 0; i < fields.length; i++) {
-        var field = fields[i];
-        e[J2ME.fromUTF8(field.utf8Name)] = field.get(event);
-      }
-
-      sendNativeEvent(e, isolateId);
+      J2ME.setUncollectable(eventAddr);
+      sendNativeEvent(eventAddr, isolateId);
     };
 
   Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
