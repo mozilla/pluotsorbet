@@ -1240,7 +1240,6 @@ module J2ME {
     release || assert(typeof address === "number", "address is number");
 
     var classId = i32[address + Constants.OBJ_CLASS_ID_OFFSET >> 2];
-    release || assert(typeof classId === "number", "classId is number");
 
     var classInfo = classIdToClassInfoMap[classId];
     release || assert(classInfo, "object has class info");
