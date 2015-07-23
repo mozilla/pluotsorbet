@@ -683,9 +683,10 @@ module J2ME {
 
   export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
 
-  export function getObjectClassId(addr: number) {
+  export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL);
-    return i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2];
+    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0);
+    return classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
   }
 
   /**
@@ -1247,7 +1248,6 @@ module J2ME {
     release || assert(typeof address === "number", "address is number");
 
     var classId = i32[address + Constants.OBJ_CLASS_ID_OFFSET >> 2];
-    release || assert(typeof classId === "number", "classId is number");
 
     var classInfo = classIdToClassInfoMap[classId];
     release || assert(classInfo, "object has class info");
@@ -1268,14 +1268,23 @@ module J2ME {
     return new handleConstructors[classId](address);
   }
 
+  var jStringEncoder = new TextEncoder('utf-16');
+
   export function newString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
       return Constants.NULL;
     }
-    var object = <java.lang.String>getHandle(allocUncollectableObject(CLASSES.java_lang_String));
-    object.value = util.stringToCharArray(jsString);
+
+    var objectAddr = allocUncollectableObject(CLASSES.java_lang_String);
+    var object = <java.lang.String>getHandle(objectAddr);
+
+    var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
+    var arrayAddr = newCharArray(encoded.length);
+    u16.set(encoded, Constants.ARRAY_HDR_SIZE + arrayAddr >> 1);
+
+    object.value = arrayAddr;
     object.offset = 0;
-    object.count = getArrayFromAddr(object.value).length;
+    object.count = encoded.length;
     return object._address;
   }
 
@@ -1285,7 +1294,7 @@ module J2ME {
     }
 
     release || assert(typeof addr === "number", "addr is number");
-    var classInfo = classIdToClassInfoMap[getObjectClassId(addr)];
+    var classInfo = classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
     var constructor;
     if (classInfo instanceof PrimitiveArrayClassInfo) {
       switch (classInfo) {

@@ -21,7 +21,11 @@ public class ClassCast implements Testlet {
         // This test illuminates an issue where ClassB's interfaces are setup
         // in the runtime before the super class has been loaded.
         Object o = new ClassC();
-        Interface iface = (Interface)o;
-        th.check(true);
+        try {
+            Interface iface = (Interface)o;
+            th.check(true);
+        } catch (ClassCastException e) {
+            th.fail("Unexpected exception: " + e);
+        }
     }
 }

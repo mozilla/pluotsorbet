@@ -526,7 +526,7 @@ module J2ME {
     var ll = 0, lh = 0; // Long Low / High
 
     var classInfo: ClassInfo;
-    var otherCassInfo: ClassInfo;
+    var otherClassInfo: ClassInfo;
     var fieldInfo: FieldInfo;
 
     var monitorAddr: number;
@@ -1507,12 +1507,12 @@ module J2ME {
               continue;
             }
 
-            otherCassInfo = classIdToClassInfoMap[i32[address >> 2]];
+            otherClassInfo = classIdToClassInfoMap[i32[address >> 2]];
 
-            if (!isAssignableTo(otherCassInfo, classInfo)) {
+            if (!isAssignableTo(otherClassInfo, classInfo)) {
               thread.set(fp, sp, opPC);
               throw $.newClassCastException (
-                otherCassInfo.getClassNameSlow() + " is not assignable to " + classInfo.getClassNameSlow()
+                otherClassInfo.getClassNameSlow() + " is not assignable to " + classInfo.getClassNameSlow()
               );
             }
             continue;
@@ -1524,8 +1524,8 @@ module J2ME {
             if (address === Constants.NULL) {
               i32[sp++] = 0;
             } else {
-              otherCassInfo = classIdToClassInfoMap[i32[address >> 2]];
-              i32[sp++] = isAssignableTo(otherCassInfo, classInfo) ? 1 : 0;
+              otherClassInfo = classIdToClassInfoMap[i32[address >> 2]];
+              i32[sp++] = isAssignableTo(otherClassInfo, classInfo) ? 1 : 0;
             }
             continue;
           case Bytecodes.ATHROW:

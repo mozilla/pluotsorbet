@@ -292,13 +292,11 @@ Native["com/sun/cldchi/jvm/JVM.monotonicTimeMillis.()J"] = function(addr) {
 };
 
 Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(addr) {
-    var classInfo = J2ME.classIdToClassInfoMap[J2ME.getObjectClassId(addr)];
-    return $.getClassObjectAddress(classInfo);
+    return $.getClassObjectAddress(J2ME.getClassInfo(addr));
 };
 
 Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
-    var classInfo = J2ME.classIdToClassInfoMap[J2ME.getObjectClassId(addr)];
-    var superClassInfo = classInfo.superClass;
+    var superClassInfo = J2ME.getClassInfo(addr).superClass;
     if (!superClassInfo) {
       return J2ME.Constants.NULL;
     }
