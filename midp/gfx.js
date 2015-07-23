@@ -235,7 +235,7 @@ var currentlyFocusedTextEditor;
         canvas.height = height;
 
         var contextInfo = new ContextInfo(canvas.getContext("2d"))
-        NativeMap.set(imageDataAddr, contextInfo);
+        setNative(imageDataAddr, contextInfo);
 
         var imageData = getHandle(imageDataAddr);
 
@@ -386,7 +386,7 @@ var currentlyFocusedTextEditor;
         self.height = (size * 1.3) | 0;
 
         var context = document.createElement("canvas").getContext("2d");
-        NativeMap.set(addr, context);
+        setNative(addr, context);
         context.canvas.width = 0;
         context.canvas.height = 0;
         context.font = style + size + "px " + face;
@@ -410,22 +410,22 @@ var currentlyFocusedTextEditor;
         return len + emojiLen;
     }
 
-    var defaultFont;
-    function getDefaultFont() {
-        if (!defaultFont) {
-            var classInfo = CLASSES.loadAndLinkClass("javax/microedition/lcdui/Font");
-            defaultFont = new classInfo.klass();
+    var defaultFontAddress;
+    function getDefaultFontAddress() {
+        if (!defaultFontAddress) {
+            var classInfo = CLASSES.loadClass("javax/microedition/lcdui/Font");
+            defaultFontAddress = J2ME.allocUncollectableObject(classInfo);
             var methodInfo = classInfo.getMethodByNameString("<init>", "(III)V", false);
             J2ME.preemptionLockLevel++;
-            J2ME.getLinkedMethod(methodInfo)(defaultFont._address, 0, 0, 0);
+            J2ME.getLinkedMethod(methodInfo)(defaultFontAddress, 0, 0, 0);
             release || J2ME.Debug.assert(!U, "Unexpected unwind during createException.");
             J2ME.preemptionLockLevel--;
         }
-        return defaultFont;
+        return defaultFontAddress;
     }
 
     Native["javax/microedition/lcdui/Font.getDefaultFont.()Ljavax/microedition/lcdui/Font;"] = function(addr) {
-        return getDefaultFont()._address;
+        return getDefaultFontAddress();
     };
 
     Native["javax/microedition/lcdui/Font.stringWidth.(Ljava/lang/String;)I"] = function(addr, strAddr) {
@@ -833,7 +833,7 @@ var currentlyFocusedTextEditor;
         this.clipY2 = contextInfo.context.canvas.height;
 
         // GC info
-        this.currentFont = getDefaultFont();
+        this.currentFont = getHandle(getDefaultFontAddress());
         this.alpha = 0xFF;
         this.red = 0x00;
         this.green = 0x00;
@@ -842,7 +842,7 @@ var currentlyFocusedTextEditor;
 
     GraphicsInfo.prototype.setFont = function(font) {
         if (null === font) {
-            font = getDefaultFont();
+            font = getHandle(getDefaultFontAddress());
         }
 
         if (this.currentFont !== font) {
@@ -957,7 +957,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.initScreen0.(I)V"] = function(addr, displayId) {
         var self = getHandle(addr);
         self.displayId = displayId;
-        NativeMap.set(addr, new GraphicsInfo(screenContextInfo));
+        setNative(addr, new GraphicsInfo(screenContextInfo));
         self.creator = J2ME.Constants.NULL;
     };
 
@@ -966,7 +966,7 @@ var currentlyFocusedTextEditor;
         var self = getHandle(addr);
         var img = getHandle(imgAddr);
         self.displayId = -1;
-        NativeMap.set(addr, new GraphicsInfo(getNative(getHandle(img.imageData))));
+        setNative(addr, new GraphicsInfo(getNative(getHandle(img.imageData))));
         self.creator = J2ME.Constants.NULL;
     };
 
@@ -1358,7 +1358,7 @@ var currentlyFocusedTextEditor;
         }
 
         var textEditor = TextEditorProvider.getEditor(constraints, null, ++textEditorId);
-        NativeMap.set(addr, textEditor);
+        setNative(addr, textEditor);
         textEditor.setBackgroundColor(0xFFFFFFFF | 0); // opaque white
         textEditor.setForegroundColor(0xFF000000 | 0); // opaque black
 
@@ -1435,7 +1435,7 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/TextEditor.setConstraints.(I)V"] = function(addr, constraints) {
         var textEditor = NativeMap.get(addr);
-        NativeMap.set(addr, TextEditorProvider.getEditor(constraints, textEditor, textEditor.id));
+        setNative(addr, TextEditorProvider.getEditor(constraints, textEditor, textEditor.id));
     };
 
     Native["com/nokia/mid/ui/TextEditor.getConstraints.()I"] = function(addr) {
@@ -1573,12 +1573,12 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;"] = function(addr) {
         if (dirtyEditors.length) {
-            return dirtyEditors.shift();
+            return dirtyEditors.shift()._address;
         }
 
         asyncImpl("Lcom/nokia/mid/ui/TextEditor;", new Promise(function(resolve, reject) {
             textEditorResolve = function() {
-                resolve(dirtyEditors.shift());
+                resolve(dirtyEditors.shift()._address);
             }
         }));
     };

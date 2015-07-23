@@ -934,7 +934,7 @@ var MIDP = (function() {
       var event = getHandle(eventAddr);
       var e = { type: event.type };
 
-      var fields = event.klass.classInfo.fields;
+      var fields = event.classInfo.fields;
       for (var i = 0; i < fields.length; i++) {
         var field = fields[i];
         e[J2ME.fromUTF8(field.utf8Name)] = field.get(event);

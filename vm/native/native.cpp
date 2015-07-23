@@ -55,9 +55,7 @@ extern "C" {
   }
 
   uintptr_t gcMallocUncollectable(int32_t size) {
-    uintptr_t p = (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
-    GC_REGISTER_FINALIZER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
-    return p;
+    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
   }
 
   void gcFree(uintptr_t p) {
@@ -65,15 +63,15 @@ extern "C" {
   }
 
   uintptr_t gcMalloc(int32_t size) {
-    uintptr_t p = (uintptr_t)GC_MALLOC(size);
-    GC_REGISTER_FINALIZER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
-    return p;
+    return (uintptr_t)GC_MALLOC(size);
   }
 
   uintptr_t gcMallocAtomic(int32_t size) {
-    uintptr_t p = (uintptr_t)GC_MALLOC_ATOMIC(size);
+    return (uintptr_t)GC_MALLOC_ATOMIC(size);
+  }
+
+  void registerFinalizer(uintptr_t p) {
     GC_REGISTER_FINALIZER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
-    return p;
   }
 
   void forceCollection(void) {

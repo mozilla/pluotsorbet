@@ -171,74 +171,10 @@ module J2ME {
     timeline && timeline.leave(name, data);
   }
 
-  export var Klasses = {
-    java: {
-      lang: {
-        Object: null,
-        Class: null,
-        String: null,
-        Thread: null,
-        IllegalArgumentException: null,
-        IllegalStateException: null,
-        NullPointerException: null,
-        RuntimeException: null,
-        IndexOutOfBoundsException: null,
-        ArrayIndexOutOfBoundsException: null,
-        StringIndexOutOfBoundsException: null,
-        ArrayStoreException: null,
-        IllegalMonitorStateException: null,
-        ClassCastException: null,
-        NegativeArraySizeException: null,
-        ArithmeticException: null,
-        ClassNotFoundException: null,
-        SecurityException: null,
-        IllegalThreadStateException: null,
-        InstantiationException: null,
-        Exception: null
-      },
-      io: {
-        IOException: null,
-        UTFDataFormatException: null,
-        UnsupportedEncodingException: null
-      }
-    },
-    javax: {
-      microedition: {
-        media: {
-          MediaException: null
-        }
-      }
-    },
-    boolean: null,
-    char: null,
-    float: null,
-    double: null,
-    byte: null,
-    short: null,
-    int: null,
-    long: null
-  };
-
   function Int64Array(buffer: ArrayBuffer, offset: number, length: number) {
     this.length = length;
     this.byteOffset = offset;
     this.buffer = buffer;
-  }
-  Int64Array.prototype.BYTES_PER_ELEMENT = 8;
-
-  var arrays = {
-    'Z': Uint8Array,
-    'C': Uint16Array,
-    'F': Float32Array,
-    'D': Float64Array,
-    'B': Int8Array,
-    'S': Int16Array,
-    'I': Int32Array,
-    'J': Int64Array
-  };
-
-  export function getArrayConstructor(type: string): Function {
-    return arrays[type];
   }
 
   /**
@@ -425,16 +361,14 @@ module J2ME {
   export class RuntimeTemplate {
     static all = new Set();
 
-    static isolateMap = Object.create(null);
-
     jvm: JVM;
     status: RuntimeStatus;
     waiting: any [];
     threadCount: number;
     initialized: any;
     pending: any;
-    staticFields: any;
-    classObjects: any;
+    staticObjectAddresses: any;
+    classObjectAddresses: any;
     ctx: Context;
     allCtxs: Set<Context>;
 
@@ -455,8 +389,8 @@ module J2ME {
       this.threadCount = 0;
       this.initialized = Object.create(null);
       this.pending = {};
-      this.staticFields = {};
-      this.classObjects = {};
+      this.staticObjectAddresses = {};
+      this.classObjectAddresses = {};
       this.ctx = null;
       this.allCtxs = new Set();
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
@@ -468,11 +402,9 @@ module J2ME {
       var preInit = CLASSES.preInitializedClasses;
       ctx.setAsCurrentContext();
       for (var i = 0; i < preInit.length; i++) {
-        var runtimeKlass = this.getRuntimeKlass(preInit[i].klass);
         preemptionLockLevel++;
-        var methodInfo = runtimeKlass.classObject.klass.classInfo.getMethodByNameString("initialize", "()V");
-        runtimeKlass.classObject[methodInfo.virtualName](runtimeKlass.classObject._address);
-        // runtimeKlass.classObject.initialize();
+        var classInfo = preInit[i];
+        classInitCheck(classInfo);
         release || Debug.assert(!U, "Unexpected unwind during preInitializeClasses.");
         preemptionLockLevel-- ;
       }
@@ -483,19 +415,41 @@ module J2ME {
     }
 
     /**
-     * After class intialization is finished the init9 method will invoke this so
+     * After class initialization is finished the init9 method will invoke this so
      * any further initialize calls can be avoided. This isn't set on the first call
      * to a class initializer because there can be multiple calls into initialize from
      * different threads that need trigger the Class.initialize() code so they block.
      */
-    setClassInitialized(runtimeKlass: RuntimeKlass) {
-      var className = runtimeKlass.templateKlass.classInfo.getClassNameSlow();
+    setClassInitialized(classId: number) {
+      var classInfo = classIdToClassInfoMap[classId];
+      var className = classInfo.getClassNameSlow();
       this.initialized[className] = true;
     }
 
-    getRuntimeKlass(klass: Klass): RuntimeKlass {
-      var runtimeKlass = this[klass.classInfo.mangledName];
-      return runtimeKlass;
+    getClassObjectAddress(classInfo: ClassInfo): number {
+      if (!this.classObjectAddresses[classInfo.mangledName]) {
+        var addr = allocUncollectableObject(CLASSES.java_lang_Class);
+        var handle = <java.lang.Class>getHandle(addr);
+        handle.vmClass = classInfo.id;
+        this.classObjectAddresses[classInfo.mangledName] = addr;
+        linkWriter && linkWriter.writeLn("Initializing Class Object For: " + classInfo.getClassNameSlow());
+        if (classInfo === CLASSES.java_lang_Object ||
+            classInfo === CLASSES.java_lang_Class ||
+            classInfo === CLASSES.java_lang_String ||
+            classInfo === CLASSES.java_lang_Thread) {
+          var handle = <java.lang.Class>getHandle(addr);
+          handle.status = 4;
+          this.setClassInitialized(classInfo.id);
+        }
+      }
+      return this.classObjectAddresses[classInfo.mangledName];
+    }
+
+    getStaticObjectAddress(classInfo: ClassInfo): number {
+      if (!this.staticObjectAddresses[classInfo.mangledName]) {
+        $.staticObjectAddresses[classInfo.mangledName] = ASM._gcMallocUncollectable(J2ME.Constants.OBJ_HDR_SIZE + classInfo.sizeOfStaticFields);
+      }
+      return this.staticObjectAddresses[classInfo.mangledName];
     }
 
     /**
@@ -553,7 +507,7 @@ module J2ME {
       // to ConstantPool.resolve, which itself is only called by a few callers,
       // which should be able to convert it into an address if needed.  But we
       // should confirm that all callers of ConstantPool.resolve really do that.
-      javaString = <java.lang.String>newObject(Klasses.java.lang.String);
+      javaString = <java.lang.String>getHandle(allocUncollectableObject(CLASSES.java_lang_String));
       javaString.value = utf16ArrayAddr;
       javaString.offset = 0;
       javaString.count = utf16Array.length;
@@ -562,14 +516,6 @@ module J2ME {
       unsetUncollectable(utf16ArrayAddr);
 
       return javaString._address;
-    }
-
-    setStatic(field, value) {
-      this.staticFields[field.id] = value;
-    }
-
-    getStatic(field) {
-      return this.staticFields[field.id];
     }
 
     newIOException(str?: string): java.io.IOException {
@@ -735,13 +681,13 @@ module J2ME {
     }
   }
 
-  export class Class {
-    constructor(public klass: Klass) {
-      // ...
-    }
-  }
+  export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
 
-  export var klassIdMap = Object.create(null);
+  export function getClassInfo(addr: number) {
+    release || assert(addr !== Constants.NULL);
+    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0);
+    return classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
+  }
 
   /**
    * A map from addresses to monitors, which are JS objects that we use to track
@@ -764,99 +710,13 @@ module J2ME {
   }
 
   /**
-   * Representation of a template class.
+   * Representation of a Java class with JS object.
    */
-  export interface Klass extends Function {
+  export interface Handle extends Function {
     new (address?: number): java.lang.Object;
 
-    id: number;
-
-    /**
-     * Array klass of this klass, constructed via \arrayKlass\.
-     */
-    arrayKlass: Klass;
-
-    superKlass: Klass;
-
-    /**
-     * Would be nice to remove this. So we try not to depend on it too much.
-     */
+    _address: number;
     classInfo: ClassInfo;
-
-    /**
-     * Flattened array of super klasses. This makes type checking easy,
-     * see |classInstanceOf|.
-     */
-    display: Klass [];
-
-    /**
-     * Flattened array of super klasses. This makes type checking easy,
-     * see |classInstanceOf|.
-     */
-    interfaces: Klass [];
-
-    /**
-     * Depth in the class hierarchy.
-     */
-    depth: number;
-
-    classSymbols: string [];
-
-    /**
-     * Static constructor, not all klasses have one.
-     */
-    staticConstructor: () => void;
-
-    /**
-     * Whether this class is an interface class.
-     */
-    isInterfaceKlass: boolean;
-
-    isArrayKlass: boolean;
-
-    elementKlass: Klass;
-
-    /**
-     * Links class method.
-     */
-    m(index: number): Function;
-
-    /**
-     * Resolve constant pool entry.
-     */
-    c(index: number): any;
-
-    /**
-     * Linked class methods.
-     */
-    M: Function[];
-  }
-
-  export class RuntimeKlass {
-
-    public _address: number;
-
-    templateKlass: Klass;
-
-    /**
-     * Java class object. This is only available on runtime klasses and it points to itself. We go trough
-     * this indirection in VM code for now so that we can easily change it later if we need to.
-     */
-    classObject: java.lang.Class;
-
-    /**
-     * Whether this class is a runtime class.
-     */
-    // isRuntimeKlass: boolean;
-
-    constructor(templateKlass: Klass) {
-      this._address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + templateKlass.classInfo.sizeOfStaticFields);
-
-      // XXX Should we set the ID of this instance to java.lang.Class's ID?
-      // i32[this._address >> 2] = Klasses.java.lang.Class.id | 0;
-
-      this.templateKlass = templateKlass;
-    }
   }
 
   export class Lock {
@@ -866,332 +726,6 @@ module J2ME {
     constructor(public threadAddress: number, public level: number) {
       this.ready = [];
       this.waiting = [];
-    }
-  }
-
-  function initializeClassObject(runtimeKlass: RuntimeKlass) {
-    linkWriter && linkWriter.writeLn("Initializing Class Object For: " + runtimeKlass.templateKlass);
-    release || assert(!runtimeKlass.classObject);
-    runtimeKlass.classObject = <java.lang.Class><any>new Klasses.java.lang.Class();
-    runtimeKlass.classObject.runtimeKlass = runtimeKlass;
-    monitorMap[runtimeKlass.classObject._address] = runtimeKlass.classObject;
-    var className = runtimeKlass.templateKlass.classInfo.getClassNameSlow();
-    if (className === "java/lang/Object" ||
-        className === "java/lang/Class" ||
-        className === "java/lang/String" ||
-        className === "java/lang/Thread") {
-      (<any>runtimeKlass.classObject).status = 4;
-      $.setClassInitialized(runtimeKlass);
-      return;
-    }
-    //REDUX: No need.
-    //var fields = runtimeKlass.templateKlass.classInfo.getFields();
-    //for (var i = 0; i < fields.length; i++) {
-    //  var field = fields[i];
-    //  if (field.isStatic) {
-    //    var kind = getSignatureKind(field.utf8Signature);
-    //    var defaultValue;
-    //    switch (kind) {
-    //      case Kind.Reference:
-    //        defaultValue = null;
-    //        break;
-    //      case Kind.Long:
-    //        defaultValue = Long.ZERO;
-    //        break;
-    //      default:
-    //        defaultValue = 0;
-    //        break;
-    //    }
-    //    field.set(<java.lang.Object><any>runtimeKlass, defaultValue);
-    //  }
-    //}
-  }
-
-  /**
-   * Registers the klass as a getter on the runtime template. On first access, the getter creates a runtime klass and
-   * adds it to the runtime.
-   */
-  export function registerKlass(klass: Klass, classInfo: ClassInfo) {
-    linkWriter && linkWriter.writeLn("Registering Klass: " + classInfo.getClassNameSlow());
-    Object.defineProperty(RuntimeTemplate.prototype, classInfo.mangledName, {
-      configurable: true,
-      get: function () {
-        linkWriter && linkWriter.writeLn("Creating Runtime Klass: " + classInfo.getClassNameSlow());
-        release || assert(!(klass instanceof RuntimeKlass));
-        var runtimeKlass = new RuntimeKlass(klass);
-        initializeClassObject(runtimeKlass);
-        Object.defineProperty(this, classInfo.mangledName, {
-          value: runtimeKlass
-        });
-        return runtimeKlass;
-      }
-    });
-  }
-
-  var unresolvedSymbols = Object.create(null);
-
-  function findKlass(classInfo: ClassInfo) {
-    if (unresolvedSymbols[classInfo.mangledName]) {
-      return null;
-    }
-    var klass = jsGlobal[classInfo.mangledName];
-    if (klass) {
-      return klass;
-    }
-    return null;
-  }
-
-  export function registerKlassSymbol(className: string) {
-    // TODO: This needs to be kept in sync to how mangleClass works.
-    var mangledName = mangleClassName(toUTF8(className));
-    if (RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
-      return;
-    }
-    linkWriter && linkWriter.writeLn("Registering Klass Symbol: " + className);
-    if (!RuntimeTemplate.prototype.hasOwnProperty(mangledName)) {
-      Object.defineProperty(RuntimeTemplate.prototype, mangledName, {
-        configurable: true,
-        get: function lazyKlass() {
-          linkWriter && linkWriter.writeLn("Load Klass: " + className);
-          CLASSES.loadAndLinkClass(className);
-          return this[mangledName]; // This should not be recursive at this point.
-        }
-      });
-    }
-
-    if (!jsGlobal.hasOwnProperty(mangledName)) {
-      unresolvedSymbols[mangledName] = true;
-      Object.defineProperty(jsGlobal, mangledName, {
-        configurable: true,
-        get: function () {
-          linkWriter && linkWriter.writeLn("Load Klass: " + className);
-          CLASSES.loadAndLinkClass(className);
-          return this[mangledName]; // This should not be recursive at this point.
-        }
-      });
-    }
-  }
-
-  export function registerKlassSymbols(classNames: string []) {
-    for (var i = 0; i < classNames.length; i++) {
-      var className = classNames[i];
-      registerKlassSymbol(className);
-    }
-  }
-
-  function setKlassSymbol(mangledName: string, klass: Klass) {
-    Object.defineProperty(jsGlobal, mangledName, {
-      value: klass
-    });
-  }
-
-  function emitKlassConstructor(classInfo: ClassInfo, mangledName: string): Klass {
-    var klass: Klass;
-    enterTimeline("emitKlassConstructor");
-    // TODO: Creating and evaling a Klass here may be too slow at startup. Consider
-    // creating a closure, which will probably be slower at runtime.
-    var source = [];
-    var writer = new IndentingWriter(false, function (x) {
-        source.push(x);
-    });
-    var emitter = new Emitter(writer, false, true, true);
-    J2ME.emitKlass(emitter, classInfo);
-    (1, eval)(source.join("\n"));
-    leaveTimeline("emitKlassConstructor");
-    // consoleWriter.writeLn("Synthesizing Klass: " + classInfo.getClassNameSlow());
-    // consoleWriter.writeLn(source);
-    klass = <Klass>jsGlobal[mangledName];
-    release || assert(klass, mangledName);
-    klass.toString = function () {
-      return "[Synthesized Klass " + classInfo.getClassNameSlow() + "]";
-    };
-    return klass;
-  }
-
-  export function getKlass(classInfo: ClassInfo): Klass {
-    if (!classInfo) {
-      return null;
-    }
-    if (classInfo.klass) {
-      return classInfo.klass;
-    }
-    return makeKlass(classInfo);
-  }
-
-  function makeKlass(classInfo: ClassInfo): Klass {
-    var klass = findKlass(classInfo);
-    if (klass) {
-      release || assert (!classInfo.isInterface, "Interfaces should not be compiled.");
-      linkWriter && linkWriter.greenLn("Found Compiled Klass: " + classInfo.getClassNameSlow());
-      release || assert(!classInfo.klass);
-      classInfo.klass = klass;
-      klass.toString = function () {
-        return "[Compiled Klass " + classInfo.getClassNameSlow() + "]";
-      };
-      if (klass.classSymbols) {
-        registerKlassSymbols(klass.classSymbols);
-      }
-    } else {
-      klass = makeKlassConstructor(classInfo);
-      release || assert(!classInfo.klass);
-      classInfo.klass = klass;
-    }
-
-    if (classInfo.superClass && !classInfo.superClass.klass &&
-      J2ME.phase === J2ME.ExecutionPhase.Runtime) {
-      J2ME.linkKlass(classInfo.superClass);
-    }
-
-    var superKlass = getKlass(classInfo.superClass);
-
-    enterTimeline("extendKlass");
-    extendKlass(classInfo, klass, superKlass);
-    leaveTimeline("extendKlass");
-
-    enterTimeline("registerKlass");
-    registerKlass(klass, classInfo);
-    leaveTimeline("registerKlass");
-
-    if (classInfo instanceof ArrayClassInfo) {
-      klass.isArrayKlass = true;
-      var elementKlass = getKlass(classInfo.elementClass);
-      elementKlass.arrayKlass = klass;
-      klass.elementKlass = elementKlass;
-    }
-
-    klass.classInfo = classInfo;
-
-    if (!classInfo.isInterface) {
-      initializeInterfaces(klass, classInfo);
-    }
-
-    return klass;
-  }
-
-  function makeKlassConstructor(classInfo: ClassInfo): Klass {
-    var klass: Klass;
-    var mangledName = classInfo.mangledName;
-    if (classInfo.isInterface) {
-      klass = <Klass><any>function () {
-        Debug.unexpected("Should never be instantiated.")
-      };
-      klass.isInterfaceKlass = true;
-      klass.toString = function () {
-        return "[Interface Klass " + classInfo.getClassNameSlow() + "]";
-      };
-      setKlassSymbol(mangledName, klass);
-    } else if (classInfo instanceof ArrayClassInfo) {
-      var elementKlass = getKlass(classInfo.elementClass);
-      // Have we already created one? We need to maintain pointer identity.
-      if (elementKlass.arrayKlass) {
-        return elementKlass.arrayKlass;
-      }
-      klass = makeArrayKlassConstructor(elementKlass);
-    } else if (classInfo instanceof PrimitiveClassInfo) {
-      klass = <Klass><any>function () {
-        Debug.unexpected("Should never be instantiated.")
-      };
-      klass.toString = function () {
-        return "[Primitive Klass " + classInfo.getClassNameSlow() + "]";
-      };
-    } else {
-      klass = emitKlassConstructor(classInfo, mangledName);
-    }
-    return klass;
-  }
-
-  export function makeArrayKlassConstructor(elementKlass: Klass): Klass {
-    var klass = <Klass><any> getArrayConstructor(elementKlass.classInfo.getClassNameSlow());
-    if (!klass) {
-      klass = <Klass><any> function (size: number) {
-        Debug.unexpected("Array constructor should not be called");
-      };
-      klass.prototype.klass = klass;
-      klass.toString = function () {
-        return "[Array of " + elementKlass + "]";
-      };
-    } else {
-      release || assert(!klass.prototype.hasOwnProperty("klass"));
-      klass.prototype.klass = klass;
-      klass.toString = function () {
-        return "[Array of " + elementKlass + "]";
-      };
-    }
-    return klass;
-  }
-
-  /**
-   * TODO: Find out if we need to also run class initialization here, or if the
-   * callers should be calling that instead of this.
-   */
-  export function linkKlass(classInfo: ClassInfo) {
-    // We shouldn't do any linking if we're not in the runtime phase.
-    if (phase !== ExecutionPhase.Runtime) {
-      return;
-    }
-    if (classInfo.klass) {
-      return;
-    }
-    enterTimeline("linkKlass", {classInfo: classInfo});
-    var mangledName = classInfo.mangledName;
-    var klass;
-    classInfo.klass = klass = getKlass(classInfo);
-    classInfo.klass.classInfo = classInfo;
-    if (classInfo instanceof PrimitiveClassInfo) {
-      switch (classInfo) {
-        case PrimitiveClassInfo.Z: Klasses.boolean = klass; break;
-        case PrimitiveClassInfo.C: Klasses.char    = klass; break;
-        case PrimitiveClassInfo.F: Klasses.float   = klass; break;
-        case PrimitiveClassInfo.D: Klasses.double  = klass; break;
-        case PrimitiveClassInfo.B: Klasses.byte    = klass; break;
-        case PrimitiveClassInfo.S: Klasses.short   = klass; break;
-        case PrimitiveClassInfo.I: Klasses.int     = klass; break;
-        case PrimitiveClassInfo.J: Klasses.long    = klass; break;
-        default: J2ME.Debug.assertUnreachable("linking primitive " + classInfo.getClassNameSlow())
-      }
-    } else {
-      switch (classInfo.getClassNameSlow()) {
-        case "java/lang/Object": Klasses.java.lang.Object = klass; break;
-        case "java/lang/Class" : Klasses.java.lang.Class  = klass; break;
-        case "java/lang/String": Klasses.java.lang.String = klass; break;
-        case "java/lang/Thread": Klasses.java.lang.Thread = klass; break;
-        case "java/lang/Exception": Klasses.java.lang.Exception = klass; break;
-        case "java/lang/InstantiationException": Klasses.java.lang.InstantiationException = klass; break;
-        case "java/lang/IllegalArgumentException": Klasses.java.lang.IllegalArgumentException = klass; break;
-        case "java/lang/NegativeArraySizeException": Klasses.java.lang.NegativeArraySizeException = klass; break;
-        case "java/lang/IllegalStateException": Klasses.java.lang.IllegalStateException = klass; break;
-        case "java/lang/NullPointerException": Klasses.java.lang.NullPointerException = klass; break;
-        case "java/lang/RuntimeException": Klasses.java.lang.RuntimeException = klass; break;
-        case "java/lang/IndexOutOfBoundsException": Klasses.java.lang.IndexOutOfBoundsException = klass; break;
-        case "java/lang/ArrayIndexOutOfBoundsException": Klasses.java.lang.ArrayIndexOutOfBoundsException = klass; break;
-        case "java/lang/StringIndexOutOfBoundsException": Klasses.java.lang.StringIndexOutOfBoundsException = klass; break;
-        case "java/lang/ArrayStoreException": Klasses.java.lang.ArrayStoreException = klass; break;
-        case "java/lang/IllegalMonitorStateException": Klasses.java.lang.IllegalMonitorStateException = klass; break;
-        case "java/lang/ClassCastException": Klasses.java.lang.ClassCastException = klass; break;
-        case "java/lang/ArithmeticException": Klasses.java.lang.ArithmeticException = klass; break;
-        case "java/lang/NegativeArraySizeException": Klasses.java.lang.NegativeArraySizeException = klass; break;
-        case "java/lang/ClassNotFoundException": Klasses.java.lang.ClassNotFoundException = klass; break;
-        case "javax/microedition/media/MediaException": Klasses.javax.microedition.media.MediaException = klass; break;
-        case "java/lang/SecurityException": Klasses.java.lang.SecurityException = klass; break;
-        case "java/lang/IllegalThreadStateException": Klasses.java.lang.IllegalThreadStateException = klass; break;
-        case "java/io/IOException": Klasses.java.io.IOException = klass; break;
-        case "java/io/UnsupportedEncodingException": Klasses.java.io.UnsupportedEncodingException = klass; break;
-        case "java/io/UTFDataFormatException": Klasses.java.io.UTFDataFormatException = klass; break;
-      }
-    }
-    linkWriter && linkWriter.writeLn("Link: " + classInfo.getClassNameSlow() + " -> " + klass);
-
-    enterTimeline("linkKlassMethods");
-    linkKlassMethods(classInfo.klass);
-    leaveTimeline("linkKlassMethods");
-
-    enterTimeline("linkKlassFields");
-    linkKlassFields(classInfo.klass);
-    leaveTimeline("linkKlassFields");
-    leaveTimeline("linkKlass");
-
-    if (klass === Klasses.java.lang.Object) {
-      extendKlass(classInfo, <Klass><any>Array, Klasses.java.lang.Object);
     }
   }
 
@@ -1213,7 +747,7 @@ module J2ME {
       } catch (e) {
         // Filter JAVA exception and only report the native js exception, which
         // cannnot be handled properly by the JAVA code.
-        if (!e.klass) {
+        if (!e.classInfo) {
           stderrWriter.errorLn("Native " + key + " throws: " + e);
         }
         throw e;
@@ -1244,7 +778,10 @@ module J2ME {
 
   var frameView = new FrameView();
 
-  function findCompiledMethod(klass: Klass, methodInfo: MethodInfo): Function {
+  function findCompiledMethod(methodInfo: MethodInfo): Function {
+    // REDUX when compiler is enabled again
+    return null;
+    /*
     // Use aotMetaData to find AOT methods instead of jsGlobal because runtime compiled methods may
     // be on the jsGlobal.
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
@@ -1263,89 +800,87 @@ module J2ME {
     }
 
     return jsGlobal[mangledClassAndMethodName];
+    */
   }
 
   /**
    * Creates convenience getters / setters on Java objects.
    */
-  function linkKlassFields(klass: Klass) {
-    var classInfo = klass.classInfo;
-    var classBindings = BindingsMap.get(classInfo.utf8Name);
-    if (classBindings && classBindings.fields) {
-      release || assert(!classBindings.fields.staticSymbols, "Static fields are not supported yet");
+  function linkHandleFields(handleConstructor, classInfo: ClassInfo) {
+    // Get all the parent classes so their fields are linked first.
+    var classes = [classInfo];
+    var superClass = classInfo.superClass;
+    while (superClass) {
+      classes.unshift(superClass);
+      superClass = superClass.superClass;
+    }
+    for (var i = 0; i < classes.length; i++) {
+      var classInfo = classes[i];
+      var classBindings = BindingsMap.get(classInfo.utf8Name);
+      if (classBindings && classBindings.fields) {
+        release || assert(!classBindings.fields.staticSymbols, "Static fields are not supported yet");
 
-      var instanceSymbols = classBindings.fields.instanceSymbols;
+        var instanceSymbols = classBindings.fields.instanceSymbols;
 
-      for (var fieldName in instanceSymbols) {
-        var fieldSignature = instanceSymbols[fieldName];
+        for (var fieldName in instanceSymbols) {
+          var fieldSignature = instanceSymbols[fieldName];
 
-        var field = classInfo.getFieldByName(toUTF8(fieldName), toUTF8(fieldSignature), false);
+          var field = classInfo.getFieldByName(toUTF8(fieldName), toUTF8(fieldSignature), false);
 
-        release || assert(!field.isStatic, "Static field was defined as instance in BindingsMap");
-        var object = field.isStatic ? klass : klass.prototype;
-        release || assert (!object.hasOwnProperty(fieldName), "Should not overwrite existing properties.");
-        var getter;
-        var setter;
-        if (true || release) {
-          switch (field.kind) {
-            case Kind.Reference:
-              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
-              getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
-              break;
-            case Kind.Boolean:
-              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value ? 1 : 0;");
-              getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
-              break;
-            case Kind.Byte:
-            case Kind.Short:
-            case Kind.Int:
-              setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
-              getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
-              break;
-            case Kind.Float:
-              setter = new Function("value", "f32[this._address + " + field.byteOffset + " >> 2] = value;");
-              getter = new Function("return f32[this._address + " + field.byteOffset + " >> 2];");
-              break;
-            case Kind.Long:
-              setter = new Function("value",
-                                    "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value);" +
-                                    "i32[this._address + " + field.byteOffset + " + 4 >> 2] = tempReturn0;");
-              getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2]," +
-                                    "                         i32[this._address + " + field.byteOffset + " + 4 >> 2]);");
-              break;
-            case Kind.Double:
-              setter = new Function("value",
-                                    "aliasedF64[0] = value;" +
-                                    "i32[this._address + " + field.byteOffset + " >> 2] = aliasedI32[0];" +
-                                    "i32[this._address + " + field.byteOffset + " + 4 >> 2] = aliasedI32[1];");
-              getter = new Function("aliasedI32[0] = i32[this._address + " + field.byteOffset + " >> 2];" +
-                                    "aliasedI32[1] = i32[this._address + " + field.byteOffset + " + 4 >> 2];" +
-                                    "return aliasedF64[0];");
-              break;
-            default:
-              Debug.assert(false, Kind[field.kind]);
-              break;
+          release || assert(!field.isStatic, "Static field was defined as instance in BindingsMap");
+          var object = field.isStatic ? handleConstructor : handleConstructor.prototype;
+          release || assert(!object.hasOwnProperty(fieldName), "Should not overwrite existing properties.");
+          var getter;
+          var setter;
+          if (true || release) {
+            switch (field.kind) {
+              case Kind.Reference:
+                setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
+                getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
+                break;
+              case Kind.Boolean:
+                setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value ? 1 : 0;");
+                getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
+                break;
+              case Kind.Byte:
+              case Kind.Short:
+              case Kind.Int:
+                setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
+                getter = new Function("return i32[this._address + " + field.byteOffset + " >> 2];");
+                break;
+              case Kind.Float:
+                setter = new Function("value", "f32[this._address + " + field.byteOffset + " >> 2] = value;");
+                getter = new Function("return f32[this._address + " + field.byteOffset + " >> 2];");
+                break;
+              case Kind.Long:
+                setter = new Function("value",
+                  "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value);" +
+                  "i32[this._address + " + field.byteOffset + " + 4 >> 2] = tempReturn0;");
+                getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2]," +
+                  "                         i32[this._address + " + field.byteOffset + " + 4 >> 2]);");
+                break;
+              case Kind.Double:
+                setter = new Function("value",
+                  "aliasedF64[0] = value;" +
+                  "i32[this._address + " + field.byteOffset + " >> 2] = aliasedI32[0];" +
+                  "i32[this._address + " + field.byteOffset + " + 4 >> 2] = aliasedI32[1];");
+                getter = new Function("aliasedI32[0] = i32[this._address + " + field.byteOffset + " >> 2];" +
+                  "aliasedI32[1] = i32[this._address + " + field.byteOffset + " + 4 >> 2];" +
+                  "return aliasedF64[0];");
+                break;
+              default:
+                Debug.assert(false, Kind[field.kind]);
+                break;
+            }
+          } else {
+            setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
           }
-        } else {
-          setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
-        }
-        Object.defineProperty(object, fieldName, {
-          get: getter,
-          set: setter,
-          configurable: true,
-          enumerable: false
-        });
-        delete instanceSymbols[fieldName];
-      }
-
-      if (!release) {
-        if (classBindings.fields.staticSymbols) {
-          var staticSymbolNames = Object.keys(classBindings.fields.staticSymbols);
-          assert(staticSymbolNames.length === 0, "Unlinked symbols: " + staticSymbolNames.join(", "));
-        }
-        if (classBindings.fields.instanceSymbols) {
-          var instanceSymbolNames = Object.keys(classBindings.fields.instanceSymbols);
-          assert(instanceSymbolNames.length === 0, "Unlinked symbols: " + instanceSymbolNames.join(", "));
+          Object.defineProperty(object, fieldName, {
+            get: getter,
+            set: setter,
+            configurable: true,
+            enumerable: false
+          });
         }
       }
     }
@@ -1436,14 +971,13 @@ module J2ME {
     if (methodInfo.fn) {
       return methodInfo.fn;
     }
-    linkKlass(methodInfo.classInfo);
-    linkKlassMethod(methodInfo.classInfo.klass, methodInfo);
+    linkClassMethod(methodInfo);
     release || assert (methodInfo.fn);
     return methodInfo.fn;
   }
 
-  function linkKlassMethod(klass: Klass, methodInfo: MethodInfo) {
-    runtimeCounter && runtimeCounter.count("linkKlassMethod");
+  function linkClassMethod(methodInfo: MethodInfo) {
+    runtimeCounter && runtimeCounter.count("linkClassMethod");
     var fn;
     var methodType;
     var nativeMethod = findNativeMethodImplementation(methodInfo);
@@ -1453,7 +987,7 @@ module J2ME {
       methodType = MethodType.Native;
       methodInfo.state = MethodState.Compiled;
     } else {
-      fn = findCompiledMethod(klass, methodInfo);
+      fn = findCompiledMethod(methodInfo);
       if (fn) {
         linkWriter && linkWriter.greenLn("Method: " + methodInfo.name + methodInfo.signature + " -> Compiled");
         methodType = MethodType.Compiled;
@@ -1472,196 +1006,7 @@ module J2ME {
       fn = wrapMethod(fn, methodInfo, methodType);
     }
 
-    klass.M[methodInfo.index] = methodInfo.fn = fn;
-
-    if (!methodInfo.isStatic && methodInfo.virtualName) {
-      release || assert(klass.prototype.hasOwnProperty(methodInfo.virtualName));
-      klass.prototype[methodInfo.virtualName] = fn;
-      var classBindings = BindingsMap.get(klass.classInfo.utf8Name);
-      if (classBindings && classBindings.methods && classBindings.methods.instanceSymbols) {
-        var methodKey = classBindings.methods.instanceSymbols[methodInfo.name + "." + methodInfo.signature];
-        if (methodKey) {
-          klass.prototype[methodKey] = fn;
-        }
-      }
-    }
-  }
-
-  function linkKlassMethods(klass: Klass) {
-    var methods = klass.classInfo.getMethods();
-    if (!methods) {
-      return;
-    }
-    linkWriter && linkWriter.enter("Link Klass Methods: " + klass);
-    var methods = klass.classInfo.getMethods();
-
-    var vTable = klass.classInfo.vTable;
-    if (vTable) {
-      // Eagerly install interface forwarders.
-      for (var i = 0; i < vTable.length; i++) {
-        var methodInfo = vTable[i];
-        if (methodInfo.implementsInterface) {
-          release || assert(methodInfo.mangledName);
-          klass.prototype[methodInfo.mangledName] = makeInterfaceMethodForwarder(methodInfo.vTableIndex);
-        }
-      }
-    }
-
-    linkWriter && linkWriter.outdent();
-  }
-
-  /**
-   * Creates lookup tables used to efficiently implement type checks.
-   */
-  function initializeKlassTables(klass: Klass) {
-    linkWriter && linkWriter.writeLn("initializeKlassTables: " + klass);
-    klass.depth = klass.superKlass ? klass.superKlass.depth + 1 : 0;
-    assert (klass.display === undefined, "Display should only be defined once.")
-    var display = klass.display = new Array(32);
-
-    var i = klass.depth;
-    while (klass) {
-      display[i--] = klass;
-      klass = klass.superKlass;
-    }
-    release || assert(i === -1, i);
-  }
-
-  function initializeInterfaces(klass: Klass, classInfo: ClassInfo) {
-    release || assert (!klass.interfaces);
-    var interfaces = klass.interfaces = klass.superKlass ? klass.superKlass.interfaces.slice() : [];
-
-    var interfaceClassInfos = classInfo.getAllInterfaces();
-    if (interfaceClassInfos) {
-      for (var j = 0; j < interfaceClassInfos.length; j++) {
-        ArrayUtilities.pushUnique(interfaces, getKlass(interfaceClassInfos[j]));
-      }
-    }
-  }
-
-  // Links the virtual method at a given index.
-  function linkVirtualMethodByIndex(self: java.lang.Object, index: number) {
-    // Self is the object on which the trampoline is called. We want to figure
-    // out the appropriate prototype object where we need to link the method. To
-    // do this we look at self's class vTable, then find out the class of the
-    // bound method and then call linkKlassMethod to patch it on the appropriate
-    // prototype.
-    var klass = self.klass;
-    var classInfo = klass.classInfo;
-    var methodInfo = classInfo.vTable[index];
-    var methodKlass = methodInfo.classInfo.klass;
-    linkKlassMethod(methodKlass, methodInfo);
-    release || assert(methodInfo.fn);
-    return methodInfo.fn;
-  }
-
-  // Cache interface forwarders.
-  var interfaceMethodForwarders = new Array(256);
-
-  // Creates a forwarder function that dispatches to a specified virtual
-  // name. These are used for interface dispatch.
-  function makeInterfaceMethodForwarder(index: number) {
-    var forwarder = interfaceMethodForwarders[index];
-    if (forwarder) {
-      return forwarder;
-    }
-    runtimeCounter && runtimeCounter.count("makeInterfaceMethodForwarder");
-    return interfaceMethodForwarders[index] = new Function("return this.v" + index + ".apply(this, arguments);");
-  }
-
-  // Cache virtual trampolines.
-  var virtualMethodTrampolines = new Array(256);
-
-  // Creates a reusable trampoline function for a given index in the vTable.
-  function makeVirtualMethodTrampoline(index: number) {
-    var trampoline = virtualMethodTrampolines[index];
-    if (trampoline) {
-      return trampoline;
-    }
-    runtimeCounter && runtimeCounter.count("makeVirtualMethodTrampoline");
-    return virtualMethodTrampolines[index] = function vTrampoline() {
-      return linkVirtualMethodByIndex(this, index).apply(this, arguments);
-    };
-  }
-
-  function linkMethodByIndex(klass: Klass, index: number) {
-    var methodInfo = klass.classInfo.getMethodByIndex(index);
-    linkKlassMethod(klass, methodInfo);
-    release || assert(methodInfo.fn);
-    return methodInfo.fn;
-  }
-
-  function makeMethodTrampoline(klass: Klass, index: number) {
-    runtimeCounter && runtimeCounter.count("makeMethodTrampoline");
-    return function () {
-      return linkMethodByIndex(klass, index).apply(this, arguments);
-    };
-  }
-
-  // Inserts trampolines for virtual methods on prototype objects whenever new methods
-  // are defined. Inherited methods don't need trampolines since they already have them
-  // in the super class prototypes.
-  function initializeKlassVirtualMethodTrampolines(classInfo: ClassInfo, klass: Klass) {
-    var vTable = classInfo.vTable;
-    for (var i = 0; i < vTable.length; i++) {
-      if (vTable[i].classInfo === classInfo) {
-        runtimeCounter && runtimeCounter.count("fillTrampoline");
-        // TODO: Uncomment this assertion. Array prototype has Object prototype on the
-        // prototype hierarchy, and trips this assert since it already has the virtual
-        // trampolines installed.
-        // assert (!klass.prototype.hasOwnProperty("v" + i));
-        klass.prototype["v" + i] = makeVirtualMethodTrampoline(i);
-      }
-    }
-  }
-
-  function initializeKlassMethodTrampolines(classInfo: ClassInfo, klass: Klass) {
-    var count = classInfo.getMethodCount();
-    for (var i = 0; i < count; i++) {
-      klass["m" + i] = makeMethodTrampoline(klass, i);
-    }
-  }
-
-  function klassMethodLink(index: number) {
-    var klass: Klass = this;
-    var fn = klass.M[index];
-    if (fn) {
-      return fn;
-    }
-    linkKlassMethod(klass, klass.classInfo.getMethodByIndex(index));
-    release || assert(klass.M[index], "Method should be linked now.");
-    return klass.M[index];
-  }
-
-  function klassResolveConstantPoolEntry(index: number) {
-    var klass: Klass = this;
-    return klass.classInfo.constantPool.resolve(index, TAGS.CONSTANT_Any);
-  }
-
-  export function extendKlass(classInfo: ClassInfo, klass: Klass, superKlass: Klass) {
-    klass.superKlass = superKlass;
-    if (superKlass) {
-      if (isPrototypeOfFunctionMutable(klass)) {
-        linkWriter && linkWriter.writeLn("Extending: " + klass + " -> " + superKlass);
-        klass.prototype = Object.create(superKlass.prototype);
-        release || assert((<any>Object).getPrototypeOf(klass.prototype) === superKlass.prototype);
-      } else {
-        release || assert(!superKlass.superKlass, "Should not have a super-super-klass.");
-        for (var key in superKlass.prototype) {
-          klass.prototype[key] = superKlass.prototype[key];
-        }
-      }
-    } else {
-      klass.prototype = {};
-    }
-    klass.prototype.klass = klass;
-    initializeKlassTables(klass);
-    initializeKlassVirtualMethodTrampolines(classInfo, klass);
-
-    // Method linking.
-    klass.m = klassMethodLink;
-    klass.c = klassResolveConstantPoolEntry;
-    klass.M = new Array(classInfo.getMethodCount());
+    methodInfo.fn = fn;
   }
 
   /**
@@ -1693,6 +1038,8 @@ module J2ME {
    * Compiles method and links it up at runtime.
    */
   export function compileAndLinkMethod(methodInfo: MethodInfo) {
+    // REDUX when compiler is enabled again
+    /*
     // Don't do anything if we're past the compiled state.
     if (methodInfo.state >= MethodState.Compiled) {
       return;
@@ -1761,6 +1108,7 @@ module J2ME {
         "sourceSize: " + compiledMethod.body.length);
       jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
     }
+    */
   }
 
   function wrapMethod(fn, methodInfo: MethodInfo, methodType: MethodType) {
@@ -1778,6 +1126,8 @@ module J2ME {
    * Links up compiled method at runtime.
    */
   export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
+    // REDUX when compiler is enabled
+    /*
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
@@ -1808,66 +1158,58 @@ module J2ME {
     for (var i = 0; i < referencedClasses.length; i++) {
       registerKlassSymbol(referencedClasses[i]);
     }
+    */
   }
 
-  export function isAssignableTo(from: Klass, to: Klass): boolean {
-    if (from === to) {
-      return true;
-    }
-    if (to.isInterfaceKlass) {
-      return from.interfaces.indexOf(to) >= 0;
-    } else if (to.isArrayKlass) {
-      if (!from.isArrayKlass) {
-        return false;
-      }
-      return isAssignableTo(from.elementKlass, to.elementKlass);
-    }
-    return from.display[to.depth] === to;
+  export function isAssignableTo(from: ClassInfo, to: ClassInfo): boolean {
+    return from.isAssignableTo(to);
   }
 
-  export function instanceOfKlass(object: java.lang.Object, klass: Klass): boolean {
-    return object !== null && isAssignableTo(object.klass, klass);
+  export function instanceOfKlass(object: java.lang.Object, classInfo: ClassInfo): boolean {
+    return object !== null && isAssignableTo(object.classInfo, classInfo);
   }
 
-  export function instanceOfInterface(object: java.lang.Object, klass: Klass): boolean {
-    release || assert(klass.isInterfaceKlass);
-    return object !== null && isAssignableTo(object.klass, klass);
+  export function instanceOfInterface(object: java.lang.Object, classInfo: ClassInfo): boolean {
+    release || assert(classInfo.isInterface);
+    return object !== null && isAssignableTo(object.classInfo, classInfo);
   }
 
-  export function checkCastKlass(object: java.lang.Object, klass: Klass) {
-    if (object !== null && !isAssignableTo(object.klass, klass)) {
+  export function checkCastKlass(object: java.lang.Object, classInfo: ClassInfo) {
+    if (object !== null && !isAssignableTo(object.classInfo, classInfo)) {
       throw $.newClassCastException();
     }
   }
 
-  export function checkCastInterface(object: java.lang.Object, klass: Klass) {
-    if (object !== null && !isAssignableTo(object.klass, klass)) {
+  export function checkCastInterface(object: java.lang.Object, classInfo: ClassInfo) {
+    if (object !== null && !isAssignableTo(object.classInfo, classInfo)) {
       throw $.newClassCastException();
     }
   }
 
-  export function newObject(klass: Klass): java.lang.Object {
-    return new klass();
-  }
+  var handleConstructors = Object.create(null);
 
-  export function allocUncollectableObject(klass: Klass): number {
-    // This could be implemented via a call to newObject, at the cost
-    // of creating a temporary object: return newObject(klass)._address;
-    var address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + klass.classInfo.sizeOfFields);
-    i32[address >> 2] = klass.id | 0;
+  export function allocUncollectableObject(classInfo: ClassInfo): number {
+    var address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
+    i32[address >> 2] = classInfo.id | 0;
     return address;
   }
 
-  export function allocObject(klass: Klass): number {
-    // This could be implemented via a call to newObject, at the cost
-    // of creating a temporary object: return newObject(klass)._address;
-    var address = ASM._gcMalloc(Constants.OBJ_HDR_SIZE + klass.classInfo.sizeOfFields);
-    i32[address >> 2] = klass.id | 0;
+  export function allocObject(classInfo: ClassInfo): number {
+    var address = ASM._gcMalloc(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
+    i32[address >> 2] = classInfo.id | 0;
     return address;
   }
+
+  export var weakReferences = new Map<number,number>();
 
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
+
+    var weakReferenceAddr = weakReferences.get(addr);
+    if (weakReferenceAddr) {
+      weakReferences.delete(addr);
+      NativeMap.delete(weakReferenceAddr);
+    }
   }
 
   /**
@@ -1881,6 +1223,11 @@ module J2ME {
    * to do something more sophisticated here.
    */
   export var NativeMap = new Map<number,Object|number>();
+
+  export function setNative(addr: number, obj: Object|number): void {
+    NativeMap.set(addr, obj);
+    ASM._registerFinalizer(addr);
+  }
 
   export function getNative(javaObj: java.lang.Object): Object|number {
       return NativeMap.get(javaObj._address);
@@ -1900,42 +1247,46 @@ module J2ME {
 
     release || assert(typeof address === "number", "address is number");
 
-    var klassId = i32[address + Constants.OBJ_KLASS_ID_OFFSET >> 2];
-    release || assert(typeof klassId === "number", "klassId is number");
+    var classId = i32[address + Constants.OBJ_CLASS_ID_OFFSET >> 2];
 
-    var klass = klassIdMap[klassId];
-    release || assert(klass, "object has klass");
+    var classInfo = classIdToClassInfoMap[classId];
+    release || assert(classInfo, "object has class info");
 
-    // Special-case an object that represents a java.lang.Class, since some code
-    // accesses its runtimeKlass property, which we set only when we create
-    // the object in initializeClassObject, not when we call the klass constructor.
-    if (klass === CLASSES.java_lang_Class.klass) {
-      var classObject = getMonitor(address);
-      return classObject;
-    }
-
-    if (klass.isArrayKlass) {
+    if (classInfo.elementClass) {
       return getArrayFromAddr(address);
     }
 
-    // Use the constructor to create a wrapper for the already allocated object
-    // by passing in an address, which tells the constructor to reuse the memory
-    // already allocated instead of allocating new memory.
-    return new klass(address);
+    if (!handleConstructors[classId]) {
+      var constructor = function(address) {
+        this._address = address;
+      };
+      constructor.prototype.classInfo = classInfo;
+      // Link the field bindings.
+      linkHandleFields(constructor, classInfo);
+      handleConstructors[classId] = constructor;
+    }
+    return new handleConstructors[classId](address);
   }
+
+  var jStringEncoder = new TextEncoder('utf-16');
 
   export function newString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
       return Constants.NULL;
     }
-    var object = <java.lang.String>newObject(Klasses.java.lang.String);
-    object.value = util.stringToCharArray(jsString);
+
+    var objectAddr = allocUncollectableObject(CLASSES.java_lang_String);
+    var object = <java.lang.String>getHandle(objectAddr);
+
+    var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
+    var arrayAddr = newCharArray(encoded.length);
+    u16.set(encoded, Constants.ARRAY_HDR_SIZE + arrayAddr >> 1);
+
+    object.value = arrayAddr;
     object.offset = 0;
-    object.count = getArrayFromAddr(object.value).length;
+    object.count = encoded.length;
     return object._address;
   }
-
-  export var arrayMap = Object.create(null);
 
   export function getArrayFromAddr(addr: number) {
     if (addr === Constants.NULL) {
@@ -1943,8 +1294,44 @@ module J2ME {
     }
 
     release || assert(typeof addr === "number", "addr is number");
-
-    return arrayMap[addr];
+    var classInfo = classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
+    var constructor;
+    if (classInfo instanceof PrimitiveArrayClassInfo) {
+      switch (classInfo) {
+        case PrimitiveArrayClassInfo.Z:
+          constructor = Uint8Array;
+          break;
+        case PrimitiveArrayClassInfo.C:
+          constructor = Uint16Array;
+          break;
+        case PrimitiveArrayClassInfo.F:
+          constructor = Float32Array;
+          break;
+        case PrimitiveArrayClassInfo.D:
+          constructor = Float64Array;
+          break;
+        case PrimitiveArrayClassInfo.B:
+          constructor = Int8Array;
+          break;
+        case PrimitiveArrayClassInfo.S:
+          constructor = Int16Array;
+          break;
+        case PrimitiveArrayClassInfo.I:
+          constructor = Int32Array;
+          break;
+        case PrimitiveArrayClassInfo.J:
+          constructor = Int64Array;
+          break;
+        default:
+          Debug.assertUnreachable("Bad primitive array" + classInfo.getClassNameSlow());
+          break;
+      }
+    } else {
+      constructor = Int32Array;
+    }
+    var arrayObject = new constructor(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, i32[addr + Constants.ARRAY_LENGTH_OFFSET >> 2]);
+    arrayObject.classInfo = classInfo;
+    return arrayObject;
   }
 
   var uncollectableAddress = ASM._gcMallocUncollectable(16);
@@ -1959,57 +1346,45 @@ module J2ME {
     i32[(uncollectableAddress >> 2) + uncollectableNumber] = 0;
     uncollectableNumber--;
   }
-
-  export function newArray(klass: Klass, size: number): number {
+  export function newArray(elementClassInfo: ClassInfo, size: number): number {
+    release || assert(elementClassInfo instanceof ClassInfo);
     if (size < 0) {
       throwNegativeArraySizeException();
     }
 
-    var constructor: any = getArrayKlass(klass);
-
-    var arr;
+    var arrayClassInfo = CLASSES.getClass("[" + elementClassInfo.getClassNameSlow());
     var addr;
-    var klassId = generateKlassId();
-    klassIdMap[klassId] = constructor;
 
-    if (klass.classInfo instanceof PrimitiveClassInfo) {
-      addr = ASM._gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * constructor.prototype.BYTES_PER_ELEMENT);
+    if (elementClassInfo instanceof PrimitiveClassInfo) {
+      addr = ASM._gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * (<PrimitiveArrayClassInfo>arrayClassInfo).bytesPerElement);
 
       // Zero-out memory because GC_MALLOC_ATOMIC doesn't do it automatically.
       var off = Constants.ARRAY_HDR_SIZE + addr;
-      var end = off + size * constructor.prototype.BYTES_PER_ELEMENT
+      var end = off + size * (<PrimitiveArrayClassInfo>arrayClassInfo).bytesPerElement;
       for (var i = off; i < end; i++) {
         i8[i] = 0;
       }
-
-      // XXX: To remove
-      arr = new constructor(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
       addr = ASM._gcMalloc(Constants.ARRAY_HDR_SIZE + size * 4);
-      // XXX: To remove
-      arr = new Int32Array(ASM.buffer, Constants.ARRAY_HDR_SIZE + addr, size);
     }
 
-    i32[addr + Constants.OBJ_KLASS_ID_OFFSET >> 2] = klassId;
+    i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] = arrayClassInfo.id;
     i32[addr + Constants.ARRAY_LENGTH_OFFSET >> 2] = size;
-    // XXX: To remove
-    (<any>arr).klass = constructor;
-    arrayMap[addr] = arr;
 
     return addr;
   }
 
-  export function newMultiArray(klass: Klass, lengths: number[]): number {
+  export function newMultiArray(classInfo: ClassInfo, lengths: number[]): number {
     var length = lengths[0];
-    var arrayAddr = newArray(klass.elementKlass, length);
+    var arrayAddr = newArray(classInfo.elementClass, length);
     setUncollectable(arrayAddr);
-    var array = arrayMap[arrayAddr];
+    var array = getHandle(arrayAddr);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i = 0; i < length; i++) {
-        array[i] = newMultiArray(klass.elementKlass, lengths);
+        array[i] = newMultiArray(classInfo.elementClass, lengths);
       }
     }
     unsetUncollectable(arrayAddr);
@@ -2033,62 +1408,23 @@ module J2ME {
   }
 
   export function newObjectArray(size: number): number {
-    return newArray(Klasses.java.lang.Object, size);
+    return newArray(CLASSES.java_lang_Object, size);
   }
 
   export function newStringArray(size: number): number {
-    return newArray(Klasses.java.lang.String, size);
+    return newArray(CLASSES.java_lang_String, size);
   }
 
   export function newByteArray(size: number): number {
-    return newArray(Klasses.byte, size);
+    return newArray(PrimitiveClassInfo.B, size);
   }
 
   export function newCharArray(size: number): number {
-    return newArray(Klasses.char, size);
+    return newArray(PrimitiveClassInfo.C, size);
   }
 
   export function newIntArray(size: number): number {
-    return newArray(Klasses.int, size);
-  }
-
-  export function getArrayKlass(elementKlass: Klass): Klass {
-    // Have we already created one? We need to maintain pointer identity.
-    if (elementKlass.arrayKlass) {
-      return elementKlass.arrayKlass;
-    }
-    var className = elementKlass.classInfo.getClassNameSlow();
-    if (!(elementKlass.classInfo instanceof PrimitiveClassInfo) && className[0] !== "[") {
-      className = "L" + className + ";";
-    }
-    className = "[" + className;
-    return getKlass(CLASSES.getClass(className));
-  }
-
-  export function toDebugString(value: any): string {
-    if (typeof value !== "object") {
-      return String(value);
-    }
-    if (value === undefined) {
-      return "undefined";
-    }
-    if (!value) {
-      return "null";
-    }
-    if (!value.klass) {
-      return "no klass";
-    }
-    if (!value.klass.classInfo) {
-      return value.klass + " no classInfo"
-    }
-    var hashcode = "";
-    if (value._hashCode) {
-      hashcode = " 0x" + value._hashCode.toString(16).toUpperCase();
-    }
-    if (value instanceof Klasses.java.lang.String) {
-      return "\"" + value.str + "\"";
-    }
-    return "[" + value.klass.classInfo.getClassNameSlow() + hashcode + "]";
+    return newArray(PrimitiveClassInfo.I, size);
   }
 
   export function fromStringAddr(stringAddr: number): string {
@@ -2142,10 +1478,10 @@ module J2ME {
       return;
     }
 
-    var arrayKlass = klassIdMap[i32[arrayAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]];
-    var valueKlass = klassIdMap[i32[valueAddr + Constants.OBJ_KLASS_ID_OFFSET >> 2]];
+    var arrayClassInfo = classIdToClassInfoMap[i32[arrayAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
+    var valueClassInfo = classIdToClassInfoMap[i32[valueAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
 
-    if (!isAssignableTo(valueKlass, arrayKlass.elementKlass)) {
+    if (!isAssignableTo(valueClassInfo, arrayClassInfo.elementClass)) {
       throw $.newArrayStoreException();
     }
   }
@@ -2178,8 +1514,8 @@ module J2ME {
     OBJ_HDR_SIZE = 8,
 
     // The offset in bytes from the beginning of the allocated memory
-    // to the location of the klass id.
-    OBJ_KLASS_ID_OFFSET = 0,
+    // to the location of the class id.
+    OBJ_CLASS_ID_OFFSET = 0,
     // The offset in bytes from the beginning of the allocated memory
     // to the location of the hash code.
     HASH_CODE_OFFSET = 4,
@@ -2208,17 +1544,12 @@ module J2ME {
     return e;
   }
 
-  var initializeMethodInfo = null;
   export function classInitCheck(classInfo: ClassInfo) {
     if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.getClassNameSlow()]) {
       return;
     }
-    linkKlass(classInfo);
-    var runtimeKlass = $.getRuntimeKlass(classInfo.klass);
-    if (!initializeMethodInfo) {
-      initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
-    }
-    runtimeKlass.classObject[initializeMethodInfo.virtualName](runtimeKlass.classObject._address);
+    // TODO: make this more efficient when we decide on how to invoke code.
+    getLinkedMethod(CLASSES.java_lang_Class.getMethodByNameString("initialize", "()V"))($.getClassObjectAddress(classInfo));
   }
 
   export function preempt() {
@@ -2349,9 +1680,8 @@ var IOI = J2ME.instanceOfInterface;
 var CCK = J2ME.checkCastKlass;
 var CCI = J2ME.checkCastInterface;
 
-var AK = J2ME.getArrayKlass;
+//var AK = J2ME.getArrayKlass;
 
-// XXX These (or their callers) will need to be updated to handle addresses.
 var NA = J2ME.newArray;
 var NM = J2ME.newMultiArray;
 
@@ -2376,4 +1706,5 @@ var PS = 0; // Preemption samples.
 var getHandle = J2ME.getHandle;
 
 var NativeMap = J2ME.NativeMap;
+var setNative = J2ME.setNative;
 var getNative = J2ME.getNative;
