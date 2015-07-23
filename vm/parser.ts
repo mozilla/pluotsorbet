@@ -1070,20 +1070,15 @@ module J2ME {
     return cache[hash & 0xff];
   }
 
-  /**
-   * Generate an ID for a Class.  We use this to map Java objects to their
-   * ClassInfo objects, storing the ID for the Class in the first four bytes
-   * of the memory allocated for the Java object in the ASM heap.
-   *
-   */
-  var generateClassId = (function() {
-    var nextId = 1;
-    return function() {
-      return nextId++;
-    }
-  })();
-
   export class ClassInfo extends ByteStream {
+    /**
+     * We use this ID to map Java objects to their ClassInfo objects,
+     * storing the ID for the Class in the first four bytes
+     * of the memory allocated for the Java object in the ASM heap.
+     *
+     */
+    private static nextId: number = 1;
+
     constantPool: ConstantPool = null;
 
     utf8Name: Uint8Array = null;
@@ -1130,7 +1125,7 @@ module J2ME {
 
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
-      this.id = generateClassId();
+      this.id = ClassInfo.nextId++;
       if (!buffer) {
         sealObjects && Object.seal(this);
         return;
