@@ -1076,7 +1076,7 @@ module J2ME {
    * of the memory allocated for the Java object in the ASM heap.
    *
    */
-  export var generateClassId = (function() {
+  var generateClassId = (function() {
     var nextId = 1;
     return function() {
       return nextId++;
