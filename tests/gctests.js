@@ -111,7 +111,7 @@ tests.push(function() {
 
   i32[uncollectableAddr >> 2] = addr;
 
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   ASM._registerFinalizer(objAddr);
 
   i32[addr >> 2] = objAddr;
@@ -131,7 +131,7 @@ tests.push(function() {
 
 // Test allocObject
 tests.push(function() {
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   ASM._registerFinalizer(objAddr);
 
   ASM._forceCollection();
@@ -166,7 +166,7 @@ tests.push(function() {
   var addr = ASM._gcMallocUncollectable(4);
   ASM._registerFinalizer(addr);
 
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   ASM._registerFinalizer(objAddr);
 
   i32[addr >> 2] = objAddr;
@@ -189,7 +189,7 @@ tests.push(function() {
   var addr = ASM._gcMallocUncollectable(4);
   ASM._registerFinalizer(addr);
 
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   ASM._registerFinalizer(objAddr);
 
   i32[addr >> 2] = objAddr;
@@ -226,10 +226,10 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  var addr = J2ME.newArray(CLASSES.java_lang_Object.klass, 1);
+  var addr = J2ME.newArray(CLASSES.java_lang_Object, 1);
   ASM._registerFinalizer(addr);
 
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   ASM._registerFinalizer(objAddr);
 
   i32[addr + J2ME.Constants.ARRAY_HDR_SIZE >> 2] = objAddr;
@@ -251,7 +251,7 @@ tests.push(function() {
 
   i32[uncollectableAddr >> 2] = addr;
 
-  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
   ASM._registerFinalizer(objAddr);
 
   i32[addr + J2ME.Constants.ARRAY_HDR_SIZE >> 2] = objAddr;
@@ -330,7 +330,7 @@ tests.push(function() {
 tests.push(function() {
   var zeroedOut = true;
   for (var i = 0; i < 1000; i++) {
-    var addr = J2ME.newArray(J2ME.PrimitiveClassInfo.J.klass, 2);
+    var addr = J2ME.newArray(J2ME.PrimitiveClassInfo.J, 2);
     for (var j = 0; j < 8; j += 4) {
       if (i32[addr + J2ME.Constants.ARRAY_HDR_SIZE + j >> 2] != 0) {
         zeroedOut = false;
@@ -355,7 +355,7 @@ tests.push(function() {
 });
 
 tests.push(function() {
-  var addr = J2ME.allocObject(CLASSES.java_lang_Object.klass);
+  var addr = J2ME.allocObject(CLASSES.java_lang_Object);
   setNative(addr, { prop: "ciao" });
 
   ok(NativeMap.has(addr), "Native object is in the NativeMap map");

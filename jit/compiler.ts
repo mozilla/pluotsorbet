@@ -30,85 +30,6 @@ module J2ME {
     return list;
   }
 
-  /**
-   * Generate an ID for a Klass.  We use this to map Java objects to their
-   * Klass JS objects, storing the ID for the Klass in the first four bytes
-   * of the memory allocated for the Java object in the ASM heap.
-   *
-   * XXX Should we instead store the address of the Java object that represents
-   * the Klass in the ASM heap?
-   */
-  export var generateKlassId = (function() {
-    var nextId = 1;
-    return function() {
-      return nextId++;
-    }
-  })();
-
-  export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
-    var writer = emitter.writer;
-    var mangledClassName = classInfo.mangledName;
-    if (emitter.closure) {
-      writer.writeLn("/** @constructor */");
-    }
-
-    function emitFields(fields: FieldInfo [], emitStatic: boolean) {
-      for (var i = 0; i < fields.length; i++) {
-        var fieldInfo = fields[i];
-        if (fieldInfo.isStatic !== emitStatic) {
-          continue;
-        }
-        var kind = getSignatureKind(fieldInfo.utf8Signature);
-        var defaultValue;
-        switch (kind) {
-        case Kind.Reference:
-          defaultValue = "null";
-          break;
-        case Kind.Long:
-          defaultValue = "Long.ZERO";
-          break;
-        default:
-          defaultValue = "0";
-          break;
-        }
-        if (emitter.closure) {
-          writer.writeLn("this[" + quote(fieldInfo.mangledName) + "] = " + defaultValue + ";");
-        } else {
-          writer.writeLn("this." + fieldInfo.mangledName + " = " + defaultValue + ";");
-        }
-      }
-    }
-    // Emit class initializer.
-    var klassId = generateKlassId();
-    writer.enter("function " + mangledClassName + "(address) {");
-    writer.writeLn("if (address) {");
-    writer.writeLn("  this._address = address;");
-    // writer.writeLn("  this._hashCode = i32[this._address + " + Constants.HASH_CODE_OFFSET + " >> 2];");
-    writer.writeLn("} else {");
-    writer.writeLn("  this._address = ASM._gcMallocUncollectable(" + (Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields) + ");");
-    writer.writeLn("  i32[this._address >> 2] = " + klassId + " | 0;");
-    // writer.writeLn("  this._hashCode = i32[this._address + " + Constants.HASH_CODE_OFFSET + " >> 2] = $.nextHashCode();");
-    writer.writeLn("  this._hashCode = i32[this._address + 4 >> 2] = 0;");
-    writer.writeLn("}");
-    //
-    // Should we or should we not generate hash codes at this point? Eager or lazy, we should at least
-    // initialize it zero to keep object shapes fixed.
-    // writer.writeLn("this._hashCode = $.nextHashCode(this);");
-    //writer.writeLn("this._hashCode = 0;");
-    //emitFields(classInfo.fTable, false);
-    writer.leave("}");
-    writer.writeLn(mangledClassName + ".id = " + klassId + ";");
-    writer.writeLn("J2ME.klassIdMap[" + klassId + "] = " + mangledClassName + ";");
-
-    if (emitter.klassHeaderOnly) {
-      return;
-    }
-
-    if (emitter.closure) {
-      writer.writeLn("window[" + quote(mangledClassName) + "] = " + mangledClassName + ";");
-    }
-  }
-
   function classNameWithDots(classInfo: ClassInfo) {
     return classInfo.getClassNameSlow().replace(/\//g, '.');
   }
@@ -147,8 +68,6 @@ module J2ME {
     }
 
     var classNameParts;
-
-    emitKlass(emitter, classInfo);
 
     var methods = classInfo.getMethods();
     var compiledMethods: CompiledMethodInfo [] = [];

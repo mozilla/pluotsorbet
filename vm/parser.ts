@@ -1071,6 +1071,14 @@ module J2ME {
   }
 
   export class ClassInfo extends ByteStream {
+    /**
+     * We use this ID to map Java objects to their ClassInfo objects,
+     * storing the ID for the Class in the first four bytes
+     * of the memory allocated for the Java object in the ASM heap.
+     *
+     */
+    private static nextId: number = 1;
+
     constantPool: ConstantPool = null;
 
     utf8Name: Uint8Array = null;
@@ -1080,6 +1088,10 @@ module J2ME {
     elementClass: ClassInfo = null;
     subClasses: ClassInfo [] = [];
     allSubClasses: ClassInfo [] = [];
+
+    // Class hierarchy depth.
+    depth: number = 0;
+    private display: ClassInfo [] = null;
 
     accessFlags: number = 0;
     vTable: MethodInfo [] = null;
@@ -1098,7 +1110,6 @@ module J2ME {
     sizeOfFields: number = 0;
     sizeOfStaticFields: number = 0;
 
-    klass: Klass = null;
     private resolvedFlags: ResolvedFlags = ResolvedFlags.None;
     private fields: (number | FieldInfo) [] = null;
     private methods: (number | MethodInfo) [] = null;
@@ -1107,12 +1118,14 @@ module J2ME {
 
     sourceFile: string = null;
     mangledName: string = null;
+    id: number;
 
     private _name: string = null;
     private _superName: string = null;
 
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
+      this.id = ClassInfo.nextId++;
       if (!buffer) {
         sealObjects && Object.seal(this);
         return;
@@ -1133,7 +1146,6 @@ module J2ME {
       this.scanMethods();
       this.scanClassInfoAttributes();
       this.mangledName = mangleClassName(this.utf8Name);
-      this.createAbstractMethods();
       leaveTimeline("ClassInfo");
       sealObjects && Object.seal(this);
     }
@@ -1151,7 +1163,7 @@ module J2ME {
         return;
       }
       var methods = this.getMethods();
-      var interfaces = this.getAllInterfaces();
+      var interfaces = this.getInterfaces();
       for (var i = 0; i < interfaces.length; i++) {
         var c = interfaces[i];
         for (var j = 0; j < c.methods.length; j++) {
@@ -1225,6 +1237,7 @@ module J2ME {
     }
 
     public complete() {
+      this.createAbstractMethods();
       if (!this.isInterface) {
         this.buildVTable();
         this.buildITable();
@@ -1548,13 +1561,6 @@ module J2ME {
       return this.getMethodByNameString("<clinit>", "()V");
     }
 
-    /**
-     * Object that holds static properties for this class.
-     */
-    getStaticObject(ctx: Context): java.lang.Object {
-      return <java.lang.Object><any>ctx.runtime.getRuntimeKlass(this.klass);
-    }
-
     get isInterface(): boolean {
       return !!(this.accessFlags & ACCESS_FLAGS.ACC_INTERFACE);
     }
@@ -1581,19 +1587,37 @@ module J2ME {
     }
 
     isAssignableTo(toClass: ClassInfo): boolean {
-      if (this === toClass || toClass === CLASSES.java_lang_Object)
+      if (this === toClass) {
         return true;
-      if (toClass.isInterface && this.implementsInterface(toClass))
-        return true;
-      return this.superClass ? this.superClass.isAssignableTo(toClass) : false;
+      }
+      if (toClass.isInterface) {
+        return this.getAllInterfaces().indexOf(toClass) >= 0;
+      } else if (toClass.elementClass) {
+        if (!this.elementClass) {
+          return false;
+        }
+        return this.elementClass.isAssignableTo(toClass.elementClass);
+      }
+      return this.getDisplay()[toClass.depth] === toClass;
     }
 
     /**
-     * java.lang.Class object for this class info. This is a not where static properties
-     * are stored for this class.
-     */
-    getClassObject(): java.lang.Class {
-      return $.getRuntimeKlass(this.klass).classObject;
+      * Creates lookup tables used to efficiently implement type checks.
+      */
+    getDisplay() {
+      if (this.display !== null) {
+        return this.display;
+      }
+      var display = this.display = new Array(32);
+
+      var i = this.depth;
+      var classInfo = this;
+      while (classInfo) {
+        display[i--] = classInfo;
+        classInfo = classInfo.superClass;
+      }
+      release || assert(i === -1, i);
+      return this.display;
     }
   }
 
@@ -1624,20 +1648,7 @@ module J2ME {
       this.elementClass = elementClass;
       this.superClass = CLASSES.java_lang_Object;
       this.superClassName = CLASSES.java_lang_Object.getClassNameSlow();
-    }
-
-    isAssignableTo(toClass: ClassInfo): boolean {
-      if (this === toClass || toClass === CLASSES.java_lang_Object)
-        return true;
-      if (toClass.isInterface && this.implementsInterface(toClass))
-        return true;
-      if (toClass instanceof ArrayClassInfo) {
-        if (this.elementClass && toClass.elementClass)
-          return this.elementClass.isAssignableTo(toClass.elementClass);
-      } else {
-        return false;
-      }
-      return this.superClass ? this.superClass.isAssignableTo(toClass) : false;
+      this.depth = 1;
     }
   }
 
@@ -1655,23 +1666,25 @@ module J2ME {
   }
 
   export class PrimitiveArrayClassInfo extends ArrayClassInfo {
-    constructor(elementClass: ClassInfo, mangledName: string) {
+    bytesPerElement: number;
+    constructor(elementClass: ClassInfo, mangledName: string, bytesPerElement: number) {
       super(elementClass);
       this.utf8Name = strcatSingle(UTF8Chars.OpenBracket, elementClass.utf8Name);
       this.mangledName = mangledName;
+      this.bytesPerElement = bytesPerElement;
       this.complete();
     }
     
     static initialize() {
       // Primitive array classes require the java_lang_Object to exists before they can be created.
-      PrimitiveArrayClassInfo.Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "ZArray");
-      PrimitiveArrayClassInfo.C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "CArray");
-      PrimitiveArrayClassInfo.F = new PrimitiveArrayClassInfo(PrimitiveClassInfo.F, "FArray");
-      PrimitiveArrayClassInfo.D = new PrimitiveArrayClassInfo(PrimitiveClassInfo.D, "DArray");
-      PrimitiveArrayClassInfo.B = new PrimitiveArrayClassInfo(PrimitiveClassInfo.B, "BArray");
-      PrimitiveArrayClassInfo.S = new PrimitiveArrayClassInfo(PrimitiveClassInfo.S, "SArray");
-      PrimitiveArrayClassInfo.I = new PrimitiveArrayClassInfo(PrimitiveClassInfo.I, "IArray");
-      PrimitiveArrayClassInfo.J = new PrimitiveArrayClassInfo(PrimitiveClassInfo.J, "JArray");
+      PrimitiveArrayClassInfo.Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "ZArray", 1);
+      PrimitiveArrayClassInfo.C = new PrimitiveArrayClassInfo(PrimitiveClassInfo.C, "CArray", 2);
+      PrimitiveArrayClassInfo.F = new PrimitiveArrayClassInfo(PrimitiveClassInfo.F, "FArray", 4);
+      PrimitiveArrayClassInfo.D = new PrimitiveArrayClassInfo(PrimitiveClassInfo.D, "DArray", 8);
+      PrimitiveArrayClassInfo.B = new PrimitiveArrayClassInfo(PrimitiveClassInfo.B, "BArray", 1);
+      PrimitiveArrayClassInfo.S = new PrimitiveArrayClassInfo(PrimitiveClassInfo.S, "SArray", 2);
+      PrimitiveArrayClassInfo.I = new PrimitiveArrayClassInfo(PrimitiveClassInfo.I, "IArray", 4);
+      PrimitiveArrayClassInfo.J = new PrimitiveArrayClassInfo(PrimitiveClassInfo.J, "JArray", 8);
     }
 
     static Z: PrimitiveArrayClassInfo;
