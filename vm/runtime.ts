@@ -683,9 +683,10 @@ module J2ME {
 
   export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
 
-  export function getObjectClassId(addr: number) {
+  export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL);
-    return i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2];
+    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0);
+    return classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
   }
 
   /**
@@ -1245,7 +1246,6 @@ module J2ME {
     release || assert(typeof address === "number", "address is number");
 
     var classId = i32[address + Constants.OBJ_CLASS_ID_OFFSET >> 2];
-    release || assert(typeof classId === "number", "classId is number");
 
     var classInfo = classIdToClassInfoMap[classId];
     release || assert(classInfo, "object has class info");
@@ -1300,7 +1300,7 @@ module J2ME {
     }
 
     release || assert(typeof addr === "number", "addr is number");
-    var classInfo = classIdToClassInfoMap[getObjectClassId(addr)];
+    var classInfo = classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
     var constructor;
     if (classInfo instanceof PrimitiveArrayClassInfo) {
       switch (classInfo) {
