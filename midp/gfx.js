@@ -1284,6 +1284,9 @@ var currentlyFocusedTextEditor;
         x2 *= MIDP.devicePixelRatio;
         y2 *= MIDP.devicePixelRatio;
 
+        // XXX Figure out if we should scale a one-pixel-thick line
+        // by the device pixel ratio.
+
         // If we're drawing a completely vertical line that is
         // 1 pixel thick, we should draw it at half-pixel offsets.
         // Otherwise, half of the line's thickness lies to the left
