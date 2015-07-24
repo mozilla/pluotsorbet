@@ -80,7 +80,7 @@ var gfxTests = [
   { name: "gfx/TextEditorGfxTest", maxDifferentLinux: 968, maxDifferentMac: 1057 },
   { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferentLinux: 159, maxDifferentMac: 248 },
   { name: "gfx/VideoPlayerTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
-  { name: "gfx/ImageCapture", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/ImageCapture", maxDifferentLinux: 0, maxDifferentMac: 120 },
   { name: "gfx/CameraTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/DrawRegionTransMirrorAnchorBottomHCenter", maxDifferentLinux: 164, maxDifferentMac: 904 },
   { name: "gfx/DrawRegionTransMirrorAnchorBottomLeft", maxDifferentLinux: 164, maxDifferentMac: 810 },
