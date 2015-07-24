@@ -600,9 +600,8 @@ Native["com/sun/cldc/io/ResourceInputStream.open.(Ljava/lang/String;)Ljava/lang/
 };
 
 Native["com/sun/cldc/io/ResourceInputStream.clone.(Ljava/lang/Object;)Ljava/lang/Object;"] = function(addr, sourceAddr) {
-    var source = getHandle(sourceAddr);
     var objAddr = J2ME.allocObject(CLASSES.java_lang_Object);
-    var sourceDecoder = getNative(source);
+    var sourceDecoder = NativeMap.get(sourceAddr);
     setNative(objAddr, {
         data: new Uint8Array(sourceDecoder.data),
         pos: sourceDecoder.pos,
