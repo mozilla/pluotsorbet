@@ -512,11 +512,13 @@ module J2ME {
       release || Debug.assert(!U, "Unexpected unwind during createException.");
       runtimeCounter && runtimeCounter.count("createException " + className);
       var exceptionAddress = allocObject(classInfo);
+      setUncollectable(exceptionAddress);
       var methodInfo = classInfo.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
       preemptionLockLevel++;
       getLinkedMethod(methodInfo)(exceptionAddress, message ? newString(message) : Constants.NULL);
       release || Debug.assert(!U, "Unexpected unwind during createException.");
       preemptionLockLevel--;
+      unsetUncollectable(exceptionAddress);
       return getHandle(exceptionAddress);
     }
 
