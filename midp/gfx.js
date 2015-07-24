@@ -1279,6 +1279,11 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
         var c = this.info.getGraphicsContext();
 
+        x1 *= MIDP.devicePixelRatio;
+        y1 *= MIDP.devicePixelRatio;
+        x2 *= MIDP.devicePixelRatio;
+        y2 *= MIDP.devicePixelRatio;
+
         // If we're drawing a completely vertical line that is
         // 1 pixel thick, we should draw it at half-pixel offsets.
         // Otherwise, half of the line's thickness lies to the left

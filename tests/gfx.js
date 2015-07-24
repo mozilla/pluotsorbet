@@ -53,7 +53,7 @@ var gfxTests = [
   { name: "gfx/ImageProcessingTest2", maxDifferentLinux: 0, maxDifferentMac: 129 },
   { name: "gfx/CreateImageWithRegionTest", maxDifferentLinux: 0, maxDifferentMac: 6100 },
   { name: "gfx/DrawSubstringTest", maxDifferentLinux: 205, maxDifferentMac: 295 },
-  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferentLinux: 0, maxDifferentMac: 788 },
+  { name: "gfx/DrawLineOffscreenCanvasTest", maxDifferentLinux: 0, maxDifferentMac: 1500 },
   { name: "gfx/DirectUtilsClipAfter", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/DirectUtilsClipAfterOnScreen", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
   { name: "gfx/DirectUtilsClipAfterOnScreen2", maxDifferentLinux: 0, maxDifferentMac: 0 },
