@@ -274,7 +274,8 @@ var currentlyFocusedTextEditor;
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
                 var context = initImageData(imageData, img.naturalWidth, img.naturalHeight, 0);
-                context.drawImage(img, 0, 0);
+                context.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, 0, 0,
+                                  img.naturalWidth * MIDP.devicePixelRatio, img.naturalHeight * MIDP.devicePixelRatio);
 
                 URL.revokeObjectURL(img.src);
                 resolve();
