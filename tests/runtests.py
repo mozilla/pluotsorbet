@@ -20,6 +20,7 @@ if system == "Darwin":
 # The test automation scripts to run via casperjs/slimerjs.
 automation_scripts = [
     ['tests', 'automation.js'],
+    ['tests', 'gfx.js'],
     ['tests', 'fs', 'automation.js'],
 ]
 
