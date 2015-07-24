@@ -13,7 +13,7 @@ var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
 Services.perms.addFromPrincipal(principal, "tcp-socket", Services.perms.ALLOW_ACTION);
 
 casper.on('remote.message', function(message) {
-    this.echo(message);
+  this.echo(message);
 });
 
 casper.options.waitTimeout = 90000;
@@ -24,8 +24,8 @@ casper.options.clientScripts = [
 ];
 
 casper.options.onWaitTimeout = function() {
-    this.echo("data:image/png;base64," + this.captureBase64('png'));
-    this.test.fail("Timeout");
+  this.echo("data:image/png;base64," + this.captureBase64('png'));
+  this.test.fail("Timeout");
 };
 
 var gfxTests = [
@@ -158,119 +158,119 @@ var gfxTests = [
 ];
 
 casper.test.begin("gfx tests", gfxTests.length, function(test) {
-    casper.start("data:text/plain,start");
+  casper.start("data:text/plain,start");
 
-    casper.page.onLongRunningScript = function(message) {
-        casper.echo("FAIL unresponsive " + message, "ERROR");
-        casper.page.stopJavaScript();
-    };
+  casper.page.onLongRunningScript = function(message) {
+    casper.echo("FAIL unresponsive " + message, "ERROR");
+    casper.page.stopJavaScript();
+  };
 
-    gfxTests.forEach(function(testCase) {
-        casper
-        .thenOpen("http://localhost:8000/index.html?fontSize=12&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
-        .withFrame(0, function() {
-            casper.waitForText("PAINTED", function() {
-                this.waitForSelector("#canvas", function() {
-                    this.capture("test.png");
-
-                    this.evaluate(function(testCase) {
-                        var gotURL = "test.png";
-                        var expectedURL = "tests/" + testCase.name + ".png";
-
-                        var getImageData = function(url) {
-                            return new Promise(function(resolve, reject) {
-                                var img = new Image();
-                                img.src = url;
-                                img.onload = function() {
-                                    var canvas = document.createElement('canvas');
-                                    canvas.width = img.width;
-                                    canvas.height = img.height;
-                                    canvas.getContext("2d").drawImage(img, 0, 0);
-                                    var pixels = new Uint32Array(canvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
-                                    resolve({
-                                        canvas: canvas,
-                                        pixels: pixels,
-                                    });
-                                };
-                                img.onerror = function() {
-                                    console.log("Error while loading test image " + url);
-                                    console.log("FAIL");
-                                    reject();
-                                };
-                            });
-                        };
-
-                        Promise.all([getImageData(gotURL), getImageData(expectedURL)]).then(function(results) {
-                            var got = results[0];
-                            var expected = results[1];
-
-                            if (expected.canvas.width !== got.canvas.width || expected.canvas.height !== got.canvas.height) {
-                                console.log("Dimensions are wrong");
-                                console.log("FAIL");
-                                return;
-                            }
-
-                            var different = 0;
-                            var i = 0;
-                            for (var x = 0; x < got.canvas.width; x++) {
-                                for (var y = 0; y < got.canvas.height; y++) {
-                                    if (expected.pixels[i] !== got.pixels[i]) {
-                                        different++;
-                                    }
-
-                                    i++;
-                                }
-                            }
-
-                            var maxDifferent = navigator.platform.indexOf("Linux") != -1 ?
-                                                 testCase.maxDifferentLinux :
-                                                 testCase.maxDifferentMac;
-
-                            var message = different + " <= " + maxDifferent;
-                            if (different > maxDifferent) {
-                                console.log(got.canvas.toDataURL());
-                                if (!testCase.todo) {
-                                  console.log("FAIL - " + message);
-                                } else {
-                                  console.log("TODO - " + message);
-                                }
-                            } else {
-                                if (!testCase.todo) {
-                                    console.log("PASS - " + message);
-                                } else {
-                                    console.log("UNEXPECTED PASS - " + message);
-                                }
-                            }
-
-                            console.log("DONE");
-                        });
-                    }, testCase);
-
-                    this.waitForText("DONE", function() {
-                        var content = this.getPageContent();
-                        var fail = content.contains("FAIL");
-                        var todo = content.contains("TODO");
-                        var unexpected = content.contains("UNEXPECTED");
-
-                        if (fail) {
-                            test.fail(testCase.name + " - Failure");
-                        } else if (unexpected) {
-                            test.fail(testCase.name + " - Unexpected pass");
-                        } else if (todo) {
-                            test.skip(1, testCase.name + " - Todo");
-                        } else {
-                            test.pass(testCase.name + " - Pass");
-                        }
-
-                        fs.remove("test.png");
-                    });
-                });
-            });
-        });
-    });
-
+  gfxTests.forEach(function(testCase) {
     casper
-    .run(function() {
-        test.done();
+    .thenOpen("http://localhost:8000/index.html?fontSize=12&midletClassName=" + testCase.name + "&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+      casper.waitForText("PAINTED", function() {
+        this.waitForSelector("#canvas", function() {
+          this.capture("test.png");
+
+          this.evaluate(function(testCase) {
+            var gotURL = "test.png";
+            var expectedURL = "tests/" + testCase.name + ".png";
+
+            var getImageData = function(url) {
+              return new Promise(function(resolve, reject) {
+                var img = new Image();
+                img.src = url;
+                img.onload = function() {
+                  var canvas = document.createElement('canvas');
+                  canvas.width = img.width;
+                  canvas.height = img.height;
+                  canvas.getContext("2d").drawImage(img, 0, 0);
+                  var pixels = new Uint32Array(canvas.getContext("2d").getImageData(0, 0, img.width, img.height).data.buffer);
+                  resolve({
+                    canvas: canvas,
+                    pixels: pixels,
+                  });
+                };
+                img.onerror = function() {
+                  console.log("Error while loading test image " + url);
+                  console.log("FAIL");
+                  reject();
+                };
+              });
+            };
+
+            Promise.all([getImageData(gotURL), getImageData(expectedURL)]).then(function(results) {
+              var got = results[0];
+              var expected = results[1];
+
+              if (expected.canvas.width !== got.canvas.width || expected.canvas.height !== got.canvas.height) {
+                console.log("Dimensions are wrong");
+                console.log("FAIL");
+                return;
+              }
+
+              var different = 0;
+              var i = 0;
+              for (var x = 0; x < got.canvas.width; x++) {
+                for (var y = 0; y < got.canvas.height; y++) {
+                  if (expected.pixels[i] !== got.pixels[i]) {
+                    different++;
+                  }
+
+                  i++;
+                }
+              }
+
+              var maxDifferent = navigator.platform.indexOf("Linux") != -1 ?
+              testCase.maxDifferentLinux :
+              testCase.maxDifferentMac;
+
+              var message = different + " <= " + maxDifferent;
+              if (different > maxDifferent) {
+                console.log(got.canvas.toDataURL());
+                if (!testCase.todo) {
+                  console.log("FAIL - " + message);
+                } else {
+                  console.log("TODO - " + message);
+                }
+              } else {
+                if (!testCase.todo) {
+                  console.log("PASS - " + message);
+                } else {
+                  console.log("UNEXPECTED PASS - " + message);
+                }
+              }
+
+              console.log("DONE");
+            });
+          }, testCase);
+
+          this.waitForText("DONE", function() {
+            var content = this.getPageContent();
+            var fail = content.contains("FAIL");
+            var todo = content.contains("TODO");
+            var unexpected = content.contains("UNEXPECTED");
+
+            if (fail) {
+              test.fail(testCase.name + " - Failure");
+            } else if (unexpected) {
+              test.fail(testCase.name + " - Unexpected pass");
+            } else if (todo) {
+              test.skip(1, testCase.name + " - Todo");
+            } else {
+              test.pass(testCase.name + " - Pass");
+            }
+
+            fs.remove("test.png");
+          });
+        });
+      });
     });
+  });
+
+  casper
+  .run(function() {
+    test.done();
+  });
 });
