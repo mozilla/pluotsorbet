@@ -121,11 +121,11 @@ var Content = (function() {
       addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
     } else {
       MIDP.setDestroyedForRestart(true);
-      MIDP.sendDestroyMIDletEvent(J2ME.newUncollectableString(chRegisteredClassName));
+      MIDP.sendDestroyMIDletEvent(chRegisteredClassName);
       MIDP.registerDestroyedListener(function() {
         MIDP.registerDestroyedListener(null);
         addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
-        MIDP.sendExecuteMIDletEvent(chRegisteredStorageID, J2ME.newUncollectableString(chRegisteredClassName));
+        MIDP.sendExecuteMIDletEvent(chRegisteredStorageID, chRegisteredClassName);
       });
     }
   });

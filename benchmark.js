@@ -489,7 +489,7 @@ var Benchmark = (function() {
         function restartFGMIDlet() {
           setTimeout(function() {
             MIDP.setDestroyedForRestart(true);
-            MIDP.sendDestroyMIDletEvent(J2ME.newUncollectableString(fgMidletClass));
+            MIDP.sendDestroyMIDletEvent(fgMidletClass);
             MIDP.registerDestroyedListener(function() {
               MIDP.registerDestroyedListener(null);
               MIDP.sendExecuteMIDletEvent();

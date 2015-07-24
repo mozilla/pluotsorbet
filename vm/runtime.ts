@@ -1205,12 +1205,6 @@ module J2ME {
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
 
-    try {
-      console.log("FINALIZE: " + addr);
-      console.log(getHandle(addr).classInfo.getClassNameSlow());
-      console.log(fromStringAddr(addr));
-    } catch(e) {}
-
     var weakReferenceAddr = weakReferences.get(addr);
     if (weakReferenceAddr) {
       weakReferences.delete(addr);
@@ -1275,24 +1269,6 @@ module J2ME {
   }
 
   var jStringEncoder = new TextEncoder('utf-16');
-
-  export function newUncollectableString(jsString: string): number {
-    if (jsString === null || jsString === undefined) {
-      return Constants.NULL;
-    }
-
-    var objectAddr = allocUncollectableObject(CLASSES.java_lang_String);
-    var object = <java.lang.String>getHandle(objectAddr);
-
-    var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
-    var arrayAddr = newCharArray(encoded.length);
-    u16.set(encoded, Constants.ARRAY_HDR_SIZE + arrayAddr >> 1);
-
-    object.value = arrayAddr;
-    object.offset = 0;
-    object.count = encoded.length;
-    return objectAddr;
-  }
 
   export function newString(jsString: string): number {
     if (jsString === null || jsString === undefined) {

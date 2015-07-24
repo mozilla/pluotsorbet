@@ -748,7 +748,7 @@ addUnimplementedNative("com/sun/cdc/io/j2me/file/DefaultFileHandler.initialize.(
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.getSuiteIdString.(I)Ljava/lang/String;"] = function(addr, id) {
 DEBUG_FS && console.log("getSuiteIdString: " + id);
-    // return J2ME.newUncollectableString(id.toString());
+    // return J2ME.newString(id.toString());
     // The implementation adds this to the path of the file, presumably
     // to segregate files by midlet, but we only run a single midlet
     // per installation, so presumably we don't have to do that.
