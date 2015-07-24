@@ -1114,6 +1114,11 @@ var currentlyFocusedTextEditor;
 
         var c = this.info.getGraphicsContext();
 
+        x *= MIDP.devicePixelRatio;
+        y *= MIDP.devicePixelRatio;
+        width *= MIDP.devicePixelRatio;
+        height *= MIDP.devicePixelRatio;
+
         var endRad = -startAngle * 0.0175;
         var startRad = endRad - arcAngle * 0.0175;
         c.beginPath();
@@ -1127,6 +1132,11 @@ var currentlyFocusedTextEditor;
         }
 
         var c = this.info.getGraphicsContext();
+
+        x *= MIDP.devicePixelRatio;
+        y *= MIDP.devicePixelRatio;
+        width *= MIDP.devicePixelRatio;
+        height *= MIDP.devicePixelRatio;
 
         var endRad = -startAngle * 0.0175;
         var startRad = endRad - arcAngle * 0.0175;

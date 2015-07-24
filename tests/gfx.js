@@ -36,7 +36,7 @@ var gfxTests = [
   { name: "gfx/ImageRenderingTest", maxDifferentLinux: 0, maxDifferentMac: 22113 },
   { name: "gfx/FillRectTest", maxDifferentLinux: 0, maxDifferentMac: 756 },
   { name: "gfx/DrawAndFillRoundRectTest", maxDifferentLinux: 243, maxDifferentMac: 2244 },
-  { name: "gfx/DrawAndFillArcTest", maxDifferentLinux: 5, maxDifferentMac: 1765 },
+  { name: "gfx/DrawAndFillArcTest", maxDifferentLinux: 5, maxDifferentMac: 2351 },
   { name: "gfx/DrawStringTest", maxDifferentLinux: 232, maxDifferentMac: 321 },
   { name: "gfx/DrawRedStringTest", maxDifferentLinux: 338, maxDifferentMac: 485 },
   { name: "gfx/TextBoxTest", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
