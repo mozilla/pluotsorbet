@@ -40,7 +40,7 @@ var gfxTests = [
   { name: "gfx/DrawStringTest", maxDifferentLinux: 232, maxDifferentMac: 321 },
   { name: "gfx/DrawRedStringTest", maxDifferentLinux: 338, maxDifferentMac: 485 },
   { name: "gfx/TextBoxTest", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
-  { name: "gfx/DirectUtilsCreateImageTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
+  { name: "gfx/DirectUtilsCreateImageTest", maxDifferentLinux: 0, maxDifferentMac: 756 },
   { name: "gfx/GetPixelsDrawPixelsTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/OffScreenCanvasTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/ARGBColorTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
