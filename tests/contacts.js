@@ -98,7 +98,7 @@ navigator.mozContacts = {
     var contacts = fakeContacts.slice(0);
 
     req.continue = function() {
-      setZeroTimeout(function() {
+      nextTickBeforeEvents(function() {
         req.result = (contacts.length > 0) ? toMozContact(contacts.shift()) : null;
         req.onsuccess();
       });

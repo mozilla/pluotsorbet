@@ -26,11 +26,11 @@
 package javax.microedition.rms;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 
 import java.util.Random;
 
-public class TestRecordStore implements Testlet {
+public class TestRecordStore implements MIDletTestlet {
     public int getExpectedPass() { return 15; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 1; }

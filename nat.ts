@@ -9,10 +9,14 @@ var Native = Object.create(null);
  * Asm.js heap buffer and views.
  */
 var buffer = ASM.buffer;
-var u8: Uint32Array = ASM.HEAPU8;
+var i8: Int8Array = ASM.HEAP8;
+var u8: Uint8Array = ASM.HEAPU8;
+var i16: Int16Array = ASM.HEAP16;
+var u16: Uint16Array = ASM.HEAPU16;
 var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
 var f32: Float32Array = ASM.HEAPF32;
+var f64: Float64Array = ASM.HEAPF64;
 var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
 
 var aliasedI32 = J2ME.IntegerUtilities.i32;
@@ -24,8 +28,8 @@ module J2ME {
   import Bytecodes = Bytecode.Bytecodes;
   import toHEX = IntegerUtilities.toHEX;
 
-  export function asyncImplOld(returnKind: string, promise: Promise<any>) {
-    return asyncImpl(kindCharacterToKind(returnKind), promise);
+  export function asyncImplOld(returnKind: string, promise: Promise<any>, cleanup?: Function) {
+    return asyncImpl(kindCharacterToKind(returnKind), promise, cleanup);
   }
 
   /**
@@ -37,7 +41,7 @@ module J2ME {
    *
    * |onRejected| is called with a java.lang.Exception object.
    */
-  export function asyncImpl(returnKind: Kind, promise: Promise<any>) {
+  export function asyncImpl(returnKind: Kind, promise: Promise<any>, cleanup?: Function) {
     var ctx = $.ctx;
 
     promise.then(function onFulfilled(l: any, h?: number) {
@@ -70,7 +74,8 @@ module J2ME {
           i32[sp++] = l;
           break;
         case Kind.Reference:
-          ref[sp++] = l;
+          release || assert(l !== "number", "async native return value is a number");
+          i32[sp++] = l;
           break;
         case Kind.Void:
           break;
@@ -78,63 +83,112 @@ module J2ME {
           release || J2ME.Debug.assert(false, "Invalid Kind: " + Kind[returnKind]);
       }
       thread.sp = sp;
-      J2ME.Scheduler.enqueue(ctx);
+
+      cleanup && cleanup();
+
+      Scheduler.enqueue(ctx);
     }, function onRejected(exception: java.lang.Exception) {
       var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
       var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
       ctx.nativeThread.pushFrame(methodInfo);
-      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception);
+      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
+
+      cleanup && cleanup();
+
       Scheduler.enqueue(ctx);
     });
 
     $.pause("Async");
   }
 
-  Native["java/lang/Thread.sleep.(J)V"] = function(delayL: number, delayH: number) {
+  Native["java/lang/Thread.sleep.(J)V"] = function(addr: number, delayL: number, delayH: number) {
     asyncImpl(Kind.Void, new Promise(function(resolve, reject) {
       window.setTimeout(resolve, longToNumber(delayL, delayH));
     }));
   };
 
-  Native["java/lang/Thread.isAlive.()Z"] = function() {
-    return this.alive ? 1 : 0;
+  Native["java/lang/Thread.isAlive.()Z"] = function(addr: number) {
+    var self = <java.lang.Thread>getHandle(addr);
+    return self.nativeAlive ? 1 : 0;
   };
 
-  Native["java/lang/Thread.yield.()V"] = function() {
+  Native["java/lang/Thread.yield.()V"] = function(addr: number) {
     $.yield("Thread.yield");
     $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
-  Native["java/lang/Object.wait.(J)V"] = function(timeoutL: number, timeoutH: number) {
-    $.ctx.wait(this, longToNumber(timeoutL, timeoutH));
+  Native["java/lang/Object.wait.(J)V"] = function(addr: number, timeoutL: number, timeoutH: number) {
+    $.ctx.wait(addr, longToNumber(timeoutL, timeoutH));
     $.ctx.nativeThread.advancePastInvokeBytecode();
   };
 
-  Native["java/lang/Object.notify.()V"] = function() {
-    $.ctx.notify(this, false);
+  Native["java/lang/Object.notify.()V"] = function(addr: number) {
+    $.ctx.notify(addr, false);
   };
 
-  Native["java/lang/Object.notifyAll.()V"] = function() {
-    $.ctx.notify(this, true);
+  Native["java/lang/Object.notifyAll.()V"] = function(addr: number) {
+    $.ctx.notify(addr, true);
   };
 
-  Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function() {
+  Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr: number, targetAddr: number): void {
+      // Store the weak reference in NativeMap.
+      //
+      // This is technically a misuse of NativeMap, which is intended to store
+      // native objects associated with Java objects, whereas here we're storing
+      // the address of a Java object associated with another Java object.
+
+      setNative(addr, targetAddr);
+      weakReferences.set(targetAddr, addr);
+      ASM._registerFinalizer(targetAddr);
+  };
+
+  Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr: number): number {
+      return NativeMap.has(addr) ? <number>NativeMap.get(addr) : J2ME.Constants.NULL;
+  };
+
+  Native["java/lang/ref/WeakReference.clear.()V"] = function(addr: number): void {
+      weakReferences.delete(<number>NativeMap.get(addr));
+      NativeMap.delete(addr);
+  };
+
+  Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function(addr: number) {
     return unwindCount;
   };
 
-  Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function() {
+  Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
-    getLinkedMethod(methodInfo).call($.mainThread, J2ME.newString("main"));
+    getLinkedMethod(methodInfo)($.mainThread, J2ME.newString("main"));
+
+    // We've already set this in JVM.createIsolateCtx, but calling the instance
+    // initializer above resets it, so we set it again here.
+    //
+    // We used to store this state on the persistent native object, which was
+    // unaffected by the instance initializer; but now we store it on the Java
+    // object, which is susceptible to it, since there is no persistent native
+    // object anymore).
+    //
+    // XXX Figure out a less hacky approach.
+    //
+    var thread = <java.lang.Thread>getHandle($.mainThread);
+    thread.nativeAlive = true;
   };
 
-  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(): java.lang.String {
-    return $.isolate._mainClass;
+  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(addr: number): number {
+    var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+    return isolate._mainClass;
   };
 
-  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(main: java.lang.Class) {
-    var entryPoint = CLASSES.getEntryPoint(main.runtimeKlass.templateKlass.classInfo);
+  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(addr: number, mainAddr: number) {
+    var main = <java.lang.Class>getHandle(mainAddr);
+    var entryPoint = CLASSES.getEntryPoint(J2ME.classIdToClassInfoMap[main.vmClass]);
     if (!entryPoint)
       throw new Error("Could not find isolate main.");
-    getLinkedMethod(entryPoint).call(null, $.isolate._mainArgs);
+
+    var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+    getLinkedMethod(entryPoint)(Constants.NULL, isolate._mainArgs);
+  };
+
+  Native["org/mozilla/internal/Sys.forceCollection.()V"] = function(addr: number) {
+    ASM._forceCollection();
   };
 }

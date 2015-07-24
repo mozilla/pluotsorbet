@@ -26,10 +26,6 @@
 
 package org.mozilla.internal;
 
-import java.io.*;
-import com.sun.cldchi.io.*;
-import java.security.*;
-import java.util.PropertyPermission;
 import com.sun.cldc.isolate.Isolate;
 
 /**
@@ -111,4 +107,9 @@ public final class Sys {
     // Execute main.
     executeMain(main);
   }
+
+  public native static void startProfile();
+  public native static void stopProfile();
+
+  public static native void forceCollection();
 }

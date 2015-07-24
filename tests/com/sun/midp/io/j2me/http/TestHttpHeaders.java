@@ -27,7 +27,7 @@
 package com.sun.midp.io.j2me.http;
 
 import gnu.testlet.TestHarness;
-import gnu.testlet.Testlet;
+import gnu.testlet.MIDletTestlet;
 import java.io.IOException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,7 +39,7 @@ import java.io.OutputStream;
 import javax.microedition.io.StreamConnection;
 import javax.microedition.io.Connector;
 
-public class TestHttpHeaders implements Testlet {
+public class TestHttpHeaders implements MIDletTestlet {
     public int getExpectedPass() { return 12; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }

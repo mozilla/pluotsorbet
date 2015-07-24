@@ -8,7 +8,7 @@
  */
 (function() {
   var loadingPromises = [];
-  if (config.midletClassName === "RunTests" ||
+  if (config.midletClassName === "RunTestsMIDlet" ||
       config.midletClassName.startsWith("tests.midlets")) {
     loadingPromises.push(loadScript("tests/contacts.js"),
                          loadScript("tests/index.js"),
@@ -55,7 +55,7 @@ var DumbPipe = {
       return;
     }
 
-    window.setZeroTimeout(this.handlePipeEvent.bind(this, event));
+    window.nextTickBeforeEvents(this.handlePipeEvent.bind(this, event));
   },
 
   handlePipeEvent: function(event) {
@@ -120,7 +120,7 @@ var DumbPipe = {
   },
 
   receiveMessage: function(pipeID, message, detail) {
-    window.setZeroTimeout(function() {
+    window.nextTickBeforeEvents(function() {
       if (!this.recipients[pipeID]) {
         console.warn("nonexistent pipe " + pipeID + " received message " + JSON.stringify(message));
         return;
@@ -756,6 +756,10 @@ DumbPipe.registerOpener("mozActivity", function(message, sender) {
 });
 
 DumbPipe.registerOpener("mozActivityHandler", function(message, sender) {
+  if (!navigator.mozSetMessageHandler) {
+    return;
+  }
+
   navigator.mozSetMessageHandler('activity', function(activityRequest) {
     if (activityRequest.source.name !== 'share') {
       return;

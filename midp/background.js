@@ -37,13 +37,6 @@ function hideDownloadScreen() {
   }
 }
 
-function showBackgroundScreen() {
-  document.getElementById("background-screen").style.display = "block";
-}
-function hideBackgroundScreen() {
-  document.getElementById("background-screen").style.display = "none";
-}
-
 // The exit screen is hidden by default, and we only ever show it,
 // so we don't need a hideExitScreen function.
 function showExitScreen() {
@@ -54,7 +47,6 @@ function backgroundCheck() {
   var bgServer = MIDP.manifest["Nokia-MIDlet-bg-server"];
   if (!bgServer) {
     showSplashScreen();
-    hideBackgroundScreen();
     return;
   }
 
@@ -65,66 +57,22 @@ function backgroundCheck() {
   DumbPipe.close(DumbPipe.open("backgroundCheck", {}));
 }
 
-Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function() {
+Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function(addr) {
   return J2ME.newString(fgMidletClass);
 };
 
-Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
+Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function(addr) {
   return fgMidletNumber;
 };
 
 MIDP.additionalProperties = {};
 
-Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] = function(midletSuiteVendor, midletName, midletNumber, startupNoteText, args) {
-  J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
+Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] =
+function(addr, midletSuiteVendorAddr, midletNameAddr, midletNumber, startupNoteTextAddr, argsAddr) {
+  J2ME.fromStringAddr(argsAddr).split(";").splice(1).forEach(function(arg) {
     var elems = arg.split("=");
     MIDP.additionalProperties[elems[0]] = elems[1];
   });
 
   return 1;
 };
-
-Native["com/nokia/mid/s40/bg/BGUtils.maybeWaitUserInteraction.(Ljava/lang/String;)V"] = function(midletClassName) {
-  if (J2ME.fromJavaString(midletClassName) !== fgMidletClass) {
-    return;
-  }
-
-  // If the page is visible, just start the FG MIDlet
-  if (!document.hidden) {
-    showSplashScreen();
-    hideBackgroundScreen();
-
-    if (profile === 3) {
-      // Start the "warm startup" profiler after a timeout to better imitate
-      // what happens in a warm startup, where the bg midlet has time to settle.
-      asyncImpl("V", new Promise(function(resolve, reject) {
-        setTimeout(function() {
-          startTimeline();
-          resolve();
-        }, 5000);
-      }));
-    }
-
-    return;
-  }
-
-  asyncImpl("V", new Promise(function(resolve, reject) {
-    // Otherwise, wait until the page becomes visible, then start the FG MIDlet
-    document.addEventListener("visibilitychange", function onVisible() {
-      if (!document.hidden) {
-        document.removeEventListener("visibilitychange", onVisible, false);
-        resolve();
-      }
-    }, false);
-  }).then(function() {
-    showSplashScreen();
-    hideBackgroundScreen();
-    profile === 3 && startTimeline();
-  }));
-};
-
-// If the document is hidden, then we've been started by an alarm and are in
-// the background, so we show the background screen.
-if (document.hidden) {
-  showBackgroundScreen();
-}

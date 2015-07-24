@@ -64,10 +64,6 @@ function processJAD(data) {
   });
 }
 
-if (config.jad) {
-  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
-}
-
 function performDownload(url, callback) {
   showDownloadScreen();
   var progressBar = downloadDialog.querySelector('progress.pack-activity');
@@ -107,27 +103,27 @@ function performDownload(url, callback) {
   });
 }
 
-if (config.downloadJAD) {
+if (config.jad) {
+  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
+} else if (config.downloadJAD) {
   loadingMIDletPromises.push(new Promise(function(resolve, reject) {
     JARStore.loadJAR("midlet.jar").then(function(loaded) {
       if (loaded) {
-        if (!document.hidden) {
-          // Show the splash screen as soon as possible.
-          showSplashScreen();
-        }
+        // Show the splash screen as soon as possible.
+        showSplashScreen();
+
         processJAD(JARStore.getJAD());
         resolve();
         return;
       }
 
       performDownload(config.downloadJAD, function(data) {
-        if (!document.hidden) {
-          // Show the splash screen as soon as possible after showing
-          // the download screen while downloading the JAD/JAR files.
-          showSplashScreen();
-        }
+        // Show the splash screen as soon as possible after showing
+        // the download screen while downloading the JAD/JAR files.
+        showSplashScreen();
+
         JARStore.installJAR("midlet.jar", data.jarData, data.jadData).then(function() {
-          processJAD(data.jadData);
+          processJAD(JARStore.getJAD());
           resolve();
         });
       });
@@ -255,7 +251,7 @@ function start() {
 }
 
 // If we're not running a MIDlet, we need to wait everything to be loaded.
-if (!config.midletClassName || config.midletClassName == "RunTests") {
+if (!config.midletClassName) {
   loadingPromises = loadingPromises.concat(loadingMIDletPromises);
 }
 

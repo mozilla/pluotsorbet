@@ -1,4 +1,4 @@
-.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build benchmarks package
+.PHONY: all test tests j2me java certs app clean jasmin aot shumway config-build package
 BASIC_SRCS=$(shell find . -maxdepth 2 -name "*.ts" -not -path "./bld/*") config.ts
 JIT_SRCS=$(shell find jit -name "*.ts" -not -path "./bld/*")
 SHUMWAY_SRCS=$(shell find shumway -name "*.ts")
@@ -18,7 +18,7 @@ VERBOSE ?= 0
 export VERBOSE
 
 # An extra configuration script to load.  Use this to configure the project
-# to run a particular midlet.  By default, it runs the test midlet RunTests.
+# to run a particular midlet.  By default, it runs the test midlet RunTestsMIDlet.
 CONFIG ?= config/runtests.js
 export CONFIG
 
@@ -33,10 +33,10 @@ ifeq ($(PACKAGE_TESTS),1)
   TESTS_JAR = tests/tests.jar
 endif
 
-NAME ?= j2me.js
+NAME ?= PluotSorbet
 MIDLET_NAME ?= midlet
-DESCRIPTION ?= j2me interpreter for firefox os
-ORIGIN ?= app://j2mejs.mozilla.org
+DESCRIPTION ?= a J2ME-compatible virtual machine written in JavaScript
+ORIGIN ?= app://pluotsorbet.mozilla.org
 VERSION ?= $(shell date +%s)
 
 ICON_128 ?= img/default-icon-128.png
@@ -55,8 +55,8 @@ JSR_179 ?= 1
 export JSR_179
 
 # Content handler support
-CONTENT_HANDLER_SUPPORT ?= 1
-export CONTENT_HANDLER_SUPPORT
+CONTENT_HANDLER_FILTER ?= '["image/*", "video/*", "audio/*"]'
+export CONTENT_HANDLER_FILTER
 
 ifeq ($(PROFILE),0)
   J2ME_JS_OPTIMIZATION_LEVEL = J2ME_OPTIMIZATIONS
@@ -166,7 +166,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D CONSOLE=$(call toBool,$(CONSOLE)) \
              -D JSR_256=$(JSR_256) \
              -D JSR_179=$(JSR_179) \
-             -D CONTENT_HANDLER_SUPPORT=$(CONTENT_HANDLER_SUPPORT) \
+             -D CONTENT_HANDLER_FILTER=$(CONTENT_HANDLER_FILTER) \
              -D CONFIG=$(CONFIG) \
              -D NAME="$(NAME)" \
              -D MIDLET_NAME="$(MIDLET_NAME)" \
@@ -177,7 +177,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot benchmarks bld/main-all.js
+all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -197,25 +197,37 @@ CLOSURE_COMPILER_VERSION=j2me.js-v20150428
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
-PATH := build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
+SPIDERMONKEY_VERSION=38.1.0esr
+OLD_SPIDERMONKEY_VERSION := $(shell [ -f build_tools/.spidermonkey_version ] && cat build_tools/.spidermonkey_version)
+$(shell [ "$(SPIDERMONKEY_VERSION)" != "$(OLD_SPIDERMONKEY_VERSION)" ] && echo $(SPIDERMONKEY_VERSION) > build_tools/.spidermonkey_version)
+
+PATH := build_tools/spidermonkey:build_tools/slimerjs-$(SLIMERJS_VERSION):${PATH}
 
 UNAME_S := $(shell uname -s)
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_S),Linux)
-	XULRUNNER_PLATFORM=linux-$(UNAME_M)
+	PLATFORM=linux-$(UNAME_M)
 	XULRUNNER_PATH=xulrunner/xulrunner
+	XULRUNNER_EXT=tar.bz2
+	BOOTCLASSPATH_SEPARATOR=:
 endif
 ifeq ($(UNAME_S),Darwin)
-	XULRUNNER_PLATFORM=mac
+	PLATFORM=mac
 	XULRUNNER_PATH=XUL.framework/Versions/Current/xulrunner
+	XULRUNNER_EXT=tar.bz2
+	BOOTCLASSPATH_SEPARATOR=:
 endif
-ifneq (,$(findstring MINGW,$(uname_S)))
-	XULRUNNER_PLATFORM=win32
-	XULRUNNER_PATH=xulrunner/xulrunner
+ifneq (,$(findstring MINGW,$(UNAME_S)))
+	PLATFORM=win32
+	XULRUNNER_PATH=xulrunner
+	XULRUNNER_EXT=zip
+	BOOTCLASSPATH_SEPARATOR=;
 endif
-ifneq (,$(findstring CYGWIN,$(uname_S)))
-	XULRUNNER_PLATFORM=win32
-	XULRUNNER_PATH=xulrunner/xulrunner
+ifneq (,$(findstring CYGWIN,$(UNAME_S)))
+	PLATFORM=win32
+	XULRUNNER_PATH=xulrunner
+	XULRUNNER_EXT=zip
+	BOOTCLASSPATH_SEPARATOR=;
 endif
 
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
@@ -229,18 +241,31 @@ build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 
 build_tools/$(XULRUNNER_PATH): build_tools/.xulrunner_version
 	rm -rf build_tools/XUL* build_tools/xul*
-	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2
-	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(XULRUNNER_PLATFORM).tar.bz2 -m
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/xulrunner/releases/$(XULRUNNER_VERSION)/runtimes/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT)
+ifeq ($(XULRUNNER_EXT),tar.bz2)
+	tar x -C build_tools -f build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT) -m
+else
+	unzip -o -d build_tools build_tools/xulrunner-$(XULRUNNER_VERSION).en-US.$(PLATFORM).$(XULRUNNER_EXT)
+endif
 
 build_tools/soot-trunk.jar: build_tools/.soot_version
 	rm -f build_tools/soot-trunk.jar
-	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-25Mar2015/soot-trunk.jar
+	wget -P build_tools https://github.com/marco-c/soot/releases/download/soot-$(SOOT_VERSION)/soot-trunk.jar
 	touch build_tools/soot-trunk.jar
 
 build_tools/closure.jar: build_tools/.closure_compiler_version
 	rm -f build_tools/closure.jar
 	wget -P build_tools https://github.com/mykmelez/closure-compiler/releases/download/$(CLOSURE_COMPILER_VERSION)/closure.jar
 	touch build_tools/closure.jar
+
+JS=build_tools/spidermonkey/js
+
+$(JS): build_tools/.spidermonkey_version
+	rm -rf build_tools/spidermonkey build_tools/jsshell*
+	wget -P build_tools -N https://ftp.mozilla.org/pub/mozilla.org/firefox/nightly/$(SPIDERMONKEY_VERSION)-candidates/build1/jsshell-$(PLATFORM).zip
+	unzip -o -d build_tools/spidermonkey build_tools/jsshell-$(PLATFORM).zip
+	chmod +x build_tools/spidermonkey/*
+	touch $(JS)
 
 $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 	$(foreach file,$(PREPROCESS_SRCS),$(PREPROCESS) -o $(file:.in=) $(file);)
@@ -288,9 +313,10 @@ endif
 bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
 	mkdir -p bld
 	rm -f bld/native.js
-	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -DNDEBUG -DNO_DEBUGGING -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=134217728 -s NO_FILESYSTEM=1 -s NO_BROWSER=1 -O3 \
-	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMalloc"]' \
-	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts", "setjmp", "longjmp"]'
+	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=128*1024*1024 -s NO_BROWSER=1 -O3 \
+	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMallocUncollectable", "_gcFree", "_gcMalloc", "_gcMallocAtomic", "_registerFinalizer", "_forceCollection"]' \
+	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts", "setjmp", "longjmp"]' \
+	-s NO_EXIT_RUNTIME=1
 	echo "var ASM = (function(Module) {" >> bld/native.js
 	cat native.raw.js >> bld/native.js
 	echo "" >> bld/native.js
@@ -299,7 +325,7 @@ bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
 	rm native.raw.js
 
 vm/native/Boehm.js/.libs/$(BOEHM_LIB):
-	cd vm/native/Boehm.js && emconfigure ./configure --without-threads --disable-threads __EMSCRIPTEN__=1 && emmake make
+	cd vm/native/Boehm.js && emconfigure ./configure --without-threads --disable-threads --enable-gc-debug=no --enable-gc-assertions=no __EMSCRIPTEN__=1 && emmake make
 
 bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) bld/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
@@ -328,7 +354,7 @@ bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
 j2me: bld/j2me.js bld/jsc.js
 
 aot: bld/classes.jar.js
-bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar .checksum
+bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar $(JS) .checksum
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
 ifeq ($(RELEASE),1)
@@ -336,10 +362,10 @@ ifeq ($(RELEASE),1)
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
 endif
 
-bld/tests.jar.js: tests/tests.jar bld/jsc.js aot-methods.txt
+bld/tests.jar.js: tests/tests.jar bld/jsc.js $(JS) aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar tests/tests.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 
-bld/program.jar.js: program.jar bld/jsc.js aot-methods.txt
+bld/program.jar.js: program.jar bld/jsc.js $(JS) aot-methods.txt
 	js bld/jsc.js -cp java/classes.jar program.jar -d -jf program.jar -mff aot-methods.txt > bld/program.jar.js
 
 shumway: bld/shumway.js
@@ -387,8 +413,14 @@ package: app
 	rm -f '$(NAME)-$(VERSION).zip'
 	cd $(PACKAGE_DIR) && zip -r '../$(NAME)-$(VERSION).zip' *
 
-benchmarks: java tests
-	make -C bench
+BENCHMARK_SRCS=$(shell find bench -name "*.java")
+
+bench/benchmark.jar: $(BENCHMARK_SRCS) java/classes.jar tests/tests.jar
+	rm -rf bench/build
+	mkdir bench/build
+	javac -source 1.3 -target 1.3 -encoding UTF-8 -bootclasspath "java/classes.jar$(BOOTCLASSPATH_SEPARATOR)tests/tests.jar" -extdirs "" -d bench/build $(BENCHMARK_SRCS) > /dev/null
+	cd bench/build && jar cf0 ../benchmark.jar *
+	rm -rf bench/build
 
 clean:
 	rm -rf bld $(PACKAGE_DIR)
@@ -398,6 +430,6 @@ clean:
 	make -C java clean
 	rm -rf java/l10n/
 	rm -f java/custom/com/sun/midp/i18n/ResourceConstants.java java/custom/com/sun/midp/l10n/LocalizedStringsBase.java
-	make -C bench clean
+	rm -f bench/benchmark.jar
 	rm -f img/icon-128.png img/icon-512.png
 	rm -f package.zip
