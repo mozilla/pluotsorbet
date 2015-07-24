@@ -322,14 +322,13 @@ var currentlyFocusedTextEditor;
         var image = getHandle(imageAddr);
         var width = image.width;
         var height = image.height;
-        var imageData = getHandle(image.imageData);
 
         // NOTE: This function will only ever be called by the variants
         // of `DirectUtils.createImage`. We don't have to worry about
         // the dimensions or the context info because this `Image` and
         // this `ImageData` were just created; nothing can be out of
         // sync yet.
-        var ctx = getNative(imageData).context;
+        var ctx = NativeMap.get(image.imageData).context;
 
         var ctxImageData = ctx.createImageData(width, height);
         var pixels = new Int32Array(ctxImageData.data.buffer);
@@ -457,9 +456,8 @@ var currentlyFocusedTextEditor;
     var BOTTOM = 32;
     var BASELINE = 64;
 
-    function withTextAnchor(c, font, anchor, x, str) {
+    function withTextAnchor(c, fontContext, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            var fontContext = getNative(font);
             var w = calcStringWidth(fontContext, str);
 
             if (anchor & RIGHT) {
@@ -661,12 +659,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getFont.()Ljavax/microedition/lcdui/Font;"] = function(addr) {
-        return NativeMap.get(addr).currentFont._address;
+        return NativeMap.get(addr).currentFont;
     };
 
     Native["javax/microedition/lcdui/Graphics.setFont.(Ljavax/microedition/lcdui/Font;)V"] = function(addr, fontAddr) {
-        // XXX Consider storing the address instead of a handle in the native.
-        NativeMap.get(addr).setFont(getHandle(fontAddr));
+        NativeMap.get(addr).setFont(fontAddr);
     };
 
     var SOLID = 0;
@@ -727,12 +724,12 @@ var currentlyFocusedTextEditor;
         var red = (argb >>> 16) & 0xFF;
         var green = (argb >>> 8) & 0xFF;
         var blue = argb & 0xFF;
-        getNative(getHandle(self.graphics)).setPixel(alpha, red, green, blue);
+        NativeMap.get(self.graphics).setPixel(alpha, red, green, blue);
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getAlphaComponent.()I"] = function(addr) {
         var self = getHandle(addr);
-        return getNative(getHandle(self.graphics)).alpha;
+        return NativeMap.get(self.graphics).alpha;
     };
 
     Native["com/nokia/mid/ui/DirectGraphicsImp.getPixels.([SIIIIIII)V"] =
@@ -753,7 +750,7 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException("Format unsupported");
         }
 
-        var context = getNative(getHandle(self.graphics)).contextInfo.context;
+        var context = NativeMap.get(self.graphics).contextInfo.context;
         var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
     };
@@ -783,7 +780,7 @@ var currentlyFocusedTextEditor;
 
         tempContext.putImageData(imageData, 0, 0);
 
-        var c = getNative(getHandle(self.graphics)).getGraphicsContext();
+        var c = NativeMap.get(self.graphics).getGraphicsContext();
 
         c.drawImage(tempContext.canvas, x, y);
         tempContext.canvas.width = 0;
@@ -793,7 +790,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.render.(Ljavax/microedition/lcdui/Image;III)Z"] =
     function(addr, imageAddr, x, y, anchor) {
         var image = getHandle(imageAddr);
-        renderRegion(NativeMap.get(addr).getGraphicsContext(), getNative(getHandle(image.imageData)).context.canvas,
+        renderRegion(NativeMap.get(addr).getGraphicsContext(), NativeMap.get(image.imageData).context.canvas,
                      0, 0, image.width, image.height, TRANS_NONE, x, y, anchor);
         return 1;
     };
@@ -805,7 +802,7 @@ var currentlyFocusedTextEditor;
         }
 
         var src = getHandle(srcAddr);
-        renderRegion(NativeMap.get(addr).getGraphicsContext(), getNative(getHandle(src.imageData)).context.canvas,
+        renderRegion(NativeMap.get(addr).getGraphicsContext(), NativeMap.get(src.imageData).context.canvas,
                      x_src, y_src, width, height, transform, x_dest, y_dest, anchor);
     };
 
@@ -817,7 +814,7 @@ var currentlyFocusedTextEditor;
 
         var image = getHandle(imageAddr);
         var imageData = getHandle(image.imageData);
-        renderRegion(NativeMap.get(addr).getGraphicsContext(), getNative(imageData).context.canvas,
+        renderRegion(NativeMap.get(addr).getGraphicsContext(), NativeMap.get(image.imageData).context.canvas,
                      0, 0, imageData.width, imageData.height, TRANS_NONE, x, y, anchor);
     };
 
@@ -833,7 +830,7 @@ var currentlyFocusedTextEditor;
         this.clipY2 = contextInfo.context.canvas.height;
 
         // GC info
-        this.currentFont = getHandle(getDefaultFontAddress());
+        this.currentFont = getDefaultFontAddress();
         this.alpha = 0xFF;
         this.red = 0x00;
         this.green = 0x00;
@@ -841,8 +838,8 @@ var currentlyFocusedTextEditor;
     }
 
     GraphicsInfo.prototype.setFont = function(font) {
-        if (null === font) {
-            font = getHandle(getDefaultFontAddress());
+        if (J2ME.Constants.NULL === font) {
+            font = getDefaultFontAddress();
         }
 
         if (this.currentFont !== font) {
@@ -867,7 +864,7 @@ var currentlyFocusedTextEditor;
     }
 
     GraphicsInfo.prototype.resetGC = function() {
-        this.setFont(null);
+        this.setFont(J2ME.Constants.NULL);
         this.setPixel(0xFF, 0x00, 0x00, 0x00);
     }
 
@@ -944,7 +941,7 @@ var currentlyFocusedTextEditor;
         this.context.textAlign = "left";
 
         this.context.fillStyle = this.context.strokeStyle = util.rgbaToCSS(graphicsInfo.red, graphicsInfo.green, graphicsInfo.blue, graphicsInfo.alpha / 255);
-        this.context.font = getNative(graphicsInfo.currentFont).font;
+        this.context.font = NativeMap.get(graphicsInfo.currentFont).font;
 
         this.context.beginPath();
         this.context.rect(graphicsInfo.clipX1, graphicsInfo.clipY1, graphicsInfo.clipX2 - graphicsInfo.clipX1, graphicsInfo.clipY2 - graphicsInfo.clipY1);
@@ -966,7 +963,7 @@ var currentlyFocusedTextEditor;
         var self = getHandle(addr);
         var img = getHandle(imgAddr);
         self.displayId = -1;
-        setNative(addr, new GraphicsInfo(getNative(getHandle(img.imageData))));
+        setNative(addr, new GraphicsInfo(NativeMap.get(img.imageData)));
         self.creator = J2ME.Constants.NULL;
     };
 
@@ -981,8 +978,8 @@ var currentlyFocusedTextEditor;
 
     function drawString(info, str, x, y, anchor) {
         var c = info.getGraphicsContext();
-        var font = info.currentFont;
-        var fontSize = getNative(font).fontSize;
+        var fontContext = NativeMap.get(info.currentFont);
+        var fontSize = fontContext.fontSize;
 
         var finalText;
         if (!emoji.regEx.test(str)) {
@@ -998,7 +995,7 @@ var currentlyFocusedTextEditor;
                 var match0 = match[0];
                 lastIndex = match.index + match0.length;
 
-                var textX = withTextAnchor(c, font, anchor, x, text);
+                var textX = withTextAnchor(c, fontContext, anchor, x, text);
 
                 c.fillText(text, textX, y);
 
@@ -1015,7 +1012,7 @@ var currentlyFocusedTextEditor;
         // Now handle all the text after the final emoji. If there were no
         // emojis present, this is the entire string.
         if (finalText) {
-            var textX = withTextAnchor(c, font, anchor, x, finalText);
+            var textX = withTextAnchor(c, fontContext, anchor, x, finalText);
             c.fillText(finalText, textX, y);
         }
     }
@@ -1042,7 +1039,7 @@ var currentlyFocusedTextEditor;
 
         var c = info.getGraphicsContext();
 
-        x = withTextAnchor(c, info.currentFont, anchor, x, chr);
+        x = withTextAnchor(c, NativeMap.get(info.currentFont), anchor, x, chr);
 
         c.fillText(chr, x, y);
     };
