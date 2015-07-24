@@ -77,7 +77,7 @@ var gfxTests = [
   { name: "gfx/CreateImmutableCopyTest", maxDifferentLinux: 0, maxDifferentMac: 756 },
   { name: "gfx/LauncherTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/MediaImageTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
-  { name: "gfx/TextEditorGfxTest", maxDifferentLinux: 968, maxDifferentMac: 1057 },
+  { name: "gfx/TextEditorGfxTest", maxDifferentLinux: 968, maxDifferentMac: 1267 },
   { name: "gfx/DrawStringWithCopyrightAndRegisteredSymbols", maxDifferentLinux: 159, maxDifferentMac: 292 },
   { name: "gfx/VideoPlayerTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/ImageCapture", maxDifferentLinux: 0, maxDifferentMac: 120 },

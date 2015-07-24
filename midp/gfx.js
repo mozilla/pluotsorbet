@@ -372,7 +372,7 @@ var currentlyFocusedTextEditor;
     var SIZE_LARGE = 16;
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
-        var defaultSize = (config.fontSize ? config.fontSize : 18) * MIDP.devicePixelRatio;
+        var defaultSize = (config.fontSize ? config.fontSize : 18);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
@@ -401,8 +401,9 @@ var currentlyFocusedTextEditor;
         this.context = document.createElement("canvas").getContext("2d");
         this.context.canvas.width = 0;
         this.context.canvas.height = 0;
-        this.context.font = style + size + "px " + face;
+        this.context.font = style + size * MIDP.devicePixelRatio + "px " + face;
         this.size = size;
+        // XXX Figure out why this works when these two fields are both int.
         this.style = style;
         this.face = face;
     };

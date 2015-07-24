@@ -165,7 +165,18 @@ var TextEditorProvider = (function() {
 
         setFont: function(font) {
             this.font = font;
-            this._setStyle("font", font.context.font);
+
+            // We can't set the font style to *font.context.font* here,
+            // because the context's font size was multiplied by the device
+            // pixel ratio in order to scale the font correctly in contexts
+            // whose dimensions are also multiplied by that ratio.
+            //
+            // The text editor's dimensions aren't multiplied by the ratio,
+            // however, because they don't need to be scaled up in order to look
+            // sharp on HiDPI displays.  So instead we set the font size
+            // per the original font size value stored in the Java Font object.
+            //
+            this._setStyle("font", font.style + " " + font.size + " " + font.face);
         },
 
         setSize: function(width, height) {
