@@ -979,9 +979,13 @@ var currentlyFocusedTextEditor;
                 // Calculate the string width.
                 x += c.measureText(text).width | 0;
 
-                var emojiData = emoji.getData(match0, font.size);
-                c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, font.size, font.size);
-                x += font.size;
+                // Scale the font size by the device pixel ratio, since we draw
+                // the emoji to the canvas, which has been scaled by that ratio.
+                var fontSize = font.size * MIDP.devicePixelRatio;
+
+                var emojiData = emoji.getData(match0, fontSize);
+                c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, fontSize, fontSize);
+                x += fontSize;
             }
             finalText = str.substring(lastIndex);
         }
