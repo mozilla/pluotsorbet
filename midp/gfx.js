@@ -1055,6 +1055,13 @@ var currentlyFocusedTextEditor;
         w = w || 1;
         h = h || 1;
 
+        x *= MIDP.devicePixelRatio;
+        y *= MIDP.devicePixelRatio;
+        w *= MIDP.devicePixelRatio;
+        h *= MIDP.devicePixelRatio;
+        arcWidth *= MIDP.devicePixelRatio;
+        arcHeight *= MIDP.devicePixelRatio;
+
         c.beginPath();
         createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
         c.stroke();
@@ -1087,6 +1094,13 @@ var currentlyFocusedTextEditor;
 
         w = w || 1;
         h = h || 1;
+
+        x *= MIDP.devicePixelRatio;
+        y *= MIDP.devicePixelRatio;
+        w *= MIDP.devicePixelRatio;
+        h *= MIDP.devicePixelRatio;
+        arcWidth *= MIDP.devicePixelRatio;
+        arcHeight *= MIDP.devicePixelRatio;
 
         c.beginPath();
         createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
