@@ -165,7 +165,7 @@ Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesNext.(I)Ljava/lang/
         return J2ME.Constants.NULL;
     }
     var s = cached.shift();
-    return s ? J2ME.newUncollectableString(s) : J2ME.Constants.NULL;
+    return s ? J2ME.newString(s) : J2ME.Constants.NULL;
 };
 
 Native["com/sun/mmedia/DefaultConfiguration.nListContentTypesClose.(I)V"] = function(addr, hdlr) {
@@ -193,7 +193,7 @@ Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsNext.(I)Ljava/lang/Str
         return J2ME.Constants.NULL;
     }
     var s = cached.shift();
-    return s ? J2ME.newUncollectableString(s) : J2ME.Constants.NULL;
+    return s ? J2ME.newString(s) : J2ME.Constants.NULL;
 };
 
 Native["com/sun/mmedia/DefaultConfiguration.nListProtocolsClose.(I)V"] = function(addr, hdlr) {
@@ -1046,11 +1046,11 @@ Native["com/sun/mmedia/PlayerImpl.nTerm.(I)I"] = function(addr, handle) {
 Native["com/sun/mmedia/PlayerImpl.nGetMediaFormat.(I)Ljava/lang/String;"] = function(addr, handle) {
     var player = Media.PlayerCache[handle];
     player.mediaFormat = player.getMediaFormat();
-    return J2ME.newUncollectableString(player.mediaFormat);
+    return J2ME.newString(player.mediaFormat);
 };
 
 Native["com/sun/mmedia/DirectPlayer.nGetContentType.(I)Ljava/lang/String;"] = function(addr, handle) {
-    return J2ME.newUncollectableString(Media.PlayerCache[handle].getContentType());
+    return J2ME.newString(Media.PlayerCache[handle].getContentType());
 };
 
 Native["com/sun/mmedia/PlayerImpl.nIsHandledByDevice.(I)Z"] = function(addr, handle) {
@@ -1291,7 +1291,7 @@ Native["com/sun/mmedia/DirectRecord.nStart.(I)I"] = function(addr, handle) {
 };
 
 Native["com/sun/mmedia/DirectRecord.nGetRecordedType.(I)Ljava/lang/String;"] = function(addr, handle) {
-    return J2ME.newUncollectableString(Media.PlayerCache[handle].audioRecorder.getContentType());
+    return J2ME.newString(Media.PlayerCache[handle].audioRecorder.getContentType());
 };
 
 /**

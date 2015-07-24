@@ -65,7 +65,7 @@ LocationProvider.prototype.requestData = function() {
 
 Native["com/sun/j2me/location/PlatformLocationProvider.getListOfLocationProviders.()Ljava/lang/String;"] = function(addr) {
     // If there are more than one providers, separate them by comma.
-    return J2ME.newUncollectableString(Location.PROVIDER_NAME);
+    return J2ME.newString(Location.PROVIDER_NAME);
 };
 
 addUnimplementedNative("com/sun/j2me/location/CriteriaImpl.initNativeClass.()V");
@@ -73,7 +73,7 @@ addUnimplementedNative("com/sun/j2me/location/CriteriaImpl.initNativeClass.()V")
 Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteriaImpl.(Lcom/sun/j2me/location/CriteriaImpl;)Z"] =
 function(addr, criteriaAddr) {
     var criteria = getHandle(criteriaAddr);
-    criteria.providerName = J2ME.newUncollectableString(Location.PROVIDER_NAME);
+    criteria.providerName = J2ME.newString(Location.PROVIDER_NAME);
     return 1;
 };
 

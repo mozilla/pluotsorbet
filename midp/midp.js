@@ -172,11 +172,11 @@ var MIDP = (function() {
     var state = getHandle(stateAddr);
     var suiteId = (config.midletClassName === "internal") ? -1 : 1;
     state.suiteId = suiteId;
-    state.midletClassName = J2ME.newUncollectableString(config.midletClassName);
+    state.midletClassName = J2ME.newString(config.midletClassName);
     var args = config.args;
-    state.arg0 = J2ME.newUncollectableString((args.length > 0) ? args[0] : "");
-    state.arg1 = J2ME.newUncollectableString((args.length > 1) ? args[1] : "");
-    state.arg2 = J2ME.newUncollectableString((args.length > 2) ? args[2] : "");
+    state.arg0 = J2ME.newString((args.length > 0) ? args[0] : "");
+    state.arg1 = J2ME.newString((args.length > 1) ? args[1] : "");
+    state.arg2 = J2ME.newString((args.length > 2) ? args[2] : "");
   };
 
   Native["com/sun/midp/main/MIDletSuiteUtils.getIsolateId.()I"] = function(addr) {
@@ -295,7 +295,7 @@ var MIDP = (function() {
         value = null;
         break;
     }
-    return J2ME.newUncollectableString(value);
+    return J2ME.newString(value);
   };
 
   Native["com/sun/midp/util/ResourceHandler.loadRomizedResource0.(Ljava/lang/String;)[B"] = function(addr, fileAddr) {
@@ -584,7 +584,7 @@ var MIDP = (function() {
   });
 
   Native["com/sun/midp/midletsuite/MIDletSuiteStorage.suiteIdToString.(I)Ljava/lang/String;"] = function(addr, id) {
-    return J2ME.newUncollectableString(id.toString());
+    return J2ME.newString(id.toString());
   };
 
   Native["com/sun/midp/midletsuite/MIDletSuiteStorage.getMidletSuiteStorageId.(I)I"] = function(addr, suiteId) {
@@ -614,8 +614,8 @@ var MIDP = (function() {
     var arr = J2ME.getArrayFromAddr(arrAddr);
     var i = 0;
     keys.forEach(function(key) {
-      arr[i++] = J2ME.newUncollectableString(key);
-      arr[i++] = J2ME.newUncollectableString(manifest[key]);
+      arr[i++] = J2ME.newString(key);
+      arr[i++] = J2ME.newString(manifest[key]);
     });
     J2ME.unsetUncollectable(arrAddr);
     return arrAddr;
@@ -883,7 +883,7 @@ var MIDP = (function() {
     AMS.sendNativeEventToAMSIsolate({
       type: NATIVE_MIDLET_EXECUTE_REQUEST,
       intParam1: midletNumber || fgMidletNumber,
-      stringParam1: midletClassName || J2ME.newUncollectableString(fgMidletClass),
+      stringParam1: midletClassName || J2ME.newString(fgMidletClass),
     });
   }
 
@@ -1018,7 +1018,7 @@ var MIDP = (function() {
       throw $.newIllegalStateException("String with ID (" + id + ") doesn't exist");
     }
 
-    return J2ME.newUncollectableString(value);
+    return J2ME.newString(value);
   };
 
   Native["javax/microedition/lcdui/Display.drawTrustedIcon0.(IZ)V"] = function(addr, dispId, drawTrusted) {
@@ -1091,7 +1091,7 @@ var MIDP = (function() {
   };
 
   Native["javax/microedition/lcdui/KeyConverter.getKeyName.(I)Ljava/lang/String;"] = function(addr, keyCode) {
-    return J2ME.newUncollectableString((keyCode in keyNames) ? keyNames[keyCode] : String.fromCharCode(keyCode));
+    return J2ME.newString((keyCode in keyNames) ? keyNames[keyCode] : String.fromCharCode(keyCode));
   };
 
   var gameKeys = {

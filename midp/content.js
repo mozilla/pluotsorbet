@@ -31,7 +31,7 @@ var Content = (function() {
                                               chRegisteredRegistrationMethod.toString(16)
                                            ]);
 
-    return J2ME.newUncollectableString(String.fromCharCode(serializedString.length * 2) + serializedString);
+    return J2ME.newString(String.fromCharCode(serializedString.length * 2) + serializedString);
   };
 
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", J2ME.Constants.NULL);
@@ -85,7 +85,7 @@ var Content = (function() {
       console.warn("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String; expected callerIdAddr = null");
     }
 
-    return J2ME.newUncollectableString(serializeString([
+    return J2ME.newString(serializeString([
                                             chRegisteredID,
                                             chRegisteredStorageID.toString(16),
                                             chRegisteredClassName,
@@ -147,8 +147,8 @@ var Content = (function() {
       return -1;
     }
 
-    invocArguments[0] = J2ME.newUncollectableString(invocation.argument);
-    invoc.action = J2ME.newUncollectableString(invocation.action);
+    invocArguments[0] = J2ME.newString(invocation.argument);
+    invoc.action = J2ME.newString(invocation.action);
     invoc.status = 2; // Invocation.ACTIVE
 
     invocation = null;

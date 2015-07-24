@@ -37,7 +37,7 @@ module J2ME {
   /**
    * Toggle VM tracing here.
    */
-  export var writers = WriterFlags.Trace;
+  export var writers = WriterFlags.None;
 
   Array.prototype.push2 = function(value) {
     this.push(value);
@@ -330,13 +330,13 @@ module J2ME {
 
       ctx.nativeThread.pushFrame(null);
       ctx.nativeThread.pushFrame(sys.getMethodByNameString("isolate0Entry", "(Ljava/lang/String;[Ljava/lang/String;)V"));
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newUncollectableString(className.replace(/\./g, "/")));
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newString(className.replace(/\./g, "/")));
 
       var arrayAddr = newStringArray(args.length);
       setUncollectable(arrayAddr);
       var array = getArrayFromAddr(arrayAddr);
       for (var n = 0; n < args.length; ++n) {
-        array[n] = args[n] ? J2ME.newUncollectableString(args[n]) : Constants.NULL;
+        array[n] = args[n] ? J2ME.newString(args[n]) : Constants.NULL;
       }
       unsetUncollectable(arrayAddr);
 
@@ -514,7 +514,7 @@ module J2ME {
       var exceptionAddress = allocObject(classInfo);
       var methodInfo = classInfo.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
       preemptionLockLevel++;
-      getLinkedMethod(methodInfo)(exceptionAddress, message ? newUncollectableString(message) : Constants.NULL);
+      getLinkedMethod(methodInfo)(exceptionAddress, message ? newString(message) : Constants.NULL);
       release || Debug.assert(!U, "Unexpected unwind during createException.");
       preemptionLockLevel--;
       return getHandle(exceptionAddress);

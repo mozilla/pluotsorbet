@@ -29,7 +29,7 @@ Native["com/sun/midp/io/j2me/socket/Protocol.getHost0.(Z)Ljava/lang/String;"] = 
     // var host = J2ME.fromStringAddr(self.host);
 
     var socket = NativeMap.get(addr);
-    return J2ME.newUncollectableString(local ? "127.0.0.1" : socket.host);
+    return J2ME.newString(local ? "127.0.0.1" : socket.host);
 };
 
 function Socket(host, port, ctx, resolve, reject) {
