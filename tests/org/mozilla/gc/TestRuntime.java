@@ -18,7 +18,7 @@ public class TestRuntime implements Testlet {
         th.check(freeMemory > 0, "Free memory is strictly greater than 0");
 
         for (int i = 0; i < 1000; i++) {
-            long[] array = new long[1000];
+            long[] array = new long[100000];
         }
 
         System.out.println("freeMemory2: " + Runtime.getRuntime().freeMemory());
