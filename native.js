@@ -475,12 +475,14 @@ Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(ad
     return resultAddr;
 };
 
+var ASMJS_TOTAL_MEMORY = 128 * 1024 * 1024;
+
 Native["java/lang/Runtime.freeMemory.()J"] = function(addr) {
-    return J2ME.returnLong(0x800000, 0);
+    return J2ME.returnLongValue(ASMJS_TOTAL_MEMORY - ASM._getUsedHeapSize());
 };
 
 Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
-    return J2ME.returnLong(0x1000000, 0);
+    return J2ME.returnLongValue(ASMJS_TOTAL_MEMORY);
 };
 
 Native["java/lang/Runtime.gc.()V"] = function(addr) {
