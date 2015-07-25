@@ -77,6 +77,13 @@ extern "C" {
   void forceCollection(void) {
     GC_gcollect();
   }
+
+  int getUsedHeapSize(void) {
+    GC_word heapSize;
+    GC_word freeBytes;
+    GC_get_heap_usage_safe(&heapSize, &freeBytes, NULL, NULL, NULL);
+    return heapSize - freeBytes;
+  }
 }
 
 int main() {
