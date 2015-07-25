@@ -1285,7 +1285,7 @@ module J2ME {
     object.value = arrayAddr;
     object.offset = 0;
     object.count = encoded.length;
-    return object._address;
+    return objectAddr;
   }
 
   export function getArrayFromAddr(addr: number) {
