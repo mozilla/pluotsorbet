@@ -12,6 +12,8 @@ public class TestRuntime implements Testlet {
         long totalMemory = Runtime.getRuntime().totalMemory();
         long freeMemory = Runtime.getRuntime().freeMemory();
 
+        System.out.println("freeMemory1: " + Runtime.getRuntime().freeMemory());
+
         th.check(totalMemory > freeMemory, "Total memory is strictly greater than free memory");
         th.check(freeMemory > 0, "Free memory is strictly greater than 0");
 
@@ -19,12 +21,16 @@ public class TestRuntime implements Testlet {
             long[] array = new long[1000];
         }
 
+        System.out.println("freeMemory2: " + Runtime.getRuntime().freeMemory());
+
         th.check(totalMemory, Runtime.getRuntime().totalMemory(), "Total memory doesn't change");
         th.check(freeMemory > Runtime.getRuntime().freeMemory(), "Free memory decreases after allocating some objects");
 
         freeMemory = Runtime.getRuntime().freeMemory();
 
         Runtime.getRuntime().gc();
+
+        System.out.println("freeMemory3: " + Runtime.getRuntime().freeMemory());
 
         th.check(freeMemory < Runtime.getRuntime().freeMemory(), "Free memory increases after a collection");
     }
