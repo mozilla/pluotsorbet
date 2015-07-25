@@ -1,6 +1,5 @@
 package java.lang.ref;
 
-import org.mozilla.internal.Sys;
 import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
@@ -41,8 +40,8 @@ public class TestWeakReference implements Testlet {
     }
 
     th.check(gcWeakRef.get() != null, "weakly held referent isn't null");
-    Sys.forceCollection();
-    Sys.forceCollection();
+    Runtime.getRuntime().gc();
+    Runtime.getRuntime().gc();
     th.check(gcWeakRef.get() == null, "GC cleared weakly held referent is null");
     gcWeakRef.clear();
     th.check(weakRef.get() == null, "clearing a WeakReference cleared by the GC works");
