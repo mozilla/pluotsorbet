@@ -644,8 +644,7 @@ Native["com/sun/cldc/isolate/Isolate.getStatus.()I"] = function(addr) {
 };
 
 Native["com/sun/cldc/isolate/Isolate.nativeStart.()V"] = function(addr) {
-    var self = getHandle(addr);
-    $.ctx.runtime.jvm.startIsolate(self);
+    $.ctx.runtime.jvm.startIsolate(addr);
 };
 
 Native["com/sun/cldc/isolate/Isolate.waitStatus.(I)V"] = function(addr, status) {
