@@ -1379,7 +1379,7 @@ module J2ME {
     var length = lengths[0];
     var arrayAddr = newArray(classInfo.elementClass, length);
     setUncollectable(arrayAddr);
-    var array = getHandle(arrayAddr);
+    var array = getArrayFromAddr(arrayAddr);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i = 0; i < length; i++) {
