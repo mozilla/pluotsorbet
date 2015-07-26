@@ -1,4 +1,5 @@
 //#define GC_DEBUG
+//#define GC_MAXIMUM_HEAP_SIZE (128 * 1024 * 1024)
 
 #include "gc.h"
 #include <stdio.h>
@@ -81,5 +82,4 @@ extern "C" {
 
 int main() {
   GC_INIT();
-  GC_set_max_heap_size(128 * 1024 * 1024);
 }
