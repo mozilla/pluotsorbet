@@ -310,7 +310,7 @@ ifneq (,$(findstring CYGWIN,$(uname_S)))
 	BOEHM_LIB=libgc.dll
 endif
 
-bld/native.js: vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
+bld/native.js: Makefile vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
 	mkdir -p bld
 	rm -f bld/native.js
 	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz vm/native/native.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=128*1024*1024 -s NO_BROWSER=1 -O3 \
