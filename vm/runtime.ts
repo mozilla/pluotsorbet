@@ -437,7 +437,6 @@ module J2ME {
             classInfo === CLASSES.java_lang_Class ||
             classInfo === CLASSES.java_lang_String ||
             classInfo === CLASSES.java_lang_Thread) {
-          var handle = <java.lang.Class>getHandle(addr);
           handle.status = 4;
           this.setClassInitialized(classInfo.id);
         }
