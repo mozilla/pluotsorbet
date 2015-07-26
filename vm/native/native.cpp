@@ -1,5 +1,6 @@
 //#define GC_DEBUG
 //#define GC_MAXIMUM_HEAP_SIZE (128 * 1024 * 1024)
+#define GC_IGNORE_WARN
 
 #include "gc.h"
 #include <stdio.h>
