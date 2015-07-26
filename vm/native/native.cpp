@@ -73,7 +73,7 @@ extern "C" {
   }
 
   void registerFinalizer(uintptr_t p) {
-    GC_REGISTER_FINALIZER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
+    GC_REGISTER_FINALIZER_NO_ORDER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
   }
 
   void forceCollection(void) {
