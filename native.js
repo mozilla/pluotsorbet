@@ -371,9 +371,9 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function(addr) {
 };
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, oAddr) {
-  var o = getHandle(oAddr);
+  var classInfo = J2ME.getClassInfo(oAddr);
   // The following can trigger an unwind.
-  var methodInfo = o.classInfo.getLocalMethodByNameString("<init>", "()V", false);
+  var methodInfo = classInfo.getLocalMethodByNameString("<init>", "()V", false);
   if (!methodInfo) {
     throw $.newInstantiationException("Can't instantiate classes without a nullary constructor");
   }
@@ -404,9 +404,14 @@ Native["java/lang/Class.isAssignableFrom.(Ljava/lang/Class;)Z"] = function(addr,
 };
 
 Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(addr, objAddr) {
+    if (objAddr === J2ME.Constants.NULL) {
+        return 0;
+    }
+
     var self = getHandle(addr);
     var classInfo = J2ME.classIdToClassInfoMap[self.vmClass];
-    return objAddr !== J2ME.Constants.NULL && J2ME.isAssignableTo(getHandle(objAddr).classInfo, classInfo) ? 1 : 0;
+    var objClassInfo = J2ME.getClassInfo(objAddr);
+    return J2ME.isAssignableTo(objClassInfo, classInfo) ? 1 : 0;
 };
 
 Native["java/lang/Float.floatToIntBits.(F)I"] = function(addr, f) {
