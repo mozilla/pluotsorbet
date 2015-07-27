@@ -246,7 +246,7 @@ Native["tests/recordstore/ReaderMIDlet.waitWriterWrote.()V"] = function(addr) {
 
 Native["tests/background/DestroyMIDlet.sendDestroyMIDletEvent.()V"] = function(addr) {
   MIDP.setDestroyedForRestart(true);
-  MIDP.sendDestroyMIDletEvent(J2ME.newString("tests.background.DestroyMIDlet"));
+  MIDP.sendDestroyMIDletEvent("tests.background.DestroyMIDlet");
 };
 
 Native["tests/background/DestroyMIDlet.sendExecuteMIDletEvent.()V"] = function(addr) {
@@ -276,7 +276,7 @@ Native["tests/midlets/ContentHandlerStarterMIDlet.sendShareMessage.()V"] = funct
 
 Native["tests/midlets/ContentHandlerStarterMIDlet.startMIDlet.()V"] = function(addr) {
   setTimeout(function() {
-    MIDP.sendExecuteMIDletEvent(1, J2ME.newString("tests.midlets.ContentHandlerMIDlet"));
+    MIDP.sendExecuteMIDletEvent(1, "tests.midlets.ContentHandlerMIDlet");
   }, 0);
 };
 

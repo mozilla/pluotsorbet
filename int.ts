@@ -436,6 +436,7 @@ module J2ME {
       }
       if (methodInfo.isSynchronized) {
         var monitorAddr = methodInfo.isStatic ? $.getClassObjectAddress(methodInfo.classInfo) : arguments[0];
+        i32[calleeFP + FrameLayout.MonitorOffset] = monitorAddr;
         $.ctx.monitorEnter(getMonitor(monitorAddr));
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {

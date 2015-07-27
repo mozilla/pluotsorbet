@@ -1274,7 +1274,8 @@ module J2ME {
       return Constants.NULL;
     }
 
-    var objectAddr = allocUncollectableObject(CLASSES.java_lang_String);
+    var objectAddr = allocObject(CLASSES.java_lang_String);
+    setUncollectable(objectAddr);
     var object = <java.lang.String>getHandle(objectAddr);
 
     var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
@@ -1284,6 +1285,7 @@ module J2ME {
     object.value = arrayAddr;
     object.offset = 0;
     object.count = encoded.length;
+    unsetUncollectable(objectAddr);
     return objectAddr;
   }
 
