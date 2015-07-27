@@ -19,7 +19,6 @@ var currentlyFocusedTextEditor;
     }
 
     scaleCanvas(MIDP.deviceContext.canvas);
-    // MIDP.deviceContext.setTransform(MIDP.devicePixelRatio, 0, 0, MIDP.devicePixelRatio, 0, 0);
     // XXX if config.useOffscreenCanvas, then scale that canvas too.
 
     var offscreenCanvas, offscreenContext2D;
@@ -42,7 +41,6 @@ var currentlyFocusedTextEditor;
         }
 
         scaleCanvas(MIDP.deviceContext.canvas);
-        // MIDP.deviceContext.setTransform(MIDP.devicePixelRatio, 0, 0, MIDP.devicePixelRatio, 0, 0);
         // XXX if config.useOffscreenCanvas, then scale that canvas too.
 
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
@@ -575,12 +573,10 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
-        // return this.info.contextInfo.context.canvas.width;
         return this.info.contextInfo.context.canvas.logicalWidth;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function() {
-        // return this.info.contextInfo.context.canvas.height;
         return this.info.contextInfo.context.canvas.logicalHeight;
     };
 
