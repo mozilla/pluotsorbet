@@ -1,4 +1,6 @@
 //#define GC_DEBUG
+//#define GC_MAXIMUM_HEAP_SIZE (128 * 1024 * 1024)
+#define GC_IGNORE_WARN
 
 #include "gc.h"
 #include <stdio.h>
@@ -71,7 +73,7 @@ extern "C" {
   }
 
   void registerFinalizer(uintptr_t p) {
-    GC_REGISTER_FINALIZER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
+    GC_REGISTER_FINALIZER_NO_ORDER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
   }
 
   void forceCollection(void) {
@@ -88,5 +90,4 @@ extern "C" {
 
 int main() {
   GC_INIT();
-  GC_set_max_heap_size(128 * 1024 * 1024);
 }
