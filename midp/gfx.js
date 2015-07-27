@@ -335,7 +335,7 @@ var currentlyFocusedTextEditor;
                                   width * MIDP.devicePixelRatio,
                                   height * MIDP.devicePixelRatio,
                                   0, 0, width, height);
-            abgrData = new Int32Array(tempContext.getImageData(x, y, width, height).data.buffer);
+            abgrData = new Int32Array(tempContext.getImageData(0, 0, width, height).data.buffer);
             tempContext.canvas.width = 0;
             tempContext.canvas.height = 0;
         }
@@ -750,7 +750,24 @@ var currentlyFocusedTextEditor;
         }
 
         var context = this.graphics.info.contextInfo.context;
-        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
+        var abgrData;
+
+        if (MIDP.devicePixelRatio === 1) {
+            abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
+        } else {
+            tempContext.canvas.width = width;
+            tempContext.canvas.height = height;
+            tempContext.drawImage(context.canvas,
+                                  x * MIDP.devicePixelRatio,
+                                  y * MIDP.devicePixelRatio,
+                                  width * MIDP.devicePixelRatio,
+                                  height * MIDP.devicePixelRatio,
+                                  0, 0, width, height);
+            abgrData = new Int32Array(tempContext.getImageData(0, 0, width, height).data.buffer);
+            tempContext.canvas.width = 0;
+            tempContext.canvas.height = 0;
+        }
+
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
     };
 
@@ -780,7 +797,11 @@ var currentlyFocusedTextEditor;
 
         var c = graphics.info.getGraphicsContext();
 
-        c.drawImage(tempContext.canvas, x, y);
+        c.drawImage(tempContext.canvas,
+                    x * MIDP.devicePixelRatio,
+                    y * MIDP.devicePixelRatio,
+                    width * MIDP.devicePixelRatio,
+                    height * MIDP.devicePixelRatio);
         tempContext.canvas.width = 0;
         tempContext.canvas.height = 0;
     };
