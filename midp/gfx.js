@@ -575,13 +575,13 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
-        return this.info.contextInfo.context.canvas.width;
-        // return this.info.contextInfo.context.canvas.logicalWidth;
+        // return this.info.contextInfo.context.canvas.width;
+        return this.info.contextInfo.context.canvas.logicalWidth;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function() {
-        return this.info.contextInfo.context.canvas.height;
-        // return this.info.contextInfo.context.canvas.logicalHeight;
+        // return this.info.contextInfo.context.canvas.height;
+        return this.info.contextInfo.context.canvas.logicalHeight;
     };
 
     Native["javax/microedition/lcdui/Graphics.getCreator.()Ljava/lang/Object;"] = function() {
