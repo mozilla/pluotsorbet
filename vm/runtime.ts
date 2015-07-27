@@ -1428,15 +1428,25 @@ module J2ME {
     return newArray(PrimitiveClassInfo.I, size);
   }
 
+  var jStringDecoder = new TextDecoder('utf-16');
+
+  export function fromJavaChars(charsAddr, offset, count) {
+    release || assert(charsAddr !== Constants.NULL);
+
+    var start = (Constants.ARRAY_HDR_SIZE + charsAddr >> 1) + offset;
+
+    return jStringDecoder.decode(u16.subarray(start, start + count));
+  }
+
   export function fromStringAddr(stringAddr: number): string {
     if (stringAddr === Constants.NULL) {
       return null;
     }
 
     // XXX Retrieve the characters directly from memory, without indirecting
-    // through getHandle and getArrayFromAddr.
+    // through getHandle.
     var javaString = <java.lang.String>getHandle(stringAddr);
-    return util.fromJavaChars(getArrayFromAddr(javaString.value), javaString.offset, javaString.count);
+    return fromJavaChars(javaString.value, javaString.offset, javaString.count);
   }
 
   export function checkDivideByZero(value: number) {
