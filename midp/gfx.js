@@ -437,10 +437,9 @@ var currentlyFocusedTextEditor;
         return fontContext.measureText(String.fromCharCode(char)).width | 0;
     };
 
-    Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(addr, strAddr, offset, len) {
-        var str = J2ME.getArrayFromAddr(strAddr);
+    Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(addr, charsAddr, offset, len) {
         var fontContext = NativeMap.get(addr);
-        return calcStringWidth(fontContext, util.fromJavaChars(str).slice(offset, offset + len));
+        return calcStringWidth(fontContext, J2ME.fromJavaChars(charsAddr, offset, len));
     };
 
     Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(addr, strAddr, offset, len) {
@@ -1029,8 +1028,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawChars.([CIIIII)V"] =
     function(addr, dataAddr, offset, len, x, y, anchor) {
-        var data = J2ME.getArrayFromAddr(dataAddr);
-        drawString(NativeMap.get(addr), util.fromJavaChars(data, offset, len), x, y, anchor);
+        drawString(NativeMap.get(addr), J2ME.fromJavaChars(dataAddr, offset, len), x, y, anchor);
     };
 
     Native["javax/microedition/lcdui/Graphics.drawChar.(CIII)V"] = function(addr, jChr, x, y, anchor) {
@@ -1537,9 +1535,10 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.setMaxSize.(I)I"] = function(addr, maxSize) {
-        var self = getHandle(addr);
         var nativeTextEditor = NativeMap.get(addr);
         if (nativeTextEditor.getContentSize() > maxSize) {
+            var self = getHandle(addr);
+
             var oldCaretPosition = getTextEditorCaretPosition(self);
 
             nativeTextEditor.setContent(nativeTextEditor.getSlice(0, maxSize));

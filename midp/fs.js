@@ -737,8 +737,7 @@ function(addr, rootAddr) {
     var root = J2ME.fromStringAddr(rootAddr);
     // XXX Ensure root is in MIDP.fsRoots?
     DEBUG_FS && console.log("getNativePathForRoot: " + root);
-    var nativePath = J2ME.newString("/" + root);
-    return nativePath;
+    return J2ME.newString("/" + root);
 };
 
 Native["com/sun/cdc/io/j2me/file/DefaultFileHandler.illegalFileNameChars0.()Ljava/lang/String;"] = function(addr) {

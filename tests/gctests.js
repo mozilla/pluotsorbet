@@ -17,7 +17,11 @@ console.error = function (c) {
   putstr(String.fromCharCode(c));
 };
 
-var freedAddr = 0;
+var finalizedAddresses = [];
+
+function nextFinalized() {
+  return finalizedAddresses.shift();
+}
 
 var passed = 0, failed = 0;
 
@@ -54,7 +58,7 @@ function ok(a, msg) {
 var tests = [];
 
 function next() {
-  freedAddr = 0;
+  finalizedAddresses = [];
 
   if (tests.length == 0) {
     ok(true, "TESTS COMPLETED");
@@ -70,7 +74,7 @@ tests.push(function() {
   var addr = ASM._gcMalloc(4);
   ASM._registerFinalizer(addr);
   ASM._forceCollection();
-  is(freedAddr, addr, "Object allocated with gcMalloc is freed");
+  is(nextFinalized(), addr, "Object allocated with gcMalloc is freed");
 
   next();
 });
@@ -80,13 +84,13 @@ tests.push(function() {
   var addr = ASM._gcMallocUncollectable(4);
   ASM._registerFinalizer(addr);
   ASM._forceCollection();
-  isNot(freedAddr, addr, "Object allocated with gcMallocUncollectable isn't freed");
+  isNot(nextFinalized(), addr, "Object allocated with gcMallocUncollectable isn't freed");
 
   ASM._gcFree(addr);
 
   ASM._forceCollection();
   ASM._forceCollection();
-  is(freedAddr, addr, "Finalizer is called for a freed object");
+  is(nextFinalized(), addr, "Finalizer is called for a freed object");
 
   next();
 });
@@ -96,7 +100,7 @@ tests.push(function() {
   var addr = ASM._gcMallocAtomic(4);
   ASM._registerFinalizer(addr);
   ASM._forceCollection();
-  is(freedAddr, addr, "Object allocated with gcMallocAtomic is freed");
+  is(nextFinalized(), addr, "Object allocated with gcMallocAtomic is freed");
 
   next();
 });
@@ -116,15 +120,15 @@ tests.push(function() {
 
   i32[addr >> 2] = objAddr;
   ASM._forceCollection();
-  is(freedAddr, objAddr, "Values in an area allocated via gcMallocAtomic aren't considered references");
+  is(nextFinalized(), objAddr, "Values in an area allocated via gcMallocAtomic aren't considered references");
 
   ASM._gcFree(uncollectableAddr);
 
   ASM._forceCollection();
-  is(freedAddr, addr, "Object not referenced by anyone anymore is freed");
+  is(nextFinalized(), addr, "Object not referenced by anyone anymore is freed");
 
   ASM._forceCollection();
-  is(freedAddr, uncollectableAddr, "Finalizer is called for a freed object");
+  is(nextFinalized(), uncollectableAddr, "Finalizer is called for a freed object");
 
   next();
 });
@@ -135,7 +139,7 @@ tests.push(function() {
   ASM._registerFinalizer(objAddr);
 
   ASM._forceCollection();
-  is(freedAddr, objAddr, "An object not referenced by anyone is freed");
+  is(nextFinalized(), objAddr, "An object not referenced by anyone is freed");
 
   next();
 });
@@ -146,7 +150,7 @@ tests.push(function() {
   ASM._registerFinalizer(objAddr);
 
   ASM._forceCollection();
-  is(freedAddr, objAddr, "A primitive array not referenced by anyone is freed");
+  is(nextFinalized(), objAddr, "A primitive array not referenced by anyone is freed");
 
   next();
 });
@@ -157,7 +161,7 @@ tests.push(function() {
   ASM._registerFinalizer(objAddr);
 
   ASM._forceCollection();
-  is(freedAddr, objAddr, "A composite array not referenced by anyone is freed");
+  is(nextFinalized(), objAddr, "A composite array not referenced by anyone is freed");
 
   next();
 });
@@ -171,16 +175,16 @@ tests.push(function() {
 
   i32[addr >> 2] = objAddr;
   ASM._forceCollection();
-  isNot(freedAddr, addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
-  isNot(freedAddr, objAddr, "Object referenced by someone isn't freed");
+  isNot(nextFinalized(), addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
+  isNot(nextFinalized(), objAddr, "Object referenced by someone isn't freed");
 
   ASM._gcFree(addr);
 
   ASM._forceCollection();
-  is(freedAddr, objAddr, "Object that isn't referenced by anyone anymore is freed");
+  is(nextFinalized(), objAddr, "Object that isn't referenced by anyone anymore is freed");
 
   ASM._forceCollection();
-  is(freedAddr, addr, "Finalizer is called for a freed object");
+  is(nextFinalized(), addr, "Finalizer is called for a freed object");
 
   next();
 });
@@ -194,13 +198,13 @@ tests.push(function() {
 
   i32[addr >> 2] = objAddr;
   ASM._forceCollection();
-  isNot(freedAddr, addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
-  isNot(freedAddr, objAddr, "Object referenced by someone isn't freed");
+  isNot(nextFinalized(), addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
+  isNot(nextFinalized(), objAddr, "Object referenced by someone isn't freed");
 
   i32[addr >> 2] = 0;
 
   ASM._forceCollection();
-  is(freedAddr, objAddr, "Object that isn't referenced by anyone anymore is freed");
+  is(nextFinalized(), objAddr, "Object that isn't referenced by anyone anymore is freed");
 
   next();
 });
@@ -214,13 +218,13 @@ tests.push(function() {
 
   i32[addr >> 2] = objAddr;
   ASM._forceCollection();
-  isNot(freedAddr, addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
-  isNot(freedAddr, objAddr, "Object referenced by someone isn't freed");
+  isNot(nextFinalized(), addr, "Object allocated with GC_MALLOC_UNCOLLECTABLE isn't collected");
+  isNot(nextFinalized(), objAddr, "Object referenced by someone isn't freed");
 
   i32[addr >> 2] = 0;
 
   ASM._forceCollection();
-  is(freedAddr, objAddr, "Object that isn't referenced by anyone anymore is freed");
+  is(nextFinalized(), objAddr, "Object that isn't referenced by anyone anymore is freed");
 
   next();
 });
@@ -234,9 +238,9 @@ tests.push(function() {
 
   i32[addr + J2ME.Constants.ARRAY_HDR_SIZE >> 2] = objAddr;
   ASM._forceCollection();
-  is(freedAddr, addr, "Object not referenced by anyone is freed");
+  is(nextFinalized(), addr, "Object not referenced by anyone is freed");
   ASM._forceCollection();
-  is(freedAddr, objAddr, "Object that isn't referenced by anyone anymore is freed");
+  is(nextFinalized(), objAddr, "Object that isn't referenced by anyone anymore is freed");
 
   next();
 });
@@ -256,15 +260,15 @@ tests.push(function() {
 
   i32[addr + J2ME.Constants.ARRAY_HDR_SIZE >> 2] = objAddr;
   ASM._forceCollection();
-  is(freedAddr, objAddr, "Values in an area allocated via newArray (primitive) aren't considered references");
+  is(nextFinalized(), objAddr, "Values in an area allocated via newArray (primitive) aren't considered references");
 
   ASM._gcFree(uncollectableAddr);
 
   ASM._forceCollection();
-  is(freedAddr, addr, "Object not referenced by anyone anymore is freed");
+  is(nextFinalized(), addr, "Object not referenced by anyone anymore is freed");
 
   ASM._forceCollection();
-  is(freedAddr, uncollectableAddr, "Finalizer is called for a freed object");
+  is(nextFinalized(), uncollectableAddr, "Finalizer is called for a freed object");
 
   next();
 });
@@ -361,7 +365,7 @@ tests.push(function() {
   ok(NativeMap.has(addr), "Native object is in the NativeMap map");
 
   ASM._forceCollection();
-  is(freedAddr, addr, "Object not referenced by anyone is freed");
+  is(nextFinalized(), addr, "Object not referenced by anyone is freed");
 
   ok(!NativeMap.has(addr), "Native object has been removed from the NativeMap map");
 
@@ -375,7 +379,7 @@ tests.push(function() {
   ok(NativeMap.has(addr), "Native object is in the NativeMap map");
 
   ASM._forceCollection();
-  isNot(freedAddr, addr, "Uncollectable memory isn't freed");
+  isNot(nextFinalized(), addr, "Uncollectable memory isn't freed");
 
   ok(NativeMap.has(addr), "Native object is still in the NativeMap map");
 
@@ -395,7 +399,7 @@ try {
   var origOnFinalize = J2ME.onFinalize;
   J2ME.onFinalize = function(addr) {
     origOnFinalize(addr);
-    freedAddr = addr;
+    finalizedAddresses.push(addr);
   };
 
   var start = dateNow();
