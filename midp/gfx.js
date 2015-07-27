@@ -322,7 +322,24 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {
-        var abgrData = new Int32Array(this.contextInfo.context.getImageData(x, y, width, height).data.buffer);
+        var abgrData;
+
+        if (MIDP.devicePixelRatio === 1) {
+            abgrData = new Int32Array(this.contextInfo.context.getImageData(x, y, width, height).data.buffer);
+        } else {
+            tempContext.canvas.width = width;
+            tempContext.canvas.height = height;
+            tempContext.drawImage(this.contextInfo.context.canvas,
+                                  x * MIDP.devicePixelRatio,
+                                  y * MIDP.devicePixelRatio,
+                                  width * MIDP.devicePixelRatio,
+                                  height * MIDP.devicePixelRatio,
+                                  0, 0, width, height);
+            abgrData = new Int32Array(tempContext.getImageData(x, y, width, height).data.buffer);
+            tempContext.canvas.width = 0;
+            tempContext.canvas.height = 0;
+        }
+
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     };
 
