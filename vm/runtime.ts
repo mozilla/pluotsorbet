@@ -437,7 +437,6 @@ module J2ME {
             classInfo === CLASSES.java_lang_Class ||
             classInfo === CLASSES.java_lang_String ||
             classInfo === CLASSES.java_lang_Thread) {
-          var handle = <java.lang.Class>getHandle(addr);
           handle.status = 4;
           this.setClassInitialized(classInfo.id);
         }
@@ -1382,7 +1381,7 @@ module J2ME {
     var length = lengths[0];
     var arrayAddr = newArray(classInfo.elementClass, length);
     setUncollectable(arrayAddr);
-    var array = getHandle(arrayAddr);
+    var array = getArrayFromAddr(arrayAddr);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i = 0; i < length; i++) {

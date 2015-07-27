@@ -345,16 +345,18 @@ module J2ME {
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }
 
-    startIsolate(isolate: Isolate) {
+    startIsolate(isolateAddr: number) {
+      var isolate = <Isolate>getHandle(isolateAddr);
+
       var ctx = this.createIsolateCtx();
       var runtime = ctx.runtime;
-      runtime.isolateAddress = isolate._address;
+      runtime.isolateAddress = isolateAddr;
 
       // We could look this up from the address, but we use it a lot,
       // so we cache it here.
       runtime.isolateId = isolate._id;
 
-      setNative(isolate._address, runtime);
+      setNative(isolateAddr, runtime);
 
       var sys = CLASSES.getClass("org/mozilla/internal/Sys");
 
@@ -367,7 +369,7 @@ module J2ME {
 
       ctx.nativeThread.pushFrame(null);
       ctx.nativeThread.pushFrame(entryPoint);
-      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolate._address);
+      ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolateAddr);
       ctx.start();
       release || Debug.assert(!U, "Unexpected unwind during isolate initialization.");
     }

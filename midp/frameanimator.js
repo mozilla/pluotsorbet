@@ -24,7 +24,7 @@ FrameAnimator.prototype.unregister = function() {
   this.y = null;
   this.maxFps = null;
   this.maxPps = null;
-  this.listener = null;
+  this.listener = J2ME.Constants.NULL;
   this._isRegistered = false;
   --FrameAnimator.numRegistered;
 };
@@ -54,8 +54,7 @@ function(addr, x, y, maxFps, maxPps, listenerAddr) {
 
   // XXX return false if FrameAnimator.numRegistered >= FRAME_ANIMATOR_MAX_CONCURRENT
 
-  var listener = getHandle(listenerAddr);
-  nativeObject.register(x, y, maxFps, maxPps, listener);
+  nativeObject.register(x, y, maxFps, maxPps, listenerAddr);
   return 1;
 };
 

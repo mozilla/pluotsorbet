@@ -1537,9 +1537,10 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/TextEditor.setMaxSize.(I)I"] = function(addr, maxSize) {
-        var self = getHandle(addr);
         var nativeTextEditor = NativeMap.get(addr);
         if (nativeTextEditor.getContentSize() > maxSize) {
+            var self = getHandle(addr);
+
             var oldCaretPosition = getTextEditorCaretPosition(self);
 
             nativeTextEditor.setContent(nativeTextEditor.getSlice(0, maxSize));
