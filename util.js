@@ -47,19 +47,6 @@ var util = (function () {
     return Long.fromNumber(d);
   }
 
-  var jStringDecoder = new TextDecoder('utf-16');
-
-  function fromJavaChars(chars, offset, count) {
-    if (!chars) {
-      return null;
-    }
-    if (typeof count !== 'number')
-      count = chars.length;
-    if (typeof offset !== 'number')
-      offset = 0;
-    return jStringDecoder.decode(chars.subarray(offset, offset + count));
-  }
-
   var id = (function() {
     var gen = 0;
     return function() {
@@ -151,7 +138,6 @@ var util = (function () {
     decodeUtf8Array: decodeUtf8Array,
     double2int: double2int,
     double2long: double2long,
-    fromJavaChars: fromJavaChars,
     id: id,
     compareTypedArrays: compareTypedArrays,
     pad: pad,
