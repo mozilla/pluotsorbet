@@ -439,7 +439,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(addr, charsAddr, offset, len) {
         var fontContext = NativeMap.get(addr);
-        return calcStringWidth(fontContext, J2ME.fromJavaChars(charsAddr).slice(offset, offset + len));
+        return calcStringWidth(fontContext, J2ME.fromJavaChars(charsAddr, offset, len));
     };
 
     Native["javax/microedition/lcdui/Font.substringWidth.(Ljava/lang/String;II)I"] = function(addr, strAddr, offset, len) {

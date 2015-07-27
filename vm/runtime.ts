@@ -1428,7 +1428,7 @@ module J2ME {
 
   var jStringDecoder = new TextDecoder('utf-16');
 
-  export function fromJavaChars(charsAddr, offset = 0, count = i32[charsAddr + Constants.ARRAY_LENGTH_OFFSET >> 2]) {
+  export function fromJavaChars(charsAddr, offset, count) {
     release || assert(charsAddr !== Constants.NULL);
 
     var start = (Constants.ARRAY_HDR_SIZE + charsAddr >> 1) + offset;
