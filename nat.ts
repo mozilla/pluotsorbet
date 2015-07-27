@@ -187,8 +187,4 @@ module J2ME {
     var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
     getLinkedMethod(entryPoint)(Constants.NULL, isolate._mainArgs);
   };
-
-  Native["org/mozilla/internal/Sys.forceCollection.()V"] = function(addr: number) {
-    ASM._forceCollection();
-  };
 }
