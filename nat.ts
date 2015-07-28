@@ -138,7 +138,15 @@ module J2ME {
       // the address of a Java object associated with another Java object.
 
       setNative(addr, targetAddr);
-      weakReferences.set(targetAddr, addr);
+
+      var refs = weakReferences.get(targetAddr);
+      if (refs) {
+        refs.push(addr);
+      } else {
+        refs = [ addr ];
+      }
+      weakReferences.set(targetAddr, refs);
+
       ASM._registerFinalizer(targetAddr);
   };
 
@@ -147,7 +155,20 @@ module J2ME {
   };
 
   Native["java/lang/ref/WeakReference.clear.()V"] = function(addr: number): void {
-      weakReferences.delete(<number>NativeMap.get(addr));
+      var targetAddr = <number>NativeMap.get(addr);
+      var refs = weakReferences.get(targetAddr);
+      if (refs) {
+        var i = 0;
+
+        while (refs[i] != addr && i++ < refs.length);
+
+        refs.splice(i, 1);
+
+        if (refs.length === 0) {
+          weakReferences.delete(targetAddr);
+        }
+      }
+
       NativeMap.delete(addr);
   };
 
