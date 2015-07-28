@@ -1199,18 +1199,8 @@ module J2ME {
     return address;
   }
 
-  export var weakReferences = new Map<number,number[]>();
-
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
-
-    var weakReferenceAddresses = weakReferences.get(addr);
-    if (weakReferenceAddresses) {
-      for (var i = 0; i < weakReferenceAddresses.length; i++) {
-        NativeMap.delete(weakReferenceAddresses[i]);
-      }
-      weakReferences.delete(addr);
-    }
   }
 
   /**

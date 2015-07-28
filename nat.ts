@@ -131,47 +131,28 @@ module J2ME {
   };
 
   Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr: number, targetAddr: number): void {
-      // Store the weak reference in NativeMap.
-      //
-      // This is technically a misuse of NativeMap, which is intended to store
-      // native objects associated with Java objects, whereas here we're storing
-      // the address of a Java object associated with another Java object.
-
-      setNative(addr, targetAddr);
-
-      var refs = weakReferences.get(targetAddr);
-      if (refs) {
-        refs.push(addr);
-      } else {
-        refs = [ addr ];
+      if (targetAddr === J2ME.Constants.NULL) {
+        return;
       }
-      weakReferences.set(targetAddr, refs);
 
-      ASM._registerFinalizer(targetAddr);
+      var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+      weakRef.holder = ASM._gcMallocAtomic(4);
+      i32[weakRef.holder >> 2] = targetAddr;
+      ASM._gcRegisterDisappearingLink(weakRef.holder, targetAddr);
   };
 
   Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr: number): number {
-      return NativeMap.has(addr) ? <number>NativeMap.get(addr) : J2ME.Constants.NULL;
+    var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+    if (weakRef.holder === J2ME.Constants.NULL) {
+      return J2ME.Constants.NULL;
+    }
+    return i32[weakRef.holder >> 2];
   };
 
   Native["java/lang/ref/WeakReference.clear.()V"] = function(addr: number): void {
-      var targetAddr = <number>NativeMap.get(addr);
-      var refs = weakReferences.get(targetAddr);
-      if (refs) {
-        var i = 0;
-
-        while (refs[i] != addr && i++ < refs.length);
-
-        release || assert(i < refs.length, "found WeakReference object in the weakReferences map");
-
-        refs.splice(i, 1);
-
-        if (refs.length === 0) {
-          weakReferences.delete(targetAddr);
-        }
-      }
-
-      NativeMap.delete(addr);
+    var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+    ASM._gcUnregisterDisappearingLink(weakRef.holder);
+    weakRef.holder = J2ME.Constants.NULL;
   };
 
   Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function(addr: number) {

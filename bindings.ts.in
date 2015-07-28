@@ -47,6 +47,13 @@ module J2ME {
         }
       }
     },
+    "java/lang/ref/WeakReference": {
+      fields: {
+        instanceSymbols: {
+          "holder": "Ljava/lang/Object;",
+        },
+      },
+    },
     "com/sun/cldc/isolate/Isolate": {
       fields: {
         instanceSymbols: {
@@ -436,6 +443,15 @@ module J2ME {
     export interface IllegalThreadStateException extends java.lang.Exception {
     }
 
+  }
+
+  export module java.lang.ref {
+    export interface Reference extends java.lang.Object {
+    }
+
+    export interface WeakReference extends java.lang.ref.Reference {
+      holder: number;
+    }
   }
 
   export module java.io {
