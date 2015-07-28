@@ -162,6 +162,8 @@ module J2ME {
 
         while (refs[i] != addr && i++ < refs.length);
 
+        release || assert(i < refs.length, "found WeakReference object in the weakReferences map");
+
         refs.splice(i, 1);
 
         if (refs.length === 0) {
