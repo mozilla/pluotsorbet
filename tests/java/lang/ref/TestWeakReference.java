@@ -4,7 +4,7 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
 public class TestWeakReference implements Testlet {
-  public int getExpectedPass() { return 8; }
+  public int getExpectedPass() { return 11; }
   public int getExpectedFail() { return 0; }
   public int getExpectedKnownFail() { return 0; }
 
