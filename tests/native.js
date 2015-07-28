@@ -287,3 +287,15 @@ Native["tests/midlets/ContentHandlerMIDlet.shouldStop.()Z"] = function(addr) {
 
   return 0;
 };
+
+Native["java/lang/ref/TestWeakReference.setNative.(Ljava/lang/Object;)V"] = function(addr, objAddr) {
+  NativeMap.set(objAddr, { prop: "ciao", });
+};
+
+Native["java/lang/ref/TestWeakReference.checkNative.(Ljava/lang/Object;)Z"] = function(addr, objAddr) {
+  return (NativeMap.has(objAddr) && NativeMap.get(objAddr).prop === "ciao") ? 1 : 0
+};
+
+Native["java/lang/ref/TestWeakReference.simulateFinalizer.(Ljava/lang/Object;)V"] = function(addr, objAddr) {
+  J2ME.onFinalize(objAddr);
+};
