@@ -4,7 +4,7 @@ import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
 public class TestWeakReference implements Testlet {
-  public int getExpectedPass() { return 11; }
+  public int getExpectedPass() { return 10; }
   public int getExpectedFail() { return 0; }
   public int getExpectedKnownFail() { return 0; }
 
@@ -19,10 +19,6 @@ public class TestWeakReference implements Testlet {
       gcWeakRef2 = new WeakReference(obj);
     }
   }
-
-  native void setNative(Object object);
-  native boolean checkNative(Object object);
-  native void simulateFinalizer(Object object);
 
   public void test(TestHarness th) {
     Object obj = new Object();
@@ -54,20 +50,5 @@ public class TestWeakReference implements Testlet {
     th.check(gcWeakRef2.get() == null, "second GC cleared weakly held referent is null");
     gcWeakRef.clear();
     th.check(gcWeakRef.get() == null, "clearing a WeakReference cleared by the GC works");
-
-
-    WeakReference clearWeakRef = new WeakReference(obj);
-    clearWeakRef.clear();
-
-    // Simulate the situation where a native is attached to an object allocated
-    // at the same address as a WeakReference object. In theory this could happen
-    // after a WeakReference object is garbage collected.
-    setNative(clearWeakRef);
-
-    simulateFinalizer(obj);
-
-    // Check that the native object is still in the NativeMap. If we don't clear
-    // the WeakReference correctly, this could fail.
-    th.check(checkNative(clearWeakRef), "native object still exists");
   }
 }
