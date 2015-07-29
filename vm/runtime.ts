@@ -1571,20 +1571,13 @@ module J2ME {
     if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.getClassNameSlow()]) {
       return;
     }
-//<<<<<<< HEAD
+
     // TODO: make this more efficient when we decide on how to invoke code.
-    getLinkedMethod(CLASSES.java_lang_Class.getMethodByNameString("initialize", "()V"))($.getClassObjectAddress(classInfo));
-/*=======
-    linkKlass(classInfo);
-    var runtimeKlass = $.getRuntimeKlass(classInfo.klass);
-    if (!initializeMethodInfo) {
-      initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
-    }
     var thread = $.ctx.nativeThread;
     thread.pushMarkerFrame(FrameType.Interrupt);
     thread.pushMarkerFrame(FrameType.Native);
     var frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
-    runtimeKlass.classObject[initializeMethodInfo.virtualName](runtimeKlass.classObject._address);
+    getLinkedMethod(CLASSES.java_lang_Class.getMethodByNameString("initialize", "()V"))($.getClassObjectAddress(classInfo));
     if (U) {
       i32[frameTypeOffset] = FrameType.PushPendingFrames;
       thread.unwoundNativeFrames.push(null);
@@ -1592,7 +1585,6 @@ module J2ME {
     }
     thread.popMarkerFrame(FrameType.Native);
     thread.popMarkerFrame(FrameType.Interrupt);
->>>>>>> 36e7141f980e74f894d3c9d8843d44db12e810e5*/
   }
 
   export function preempt() {
