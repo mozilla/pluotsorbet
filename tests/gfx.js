@@ -69,7 +69,7 @@ var gfxTests = [
   { name: "gfx/DrawStringBaselineAnchorTest", maxDifferentLinux: 260, maxDifferentMac: 317 },
   { name: "gfx/DrawStringBottomAnchorTest", maxDifferentLinux: 260, maxDifferentMac: 324 },
   { name: "gfx/DrawStringHCenterAnchorTest", maxDifferentLinux: 213, maxDifferentMac: 303 },
-  { name: "gfx/DrawStringViaImageTest", maxDifferentLinux: 1045, maxDifferentMac: 0 },
+  { name: "gfx/DrawStringViaImageTest", maxDifferentLinux: 0, maxDifferentMac: 1046 },
   { name: "gfx/RectAfterText", maxDifferentLinux: 446, maxDifferentMac: 746 },
   { name: "gfx/DrawStringWithEmojiTest", maxDifferentLinux: 968, maxDifferentMac: 1176 },
   { name: "gfx/DrawSubstringWithEmojiTest", maxDifferentLinux: 968, maxDifferentMac: 1176 },
