@@ -1372,6 +1372,8 @@ var MIDP = (function() {
     sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
     sendKeyPress: sendKeyPress,
     sendKeyRelease: sendKeyRelease,
+    sendPenEvent: sendPenEvent, // EXPOSED FOR TESTING PURPOSES ONLY
+    sendGestureEvent: sendGestureEvent, // EXPOSED FOR TESTING PURPOSES ONLY
     sendDestroyMIDletEvent: sendDestroyMIDletEvent,
     setDestroyedForRestart: setDestroyedForRestart,
     registerDestroyedListener: registerDestroyedListener,

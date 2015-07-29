@@ -290,3 +290,27 @@ Native["tests/midlets/background/ForegroundEnableBackgroundServiceMIDlet.started
     });
   }));
 };
+
+var PRESSED = 1;
+var RELEASED = 2;
+var DRAGGED = 3;
+var GESTURE_DRAG = 0x4;
+Native["tests/drag/CoalesceCanvas.singleDragTest0.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendPenEvent({x: 15, y: 15}, PRESSED);
+    MIDP.sendPenEvent({x: 20, y: 25}, DRAGGED);
+    MIDP.sendPenEvent({x: 20, y: 25}, RELEASED);
+  }, 100);
+}
+
+Native["tests/drag/CoalesceCanvas.simpleMultiDragTest0.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendPenEvent({x: 0, y: 0}, PRESSED);
+    MIDP.sendPenEvent({x: 1, y: 1}, DRAGGED);
+    MIDP.sendPenEvent({x: 3, y: 5}, DRAGGED);
+    MIDP.sendPenEvent({x: 7, y: 9}, DRAGGED);
+    MIDP.sendPenEvent({x: 30, y: 30}, DRAGGED);
+    MIDP.sendPenEvent({x: 13, y: 27}, DRAGGED);
+    MIDP.sendPenEvent({x: 13, y: 27}, RELEASED);
+  }, 100);
+}

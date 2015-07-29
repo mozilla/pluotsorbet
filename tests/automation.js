@@ -295,6 +295,16 @@ casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
     });
 
     casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests/drag/Coalesce&jad=tests/midlets/drag/coalesce.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextDoesntExist("FAIL");
+            test.assertTextExists("SUCCESS - singleDragTest");
+            test.assertTextExists("SUCCESS - simpleMultiDragTest");
+        });
+    });
+
+    casper
     .thenOpen("http://localhost:8000/index.html?midletClassName=tests/recordstore/WriterMIDlet&jad=tests/midlets/RecordStore/recordstore.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
