@@ -9,6 +9,10 @@ public class TestRuntime implements Testlet {
     public int getExpectedKnownFail() { return 0; }
 
     public void test(TestHarness th) {
+        System.out.println("freeMemory0: " + Runtime.getRuntime().freeMemory());
+
+        Runtime.getRuntime().gc();
+
         long totalMemory = Runtime.getRuntime().totalMemory();
         long freeMemory = Runtime.getRuntime().freeMemory();
 
