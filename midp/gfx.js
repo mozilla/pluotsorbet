@@ -349,8 +349,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(image, argb) {
-        var width = image.width;
-        var height = image.height;
+        var width = image.width * MIDP.devicePixelRatio;
+        var height = image.height * MIDP.devicePixelRatio;
         var imageData = image.imageData;
 
         // NOTE: This function will only ever be called by the variants
@@ -359,6 +359,8 @@ var currentlyFocusedTextEditor;
         // this `ImageData` were just created; nothing can be out of
         // sync yet.
         var ctx = imageData.contextInfo.context;
+
+        // XXX Shouldn't we be able to simply fillRect here?
 
         var ctxImageData = ctx.createImageData(width, height);
         var pixels = new Int32Array(ctxImageData.data.buffer);
@@ -1363,7 +1365,11 @@ var currentlyFocusedTextEditor;
 
         var c = this.info.getGraphicsContext();
 
-        c.drawImage(tempContext.canvas, x, y);
+        c.drawImage(tempContext.canvas,
+                    x * MIDP.devicePixelRatio,
+                    y * MIDP.devicePixelRatio,
+                    width * MIDP.devicePixelRatio,
+                    height * MIDP.devicePixelRatio);
         tempContext.canvas.width = 0;
         tempContext.canvas.height = 0;
     };
