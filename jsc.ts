@@ -20,6 +20,10 @@ console.error = function (c) {
 
 declare var load: (string) => void;
 
+// Overwrite the shell's |quit| method because emscripten generated code calls it prematurely and we
+// don't want to exit.
+function quit() {}
+
 load("libs/relooper.js"); // Load before we polyfill the window object.
 load("bld/native.js"); // Load before we polyfill the window object.
 
@@ -93,8 +97,8 @@ module J2ME {
     }
   }
 
-  loadFiles("libs/long.js", "blackBox.js", "libs/encoding.js", "bld/j2me-jsc.js", "libs/zipfile.js",
-            "libs/jarstore.js", "libs/encoding.js");
+  loadFiles("blackBox.js", "libs/encoding.js", "bld/j2me-jsc.js", "libs/zipfile.js",
+            "libs/jarstore.js", "util.js");
 
   phase = ExecutionPhase.Compiler;
 

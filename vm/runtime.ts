@@ -10,17 +10,6 @@ var tempReturn0 = 0;
 interface Math {
   fround(value: number): number;
 }
-interface Long {
-  isZero(): boolean;
-  toNumber(): number;
-}
-declare var Long: {
-  new (low: number, high: number): Long;
-  ZERO: Long;
-  fromBits(lowBits: number, highBits: number): Long;
-  fromInt(value: number);
-  fromNumber(value: number);
-}
 
 interface CompiledMethodCache {
   get(key: string): { key: string; source: string; referencedClasses: string[]; };
@@ -45,9 +34,14 @@ module J2ME {
     return l;
   }
 
-  export function returnLongValue(v: number) {
-    var value = Long.fromNumber(v);
-    return returnLong(value.low_, value.high_);
+  export function returnDouble(l: number, h: number) {
+    tempReturn0 = h;
+    return l;
+  }
+
+  export function returnDoubleValue(v: number) {
+    aliasedF64[0] = v;
+    return returnDouble(aliasedI32[0], aliasedI32[1]);
   }
 
   declare var Native, config;
@@ -64,7 +58,7 @@ module J2ME {
   /**
    * Turns on onStackReplacement
    */
-  export var enableOnStackReplacement = true;
+  export var enableOnStackReplacement = false;
 
   /**
    * Turns on caching of JIT-compiled methods.
@@ -638,10 +632,10 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+    B(pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
+      $.ctx.bailout(methodInfo, pc, local, stack, lockObject);
     }
 
     /**
@@ -651,7 +645,7 @@ module J2ME {
     T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
+      $.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
     }
 
     yield(reason: string) {
@@ -660,6 +654,13 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
       profile && $.ctx.pauseMethodTimeline();
+      $.ctx.nativeThread.beginUnwind();
+    }
+
+    nativeBailout(returnKind: Kind, opCode?: Bytecode.Bytecodes) {
+      var pc = returnKind === Kind.Void ? 0 : 1;
+      var methodInfo = CLASSES.getUnwindMethodInfo(returnKind, opCode);
+      $.ctx.bailout(methodInfo, pc, [], [], null);
     }
 
     pause(reason: string) {
@@ -668,6 +669,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
       profile && $.ctx.pauseMethodTimeline();
+      $.ctx.nativeThread.beginUnwind();
     }
 
     stop() {
@@ -1014,6 +1016,11 @@ module J2ME {
   export var compiledMethodCount = 0;
 
   /**
+   * Maximum number of methods to compile.
+   */
+  export var maxCompiledMethodCount = -1;
+
+  /**
    * Number of methods that have not been compiled thus far.
    */
   export var notCompiledMethodCount = 0;
@@ -1044,6 +1051,10 @@ module J2ME {
       return;
     }
 
+    // Don't compile if we've compiled too many methods.
+    if (maxCompiledMethodCount > 0 && compiledMethodCount >= maxCompiledMethodCount) {
+      return;
+    }
     // Don't compile methods that are too large.
     if (methodInfo.codeAttribute.code.length > 4000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
@@ -1063,7 +1074,7 @@ module J2ME {
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
-    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
+    jitWriter && jitWriter.enter("Compiling: " + compiledMethodCount + " " + methodInfo.implKey + ", interpreterCallCount: " + methodInfo.stats.interpreterCallCount + " backwardsBranchCount: " + methodInfo.stats.backwardsBranchCount + " currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
     var s = performance.now();
 
     var compiledMethod;
@@ -1455,8 +1466,8 @@ module J2ME {
     }
   }
 
-  export function checkDivideByZeroLong(value: Long) {
-    if (value.isZero()) {
+  export function checkDivideByZeroLong(low: number, high: number) {
+    if (low === 0 && high === 0) {
       throwArithmeticException();
     }
   }
@@ -1503,6 +1514,11 @@ module J2ME {
     }
   }
 
+  export enum ConfigConstants {
+    InvokeThreshold = 1500,
+    BackwardBranchThreshold = 10000
+  }
+
   export enum Constants {
     BYTE_MIN = -128,
     BYTE_MAX = 127,
@@ -1519,7 +1535,10 @@ module J2ME {
     LONG_MIN_LOW = 0,
     LONG_MIN_HIGH = 0x80000000,
 
+    MAX_STACK_SIZE = 1024 * 128,
+
     TWO_PWR_32_DBL = 4294967296,
+    TWO_PWR_63_DBL = 9223372036854776000,
 
     // The size in bytes of the header in the memory allocated to the object.
     OBJ_HDR_SIZE = 8,
@@ -1559,8 +1578,28 @@ module J2ME {
     if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.getClassNameSlow()]) {
       return;
     }
+//<<<<<<< HEAD
     // TODO: make this more efficient when we decide on how to invoke code.
     getLinkedMethod(CLASSES.java_lang_Class.getMethodByNameString("initialize", "()V"))($.getClassObjectAddress(classInfo));
+/*=======
+    linkKlass(classInfo);
+    var runtimeKlass = $.getRuntimeKlass(classInfo.klass);
+    if (!initializeMethodInfo) {
+      initializeMethodInfo = Klasses.java.lang.Class.classInfo.getMethodByNameString("initialize", "()V");
+    }
+    var thread = $.ctx.nativeThread;
+    thread.pushMarkerFrame(FrameType.Interrupt);
+    thread.pushMarkerFrame(FrameType.Native);
+    var frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
+    runtimeKlass.classObject[initializeMethodInfo.virtualName](runtimeKlass.classObject._address);
+    if (U) {
+      i32[frameTypeOffset] = FrameType.PushPendingFrames;
+      thread.unwoundNativeFrames.push(null);
+      return;
+    }
+    thread.popMarkerFrame(FrameType.Native);
+    thread.popMarkerFrame(FrameType.Interrupt);
+>>>>>>> 36e7141f980e74f894d3c9d8843d44db12e810e5*/
   }
 
   export function preempt() {
@@ -1590,9 +1629,6 @@ module J2ME {
     }
     getSP() {
       return this.sp;
-    }
-    getNextPC() {
-      return this.nextPC;
     }
   }
 
@@ -1638,6 +1674,72 @@ module J2ME {
   export function throwUnwind7(pc: number, nextPC: number = pc + 3) {
     throwUnwind(pc, nextPC, 7);
   }
+
+  export function fadd(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
+    aliasedF32[2] = aliasedF32[0] + aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fsub(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
+    aliasedF32[2] = aliasedF32[0] - aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fmul(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
+    aliasedF32[2] = aliasedF32[0] * aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fdiv(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
+    aliasedF32[2] = Math.fround(aliasedF32[0] / aliasedF32[1]);
+    return aliasedI32[2];
+  }
+
+  export function frem(i32A: number, i32B: number): number {
+    aliasedI32[0] = i32A;
+    aliasedI32[1] = i32B;
+    aliasedF32[2] = Math.fround(aliasedF32[0] % aliasedF32[1]);
+    return aliasedI32[2];
+  }
+
+  export function fcmp(i32A: number, i32B: number, isLessThan: boolean): number {
+    var a = (aliasedI32[0] = i32A, aliasedF32[0]);
+    var b = (aliasedI32[0] = i32B, aliasedF32[0]);
+    if (isNaN(a) || isNaN(b)) {
+      return isLessThan ? -1 : 1;
+    } else if (a > b) {
+      return 1;
+    } else if (a < b) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+
+  export function fneg(i32A: number): number {
+    aliasedI32[0] = i32A;
+    aliasedF32[0] = - aliasedF32[0];
+    return aliasedI32[0];
+  }
+
+  export function f2i(i32A: number) {
+    var a = (aliasedI32[0] = i32A, aliasedF32[0]);
+    if (a > Constants.INT_MAX) {
+      return Constants.INT_MAX;
+    } else if (a < Constants.INT_MIN) {
+      return Constants.INT_MIN;
+    } else {
+      return a | 0;
+    }
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1679,7 +1781,7 @@ var B7 = J2ME.throwUnwind7;
  * OSR Frame.
  */
 // REDUX
-var O = null;
+var O: J2ME.MethodInfo = null;
 
 /**
  * Runtime exports for compiled code.
@@ -1709,10 +1811,21 @@ var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
 var TI = J2ME.throwArrayIndexOutOfBoundsException;
 var TA = J2ME.throwArithmeticException;
-var TN = J2ME.throwNegativeArraySizeException;
+var TS = J2ME.throwNegativeArraySizeException;
+var TN = J2ME.throwNullPointerException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
+
+var fadd = J2ME.fadd;
+var fsub = J2ME.fsub;
+var fmul = J2ME.fmul;
+var fdiv = J2ME.fdiv;
+var frem = J2ME.frem;
+var fneg = J2ME.fneg;
+
+var f2i = J2ME.f2i;
+var fcmp = J2ME.fcmp;
 
 var getHandle = J2ME.getHandle;
 

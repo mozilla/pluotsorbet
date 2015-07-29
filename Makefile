@@ -103,7 +103,6 @@ MAIN_JS_SRCS = \
   libs/load.js \
   libs/zipfile.js \
   libs/jarstore.js \
-  libs/long.js \
   libs/encoding.js \
   libs/fs.js \
   libs/fs-init.js \

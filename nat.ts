@@ -45,11 +45,8 @@ module J2ME {
     var ctx = $.ctx;
 
     promise.then(function onFulfilled(l: any, h?: number) {
-      release || J2ME.Debug.assert(!(l instanceof Long.constructor), "Long objects are no longer supported, use low / high pairs.");
       var thread = ctx.nativeThread;
-
-      // The caller's |pc| is currently at the invoke bytecode, we need to skip over the invoke when resuming.
-      thread.advancePastInvokeBytecode();
+      thread.pushPendingNativeFrames();
 
       // Push return value.
       var sp = thread.sp;
@@ -88,17 +85,26 @@ module J2ME {
 
       Scheduler.enqueue(ctx);
     }, function onRejected(exception: java.lang.Exception) {
+      var thread = ctx.nativeThread;
+      thread.pushPendingNativeFrames();
       var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
       var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
+//<<<<<<< HEAD
       ctx.nativeThread.pushFrame(methodInfo);
       ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
 
       cleanup && cleanup();
 
+/*=======
+      thread.pushMarkerFrame(FrameType.Interrupt);
+      thread.pushFrame(methodInfo);
+      thread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
+>>>>>>> 36e7141f980e74f894d3c9d8843d44db12e810e5*/
       Scheduler.enqueue(ctx);
     });
 
     $.pause("Async");
+    $.nativeBailout(returnKind);
   }
 
   Native["java/lang/Thread.sleep.(J)V"] = function(addr: number, delayL: number, delayH: number) {
@@ -114,20 +120,26 @@ module J2ME {
 
   Native["java/lang/Thread.yield.()V"] = function(addr: number) {
     $.yield("Thread.yield");
-    $.ctx.nativeThread.advancePastInvokeBytecode();
+    $.nativeBailout(Kind.Void);
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(addr: number, timeoutL: number, timeoutH: number) {
     $.ctx.wait(addr, longToNumber(timeoutL, timeoutH));
-    $.ctx.nativeThread.advancePastInvokeBytecode();
+    if (U) {
+      $.nativeBailout(Kind.Void);
+    }
   };
 
   Native["java/lang/Object.notify.()V"] = function(addr: number) {
     $.ctx.notify(addr, false);
+    // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify..
+    release || assert(!U, "Unexpected unwind in java/lang/Object.notify.()V.");
   };
 
   Native["java/lang/Object.notifyAll.()V"] = function(addr: number) {
     $.ctx.notify(addr, true);
+    // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify.
+    release || assert(!U, "Unexpected unwind in java/lang/Object.notifyAll.()V.");
   };
 
   Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr: number, targetAddr: number): void {
@@ -158,6 +170,9 @@ module J2ME {
   Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
     getLinkedMethod(methodInfo)($.mainThread, J2ME.newString("main"));
+    if (U) {
+      $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESPECIAL);
+    }
 
     // We've already set this in JVM.createIsolateCtx, but calling the instance
     // initializer above resets it, so we set it again here.
@@ -185,6 +200,10 @@ module J2ME {
       throw new Error("Could not find isolate main.");
 
     var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+
     getLinkedMethod(entryPoint)(Constants.NULL, isolate._mainArgs);
+    if (U) {
+      $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
+    }
   };
 }

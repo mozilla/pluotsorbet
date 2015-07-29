@@ -72,6 +72,11 @@ var options = {
     short: "w",
     value: "",
     type: "string"
+  },
+  "maxCompiledMethodCount": {
+    short: "m",
+    value: -1,
+    type: "number"
   }
 };
 
@@ -177,7 +182,6 @@ try {
     "blackBox.js",
     "util.js",
     "libs/jarstore.js",
-    "libs/long.js",
     "native.js",
     "midp/content.js",
     "midp/midp.js",
@@ -231,9 +235,18 @@ try {
   if (options.writers.value.indexOf("h") >= 0) {
     writers |= J2ME.WriterFlags.Thread;
   }
+  if (options.writers.value.indexOf("l") >= 0) {
+    writers |= J2ME.WriterFlags.Link;
+  }
+  if (options.writers.value.indexOf("j") >= 0) {
+    writers |= J2ME.WriterFlags.JIT;
+  }
+  if (options.writers.value.indexOf("c") >= 0) {
+    writers |= J2ME.WriterFlags.Code;
+  }
   J2ME.writers = writers;
-
   J2ME.enableRuntimeCompilation = false;
+  J2ME.maxCompiledMethodCount = options.maxCompiledMethodCount.value;
 
   start = dateNow();
   var runtime = jvm.startIsolate0(files[0], config.args);

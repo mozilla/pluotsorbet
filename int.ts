@@ -53,20 +53,6 @@ module J2ME {
 
   export var onStackReplacementCount = 0;
 
-  /**
-   * The closest floating-point representation to this long value.
-   */
-  export function longToNumber(l: number, h: number): number {
-    return h * Constants.TWO_PWR_32_DBL + ((l >= 0) ? l : Constants.TWO_PWR_32_DBL + l);
-  }
-
-  export function numberToLong(v: number): number {
-    // TODO Extract logic from Long so we don't allocate here.
-    var long = Long.fromNumber(v);
-    tempReturn0 = long.high_;
-    return long.low_;
-  }
-
   function wordsToDouble(l: number, h: number): number {
     aliasedI32[0] = l;
     aliasedI32[1] = h;
@@ -112,7 +98,7 @@ module J2ME {
    *             +--------------------------------+
    *             | Caller FP                      |
    *             +--------------------------------+
-   *             | Callee Method Info             |
+   *             | Callee Method Info | Marker    |
    *             +--------------------------------+
    *             | Monitor                        |
    *             +--------------------------------+
@@ -124,8 +110,37 @@ module J2ME {
    *   SP  --->  +--------------------------------+
    */
 
-  enum FrameLayout {
+  export enum FrameType {
+    /**
+     * Normal interpreter frame.
+     */
+    Interpreter = 0,
+
+    /**
+     * Marks the beginning of a sequence of interpreter frames. If we see this
+     * frame when returning we need to exit the interpreter loop.
+     */
+    ExitInterpreter = 1,
+
+    /**
+     * Native frames are pending and need to be pushed on the stack.
+     */
+    PushPendingFrames = 2,
+
+    /**
+     * Marks the beginning of frames that were not invoked by the previous frame.
+     */
+    Interrupt = 3,
+
+    /**
+     * Marks the beginning of native/compiled code called from the interpreter.
+     */
+    Native = 4
+  }
+
+  export enum FrameLayout {
     CalleeMethodInfoOffset      = 2,
+    FrameTypeOffset             = 2,
     CallerFPOffset              = 1,
     CallerRAOffset              = 0,
     MonitorOffset               = 3,
@@ -148,6 +163,8 @@ module J2ME {
       this.pc = pc;
 
       if (!release) {
+        assert(fp >= (thread.tp >> 2), "Frame pointer is not less than than the top of the stack.");
+        assert(fp < (thread.tp + Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
         var callee = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
         assert(
           callee === null ||
@@ -163,6 +180,10 @@ module J2ME {
           i32[this.fp + this.parameterOffset + i] = v;
           break;
         case Kind.Int:
+        case Kind.Byte:
+        case Kind.Char:
+        case Kind.Short:
+        case Kind.Boolean:
           i32[this.fp + this.parameterOffset + i] = v;
           break;
         default:
@@ -170,8 +191,29 @@ module J2ME {
       }
     }
 
+    setStackSlot(kind: Kind, i: number, v: any) {
+      switch (kind) {
+        case Kind.Reference:
+          ref[this.fp + FrameLayout.CallerSaveSize + i] = v;
+          break;
+        case Kind.Int:
+        case Kind.Byte:
+        case Kind.Char:
+        case Kind.Short:
+        case Kind.Boolean:
+          i32[this.fp + FrameLayout.CallerSaveSize + i] = v;
+          break;
+        default:
+          release || assert(false, "Cannot set stack slot of kind: " + Kind[kind]);
+      }
+    }
+
     get methodInfo(): MethodInfo {
       return ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
+    }
+
+    get type(): FrameType {
+      return i32[this.fp + FrameLayout.FrameTypeOffset];
     }
 
     set methodInfo(methodInfo: MethodInfo) {
@@ -186,23 +228,29 @@ module J2ME {
       return FrameLayout.CallerSaveSize;
     }
 
-    traceStack(writer: IndentingWriter) {
+    traceStack(writer: IndentingWriter, details: boolean = false) {
       var fp = this.fp;
       var sp = this.sp;
       var pc = this.pc;
-      while (this.fp > (this.thread.tp >> 2)) {
-        writer.writeLn((this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
+      while (true) {
+        if (this.fp < (this.thread.tp >> 2)) {
+          writer.writeLn("Bad frame pointer FP: " + this.fp + " TOP: " + (this.thread.tp >> 2));
+          break;
+        }
+        this.trace(writer, details);
+        if (this.fp === (this.thread.tp >> 2)) {
+          break;
+        }
         this.set(this.thread, i32[this.fp + FrameLayout.CallerFPOffset],
                  this.fp + this.parameterOffset,
                  i32[this.fp + FrameLayout.CallerRAOffset]);
-
       }
       this.fp = fp;
       this.sp = sp;
       this.pc = pc;
     }
 
-    trace(writer: IndentingWriter) {
+    trace(writer: IndentingWriter, details: boolean = true) {
       function toNumber(v) {
         if (v < 0) {
           return String(v);
@@ -220,28 +268,37 @@ module J2ME {
         return v;
       }
 
-      writer.writeLn("Frame: " + this.methodInfo.implKey + ", FP: " + this.fp + ", SP: " + this.sp + ", PC: " + this.pc);
-      for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
-        var prefix = "    ";
-        if (i >= this.fp + this.stackOffset) {
-          prefix = "S" + (i - (this.fp + this.stackOffset)) + ": ";
-        } else if (i === this.fp + FrameLayout.CalleeMethodInfoOffset) {
-          prefix = "MI: ";
-        } else if (i === this.fp + FrameLayout.CallerFPOffset) {
-          prefix = "CF: ";
-        } else if (i === this.fp + FrameLayout.CallerRAOffset) {
-          prefix = "RA: ";
-        } else if (i >= this.fp + this.parameterOffset) {
-          prefix = "L" + (i - (this.fp + this.parameterOffset)) + ": ";
+      var op = -1;
+      if (this.methodInfo) {
+        op = this.methodInfo.codeAttribute.code[this.pc];
+      }
+      var type  = i32[this.fp + FrameLayout.FrameTypeOffset];
+      writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + "(" + (this.fp - (this.thread.tp >> 2)) + "), SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecodes[op] : ""));
+      if (details) {
+        for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
+          var prefix = "    ";
+          if (i >= this.fp + this.stackOffset) {
+            prefix = "S" + (i - (this.fp + this.stackOffset)) + ": ";
+          } else if (i === this.fp + FrameLayout.CalleeMethodInfoOffset) {
+            prefix = "MI: ";
+          } else if (i === this.fp + FrameLayout.CallerFPOffset) {
+            prefix = "CF: ";
+          } else if (i === this.fp + FrameLayout.CallerRAOffset) {
+            prefix = "RA: ";
+          } else if (i === this.fp + FrameLayout.MonitorOffset) {
+            prefix = "MO: ";
+          } else if (i >= this.fp + this.parameterOffset) {
+            prefix = "L" + (i - (this.fp + this.parameterOffset)) + ": ";
+          }
+          writer.writeLn(" " + prefix.padRight(' ', 5) + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2) + ": " +
+            String(i32[i]).padLeft(' ', 12) + " " +
+            toHEX(i32[i]) + " " +
+            ((i32[i] >= 32 && i32[i] < 1024) ? String.fromCharCode(i32[i]) : "?") + " " +
+            clampString(String(f32[i]), 12).padLeft(' ', 12) + " " +
+            clampString(String(wordsToDouble(i32[i], i32[i + 1])), 12).padLeft(' ', 12) + " " +
+            // XXX ref[i] could be an address, so update toName to handle that.
+            toName(ref[i]));
         }
-        writer.writeLn(" " + prefix.padRight(' ', 5) + " " + toNumber(i - this.fp).padLeft(' ', 3) + " " + String(i).padLeft(' ', 4) + " " + toHEX(i << 2)  + ": " +
-          String(i32[i]).padLeft(' ', 12) + " " +
-          toHEX(i32[i]) + " " +
-          ((i32[i] >= 32 && i32[i] < 1024) ? String.fromCharCode(i32[i]) : "?") + " " +
-          clampString(String(f32[i]), 12).padLeft(' ', 12) + " " +
-          clampString(String(wordsToDouble(i32[i], i32[i + 1])), 12).padLeft(' ', 12) + " " +
-          // XXX ref[i] could be an address, so update toName to handle that.
-          toName(ref[i]));
       }
     }
   }
@@ -282,15 +339,28 @@ module J2ME {
 
     view: FrameView;
 
+    /**
+     * Stack of native frames seen during unwinding. These appear in reverse order. If a marker frame
+     * is seen during unwinding, a null value is also pushed on this stack to mark native frame ranges.
+     */
+    unwoundNativeFrames: any [];
+
+    /**
+     * Stack of native frames to push on the stack.
+     */
+    pendingNativeFrames: any [];
+
     constructor(ctx: Context) {
-      this.tp = ASM._gcMalloc(1024 * 256);
+      this.tp = ASM._gcMalloc(Constants.MAX_STACK_SIZE);
       this.bp = this.tp >> 2;
       this.fp = this.bp;
       this.sp = this.fp;
       this.pc = -1;
       this.view = new FrameView();
       this.ctx = ctx;
-      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp) + " " + toHEX(i32.byteLength));
+      this.unwoundNativeFrames = [];
+      this.pendingNativeFrames = [];
+      release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp) + " " + toHEX(this.tp + Constants.MAX_STACK_SIZE));
     }
 
     set(fp: number, sp: number, pc: number) {
@@ -305,48 +375,51 @@ module J2ME {
       return HashUtilities.hashBytesTo32BitsAdler(u8, fp, sp);
     }
 
-    /**
-     * Advances the |pc| to the next |pc| after the current invoke bytecode.
-     */
-    advancePastInvokeBytecode() {
-      var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-      var code = mi.codeAttribute.code;
-      var op = code[this.pc];
-      release || assert(isInvoke(op), "The PC should be at an invoke bytecode.");
-      this.pc += (op === Bytecodes.INVOKEINTERFACE ? 5 : 3);
-    }
-
     get frame(): FrameView {
       this.view.set(this, this.fp, this.sp, this.pc);
       return this.view;
     }
 
-    pushFrame(methodInfo: MethodInfo) {
+    pushMarkerFrame(frameType: FrameType) {
+      this.pushFrame(null, 0, 0, null, frameType);
+    }
+
+    pushFrame(methodInfo: MethodInfo, sp: number = 0, pc: number = 0, monitor: Object = null, frameType: FrameType = FrameType.Interpreter) {
       var fp = this.fp;
       if (methodInfo) {
         this.fp = this.sp + methodInfo.codeAttribute.max_locals;
       } else {
         this.fp = this.sp;
       }
+      release || assert(fp < (this.tp + Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
       i32[this.fp + FrameLayout.CallerRAOffset] = this.pc;    // Caller RA
       i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo; // Callee
-      i32[this.fp + FrameLayout.MonitorOffset] = Constants.NULL; // Monitor
-      this.sp = this.fp + FrameLayout.CallerSaveSize;
-      this.pc = 0;
+      i32[this.fp + FrameLayout.FrameTypeOffset] = frameType; // Frame Type
+      /* XXX: MONITOR! */
+      ref[this.fp + FrameLayout.MonitorOffset] = Constants.NULL; // Monitor 
+      this.sp = this.fp + FrameLayout.CallerSaveSize + sp;
+      this.pc = pc;
     }
 
-    popFrame(methodInfo: MethodInfo): MethodInfo {
+    popMarkerFrame(frameType: FrameType): MethodInfo {
+      return this.popFrame(null, frameType);
+    }
+
+    popFrame(methodInfo: MethodInfo, frameType: FrameType = FrameType.Interpreter): MethodInfo {
       var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-      release || assert(mi === methodInfo);
+      var type = i32[this.fp + FrameLayout.FrameTypeOffset];
+      release || assert(mi === methodInfo && type === frameType);
       this.pc = i32[this.fp + FrameLayout.CallerRAOffset];
       var maxLocals = mi ? mi.codeAttribute.max_locals : 0;
       this.sp = this.fp - maxLocals;
       this.fp = i32[this.fp + FrameLayout.CallerFPOffset];
+      release || assert(this.fp >= (this.tp >> 2), "Valid frame pointer after pop.");
       return ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
     }
 
     run() {
+      release || traceWriter && traceWriter.writeLn("Thread.run " + $.ctx.id);
       return interpret(this);
     }
 
@@ -354,39 +427,61 @@ module J2ME {
       release || traceWriter && traceWriter.writeLn("exceptionUnwind: " + toName(e));
       var pc = -1;
       var classInfo;
-      var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-      while (mi) {
-        release || traceWriter && traceWriter.writeLn("Looking for handler in: " + mi.implKey);
-        for (var i = 0; i < mi.exception_table_length; i++) {
-          var exceptionEntryView = mi.getExceptionEntryViewByIndex(i);
-          release || traceWriter && traceWriter.writeLn("Checking catch range: " + exceptionEntryView.start_pc + " - " + exceptionEntryView.end_pc);
-          if (this.pc >= exceptionEntryView.start_pc && this.pc < exceptionEntryView.end_pc) {
-            if (exceptionEntryView.catch_type === 0) {
-              pc = exceptionEntryView.handler_pc;
-              break;
-            } else {
-              classInfo = resolveClass(exceptionEntryView.catch_type, mi.classInfo);
-              release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo);
-              if (isAssignableTo(e.classInfo, classInfo)) {
-                pc = exceptionEntryView.handler_pc;
-                break;
+      while (true) {
+        var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
+        switch (frameType) {
+          case FrameType.Interpreter:
+            var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
+            release || traceWriter && traceWriter.writeLn("Looking for handler in: " + mi.implKey);
+            for (var i = 0; i < mi.exception_table_length; i++) {
+              var exceptionEntryView = mi.getExceptionEntryViewByIndex(i);
+              release || traceWriter && traceWriter.writeLn("Checking catch range: " + exceptionEntryView.start_pc + " - " + exceptionEntryView.end_pc);
+              if (this.pc >= exceptionEntryView.start_pc && this.pc < exceptionEntryView.end_pc) {
+                if (exceptionEntryView.catch_type === 0) {
+                  pc = exceptionEntryView.handler_pc;
+                  break;
+                } else {
+                  classInfo = resolveClass(exceptionEntryView.catch_type, mi.classInfo);
+                  release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo);
+                  if (isAssignableTo(e.classInfo, classInfo)) {
+                    pc = exceptionEntryView.handler_pc;
+                    break;
+                  }
+                }
               }
             }
-          }
+
+            if (pc >= 0) {
+              this.pc = pc;
+              this.sp = this.fp + FrameLayout.CallerSaveSize;
+              release || assert(e instanceof Object && "_address" in e, "exception is object with address");
+              i32[this.sp++] = e._address;
+              return;
+            }
+            if (mi.isSynchronized) {
+              this.ctx.monitorExit(getMonitor(i32[this.fp + FrameLayout.MonitorOffset]));
+            }
+            this.popFrame(mi);
+            release || traceWriter && traceWriter.outdent();
+            release || traceWriter && traceWriter.writeLn("<< I Unwind");
+            break;
+          case FrameType.ExitInterpreter:
+            this.popMarkerFrame(FrameType.ExitInterpreter);
+            throw e;
+            break;
+          case FrameType.PushPendingFrames:
+            this.frame.thread.pushPendingNativeFrames();
+            break;
+          case FrameType.Interrupt:
+            this.popMarkerFrame(FrameType.Interrupt);
+            break;
+          case FrameType.Native:
+            this.popMarkerFrame(FrameType.Native);
+            break;
+          default:
+            Debug.assertUnreachable("Unhandled frame type: " + frameType);
+            break;
         }
-        if (pc >= 0) {
-          this.pc = pc;
-          this.sp = this.fp + FrameLayout.CallerSaveSize;
-          release || assert(e instanceof Object && "_address" in e, "exception is object with address");
-          i32[this.sp++] = e._address;
-          return;
-        }
-        if (mi.isSynchronized) {
-          this.ctx.monitorExit(getMonitor(i32[this.fp + FrameLayout.MonitorOffset]));
-        }
-        mi = this.popFrame(mi);
-        release || traceWriter && traceWriter.outdent();
-        release || traceWriter && traceWriter.writeLn("<< I Unwind");
       }
       release || traceWriter && traceWriter.writeLn("Cannot catch: " + toName(e));
       throw e;
@@ -414,15 +509,128 @@ module J2ME {
           break;
       }
     }
+
+    tracePendingFrames(writer: IndentingWriter) {
+      for (var i = 0; i < this.pendingNativeFrames.length; i++) {
+        var pendingFrame = this.pendingNativeFrames[i];
+        writer.writeLn(pendingFrame ? pendingFrame.methodInfo.implKey : "-marker-");
+      }
+    }
+
+    pushPendingNativeFrames() {
+      traceWriter && traceWriter.writeLn("Pushing pending native frames.");
+
+      if (traceWriter) {
+        traceWriter.enter("Pending native frames before:");
+        this.tracePendingFrames(traceWriter);
+        traceWriter.leave("");
+
+        traceWriter.enter("Stack before:");
+        this.frame.traceStack(traceWriter);
+        traceWriter.leave("");
+      }
+
+      while (true) {
+        // We should have a |PushPendingFrames| marker frame on the stack at this point.
+        this.popMarkerFrame(FrameType.PushPendingFrames);
+
+        var pendingNativeFrame = null;
+        var frames = [];
+        while (pendingNativeFrame = this.pendingNativeFrames.pop()) {
+          frames.push(pendingNativeFrame);
+        }
+        while (pendingNativeFrame = frames.pop()) {
+          traceWriter && traceWriter.writeLn("Pushing frame: " + pendingNativeFrame.methodInfo.implKey);
+          this.pushFrame(pendingNativeFrame.methodInfo, pendingNativeFrame.stack.length, pendingNativeFrame.pc, pendingNativeFrame.lockObject);
+          // TODO: Figure out how to copy floats and doubles.
+          var frame = this.frame;
+          for (var j = 0; j < pendingNativeFrame.local.length; j++) {
+            var value = pendingNativeFrame.local[j];
+            var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
+            frame.setParameter(kind, j, value);
+          }
+          for (var j = 0; j < pendingNativeFrame.stack.length; j++) {
+            var value = pendingNativeFrame.stack[j];
+            var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
+            frame.setStackSlot(kind, j, value);
+          }
+        }
+        var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
+
+        if (frameType === FrameType.PushPendingFrames) {
+          continue;
+        }
+        break;
+      }
+
+      if (traceWriter) {
+        traceWriter.enter("Pending native frames after:");
+        this.tracePendingFrames(traceWriter);
+        traceWriter.leave("");
+
+        traceWriter.enter("Stack after:");
+        this.frame.traceStack(traceWriter);
+        traceWriter.leave("");
+      }
+    }
+
+    /**
+     * Called when unwinding begins.
+     */
+    beginUnwind() {
+      // The |unwoundNativeFrames| stack should be empty at this point.
+      release || assert(this.unwoundNativeFrames.length === 0);
+    }
+
+    /*
+     * Called when unwinding ends.
+     *
+     *  x: Interpreter Frame
+     * x': Compiler Frame
+     *  -: Skip Frame
+     *  +: Push Pending Frames
+     *  /: null
+     *
+     *
+     * Suppose you have the following logical call stack: a, b, c, d', e', -, f, g, h', i', -, j, k. The physical call
+     * stack doesn't have any of the native frames on it: a, b, c, -, f, g, -, j, k, so when we resume we need to
+     * make sure that native frames are accounted for. During unwinding, we save the state of native frames in the
+     * |unwoundNativeFrames| array. In order to keep track of how native frames interleave with interpreter frames we
+     * insert null markers in the |unwoundNativeFrames| array. So in this example, the array will be: /, i', h', /,
+     * e', d'. When we resume in the interpreter, our call stack is: a, b, c, +, f, g, +, j, k. During unwinding, the
+     * skip marker frames have been converted to push pending frames. These indicate to the interpreter that some native
+     * frames should be pushed on the stack. When we return from j, we need to push h and i. Similarly, when we return
+     * from f, we need to push d and e. After unwiding is complete, all elements in |unwoundNativeFrames| are poped and
+     * pushed into the |pendingNativeFrames| which keeps track of the native frames that need to be pushed once a
+     * push pending prame marker is observed. In this case |pendingNativeFrames| is: d', e', /, h', i', /. When we return
+     * from j and see the first push pending frames marker, we look for the last set of frames in the |pendingNativeFrames|
+     * list and push those on the stack.
+     *
+     *
+     * Before every unwind, the |unwoundNativeFrames| list must be empty. However, the |pendingNativeFrames| list may
+     * have unprocessed frames in it. This can happen if after resuming and returning from j, we call some native code
+     * that unwinds. Luckily, all new native frames must be further down on the stack than the current frames in the
+     * |pendingNativeFrames| list, so we can just push them at the end.
+     *
+     * TODO: Do a better job explaining all this.
+     */
+    endUnwind() {
+      var unwound = this.unwoundNativeFrames;
+      var pending = this.pendingNativeFrames;
+      while (unwound.length) {
+        pending.push(unwound.pop());
+      }
+    }
   }
 
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
     var method = function fastInterpreterFrameAdapter() {
-      var thread = $.ctx.nativeThread;
+      var ctx = $.ctx;
+      var thread = ctx.nativeThread;
       var callerFP = thread.fp;
       var callerPC = thread.pc;
       // release || traceWriter && traceWriter.writeLn(">> I");
-      thread.pushFrame(null);
+      thread.pushMarkerFrame(FrameType.ExitInterpreter);
       thread.pushFrame(methodInfo);
       var calleeFP = thread.fp;
       var frame = thread.frame;
@@ -445,12 +653,12 @@ module J2ME {
       }
       var v = interpret(thread);
       if (U) {
-        release || assert(v === undefined, "Return value must be undefined.");
         // Splice out the marker frame so the interpreter doesn't return early when execution is resumed.
         i32[calleeFP + FrameLayout.CallerFPOffset] = callerFP;
         i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
         return;
       }
+      thread.popMarkerFrame(FrameType.ExitInterpreter);
       release || assert(callerFP === thread.fp);
       // release || traceWriter && traceWriter.writeLn("<< I");
       return v;
@@ -483,7 +691,7 @@ module J2ME {
       return;
     }
     if (!(getKindCheck(methodInfo.returnKind)(l, h))) {
-      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got " + l + " in " + methodInfo.implKey);
+      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got low: " + l + " high: " + h + " in " + methodInfo.implKey);
     }
   }
   
@@ -506,8 +714,20 @@ module J2ME {
    */
   export function interpret(thread: Thread) {
     var frame = thread.frame;
-
+    // Special case where a |PushPendingFrames| marker is on top of the stack. This happens when
+    // native code is on top of the stack.
+    if (frame.type === FrameType.PushPendingFrames) {
+      thread.pushPendingNativeFrames();
+      frame = thread.frame;
+    }
+    release || assert(frame.type === FrameType.Interpreter, "Must begin with interpreter frame.");
     var mi = frame.methodInfo;
+    release || assert(mi, "Must have method info.");
+    mi.stats.interpreterCallCount++;
+    if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+      compileAndLinkMethod(mi);
+      // TODO call the compiled method.
+    }
     var maxLocals = mi.codeAttribute.max_locals;
     var ci = mi.classInfo;
     var cp = ci.constantPool;
@@ -521,7 +741,7 @@ module J2ME {
 
     var tag: TAGS;
     var type, size;
-    var value, index, arrayAddr: number, offset, buffer, tag: TAGS, targetPC;
+    var value, index, arrayAddr: number, offset, buffer, tag: TAGS, targetPC, jumpOffset;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
@@ -533,15 +753,21 @@ module J2ME {
     var monitorAddr: number;
 
     // HEAD
-
+    var lastPC = 0;
     while (true) {
+      //if (pc < lastPC) {
+      //  runtimeCounter.count(Bytecodes[code[lastPC]]);
+      //}
       opPC = pc, op = code[pc], pc = pc + 1 | 0;
+      lastPC = opPC;
 
       if (!release) {
         assert(code === mi.codeAttribute.code, "Bad Code.");
         assert(ci === mi.classInfo, "Bad Class Info.");
         assert(cp === ci.constantPool, "Bad Constant Pool.");
         assert(lp === fp - mi.codeAttribute.max_locals, "Bad lp.");
+        assert(fp >= (thread.tp >> 2), "Frame pointer is not less than than the top of the stack.");
+        assert(fp < (thread.tp + Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
         bytecodeCount++;
 
         if (traceStackWriter) {
@@ -719,7 +945,6 @@ module J2ME {
             if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-
             i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
             continue;
           case Bytecodes.DALOAD:
@@ -1133,103 +1358,285 @@ module J2ME {
             }
             continue;
           case Bytecodes.IFEQ:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] === 0) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IFNE:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] !== 0) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IFLT:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] < 0) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IFGE:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] >= 0) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IFGT:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] > 0) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IFLE:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] <= 0) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IF_ICMPEQ:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] === i32[--sp]) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IF_ICMPNE:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] !== i32[--sp]) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IF_ICMPLT:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] > i32[--sp]) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IF_ICMPGE:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] <= i32[--sp]) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IF_ICMPGT:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] < i32[--sp]) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IF_ICMPLE:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] >= i32[--sp]) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IF_ACMPEQ:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] === i32[--sp]) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IF_ACMPNE:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] !== i32[--sp]) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IFNULL:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] === Constants.NULL) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.IFNONNULL:
-            targetPC = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (i32[--sp] !== Constants.NULL) {
-              pc = targetPC;
+              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+              if (jumpOffset < 0) {
+                mi.stats.backwardsBranchCount++;
+                runtimeCounter.count(Bytecodes[code[opPC]]);
+              }
+              pc = opPC + jumpOffset;
+              continue;
             }
+            pc += 2;
             continue;
           case Bytecodes.GOTO:
-            pc = opPC + ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+            jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
+            if (jumpOffset < 0) {
+              mi.stats.backwardsBranchCount++;
+              if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.BackwardBranchThreshold) {
+                compileAndLinkMethod(mi);
+              }
+              //runtimeCounter.count(Bytecodes[code[opPC + jumpOffset]]);
+              if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
+                traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
+                // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
+                // at the beginning of a basic block. This is a really cheap test and a convenient place to perform an
+                // on stack replacement.
+
+                var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset];
+
+                if (previousFrameType === FrameType.Interpreter && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
+                  onStackReplacementCount++;
+
+                  // Set the global OSR to the current method info.
+                  O = mi;
+
+                  thread.set(fp, sp, opPC + jumpOffset);
+                  opPC = i32[fp + FrameLayout.CallerRAOffset];
+                  fp = i32[fp + FrameLayout.CallerFPOffset];
+
+                  var kind = Kind.Void;
+                  var signatureKinds = mi.signatureKinds;
+                  var returnValue;
+
+                  // The osr will push a Native frame for us.
+                  var frameTypeOffset = thread.fp - mi.codeAttribute.max_locals + FrameLayout.FrameTypeOffset;
+
+                  returnValue = mi.fn.call();
+                  if (!release) {
+                    checkReturnValue(mi, returnValue, tempReturn0);
+                  }
+
+                  if (U) {
+                    traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
+                    release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
+                    i32[frameTypeOffset] = FrameType.PushPendingFrames;
+                    thread.unwoundNativeFrames.push(null);
+                    return;
+                  }
+                  thread.popMarkerFrame(FrameType.Native);
+                  sp = thread.sp;
+
+                  release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
+                  mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
+                  type = i32[fp + FrameLayout.FrameTypeOffset];
+
+                  maxLocals = mi.codeAttribute.max_locals;
+                  lp = fp - maxLocals;
+
+                  kind = signatureKinds[0];
+
+                  ci = mi.classInfo;
+                  cp = ci.constantPool;
+                  code = mi.codeAttribute.code;
+
+                  pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
+
+                  // Push return value.
+                  switch (kind) {
+                    case Kind.Long:
+                    case Kind.Double:
+                      i32[sp++] = returnValue;
+                      i32[sp++] = tempReturn0;
+                      continue;
+                    case Kind.Int:
+                    case Kind.Byte:
+                    case Kind.Char:
+                    case Kind.Float:
+                    case Kind.Short:
+                    case Kind.Boolean:
+                    case Kind.Reference:
+                      i32[sp++] = returnValue;
+                      continue;
+                    case Kind.Void:
+                      continue;
+                    default:
+                      release || assert(false, "Invalid Kind: " + Kind[kind]);
+                  }
+                }
+              }
+            }
+            pc = opPC + jumpOffset;
             continue;
           //        case Bytecodes.GOTO_W:
           //          frame.pc = frame.read32Signed() - 1;
@@ -1283,9 +1690,9 @@ module J2ME {
             }
             continue;
           case Bytecodes.F2L:
-            value = Long.fromNumber(f32[--sp]);
-            i32[sp++] = value.low_;
-            i32[sp++] = value.high_;
+            var F2L_fa = f32[--sp];
+            i32[sp++] = returnLongValue(F2L_fa);
+            i32[sp++] = tempReturn0;
             continue;
           case Bytecodes.F2D:
             aliasedF64[0] = f32[--sp];
@@ -1316,9 +1723,8 @@ module J2ME {
               i32[sp - 2] = Constants.LONG_MIN_LOW;
               i32[sp - 1] = Constants.LONG_MIN_HIGH;
             } else {
-              value = Long.fromNumber(D2L_fa);
-              i32[sp - 2] = value.low_;
-              i32[sp - 1] = value.high_;
+              i32[sp - 2] = returnLongValue(D2L_fa);
+              i32[sp - 1] = tempReturn0;
             }
             continue;
           case Bytecodes.D2F:
@@ -1612,50 +2018,85 @@ module J2ME {
             opPC = i32[fp + FrameLayout.CallerRAOffset];
             sp = fp - maxLocals;
             fp = i32[fp + FrameLayout.CallerFPOffset];
+            release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
             mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
-            if (mi === null) {
-              thread.set(fp, sp, opPC);
-              thread.popFrame(null);
-              // REDUX: What do we do about the return value here?
-              return;
+            type = i32[fp + FrameLayout.FrameTypeOffset];
+            release || assert(type === FrameType.Interpreter && mi !== null || type !== FrameType.Interpreter && mi === null, "Is valid frame type and method info after return.");
+            var interrupt = false;
+            while (type !== FrameType.Interpreter) {
+              if (type === FrameType.ExitInterpreter) {
+                thread.set(fp, sp, opPC);
+                switch (lastOP) {
+                  case Bytecodes.ARETURN:
+                  case Bytecodes.IRETURN:
+                  case Bytecodes.FRETURN:
+                    return i32[lastSP - 1];
+                  case Bytecodes.LRETURN:
+                    return returnLong(i32[lastSP - 2], i32[lastSP - 1]);
+                  case Bytecodes.DRETURN:
+                    return returnDouble(i32[lastSP - 2], i32[lastSP - 1]);
+                  case Bytecodes.RETURN:
+                    return;
+                }
+              } else if (type === FrameType.PushPendingFrames) {
+                thread.set(fp, sp, opPC);
+                thread.pushPendingNativeFrames();
+                fp = thread.fp;
+                sp = thread.sp;
+                opPC = pc = thread.pc;
+                type = i32[fp + FrameLayout.FrameTypeOffset];
+                mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
+                continue;
+              } else if (type === FrameType.Interrupt) {
+                thread.set(fp, sp, opPC);
+                thread.popMarkerFrame(FrameType.Interrupt);
+                fp = thread.fp;
+                sp = thread.sp;
+                opPC = pc = thread.pc;
+                type = i32[fp + FrameLayout.FrameTypeOffset];
+                mi = ref[fp + FrameLayout.CalleeMethodInfoOffset];
+                interrupt = true;
+                continue;
+              } else {
+                assert(false, "Bad frame type: " + FrameType[type]);
+              }
             }
+            release || assert(type === FrameType.Interpreter, "Cannot resume in frame type: " + FrameType[type]);
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
             release || traceWriter && traceWriter.outdent();
-            release || traceWriter && traceWriter.writeLn("<< I " + lastMI.implKey);
+            release || traceWriter && traceWriter.writeLn(">> I " + lastMI.implKey);
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
-            var op = code[opPC];
-            if (op >= Bytecodes.FIRST_INVOKE && op <= Bytecodes.LAST_INVOKE) {
-              // Calculate the PC based on the size of the caller's invoke bytecode.
-              pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
-              // Push return value.
-              switch (lastOP) {
-                case Bytecodes.LRETURN:
-                case Bytecodes.DRETURN:
-                  i32[sp++] = i32[lastSP - 2]; // Low Bits
-                // Fallthrough
-                case Bytecodes.IRETURN:
-                case Bytecodes.FRETURN:
-                  i32[sp++] = i32[lastSP - 1];
-                  continue;
-                case Bytecodes.ARETURN:
-                  i32[sp++] = i32[lastSP - 1];
-                  continue;
-              }
-            } else {
-              // We are returning to a bytecode that trapped.
-              // REDUX: I need to think through this some more, why do we need to subtract the CallerSaveSize? Is it
-              // because of the the null frame? This frame should have been spliced out, ... is this a coincidence?
-              sp -= FrameLayout.CallerSaveSize;
-              pc = opPC;
+
+            if (interrupt) {
+              continue;
             }
+            release || assert(isInvoke(code[opPC]), "Return must come from invoke op: " + mi.implKey + " PC: " + pc + Bytecodes[op]);
+            // Calculate the PC based on the size of the caller's invoke bytecode.
+            pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
+            // Push return value.
+            switch (lastOP) {
+              case Bytecodes.LRETURN:
+              case Bytecodes.DRETURN:
+                i32[sp++] = i32[lastSP - 2]; // Low Bits
+              // Fallthrough
+              case Bytecodes.IRETURN:
+              case Bytecodes.FRETURN:
+                i32[sp++] = i32[lastSP - 1];
+                continue;
+              case Bytecodes.ARETURN:
+                i32[sp++] = i32[lastSP - 1];
+                continue;
+            }
+
             continue;
           case Bytecodes.INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
+
             index = code[pc++] << 8 | code[pc++];
             if (op === Bytecodes.INVOKEINTERFACE) {
               pc += 2; // Args Number & Zero
@@ -1702,12 +2143,23 @@ module J2ME {
             }
 
             // Call Native or Compiled Method.
-            if (calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled) {
+            var callMethod = calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled;
+            var calleeStats = calleeTargetMethodInfo.stats;
+            calleeStats.interpreterCallCount++;
+            if (callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
+              if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+                compileAndLinkMethod(calleeTargetMethodInfo);
+                callMethod = calleeTargetMethodInfo.state === MethodState.Compiled;
+              }
+            }
+            if (callMethod) {
               var kind = Kind.Void;
               var signatureKinds = calleeTargetMethodInfo.signatureKinds;
               callee = calleeTargetMethodInfo.fn || getLinkedMethod(calleeTargetMethodInfo);
               var returnValue;
 
+
+              var frameTypeOffset = -1;
               // Fast path for the no-argument case.
               if (signatureKinds.length === 1) {
                 if (!isStatic) {
@@ -1715,6 +2167,8 @@ module J2ME {
                 }
 
                 thread.set(fp, sp, opPC);
+                thread.pushMarkerFrame(FrameType.Native);
+                frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
 
                 returnValue = callee(address);
               } else {
@@ -1723,24 +2177,16 @@ module J2ME {
                 for (var i = signatureKinds.length - 1; i > 0; i--) {
                   kind = signatureKinds[i];
                   switch (kind) {
-                    case Kind.Double: // Doubles are passed in as a number value.
-                      aliasedI32[1] = i32[--sp];
-                      aliasedI32[0] = i32[--sp];
-                      args.unshift(aliasedF64[0]);
-                      break;
-                    case Kind.Float:
-                      args.unshift(f32[--sp]);
-                      break;
                     case Kind.Long:
+                    case Kind.Double:
                       args.unshift(i32[--sp]); // High Bits
                       // Fallthrough
                     case Kind.Int:
                     case Kind.Byte:
                     case Kind.Char:
+                    case Kind.Float:
                     case Kind.Short:
                     case Kind.Boolean:
-                      args.unshift(i32[--sp]);
-                      break;
                     case Kind.Reference:
                       args.unshift(i32[--sp]);
                       break;
@@ -1754,6 +2200,8 @@ module J2ME {
                 }
 
                 thread.set(fp, sp, opPC);
+                thread.pushMarkerFrame(FrameType.Native);
+                frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
 
                 if (!release) {
                   // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
@@ -1768,29 +2216,27 @@ module J2ME {
               }
 
               if (U) {
-                release || traceWriter && traceWriter.writeLn("<< U Unwind: " + VMState[U]);
+                traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
+                release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
+                i32[frameTypeOffset] = FrameType.PushPendingFrames;
+                thread.unwoundNativeFrames.push(null);
                 return;
               }
+              thread.popMarkerFrame(FrameType.Native);
 
               kind = signatureKinds[0];
 
               // Push return value.
               switch (kind) {
-                case Kind.Double: // Doubles are passed in as a number value.
-                  aliasedF64[0] = returnValue;
-                  i32[sp++] = aliasedI32[0];
-                  i32[sp++] = aliasedI32[1];
-                  continue;
-                case Kind.Float:
-                  f32[sp++] = returnValue;
-                  continue;
                 case Kind.Long:
+                case Kind.Double:
                   i32[sp++] = returnValue;
                   i32[sp++] = tempReturn0;
                   continue;
                 case Kind.Int:
                 case Kind.Byte:
                 case Kind.Char:
+                case Kind.Float:
                 case Kind.Short:
                 case Kind.Boolean:
                   i32[sp++] = returnValue;
@@ -1823,11 +2269,13 @@ module J2ME {
             // Caller saved values.
             i32[fp + FrameLayout.CallerRAOffset] = opPC;
             i32[fp + FrameLayout.CallerFPOffset] = callerFPOffset;
+            i32[fp + FrameLayout.FrameTypeOffset] = FrameType.Interpreter;
             ref[fp + FrameLayout.CalleeMethodInfoOffset] = mi;
             i32[fp + FrameLayout.MonitorOffset] = Constants.NULL; // Monitor
 
             // Reset PC.
             opPC = pc = 0;
+            lastPC = 0;
 
             if (calleeTargetMethodInfo.isSynchronized) {
               monitorAddr = calleeTargetMethodInfo.isStatic
@@ -1853,7 +2301,7 @@ module J2ME {
         }
       } catch (e) {
         release || traceWriter && traceWriter.redLn("XXX I Caught: " + e + ", details: " + toName(e));
-        // release || traceWriter && traceWriter.writeLns(e.stack);
+        release || traceWriter && traceWriter.writeLn(e.stack);
         // release || traceWriter && traceWriter.writeLn(jsGlobal.getBacktrace());
 
         thread.set(fp, sp, opPC);

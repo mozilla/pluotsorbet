@@ -26,13 +26,18 @@ AccelerometerSensor.model = {
     ]
 };
 
-var doubleToLongBits = (function() {
+var createLongArrayFromDoubles = (function() {
     var da = new Float64Array(1);
     var ia = new Int32Array(da.buffer);
-    return function(val) {
-        da[0] = val;
-        return Long.fromBits(ia[0], ia[1]);
-    }
+    return function(doubles) {
+        var ret = [];
+        for (var i = 0; i < doubles.length; i++) {
+            var val = doubles[i];
+            da[0] = val;
+            ret.push(ia[0], ia[1]);
+        }
+        return ret;
+    };
 })();
 
 AccelerometerSensor.channels = [ {
@@ -41,33 +46,33 @@ AccelerometerSensor.channels = [ {
         unit: "m/s^2",
         dataType: 1, // 1 == Double type
         accuracy: 1,
-        mrangeArray: [
-            doubleToLongBits(-19.6), // smallest value
-            doubleToLongBits(19.6),  // largest value
-            doubleToLongBits(0.153)  // resolution
-        ]
+        mrangeArray: createLongArrayFromDoubles([
+            -19.6, // smallest value
+            19.6,  // largest value
+            0.153  // resolution
+        ])
     }, {
         scale: 0,
         name: "axis_y",
         unit: "m/s^2",
         dataType: 1, // 1 == Double type
         accuracy: 1,
-        mrangeArray: [
-            doubleToLongBits(-19.6), // smallest value
-            doubleToLongBits(19.6),  // largest value
-            doubleToLongBits(0.153)  // resolution
-        ]
+        mrangeArray: createLongArrayFromDoubles([
+            -19.6, // smallest value
+            19.6,  // largest value
+            0.153  // resolution
+        ])
     }, {
         scale: 0,
         name: "axis_z",
         unit: "m/s^2",
         dataType: 1, // 1 == Double type
         accuracy: 1,
-        mrangeArray: [
-            doubleToLongBits(-19.6), // smallest value
-            doubleToLongBits(19.6),  // largest value
-            doubleToLongBits(0.153)  // resolution
-        ]
+        mrangeArray: createLongArrayFromDoubles([
+            -19.6, // smallest value
+            19.6,  // largest value
+            0.153  // resolution
+        ])
     }
 ];
 
@@ -245,7 +250,8 @@ function(addr, sensorsNumber, number, modelAddr) {
     model.unit = J2ME.newString(c.unit);
     model.dataType = c.dataType;
     model.accuracy = c.accuracy;
-    model.mrangeCount = c.mrangeArray.length;
+    var n = c.mrangeArray.length / 2;
+    model.mrangeCount = n;
 
     var n = c.mrangeArray.length;
     var arrayAddr = J2ME.newArray(J2ME.PrimitiveClassInfo.J, n);
