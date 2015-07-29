@@ -143,24 +143,28 @@ module J2ME {
   };
 
   Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr: number, targetAddr: number): void {
-      // Store the weak reference in NativeMap.
-      //
-      // This is technically a misuse of NativeMap, which is intended to store
-      // native objects associated with Java objects, whereas here we're storing
-      // the address of a Java object associated with another Java object.
+      if (targetAddr === J2ME.Constants.NULL) {
+        return;
+      }
 
-      setNative(addr, targetAddr);
-      weakReferences.set(targetAddr, addr);
-      ASM._registerFinalizer(targetAddr);
+      var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+      weakRef.holder = ASM._gcMallocAtomic(4);
+      i32[weakRef.holder >> 2] = targetAddr;
+      ASM._gcRegisterDisappearingLink(weakRef.holder, targetAddr);
   };
 
   Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr: number): number {
-      return NativeMap.has(addr) ? <number>NativeMap.get(addr) : J2ME.Constants.NULL;
+    var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+    if (weakRef.holder === J2ME.Constants.NULL) {
+      return J2ME.Constants.NULL;
+    }
+    return i32[weakRef.holder >> 2];
   };
 
   Native["java/lang/ref/WeakReference.clear.()V"] = function(addr: number): void {
-      weakReferences.delete(<number>NativeMap.get(addr));
-      NativeMap.delete(addr);
+    var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+    ASM._gcUnregisterDisappearingLink(weakRef.holder);
+    weakRef.holder = J2ME.Constants.NULL;
   };
 
   Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function(addr: number) {

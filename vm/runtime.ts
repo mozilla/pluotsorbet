@@ -1210,16 +1210,8 @@ module J2ME {
     return address;
   }
 
-  export var weakReferences = new Map<number,number>();
-
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
-
-    var weakReferenceAddr = weakReferences.get(addr);
-    if (weakReferenceAddr) {
-      weakReferences.delete(addr);
-      NativeMap.delete(weakReferenceAddr);
-    }
   }
 
   /**
@@ -1358,6 +1350,7 @@ module J2ME {
     i32[(uncollectableAddress >> 2) + uncollectableNumber] = 0;
     uncollectableNumber--;
   }
+
   export function newArray(elementClassInfo: ClassInfo, size: number): number {
     release || assert(elementClassInfo instanceof ClassInfo);
     if (size < 0) {
