@@ -1079,7 +1079,7 @@ module J2ME {
           this.emitPushLong(l, h);
           return;
         case TAGS.CONSTANT_String:
-          this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".c(" + index + ")", Precedence.Primary);
+          this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".constantPool.resolve(" + index + ", " + TAGS.CONSTANT_String + ")", Precedence.Primary);
           return;
         default:
           throw "Not done for: " + TAGS[tag];
