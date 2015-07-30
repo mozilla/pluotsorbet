@@ -234,8 +234,10 @@ module J2ME {
   }
 
   function classConstant(classInfo: ClassInfo): string {
+    return "CLASSES.getClass('" + classInfo.getClassNameSlow() + "')";
+
     // PrimitiveArrayClassInfo have custom mangledNames;
-    if (classInfo instanceof PrimitiveArrayClassInfo) {
+    /*if (classInfo instanceof PrimitiveArrayClassInfo) {
       return classInfo.mangledName;
     }
     if (classInfo instanceof ArrayClassInfo) {
@@ -245,7 +247,7 @@ module J2ME {
       return classInfo.mangledName;
     }
     release || assert(classInfo.mangledName);
-    return classInfo.mangledName;
+    return classInfo.mangledName;*/
   }
 
   function primitiveArrayValue(kind: Kind, arrayAddr: String, index: String): string {
@@ -958,17 +960,17 @@ module J2ME {
       if (opcode !== Bytecodes.INVOKESTATIC) {
         var objectAddr = this.pop(Kind.Reference);
         args.unshift(objectAddr);
-        /*this.blockEmitter.writeLn("console.log('porco1: ' + " + objectAddr + ");");
-        this.blockEmitter.writeLn("console.log('porco: ' + ((" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET) >> 2));");
-        this.blockEmitter.writeLn("console.log('porco: ' + i32[" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET >> 2]);");*/
+        /*this.blockEmitter.writeLn("console.log('invoke: ' + " + objectAddr + ");");
+        this.blockEmitter.writeLn("console.log('invoke: ' + ((" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET) >> 2));");
+        this.blockEmitter.writeLn("console.log('invoke: ' + i32[" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET >> 2]);");*/
         var objKlass = "J2ME.classIdToClassInfoMap[i32[(" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET) >> 2]]";
         if (opcode === Bytecodes.INVOKESPECIAL) {
           call = klassConstant + ".getMethodByIndex(" + methodInfo.index + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
           call = objKlass + ".vTable[" + methodInfo.vTableIndex + "]";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
-          this.blockEmitter.writeLn("console.log('porco1');");
-          this.blockEmitter.writeLn("console.log('porco1: .iTable[" + methodInfo.mangledName + "]');");
+          this.blockEmitter.writeLn("console.log('invoke1');");
+          this.blockEmitter.writeLn("console.log('invoke1: .iTable[" + methodInfo.mangledName + "]');");
           call = objKlass + ".iTable['" + methodInfo.mangledName + "']";
         } else {
           Debug.unexpected(Bytecodes[opcode]);
@@ -986,11 +988,11 @@ module J2ME {
       this.needsVariable("re");
       this.flushBlockStack();
       emitDebugInfoComments && this.blockEmitter.writeLn("// " + Bytecodes[opcode] + ": " + methodInfo.implKey);
-      /*this.blockEmitter.writeLn("console.log('porco: ' + " + args[0] + ");");
-      this.blockEmitter.writeLn("console.log('porco: ' + " + klassConstant + ".getClassNameSlow());");
-      this.blockEmitter.writeLn("console.log('porco: ' + " + klassConstant + ".getMethodByIndex(" + methodInfo.index + ").implKey);");*/
+      /*this.blockEmitter.writeLn("console.log('invoke: ' + " + args[0] + ");");
+      this.blockEmitter.writeLn("console.log('invoke: ' + " + klassConstant + ".getClassNameSlow());");
+      this.blockEmitter.writeLn("console.log('invoke: ' + " + klassConstant + ".getMethodByIndex(" + methodInfo.index + ").implKey);");*/
       this.blockEmitter.writeLn("re=" + call + ";");
-      //this.blockEmitter.writeLn("console.log('porco2');");
+      //this.blockEmitter.writeLn("console.log('invoke2');");
       if (calleeCanYield) {
         this.emitUnwind(this.blockEmitter, String(this.pc));
       } else {
