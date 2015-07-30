@@ -1,3 +1,5 @@
+// This code has been modified. The original file can be found here: http://www.hboehm.info/gc/gc_bench/GCBench.java
+
 // This is adapted from a benchmark written by John Ellis and Pete Kovac
 // of Post Communications.
 // It was modified by Hans Boehm of Silicon Graphics.
