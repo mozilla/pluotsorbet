@@ -22,6 +22,10 @@ export VERBOSE
 CONFIG ?= config/runtests.js
 export CONFIG
 
+# Amount of memory for Emscripten-compiled code.
+ASMJS_TOTAL_MEMORY ?= 128*1024*1024
+export ASMJS_TOTAL_MEMORY
+
 # Whether or not to package test files like tests.jar and support scripts.
 # Set this to 1 if running tests on a device or building an app for a midlet
 # in the tests/ subdirectory, like Asteroids.
@@ -173,6 +177,7 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D DESCRIPTION="$(DESCRIPTION)" \
              -D ORIGIN=$(ORIGIN) \
              -D VERSION=$(VERSION) \
+             -D ASMJS_TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) \
              $(NULL)
 PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
@@ -313,8 +318,8 @@ endif
 bld/native.js: Makefile vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB)
 	mkdir -p bld
 	rm -f bld/native.js
-	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz -O3 vm/native/native.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=128*1024*1024 \
-	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMallocUncollectable", "_gcFree", "_gcMalloc", "_gcMallocAtomic", "_registerFinalizer", "_forceCollection"]' \
+	emcc -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz -O3 vm/native/native.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=4*1024*1024 -s TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) \
+	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMallocUncollectable", "_gcFree", "_gcMalloc", "_gcMallocAtomic", "_gcMallocAtomicUncollectable", "_gcRegisterDisappearingLink", "_gcUnregisterDisappearingLink", "_registerFinalizer", "_forceCollection", "_getUsedHeapSize"]' \
 	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts"]' \
 	-s NO_EXIT_RUNTIME=1 -s NO_BROWSER=1 -s NO_FILESYSTEM=1
 	echo "var ASM = (function(Module) {" >> bld/native.js

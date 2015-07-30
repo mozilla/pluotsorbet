@@ -72,12 +72,27 @@ extern "C" {
     return (uintptr_t)GC_MALLOC_ATOMIC(size);
   }
 
+  void gcRegisterDisappearingLink(uintptr_t p, uintptr_t objAddr) {
+    GC_GENERAL_REGISTER_DISAPPEARING_LINK((void**)p, (void*)objAddr);
+  }
+
+  void gcUnregisterDisappearingLink(uintptr_t p) {
+    GC_unregister_disappearing_link((void**)p);
+  }
+
   void registerFinalizer(uintptr_t p) {
     GC_REGISTER_FINALIZER_NO_ORDER((void*)p, finalizer, NULL, (GC_finalization_proc*)0, (void**)0);
   }
 
   void forceCollection(void) {
     GC_gcollect();
+  }
+
+  int getUsedHeapSize(void) {
+    GC_word heapSize;
+    GC_word freeBytes;
+    GC_get_heap_usage_safe(&heapSize, &freeBytes, NULL, NULL, NULL);
+    return heapSize - freeBytes;
   }
 }
 
