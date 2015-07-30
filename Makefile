@@ -357,10 +357,11 @@ bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
 
 j2me: bld/j2me.js bld/jsc.js
 
-aot: bld/classes.jar.js
+aot: bld/classes.jar.js bld/tests.jar.js
 bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar $(JS) .checksum
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
+	js bld/jsc.js -cp java/classes.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 ifeq ($(RELEASE),1)
 	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js

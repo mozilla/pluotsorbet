@@ -112,6 +112,8 @@ module J2ME {
     var compileExceptions = true;
     var compileSynchronized = true;
 
+    console.log("baselineCompileMethod: " + methodInfo.implKey);
+
     if (!compileExceptions && methodInfo.exception_table_length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
@@ -950,29 +952,32 @@ module J2ME {
         args.unshift(this.pop(signatureKinds[i]));
       }
 
-
       var call;
       var klassId = this.klassId(methodInfo.classInfo);
-      var klassConstant = "J2ME.klassIdMap[" + klassId + "]";
-      var methodConstant = "(" + klassConstant + ".M[" + methodInfo.index + "]||" + klassConstant + ".m(" + methodInfo.index + "))";
+      var klassConstant = "J2ME.classIdToClassInfoMap[" + klassId + "]";
       if (opcode !== Bytecodes.INVOKESTATIC) {
         var objectAddr = this.pop(Kind.Reference);
         args.unshift(objectAddr);
-        var object = "J2ME.klassSingles[i32[" + objectAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + " >> 2]]";
+        /*this.blockEmitter.writeLn("console.log('porco1: ' + " + objectAddr + ");");
+        this.blockEmitter.writeLn("console.log('porco: ' + ((" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET) >> 2));");
+        this.blockEmitter.writeLn("console.log('porco: ' + i32[" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET >> 2]);");*/
+        var objKlass = "J2ME.classIdToClassInfoMap[i32[(" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET) >> 2]]";
         if (opcode === Bytecodes.INVOKESPECIAL) {
-          call = methodConstant;
+          call = klassConstant + ".getMethodByIndex(" + methodInfo.index + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
-          call = object + "." + methodInfo.virtualName;
+          call = objKlass + ".vTable[" + methodInfo.vTableIndex + "]";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
-          call = object + "." + methodInfo.mangledName;
+          this.blockEmitter.writeLn("console.log('porco1');");
+          this.blockEmitter.writeLn("console.log('porco1: .iTable[" + methodInfo.mangledName + "]');");
+          call = objKlass + ".iTable['" + methodInfo.mangledName + "']";
         } else {
           Debug.unexpected(Bytecodes[opcode]);
         }
       } else {
         args.unshift(String(Constants.NULL));
-        call = methodConstant;
+        call = klassConstant + ".getMethodByIndex(" + methodInfo.index + ")";
       }
-      call = call + "(" + args.join(",") + ")";
+      call = "J2ME.getLinkedMethod(" + call + ")(" + args.join(",") + ")";
 
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
@@ -981,7 +986,11 @@ module J2ME {
       this.needsVariable("re");
       this.flushBlockStack();
       emitDebugInfoComments && this.blockEmitter.writeLn("// " + Bytecodes[opcode] + ": " + methodInfo.implKey);
+      /*this.blockEmitter.writeLn("console.log('porco: ' + " + args[0] + ");");
+      this.blockEmitter.writeLn("console.log('porco: ' + " + klassConstant + ".getClassNameSlow());");
+      this.blockEmitter.writeLn("console.log('porco: ' + " + klassConstant + ".getMethodByIndex(" + methodInfo.index + ").implKey);");*/
       this.blockEmitter.writeLn("re=" + call + ";");
+      //this.blockEmitter.writeLn("console.log('porco2');");
       if (calleeCanYield) {
         this.emitUnwind(this.blockEmitter, String(this.pc));
       } else {
@@ -1084,7 +1093,7 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "J2ME.allocObject(J2ME.klassIdMap[" + classInfo.id + "])", Precedence.New);
+      this.emitPush(Kind.Reference, "J2ME.allocObject(J2ME.classIdToClassInfoMap[" + classInfo.id + "])", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {
