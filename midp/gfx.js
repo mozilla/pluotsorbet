@@ -18,18 +18,18 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    scaleCanvas(MIDP.deviceContext.canvas);
-    // XXX if config.useOffscreenCanvas, then scale that canvas too.
-
     var offscreenCanvas, offscreenContext2D;
     if (config.useOffscreenCanvas) {
         offscreenCanvas = document.createElement("canvas");
         offscreenCanvas.width = MIDP.deviceContext.canvas.width;
         offscreenCanvas.height = MIDP.deviceContext.canvas.height;
         offscreenContext2D = offscreenCanvas.getContext("2d");
+        scaleCanvas(MIDP.deviceContext.canvas);
+        scaleCanvas(offscreenCanvas);
     } else {
         offscreenCanvas = MIDP.deviceContext.canvas;
         offscreenContext2D = MIDP.deviceContext;
+        scaleCanvas(MIDP.deviceContext.canvas);
     }
 
     var screenContextInfo = new ContextInfo(offscreenContext2D);
@@ -41,7 +41,10 @@ var currentlyFocusedTextEditor;
         }
 
         scaleCanvas(MIDP.deviceContext.canvas);
-        // XXX if config.useOffscreenCanvas, then scale that canvas too.
+
+        if (config.useOffscreenCanvas) {
+            scaleCanvas(offscreenCanvas);
+        }
 
         screenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
@@ -131,13 +134,10 @@ var currentlyFocusedTextEditor;
             return;
         }
 
-        // XXX Update this to take HiDPI scaling into account.  Presumably we
-        // should multiple the specified coordinates by the device pixel ratio.
-
-        x1 = Math.max(0, x1);
-        y1 = Math.max(0, y1);
-        x2 = Math.max(0, x2);
-        y2 = Math.max(0, y2);
+        x1 = Math.max(0, x1) * MIDP.devicePixelRatio;
+        y1 = Math.max(0, y1) * MIDP.devicePixelRatio;
+        x2 = Math.max(0, x2) * MIDP.devicePixelRatio;
+        y2 = Math.max(0, y2) * MIDP.devicePixelRatio;
 
         var maxX = Math.min(offscreenCanvas.width, MIDP.deviceContext.canvas.width);
         x1 = Math.min(maxX, x1);
