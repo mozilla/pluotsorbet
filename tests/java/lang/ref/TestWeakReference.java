@@ -1,21 +1,22 @@
 package java.lang.ref;
 
-import org.mozilla.internal.Sys;
 import gnu.testlet.Testlet;
 import gnu.testlet.TestHarness;
 
 public class TestWeakReference implements Testlet {
-  public int getExpectedPass() { return 8; }
+  public int getExpectedPass() { return 10; }
   public int getExpectedFail() { return 0; }
   public int getExpectedKnownFail() { return 0; }
 
   int objAddr;
   WeakReference gcWeakRef;
+  WeakReference gcWeakRef2;
 
   class SetWeakRefThread extends Thread {
     public void run() {
       Object obj = new Object();
       gcWeakRef = new WeakReference(obj);
+      gcWeakRef2 = new WeakReference(obj);
     }
   }
 
@@ -32,6 +33,7 @@ public class TestWeakReference implements Testlet {
     th.check(weakRef.get() == null, "clearing a cleared WeakReference works");
     th.check(weakRef2.get(), obj, "second weakly held referent is object");
 
+
     SetWeakRefThread thread = new SetWeakRefThread();
     thread.start();
     try {
@@ -41,10 +43,12 @@ public class TestWeakReference implements Testlet {
     }
 
     th.check(gcWeakRef.get() != null, "weakly held referent isn't null");
-    Sys.forceCollection();
-    Sys.forceCollection();
+    th.check(gcWeakRef2.get() != null, "second weakly held referent isn't null");
+    Runtime.getRuntime().gc();
+    Runtime.getRuntime().gc();
     th.check(gcWeakRef.get() == null, "GC cleared weakly held referent is null");
+    th.check(gcWeakRef2.get() == null, "second GC cleared weakly held referent is null");
     gcWeakRef.clear();
-    th.check(weakRef.get() == null, "clearing a WeakReference cleared by the GC works");
+    th.check(gcWeakRef.get() == null, "clearing a WeakReference cleared by the GC works");
   }
 }

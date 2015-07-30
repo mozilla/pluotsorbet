@@ -437,7 +437,6 @@ module J2ME {
             classInfo === CLASSES.java_lang_Class ||
             classInfo === CLASSES.java_lang_String ||
             classInfo === CLASSES.java_lang_Thread) {
-          var handle = <java.lang.Class>getHandle(addr);
           handle.status = 4;
           this.setClassInitialized(classInfo.id);
         }
@@ -1200,16 +1199,8 @@ module J2ME {
     return address;
   }
 
-  export var weakReferences = new Map<number,number>();
-
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
-
-    var weakReferenceAddr = weakReferences.get(addr);
-    if (weakReferenceAddr) {
-      weakReferences.delete(addr);
-      NativeMap.delete(weakReferenceAddr);
-    }
   }
 
   /**
@@ -1275,7 +1266,8 @@ module J2ME {
       return Constants.NULL;
     }
 
-    var objectAddr = allocUncollectableObject(CLASSES.java_lang_String);
+    var objectAddr = allocObject(CLASSES.java_lang_String);
+    setUncollectable(objectAddr);
     var object = <java.lang.String>getHandle(objectAddr);
 
     var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
@@ -1285,6 +1277,7 @@ module J2ME {
     object.value = arrayAddr;
     object.offset = 0;
     object.count = encoded.length;
+    unsetUncollectable(objectAddr);
     return objectAddr;
   }
 
@@ -1346,6 +1339,7 @@ module J2ME {
     i32[(uncollectableAddress >> 2) + uncollectableNumber] = 0;
     uncollectableNumber--;
   }
+
   export function newArray(elementClassInfo: ClassInfo, size: number): number {
     release || assert(elementClassInfo instanceof ClassInfo);
     if (size < 0) {
@@ -1380,7 +1374,7 @@ module J2ME {
     var length = lengths[0];
     var arrayAddr = newArray(classInfo.elementClass, length);
     setUncollectable(arrayAddr);
-    var array = getHandle(arrayAddr);
+    var array = getArrayFromAddr(arrayAddr);
     if (lengths.length > 1) {
       lengths = lengths.slice(1);
       for (var i = 0; i < length; i++) {
@@ -1427,15 +1421,25 @@ module J2ME {
     return newArray(PrimitiveClassInfo.I, size);
   }
 
+  var jStringDecoder = new TextDecoder('utf-16');
+
+  export function fromJavaChars(charsAddr, offset, count) {
+    release || assert(charsAddr !== Constants.NULL);
+
+    var start = (Constants.ARRAY_HDR_SIZE + charsAddr >> 1) + offset;
+
+    return jStringDecoder.decode(u16.subarray(start, start + count));
+  }
+
   export function fromStringAddr(stringAddr: number): string {
     if (stringAddr === Constants.NULL) {
       return null;
     }
 
     // XXX Retrieve the characters directly from memory, without indirecting
-    // through getHandle and getArrayFromAddr.
+    // through getHandle.
     var javaString = <java.lang.String>getHandle(stringAddr);
-    return util.fromJavaChars(getArrayFromAddr(javaString.value), javaString.offset, javaString.count);
+    return fromJavaChars(javaString.value, javaString.offset, javaString.count);
   }
 
   export function checkDivideByZero(value: number) {

@@ -12196,6 +12196,14 @@ declare var TextEncoder: {
     new (encoding: string): TextEncoder;
 }
 
+interface TextDecoder {
+    decode(data: Uint8Array): string;
+}
+declare var TextDecoder: {
+    prototype: TextDecoder;
+    new (encoding: string): TextDecoder;
+}
+
 interface HTMLObjectElement {
     /**
       * Gets or sets the path to the preferred media source. This enables the Play To target device to stream the media content, which can be DRM protected, from a different location, such as a cloud media server.
