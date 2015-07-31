@@ -1172,20 +1172,23 @@ console.log("after linkMethod");
     return from.isAssignableTo(to);
   }
 
-  export function instanceOfKlass(object: java.lang.Object, classInfo: ClassInfo): boolean {
-    return object !== null && isAssignableTo(object.classInfo, classInfo);
+  export function instanceOfKlass(objectAddr: number, classId: number): boolean {
+    release || assert(typeof classId === "number", "Class id must be a number.");
+    return objectAddr !== Constants.NULL && isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId]);
   }
 
-  export function instanceOfInterface(object: java.lang.Object, classInfo: ClassInfo): boolean {
-    release || assert(classInfo.isInterface);
-    return object !== null && isAssignableTo(object.classInfo, classInfo);
+  export function instanceOfInterface(objectAddr: number, classId: number): boolean {
+    release || assert(typeof classId === "number", "Class id must be a number.");
+    release || assert(classIdToClassInfoMap[classId].isInterfaceKlass);
+    return objectAddr !== Constants.NULL && isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId]);
   }
 
-  export function checkCastKlass(object: java.lang.Object, classInfo: ClassInfo) {
-    if (object !== null && !isAssignableTo(object.classInfo, classInfo)) {
-      throw $.newClassCastException();
-    }
-  }
+  export function checkCastKlass(objectAddr: number, classId: number) {
+    release || assert(typeof classId === "number", "Class id must be a number.");
+    if (objectAddr !== Constants.NULL && !isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId])) {
+       throw $.newClassCastException();
+     }
+   }
 
   export function checkCastInterface(object: java.lang.Object, classInfo: ClassInfo) {
     if (object !== null && !isAssignableTo(object.classInfo, classInfo)) {
