@@ -295,7 +295,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
         var srcCanvas = source.contextInfo.context.canvas;
-        var context = initImageData(dest, srcCanvas.width, srcCanvas.height, 0);
+        var context = initImageData(dest, srcCanvas.logicalWidth, srcCanvas.logicalHeight, 0);
         context.drawImage(srcCanvas, 0, 0);
     };
 
@@ -308,8 +308,19 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
     function(imageData, rgbData, width, height, processAlpha) {
+        // The canvas underlying the ImageData object needs to be scaled by
+        // the device pixel ratio, but the RGB data we're drawing is unscaled.
+        // So we copy the data to the temporary canvas first and then draw
+        // the temporary canvas to the ImageData canvas while scaling it.
+
+        // XXX Could we instead draw the data directly to the ImageData canvas
+        // by using putImageData with dirtyWidth/dirtyHeight to scale it?
+
         var context = initImageData(imageData, width, height, 0);
-        var ctxImageData = context.createImageData(width, height);
+
+        tempContext.canvas.width = width;
+        tempContext.canvas.height = height;
+        var ctxImageData = tempContext.createImageData(width, height);
         var abgrData = new Int32Array(ctxImageData.data.buffer);
 
         if (1 === processAlpha) {
@@ -318,7 +329,11 @@ var currentlyFocusedTextEditor;
             ARGBTo1BGR(rgbData, abgrData, width, height, 0, width);
         }
 
-        context.putImageData(ctxImageData, 0, 0);
+        tempContext.putImageData(ctxImageData, 0, 0);
+        context.drawImage(tempContext.canvas, 0, 0, width * MIDP.devicePixelRatio, height * MIDP.devicePixelRatio);
+
+        tempContext.canvas.width = 0;
+        tempContext.canvas.height = 0;
     };
 
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {

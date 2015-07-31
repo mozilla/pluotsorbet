@@ -62,6 +62,7 @@ var gfxTests = [
   { name: "gfx/DirectUtilsClipBeforeOnScreen", maxDifferentLinux: 0, maxDifferentMac: 0, todo: true },
   { name: "gfx/DirectUtilsClipBeforeOnScreen2", maxDifferentLinux: 0, maxDifferentMac: 1304 },
   { name: "gfx/DirectUtilsClipBeforeWithNormalImage", maxDifferentLinux: 0, maxDifferentMac: 1304 },
+  { name: "gfx/ImmutableImageDecodeRGBImageTest", maxDifferentLinux: 0, maxDifferentMac: 0 },
   { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferentLinux: 0, maxDifferentMac: 22113 },
   { name: "gfx/ClippingWithAnchorTest", maxDifferentLinux: 0, maxDifferentMac: 148 },
   { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferentLinux: 0, maxDifferentMac: 63 },
