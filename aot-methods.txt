@@ -1,3 +1,4 @@
 java/io/OutputStream.write.([BII)V
 java/lang/Long.hashCode.()I
 j2mejsTestHarness.check.(Z)V
+java/lang/Integer.toString.(II)Ljava/lang/String;

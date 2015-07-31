@@ -836,7 +836,7 @@ module J2ME {
         this.emitClassInitializationCheck(fieldInfo.classInfo);
       }
       var kind = getSignatureKind(fieldInfo.utf8Signature);
-      var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) + "._address" : this.pop(Kind.Reference);
+      var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       this.emitNullPointerCheck(objectAddr);
       var address = objectAddr + "+" + fieldInfo.byteOffset;
       // XXX the push kind is wrong here.
@@ -855,7 +855,7 @@ module J2ME {
       if (isTwoSlot(kind)) {
         h = this.pop(Kind.Int, Precedence.Sequence);
       }
-      var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) + "._address" : this.pop(Kind.Reference);
+      var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       this.emitNullPointerCheck(objectAddr);
       var address = objectAddr + "+" + fieldInfo.byteOffset;
       this.blockEmitter.writeLn("i32[" + address + ">>2]=" + l + ";");
@@ -899,11 +899,11 @@ module J2ME {
     }
 
     runtimeClass(classInfo: ClassInfo) {
-      return "$." + classConstant(classInfo);
+      return "$.getStaticObjectAddress(" + classConstant(classInfo) + ")";
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
-      return "$." + classConstant(classInfo) + ".classObject";
+      return "$.getClassObjectAddress(" + classConstant(classInfo) + ")";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
@@ -925,7 +925,8 @@ module J2ME {
           baselineCounter && baselineCounter.count(message);
         } else {
           baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("if($.initialized[\"" + classInfo.getClassNameSlow() + "\"]===undefined) J2ME.classInitCheck(" + this.runtimeClass(classInfo) + ".templateKlass.classInfo);");
+          // XXX: is correct?
+          this.blockEmitter.writeLn("if($.initialized[\"" + classInfo.getClassNameSlow() + "\"]===undefined) J2ME.classInitCheck(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
