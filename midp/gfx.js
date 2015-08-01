@@ -599,11 +599,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getTranslateX.()I"] = function() {
-        return this.info.transX;
+        return this.info.transX / MIDP.devicePixelRatio;
     };
 
     Native["javax/microedition/lcdui/Graphics.getTranslateY.()I"] = function() {
-        return this.info.transY;
+        return this.info.transY / MIDP.devicePixelRatio;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
@@ -709,26 +709,26 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipX.()I"] = function() {
-        return this.info.clipX1 - this.info.transX;
+        return this.info.clipX1 / MIDP.devicePixelRatio - this.info.transX / MIDP.devicePixelRatio;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipY.()I"] = function() {
-        return this.info.clipY1 - this.info.transY;
+        return this.info.clipY1 / MIDP.devicePixelRatio - this.info.transY / MIDP.devicePixelRatio;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipWidth.()I"] = function() {
-        return this.info.clipX2 - this.info.clipX1;
+        return this.info.clipX2 / MIDP.devicePixelRatio - this.info.clipX1 / MIDP.devicePixelRatio;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipHeight.()I"] = function() {
-        return this.info.clipY2 - this.info.clipY1;
+        return this.info.clipY2 / MIDP.devicePixelRatio - this.info.clipY1 / MIDP.devicePixelRatio;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClip.([I)V"] = function(region) {
-        region[0] = this.info.clipX1 - this.info.transX;
-        region[1] = this.info.clipY1 - this.info.transY;
-        region[2] = this.info.clipX2 - this.info.transX;
-        region[3] = this.info.clipY2 - this.info.transY;
+        region[0] = this.info.clipX1 / MIDP.devicePixelRatio - this.info.transX / MIDP.devicePixelRatio;
+        region[1] = this.info.clipY1 / MIDP.devicePixelRatio - this.info.transY / MIDP.devicePixelRatio;
+        region[2] = this.info.clipX2 / MIDP.devicePixelRatio - this.info.transX / MIDP.devicePixelRatio;
+        region[3] = this.info.clipY2 / MIDP.devicePixelRatio - this.info.transY / MIDP.devicePixelRatio;
     };
 
     Native["javax/microedition/lcdui/Graphics.clipRect.(IIII)V"] = function(x, y, width, height) {
@@ -912,8 +912,8 @@ var currentlyFocusedTextEditor;
         x = x | 0;
         y = y | 0;
         if (x !== 0 || y !== 0) {
-            this.transX += x;
-            this.transY += y;
+            this.transX += x * MIDP.devicePixelRatio;
+            this.transY += y * MIDP.devicePixelRatio;
 
             if (this.contextInfo.currentlyAppliedGraphicsInfo === this) {
                 this.contextInfo.currentlyAppliedGraphicsInfo = null;
@@ -922,8 +922,8 @@ var currentlyFocusedTextEditor;
     }
 
     GraphicsInfo.prototype.setClip = function(x, y, width, height, minX, minY, maxX, maxY) {
-        var newX1 = x * MIDP.devicePixelRatio + this.transX;
-        var newY1 = y * MIDP.devicePixelRatio + this.transY;
+        var newX1 = x * MIDP.devicePixelRatio + this.transX * MIDP.devicePixelRatio;
+        var newY1 = y * MIDP.devicePixelRatio + this.transY * MIDP.devicePixelRatio;
         var newX2 = newX1 + width * MIDP.devicePixelRatio;
         var newY2 = newY1 + height * MIDP.devicePixelRatio;
 
