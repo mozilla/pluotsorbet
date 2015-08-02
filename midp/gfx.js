@@ -1080,6 +1080,13 @@ var currentlyFocusedTextEditor;
         var dx2 = (x3 - x1) || 1;
         var dy2 = (y3 - y1) || 1;
 
+        x1 *= MIDP.devicePixelRatio;
+        y1 *= MIDP.devicePixelRatio;
+        dx1 *= MIDP.devicePixelRatio;
+        dy1 *= MIDP.devicePixelRatio;
+        dx2 *= MIDP.devicePixelRatio;
+        dy2 *= MIDP.devicePixelRatio;
+
         c.beginPath();
         c.moveTo(x1, y1);
         c.lineTo(x1 + dx1, y1 + dy1);
@@ -1097,6 +1104,11 @@ var currentlyFocusedTextEditor;
 
         w = w || 1;
         h = h || 1;
+
+        x *= MIDP.devicePixelRatio;
+        y *= MIDP.devicePixelRatio;
+        w *= MIDP.devicePixelRatio;
+        h *= MIDP.devicePixelRatio;
 
         c.strokeRect(x, y, w, h);
     };
@@ -1170,6 +1182,9 @@ var currentlyFocusedTextEditor;
 
         var c = this.info.getGraphicsContext();
 
+        // XXX Should we set width and height to a minimum value here,
+        // as we do in Graphics.drawRoundRect, Graphics.drawRect, etc.?
+
         x *= MIDP.devicePixelRatio;
         y *= MIDP.devicePixelRatio;
         width *= MIDP.devicePixelRatio;
@@ -1188,6 +1203,9 @@ var currentlyFocusedTextEditor;
         }
 
         var c = this.info.getGraphicsContext();
+
+        // XXX Should we set width and height to a minimum value here,
+        // as we do in Graphics.drawRoundRect, Graphics.drawRect, etc.?
 
         x *= MIDP.devicePixelRatio;
         y *= MIDP.devicePixelRatio;
