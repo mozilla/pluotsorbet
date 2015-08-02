@@ -448,7 +448,10 @@ var currentlyFocusedTextEditor;
             return "";
         })).width | 0;
 
-        return len + emojiLen;
+        // XXX Instead of dividing by the device pixel ratio here, we should
+        // divide the font size by the DPR to more accurately measure the width
+        // of the string (since string width doesn't scale exactly by DPR).
+        return (len + emojiLen) / MIDP.devicePixelRatio | 0;
     }
 
     var defaultFont;
