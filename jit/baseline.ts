@@ -219,10 +219,6 @@ module J2ME {
     }
   }
 
-  function floatConstant(v): string {
-    return aliasedF32[0] = v, String(aliasedI32[0]);
-  }
-
   function doubleConstant(v): string {
     // Check for -0 floats.
     if ((1 / v) < 0) {
@@ -270,8 +266,8 @@ module J2ME {
    * These bytecodes require stack flushing.
    */
   function needsStackFlushBefore(opcode: Bytecodes, sp: number) {
-     // Bytecodes that modify the order in which expressions are evaluated, like: SWAP and DUP
-     // must flush the stack.
+    // Bytecodes that modify the order in which expressions are evaluated, like: SWAP and DUP
+    // must flush the stack.
     switch (opcode) {
       case Bytecodes.DUP:
       case Bytecodes.DUP_X1:
@@ -737,9 +733,15 @@ module J2ME {
 
     emitLoadLocal(kind: Kind, i: number) {
       this.emitPush(kind, this.getLocal(i), Precedence.Primary);
+      if (isTwoSlot(kind)) {
+        this.emitPush(kind, this.getLocal(i + 1), Precedence.Primary);
+      }
     }
 
     emitStoreLocal(kind: Kind, i: number) {
+      if (isTwoSlot(kind)) {
+        this.blockEmitter.writeLn(this.getLocal(i + 1) + "=" + this.pop(kind, Precedence.Sequence) + ";");
+      }
       this.blockEmitter.writeLn(this.getLocal(i) + "=" + this.pop(kind, Precedence.Sequence) + ";");
     }
 
@@ -763,45 +765,59 @@ module J2ME {
 
     emitPushTemporary(...indices: number []) {
       for (var i = 0; i < indices.length; i++) {
-       this.emitPush(Kind.Void, "t" + indices[i], Precedence.Primary);
+        this.emitPush(Kind.Void, "t" + indices[i], Precedence.Primary);
       }
     }
 
     pop(kind: Kind, contextPrecedence: Precedence = Precedence.Primary): string {
-      writer && writer.writeLn(" popping: sp: " + this.sp + " " + Kind[kind]);
-      release || assert (this.sp, "SP below zero.");
-      this.sp -= isTwoSlot(kind) ? 2 : 1;
-      var v = this.getStack(this.sp, contextPrecedence);
-      writer && writer.writeLn("  popped: sp: " + this.sp + " " + Kind[kind] + " " + v);
-      return v;
+      release || assert (this.sp, "SP should not be less than zero, popping: " + Kind[kind]);
+      this.sp --;
+      return this.getStack(this.sp, contextPrecedence);
+    }
+
+    popSlot() {
+      return this.pop(Kind.Int);
     }
 
     emitPushAny(v) {
       this.emitPush(Kind.Void, v, Precedence.Sequence); // TODO: Revisit precedence.
     }
 
-    emitPushInteger(v) {
+    emitPushBits(kind: Kind, v: number) {
+      release || assert((v | 0) === v);
+      var s = String(v);
       if (v < 0) {
-        this.emitPush(Kind.Int, v, Precedence.UnaryNegation);
+        this.emitPush(kind, s, Precedence.UnaryNegation);
       } else {
-        this.emitPush(Kind.Int, v, Precedence.Primary);
+        this.emitPush(kind, s, Precedence.Primary);
       }
     }
 
-    emitPushLong(l, h) {
-      this.emitPush(Kind.Int, l, Precedence.Primary);
-      this.emitPush(Kind.Int, h, Precedence.Primary);
+    emitPushInt(v: number) {
+      release || assert((v | 0) === v);
+      this.emitPushBits(Kind.Int, v);
     }
-    
-    emitPush(kind: Kind, v, precedence: Precedence) {
-      if (isTwoSlot(kind)) {
-        throwCompilerError("PUSH: " + Kind[kind]);
-      }
-      writer && writer.writeLn("push: sp: " + this.sp + " " + Kind[kind] + " " + v);
-      // this.blockEmitter.writeLn(this.getStack(this.sp) + " = " + v + ";");
+
+    emitPushFloat(v: number) {
+      aliasedF32[0] = v;
+      this.emitPushBits(Kind.Float, aliasedI32[0]);
+    }
+
+    emitPushDouble(v: number) {
+      aliasedF64[0] = v;
+      this.emitPushBits(Kind.Double, aliasedI32[0]);
+      this.emitPushBits(Kind.Illegal, aliasedI32[1]);
+    }
+
+    emitPushLongBits(l: number, h: number) {
+      this.emitPushBits(Kind.Long, l);
+      this.emitPushBits(Kind.Illegal, h);
+    }
+
+    emitPush(kind: Kind, v: string, precedence: Precedence) {
       this.blockStack[this.sp] = v;
       this.blockStackPrecedence[this.sp] = precedence;
-      this.sp += isTwoSlot(kind) ? 2 : 1;
+      this.sp ++;
     }
 
     flushBlockStack() {
@@ -816,9 +832,6 @@ module J2ME {
     }
 
     emitReturn(kind: Kind) {
-      if (isTwoSlot(kind)) {
-        throwCompilerError("XXX Two slot return");
-      }
       if (this.methodInfo.isSynchronized) {
         this.emitMonitorExit(this.blockEmitter, this.lockObject);
       }
@@ -826,7 +839,14 @@ module J2ME {
         this.blockEmitter.writeLn("return;");
         return
       }
-      this.blockEmitter.writeLn("return " + this.pop(kind) + ";");
+      if (isTwoSlot(kind)) {
+        var h = this.pop(kind);
+        var l = this.pop(kind);
+        this.blockEmitter.writeLn("tempReturn0=" + h + ";");
+        this.blockEmitter.writeLn("return " + l + ";");
+      } else {
+        this.blockEmitter.writeLn("return " + this.pop(kind) + ";");
+      }
     }
 
     emitGetField(fieldInfo: FieldInfo, isStatic: boolean) {
@@ -866,7 +886,7 @@ module J2ME {
     setBlockStackHeight(pc: number, height: number) {
       writer && writer.writeLn("Setting Block Height " + pc + " " + height);
       if (this.blockStackHeightMap[pc] !== undefined) {
-        release || assert(this.blockStackHeightMap[pc] === height, pc + " " + this.blockStackHeightMap[pc] + " " + height);
+        release || assert(this.blockStackHeightMap[pc] === height, "Bad block height: " + pc + " " + this.blockStackHeightMap[pc] + " " + height);
       }
       this.blockStackHeightMap[pc] = height;
     }
@@ -947,9 +967,6 @@ module J2ME {
       var signatureKinds = methodInfo.signatureKinds;
       var args: string [] = [];
       for (var i = signatureKinds.length - 1; i > 0; i--) {
-        if (isTwoSlot(signatureKinds[i]) || (signatureKinds[i] === Kind.Float)) {
-          throwCompilerError("Invoke: " + Kind[signatureKinds[i]]);
-        }
         args.unshift(this.pop(signatureKinds[i]));
       }
 
@@ -1066,14 +1083,13 @@ module J2ME {
         case TAGS.CONSTANT_Float:
         case TAGS.CONSTANT_Integer:
           var value = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
-          writer && writer.writeLn("XXX: " + value);
-          this.emitPushInteger(value);
+          this.emitPushBits(Kind.Int, value);
           return;
         case TAGS.CONSTANT_Long:
         case TAGS.CONSTANT_Double:
           var h = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
           var l = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
-          this.emitPushLong(l, h);
+          this.emitPushLongBits(l, h);
           return;
         case TAGS.CONSTANT_String:
           this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".constantPool.resolve(" + index + ", " + TAGS.CONSTANT_String + ")", Precedence.Primary);
@@ -1279,41 +1295,57 @@ module J2ME {
       }
     }
 
-    emitArithmeticOp(result: Kind, opcode: Bytecodes, canTrap: boolean) {
-      var y = this.pop(result);
-      var x = this.pop(result);
-      if (canTrap) {
-        this.emitDivideByZeroCheck(result, y);
+    emitArithmeticOp(kind: Kind, opcode: Bytecodes, canTrap: boolean) {
+      var al, ah;
+      var bl, bh;
+      if (isTwoSlot(kind)) {
+        bh = this.pop(kind), bl = this.pop(kind);
+        ah = this.pop(kind), al = this.pop(kind);
+      } else {
+        bl = this.pop(kind), al = this.pop(kind);
       }
-      var v;
-      switch(opcode) {
-        case Bytecodes.IADD: v = x + "+" + y + "|0"; break;
-        case Bytecodes.ISUB: v = x + "-" + y + "|0"; break;
-        case Bytecodes.IMUL: v = "Math.imul(" + x + "," + y + ")"; break;
-        case Bytecodes.IDIV: v = x + "/" + y + "|0"; break;
-        case Bytecodes.IREM: v = x + "%" + y; break;
-
-        case Bytecodes.FADD: v = "fadd(" + x + "," + y + ")"; break;
-        case Bytecodes.FSUB: v = "fsub(" + x + "," + y + ")"; break;
-        case Bytecodes.FMUL: v = "fmul(" + x + "," + y + ")"; break;
-        case Bytecodes.FDIV: v = "fdiv(" + x + "," + y + ")"; break;
-        case Bytecodes.FREM: v = "frem(" + x + "," + y + ")"; break;
-
-        case Bytecodes.LADD: v = x + ".add(" + y + ")"; break;
-        case Bytecodes.LSUB: v = y + ".negate().add(" + x + ")"; break;
-        case Bytecodes.LMUL: v = x + ".multiply(" + y + ")"; break;
-        case Bytecodes.LDIV: v = x + ".div(" + y + ")"; break;
-        case Bytecodes.LREM: v = x + ".modulo(" + y + ")"; break;
-
-        case Bytecodes.DADD: v = x + "+" + y; break;
-        case Bytecodes.DSUB: v = x + "-" + y; break;
-        case Bytecodes.DMUL: v = x + "*" + y; break;
-        case Bytecodes.DDIV: v = x + "/" + y; break;
-        case Bytecodes.DREM: v = x + "%" + y; break;
+      if (canTrap) {
+        this.emitDivideByZeroCheck(kind, bl);
+      }
+      switch (opcode) {
+        case Bytecodes.IADD:
+          this.emitPush(Kind.Int, al + "+" + bl + "|0", Precedence.Primary);
+          break;
+        case Bytecodes.ISUB:
+          this.emitPush(Kind.Int, al + "-" + bl + "|0", Precedence.Primary);
+          break;
+        case Bytecodes.IMUL:
+          this.emitPush(Kind.Int, "Math.imul(" + al + "," + bl + ")", Precedence.Primary);
+          break;
+        case Bytecodes.IDIV:
+          this.emitPush(Kind.Int, al + "/" + bl + "|0", Precedence.Primary);
+          break;
+        case Bytecodes.IREM:
+          this.emitPush(Kind.Int, al + "%" + bl, Precedence.Primary);
+          break;
+        case Bytecodes.FADD:
+        case Bytecodes.FSUB:
+        case Bytecodes.FMUL:
+        case Bytecodes.FDIV:
+        case Bytecodes.FREM:
+          this.emitPush(Kind.Float, Bytecodes[opcode].toLowerCase() + "(" + al + "," + bl + ")", Precedence.Primary);
+          break;
+        case Bytecodes.LADD:
+        case Bytecodes.LSUB:
+        case Bytecodes.LMUL:
+        case Bytecodes.LDIV:
+        case Bytecodes.LREM:
+        case Bytecodes.DADD:
+        case Bytecodes.DSUB:
+        case Bytecodes.DMUL:
+        case Bytecodes.DDIV:
+        case Bytecodes.DREM:
+          this.emitPush(Kind.Double, Bytecodes[opcode].toLowerCase() + "(" + al + "," + ah + "," + bl + "," + bh + ")", Precedence.Primary);
+          this.emitPush(Kind.Illegal, "tempReturn0", Precedence.Primary);
+          break;
         default:
           release || assert(false, Bytecodes[opcode]);
       }
-      this.emitPush(result, v, Precedence.Sequence); // TODO: Restrict precedence.
     }
 
     emitNegateOp(kind: Kind) {
@@ -1345,9 +1377,9 @@ module J2ME {
         case Bytecodes.ISHR:  this.emitPush(kind, x + ">>"  + s, Precedence.BitwiseShift); return;
         case Bytecodes.IUSHR: this.emitPush(kind, x + ">>>" + s, Precedence.BitwiseShift); return;
 
-        case Bytecodes.LSHL: v = x + ".shiftLeft(" + s + ")"; break;
-        case Bytecodes.LSHR: v = x + ".shiftRight(" + s + ")"; break;
-        case Bytecodes.LUSHR: v = x + ".shiftRightUnsigned(" + s + ")"; break;
+        //case Bytecodes.LSHL: v = x + ".shiftLeft(" + s + ")"; break;
+        //case Bytecodes.LSHR: v = x + ".shiftRight(" + s + ")"; break;
+        //case Bytecodes.LUSHR: v = x + ".shiftRightUnsigned(" + s + ")"; break;
         default:
           Debug.unexpected(Bytecodes[opcode]);
       }
@@ -1363,9 +1395,9 @@ module J2ME {
         case Bytecodes.IOR:  this.emitPush(kind, x + "|" + y, Precedence.BitwiseOR);  return;
         case Bytecodes.IXOR: this.emitPush(kind, x + "^" + y, Precedence.BitwiseXOR); return;
 
-        case Bytecodes.LAND: v = x + ".and(" + y + ")"; break;
-        case Bytecodes.LOR:  v = x + ".or(" + y + ")"; break;
-        case Bytecodes.LXOR: v = x + ".xor(" + y + ")"; break;
+        //case Bytecodes.LAND: v = x + ".and(" + y + ")"; break;
+        //case Bytecodes.LOR:  v = x + ".or(" + y + ")"; break;
+        //case Bytecodes.LXOR: v = x + ".xor(" + y + ")"; break;
         default:
           Debug.unexpected(Bytecodes[opcode]);
       }
@@ -1373,20 +1405,36 @@ module J2ME {
     }
 
     emitConvertOp(from: Kind, to: Kind, opcode: Bytecodes) {
-      var x = this.pop(from);
-      var v;
       switch (opcode) {
-        //case Bytecodes.I2L: break;
+        case Bytecodes.I2L:
+          // REDUX: Make sure that the first slot's kind is now marked as long instead of int.
+          this.emitPush(Kind.Illegal, "(" + this.peek(Kind.Int) + "<0?-1:0)", Precedence.Primary);
+          break;
         case Bytecodes.I2F:
-        case Bytecodes.I2D: v = x; break;
-        case Bytecodes.I2B: v = "(" + x + "<<24)>>24"; break;
-        case Bytecodes.I2C: v = x + "&0xffff"; break;
-        case Bytecodes.I2S: v = "(" + x + "<<16)>>16"; break;
-        //case Bytecodes.L2I: break;
+          this.emitPush(Kind.Float, "i2f(" + this.popSlot() + ")", Precedence.Primary);
+          break;
+        case Bytecodes.I2B:
+          this.emitPush(Kind.Int, "(" + this.popSlot() + "<<24)>>24", Precedence.Primary);
+          break;
+        case Bytecodes.I2C:
+          this.emitPush(Kind.Int, this.popSlot() + "&0xffff", Precedence.Primary);
+          break;
+        case Bytecodes.I2S:
+          this.emitPush(Kind.Int, "(" + this.popSlot() + "<<16)>>16", Precedence.Primary);
+          break;
+        case Bytecodes.I2D:
+          this.emitPush(Kind.Double, "i2d(" + this.popSlot() + ")", Precedence.Primary);
+          this.emitPush(Kind.Illegal, "tempReturn0", Precedence.Primary);
+          break;
+        case Bytecodes.L2I:
+          this.pop(Kind.Long);
+          break;
         //case Bytecodes.L2F: break;
         //case Bytecodes.L2D: break;
-        //case Bytecodes.D2I: break;
-        case Bytecodes.F2I: v = "f2i(" + x + ")"; break;
+        //case Bytecodes.D2I:
+        case Bytecodes.F2I:
+          this.emitPush(Kind.Int, "f2i(" + this.popSlot() + ")", Precedence.Primary);
+          break;
         //case Bytecodes.F2L: break;
         //case Bytecodes.F2D: v = "f2d(" + x + ")"; break;
         //case Bytecodes.D2L: break;
@@ -1394,30 +1442,27 @@ module J2ME {
         default:
           throwCompilerError(Bytecodes[opcode]);
       }
-      this.emitPush(to, v, Precedence.Sequence); // TODO: Restrict precedence.
     }
 
     emitCompareOp(kind: Kind, isLessThan: boolean) {
-      var y = this.pop(kind);
-      var x = this.pop(kind);
+      var al, ah;
+      var bl, bh;
+      if (isTwoSlot(kind)) {
+        bh = this.pop(kind), bl = this.pop(kind);
+        ah = this.pop(kind), al = this.pop(kind);
+      } else {
+        bl = this.pop(kind), al = this.pop(kind);
+      }
       this.flushBlockStack();
       var sp = this.sp ++;
       // Get the top stack slot and make sure it is also it in the |blockStack|.
       var s = this.blockStack[sp] = this.getStackName(sp);
       if (kind === Kind.Long) {
-        throwCompilerError(Kind[kind]);
-        //this.blockEmitter.enter("if(" + x + ".greaterThan(" + y + ")){");
-        //this.blockEmitter.writeLn(s + "=1");
-        //this.blockEmitter.leaveAndEnter("}else if(" + x + ".lessThan(" + y + ")){");
-        //this.blockEmitter.writeLn(s + "=-1");
-        //this.blockEmitter.leaveAndEnter("}else{");
-        //this.blockEmitter.writeLn(s + "=0");
-        //this.blockEmitter.leave("}");
-      } else if (kind === Kind.Float) {
-        this.blockEmitter.writeLn(s + "=fcmp(" + x + "," + y + "," + isLessThan + ")");
+        this.blockEmitter.writeLn(s + "=lcmp(" + al + "," + ah + "," + bl + "," + bh + ")");
       } else if (kind === Kind.Double) {
-        throwCompilerError(Kind[kind]);
-        // this.blockEmitter.writeLn(s + "=dcmp(" + x + "," + y + "," + isLessThan + ")");
+        this.blockEmitter.writeLn(s + "=dcmp(" + al + "," + ah + "," + bl + "," + bh + "," + isLessThan + ")");
+      } else if (kind === Kind.Float) {
+        this.blockEmitter.writeLn(s + "=fcmp(" + al + "," + bl + "," + isLessThan + ")");
       }
     }
 
@@ -1489,23 +1534,23 @@ module J2ME {
 
       switch (opcode) {
         case Bytecodes.NOP            : break;
-        case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, String(Constants.NULL), Precedence.Primary); break;
-        case Bytecodes.ICONST_M1      : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0, Precedence.UnaryNegation); break;
+        case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null", Precedence.Primary); break;
+        case Bytecodes.ICONST_M1      :
         case Bytecodes.ICONST_0       :
         case Bytecodes.ICONST_1       :
         case Bytecodes.ICONST_2       :
         case Bytecodes.ICONST_3       :
         case Bytecodes.ICONST_4       :
-        case Bytecodes.ICONST_5       : this.emitPush(Kind.Int, opcode - Bytecodes.ICONST_0, Precedence.Primary); break;
+        case Bytecodes.ICONST_5       : this.emitPushInt(opcode - Bytecodes.ICONST_0); break;
         case Bytecodes.FCONST_0       :
         case Bytecodes.FCONST_1       :
-        case Bytecodes.FCONST_2       : this.emitPush(Kind.Float, floatConstant(opcode - Bytecodes.FCONST_0), Precedence.Primary); break;
+        case Bytecodes.FCONST_2       : this.emitPushFloat(opcode - Bytecodes.FCONST_0); break;
         case Bytecodes.DCONST_0       :
-        case Bytecodes.DCONST_1       : this.emitPush(Kind.Double, opcode - Bytecodes.DCONST_0, Precedence.Primary); break;
+        case Bytecodes.DCONST_1       : this.emitPushDouble(opcode - Bytecodes.DCONST_0); break;
         case Bytecodes.LCONST_0       :
-        case Bytecodes.LCONST_1       : this.emitPushLong(opcode - Bytecodes.LCONST_0, 0); break;
-        case Bytecodes.BIPUSH         : this.emitPushInteger(stream.readByte()); break;
-        case Bytecodes.SIPUSH         : this.emitPushInteger(stream.readShort()); break;
+        case Bytecodes.LCONST_1       : this.emitPushLongBits(opcode - Bytecodes.LCONST_0, 0); break;
+        case Bytecodes.BIPUSH         : this.emitPushInt(stream.readByte()); break;
+        case Bytecodes.SIPUSH         : this.emitPushInt(stream.readShort()); break;
         case Bytecodes.LDC            :
         case Bytecodes.LDC_W          :
         case Bytecodes.LDC2_W         : this.emitLoadConstant(stream.readCPI()); break;
