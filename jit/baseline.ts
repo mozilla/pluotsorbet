@@ -1160,7 +1160,7 @@ module J2ME {
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      this.emitPush(Kind.Reference, "J2ME.newArray(" +  classInfo.mangledName + ", " + length + ")", Precedence.Call);
+      this.emitPush(Kind.Reference, "J2ME.newArray(J2ME.classIdToClassInfoMap[" + classInfo.id + "], " + length + ")", Precedence.Call);
     }
 
     emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
