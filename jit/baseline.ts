@@ -1198,9 +1198,9 @@ module J2ME {
 
       this.needsVariable("lk");
       emitter.writeLn("lk=J2ME.getMonitor(" + object + ");");
-      emitter.enter("if(lk&&lk.level===0){lk.thread=th;lk.level=1;}else{ME(lk);");
+      // TODO: add back fast path for lock level = 0
+      emitter.writeLn("ME(lk);");
       this.emitUnwind(emitter, String(nextPC), true);
-      emitter.leave("}");
     }
 
     private emitPreemptionCheck(emitter: Emitter, nextPC: string) {
@@ -1215,7 +1215,8 @@ module J2ME {
 
     private emitMonitorExit(emitter: Emitter, object: string) {
       emitter.writeLn("lk=J2ME.getMonitor(" + object + ");");
-      emitter.writeLn("if(lk.level===1&&lk.ready.length===0)lk.level=0;else MX(lk);");
+      // TODO: add back fast path for lock level = 1
+      emitter.writeLn("MX(lk);");
     }
 
     emitStackOp(opcode: Bytecodes) {
