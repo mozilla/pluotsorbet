@@ -1077,7 +1077,6 @@ module J2ME {
       compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget[enableCompiledMethodCache ? "Static" : "Runtime"]);
       compiledMethodCount ++;
     } catch (e) {
-      console.log("Cannot compile");
       methodInfo.state = MethodState.CannotCompile;
       jitWriter && jitWriter.writeLn("Cannot compile: " + methodInfo.implKey + " because of " + e);
       leaveTimeline("Compiling");
@@ -1101,9 +1100,7 @@ module J2ME {
         onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
       });
     }
-console.log("before linkMethod");
     linkMethod(methodInfo, source, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
-console.log("after linkMethod");
     var methodJITTime = (performance.now() - s);
     totalJITTime += methodJITTime;
     if (jitWriter) {

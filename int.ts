@@ -726,7 +726,6 @@ module J2ME {
     mi.stats.interpreterCallCount++;
     if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
       compileAndLinkMethod(mi);
-      console.log("TODO call the compiled method");
       // TODO call the compiled method.
     }
     var maxLocals = mi.codeAttribute.max_locals;
@@ -1555,7 +1554,6 @@ module J2ME {
             if (jumpOffset < 0) {
               mi.stats.backwardsBranchCount++;
               if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.BackwardBranchThreshold) {
-                console.log("Bytecodes.GOTO");
                 compileAndLinkMethod(mi);
               }
               //runtimeCounter.count(Bytecodes[code[opPC + jumpOffset]]);
@@ -2150,7 +2148,6 @@ module J2ME {
             calleeStats.interpreterCallCount++;
             if (callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
               if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
-                console.log("INVOKE!!!: " + calleeTargetMethodInfo.implKey);
                 compileAndLinkMethod(calleeTargetMethodInfo);
                 callMethod = calleeTargetMethodInfo.state === MethodState.Compiled;
               }

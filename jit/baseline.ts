@@ -112,8 +112,6 @@ module J2ME {
     var compileExceptions = true;
     var compileSynchronized = true;
 
-    console.log("baselineCompileMethod: " + methodInfo.implKey);
-
     if (!compileExceptions && methodInfo.exception_table_length) {
       throw new Error("Method: " + methodInfo.implKey + " has exception handlers.");
     }
@@ -970,8 +968,6 @@ module J2ME {
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
           call = objKlass + ".vTable[" + methodInfo.vTableIndex + "]";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
-          this.blockEmitter.writeLn("console.log('invoke1');");
-          this.blockEmitter.writeLn("console.log('invoke1: .iTable[" + methodInfo.mangledName + "]');");
           call = objKlass + ".iTable['" + methodInfo.mangledName + "']";
         } else {
           Debug.unexpected(Bytecodes[opcode]);
