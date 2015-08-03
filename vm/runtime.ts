@@ -1176,7 +1176,7 @@ module J2ME {
 
   export function instanceOfInterface(objectAddr: number, classId: number): boolean {
     release || assert(typeof classId === "number", "Class id must be a number.");
-    release || assert(classIdToClassInfoMap[classId].isInterfaceKlass);
+    release || assert(classIdToClassInfoMap[classId].isInterface);
     return objectAddr !== Constants.NULL && isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId]);
   }
 

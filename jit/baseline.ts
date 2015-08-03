@@ -979,6 +979,7 @@ module J2ME {
       var klassConstant = "J2ME.classIdToClassInfoMap[" + klassId + "]";
       if (opcode !== Bytecodes.INVOKESTATIC) {
         var objectAddr = this.pop(Kind.Reference);
+        this.emitNullPointerCheck(objectAddr);
         args.unshift(objectAddr);
         /*this.blockEmitter.writeLn("console.log('invoke: ' + " + objectAddr + ");");
         this.blockEmitter.writeLn("console.log('invoke: ' + ((" + objectAddr + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET) >> 2));");
