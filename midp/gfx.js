@@ -498,7 +498,13 @@ var currentlyFocusedTextEditor;
 
     function withTextAnchor(c, font, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = calcStringWidth(font, str);
+            // calcStringWidth doesn't account for the device pixel ratio,
+            // but the functions that call this function expect its return value
+            // to be scaled by the device pixel ratio, so we scale it here.
+            // XXX Instead of scaling the result of calcStringWidth by the ratio,
+            // make calcStringWidth scale the font size by the ratio before it
+            // calculates the string width, so the result is more accurate.
+            var w = calcStringWidth(font, str) * MIDP.devicePixelRatio;
 
             if (anchor & RIGHT) {
                 x -= w;
