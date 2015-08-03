@@ -1722,6 +1722,17 @@ module J2ME {
       return a | 0;
     }
   }
+
+  var tmpAddress = ASM._gcMalloc(32);
+
+  export function lcmp(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 16 >> 2] = bh;
+    ASM._lCmp(tmpAddress, tmpAddress + 8, tmpAddress);
+    return i32[tmpAddress >> 2];
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1808,6 +1819,7 @@ var fneg = J2ME.fneg;
 
 var f2i = J2ME.f2i;
 var fcmp = J2ME.fcmp;
+var lcmp = J2ME.lcmp;
 
 var getHandle = J2ME.getHandle;
 

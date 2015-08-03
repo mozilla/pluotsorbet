@@ -740,7 +740,7 @@ module J2ME {
 
     emitStoreLocal(kind: Kind, i: number) {
       if (isTwoSlot(kind)) {
-        this.blockEmitter.writeLn(this.getLocal(i + 1) + "=" + this.pop(kind, Precedence.Sequence) + ";");
+        this.blockEmitter.writeLn(this.getLocal(i + 1) + "=" + this.pop(Kind.Illegal, Precedence.Sequence) + ";");
       }
       this.blockEmitter.writeLn(this.getLocal(i) + "=" + this.pop(kind, Precedence.Sequence) + ";");
     }
@@ -856,11 +856,10 @@ module J2ME {
       var kind = getSignatureKind(fieldInfo.utf8Signature);
       var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       this.emitNullPointerCheck(objectAddr);
-      var address = objectAddr + "+" + fieldInfo.byteOffset;
-      // XXX the push kind is wrong here.
-      this.emitPush(Kind.Int, "i32[" + address + ">>2]", Precedence.Member);
+      var addr = objectAddr + "+" + fieldInfo.byteOffset;
+      this.emitPush(kind, "i32[" + addr + ">>2]", Precedence.Member);
       if (isTwoSlot(kind)) {
-        this.emitPush(Kind.Int, "i32[" + address + "+4>>2]", Precedence.Member);
+        this.emitPush(Kind.Illegal, "i32[" + addr + "+4>>2]", Precedence.Member);
       }
     }
 
@@ -869,17 +868,19 @@ module J2ME {
         this.emitClassInitializationCheck(fieldInfo.classInfo);
       }
       var kind = getSignatureKind(fieldInfo.utf8Signature);
-      var l = this.pop(Kind.Int, Precedence.Sequence), h = "";
+      var l = "", h = "";
       if (isTwoSlot(kind)) {
-        h = this.pop(Kind.Int, Precedence.Sequence);
+        h = this.pop(Kind.Illegal, Precedence.Sequence);
+        l = this.pop(kind, Precedence.Sequence);
+      } else {
+        l = this.pop(kind, Precedence.Sequence);
       }
       var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       this.emitNullPointerCheck(objectAddr);
-      var address = objectAddr + "+" + fieldInfo.byteOffset;
-      this.blockEmitter.writeLn("i32[" + address + ">>2]=" + l + ";");
-      if (isTwoSlot(fieldInfo.kind)) {
-        throwCompilerError("XXX");
-        this.blockEmitter.writeLn("i32[" + address + "+4>>2]=" + h + ";");
+      var addr = objectAddr + "+" + fieldInfo.byteOffset;
+      this.blockEmitter.writeLn("i32[" + addr + ">>2]=" + l + ";");
+      if (isTwoSlot(kind)) {
+        this.blockEmitter.writeLn("i32[" + addr + "+4>>2]=" + h + ";");
       }
     }
 
@@ -968,6 +969,9 @@ module J2ME {
       var args: string [] = [];
       for (var i = signatureKinds.length - 1; i > 0; i--) {
         args.unshift(this.pop(signatureKinds[i]));
+        if (isTwoSlot(signatureKinds[i])) {
+          args.unshift(this.pop(Kind.Illegal));
+        }
       }
 
       var call;
@@ -1015,6 +1019,9 @@ module J2ME {
       }
       if (signatureKinds[0] !== Kind.Void) {
         this.emitPush(signatureKinds[0], "re", Precedence.Primary);
+        if (isTwoSlot(signatureKinds[0])) {
+          this.emitPush(Kind.Illegal, "tempReturn0", Precedence.Primary);
+        }
       }
     }
 
