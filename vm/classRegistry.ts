@@ -104,6 +104,9 @@ module J2ME {
     }
 
     isPreInitializedClass(classInfo: ClassInfo) {
+      if (classInfo instanceof PrimitiveClassInfo) {
+        return true;
+      }
       return this.preInitializedClasses.indexOf(classInfo) >= 0;
     }
 
