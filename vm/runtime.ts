@@ -1190,8 +1190,8 @@ console.log("after linkMethod");
      }
    }
 
-  export function checkCastInterface(object: java.lang.Object, classInfo: ClassInfo) {
-    if (object !== null && !isAssignableTo(object.classInfo, classInfo)) {
+  export function checkCastInterface(objectAddr: number, classId: number) {
+    if (objectAddr !== Constants.NULL && !isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId])) {
       throw $.newClassCastException();
     }
   }
