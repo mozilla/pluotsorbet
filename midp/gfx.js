@@ -5,16 +5,87 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
-    var offscreenCanvas = document.createElement("canvas");
-    offscreenCanvas.width = MIDP.deviceContext.canvas.width;
-    offscreenCanvas.height = MIDP.deviceContext.canvas.height;
-    var offscreenContext2D = offscreenCanvas.getContext("2d");
-    var screenContextInfo = new ContextInfo(offscreenContext2D);
+    var DPR = window.devicePixelRatio || 1;
 
-    MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
+    /**
+     * Scale a canvas by the device pixel ratio.
+     *
+     * This function should only be called once per canvas (or once after
+     * the canvas has been resized), since it scales the canvas relative to
+     * its current size, so multiple calls would be cumulative.
+     *
+     * Once you call this, you have to scale all images, text, and graphics
+     * that you draw to the canvas by the same ratio.
+     */
+    function scaleCanvas(canvas) {
+        canvas.unscaledWidth = canvas.width;
+        canvas.unscaledHeight = canvas.height;
+
+        if (DPR !== 1) {
+            // This only matters for canvases that actually get displayed,
+            // but it doesn't hurt the others, so we do it unconditionally.
+            // By setting the CSS width/height of the canvas, we ensure
+            // it appears in the specified size, even though it's scaled.
+            canvas.style.width = canvas.width + 'px';
+            canvas.style.height = canvas.height + 'px';
+
+            canvas.width *= DPR;
+            canvas.height *= DPR;
+        }
+    }
+
+    /**
+     * Scale the device canvas (and, if enabled, the offscreen canvas)
+     * by the device pixel ratio so it appears sharp on HiDPI displays.
+     *
+     * We also scale all images, text, and graphics that we draw to the display
+     * by the same ratio.
+     */
+    function scaleDeviceCanvas() {
+        // First, resize the offscreen canvas to the size of the device canvas.
+        //
+        // We do this first instead of simply setting its size after scaling
+        // the device canvas because the scaleCanvas() call also sets
+        // the unscaledWidth/unscaledHeight properties on a canvas, which we
+        // want to be set on both the device canvas and the offscreen canvas.
+        //
+        if (config.useOffscreenCanvas) {
+            offscreenCanvas.width = MIDP.deviceContext.canvas.width;
+            offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+        }
+
+        // Second, scale the device canvas by the device pixel ratio.
+        scaleCanvas(MIDP.deviceContext.canvas);
+
+        // Third, scale the offscreen canvas by the device pixel ratio.
+        if (config.useOffscreenCanvas) {
+            scaleCanvas(offscreenCanvas);
+        }
+    }
+
+    var offscreenCanvas, offscreenContext2D;
+
+    if (config.useOffscreenCanvas) {
+        offscreenCanvas = document.createElement("canvas");
         offscreenCanvas.width = MIDP.deviceContext.canvas.width;
         offscreenCanvas.height = MIDP.deviceContext.canvas.height;
-        screenContextInfo.currentlyAppliedGraphicsInfo = null;
+        offscreenContext2D = offscreenCanvas.getContext("2d");
+    } else {
+        // The offscreen canvas is disabled, so assign the offscreen variables
+        // to the device canvas/context so we can reference them elsewhere
+        // without always having to check if the offscreen canvas is enabled,
+        // since we'll draw directly to the device canvas in this case.
+        offscreenCanvas = MIDP.deviceContext.canvas;
+        offscreenContext2D = MIDP.deviceContext;
+    }
+
+    var offscreenContextInfo = new ContextInfo(offscreenContext2D);
+
+    scaleDeviceCanvas();
+
+    MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
+        scaleDeviceCanvas();
+        offscreenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
 
@@ -62,11 +133,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return offscreenCanvas.width;
+        return offscreenCanvas.unscaledWidth;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return offscreenCanvas.height;
+        return offscreenCanvas.unscaledHeight;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
@@ -98,10 +169,20 @@ var currentlyFocusedTextEditor;
 
     var refreshStr = "refresh";
     Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
-        x1 = Math.max(0, x1);
-        y1 = Math.max(0, y1);
-        x2 = Math.max(0, x2);
-        y2 = Math.max(0, y2);
+        if (!config.useOffscreenCanvas) {
+            // If the offscreen canvas is disabled, then we draw directly
+            // to the device canvas, so it's always up-to-date and never needs
+            // to be refreshed.
+            return;
+        }
+
+        x1 = Math.max(0, x1) * DPR;
+        y1 = Math.max(0, y1) * DPR;
+        x2 = Math.max(0, x2) * DPR;
+        y2 = Math.max(0, y2) * DPR;
+
+        // XXX Isn't the offscreen and device canvas width and height always
+        // the same, so it isn't necessary to compute which one is more minimal?
 
         var maxX = Math.min(offscreenCanvas.width, MIDP.deviceContext.canvas.width);
         x1 = Math.min(maxX, x1);
@@ -214,6 +295,7 @@ var currentlyFocusedTextEditor;
         var canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
+        scaleCanvas(canvas);
 
         imageData.contextInfo = new ContextInfo(canvas.getContext("2d"));
 
@@ -234,8 +316,8 @@ var currentlyFocusedTextEditor;
             img.src = URL.createObjectURL(blob);
             img.onload = function() {
                 var context = initImageData(imageData, img.naturalWidth, img.naturalHeight, 0);
-                context.drawImage(img, 0, 0);
-
+                context.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight,
+                                  0, 0, img.naturalWidth * DPR, img.naturalHeight * DPR);
                 URL.revokeObjectURL(img.src);
                 resolve();
             }
@@ -256,7 +338,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
         var srcCanvas = source.contextInfo.context.canvas;
-        var context = initImageData(dest, srcCanvas.width, srcCanvas.height, 0);
+        var context = initImageData(dest, srcCanvas.unscaledWidth, srcCanvas.unscaledHeight, 0);
         context.drawImage(srcCanvas, 0, 0);
     };
 
@@ -264,13 +346,26 @@ var currentlyFocusedTextEditor;
     function(imageData, width, height) {
         var context = initImageData(imageData, width, height, 1);
         context.fillStyle = "rgb(255,255,255)"; // white
-        context.fillRect(0, 0, width, height);
+        context.fillRect(0, 0, context.canvas.width, context.canvas.height);
     };
 
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDecodeRGBImage.(Ljavax/microedition/lcdui/ImageData;[IIIZ)V"] =
     function(imageData, rgbData, width, height, processAlpha) {
         var context = initImageData(imageData, width, height, 0);
-        var ctxImageData = context.createImageData(width, height);
+        var ctxImageData;
+
+        if (DPR === 1) {
+            ctxImageData = context.createImageData(width, height);
+        } else {
+            // The ImageData context is scaled by the device pixel ratio,
+            // but the RGB data we're drawing to it is unscaled.  So we copy
+            // the data to the temporary context first and then scale it
+            // as we draw it to the ImageData context.
+            tempContext.canvas.width = width;
+            tempContext.canvas.height = height;
+            ctxImageData = tempContext.createImageData(width, height);
+        }
+
         var abgrData = new Int32Array(ctxImageData.data.buffer);
 
         if (1 === processAlpha) {
@@ -279,11 +374,36 @@ var currentlyFocusedTextEditor;
             ARGBTo1BGR(rgbData, abgrData, width, height, 0, width);
         }
 
-        context.putImageData(ctxImageData, 0, 0);
+        if (DPR === 1) {
+            context.putImageData(ctxImageData, 0, 0);
+        } else {
+            tempContext.putImageData(ctxImageData, 0, 0);
+            context.drawImage(tempContext.canvas, 0, 0, width * DPR, height * DPR);
+            tempContext.canvas.width = 0;
+            tempContext.canvas.height = 0;
+        }
     };
 
     Native["javax/microedition/lcdui/ImageData.getRGB.([IIIIIII)V"] = function(rgbData, offset, scanlength, x, y, width, height) {
-        var abgrData = new Int32Array(this.contextInfo.context.getImageData(x, y, width, height).data.buffer);
+        var abgrData;
+
+        if (DPR === 1) {
+            abgrData = new Int32Array(this.contextInfo.context.getImageData(x, y, width, height).data.buffer);
+        } else {
+            // Un-scale the image relative to the DPR before getting its pixels.
+            // This reduces its resolution, which means it'll be blurry
+            // when the pixels are redrawn to the image via Graphics.drawRGB.
+            // XXX Figure out how to avoid blurring the image in this situation.
+            tempContext.canvas.width = width;
+            tempContext.canvas.height = height;
+            tempContext.drawImage(this.contextInfo.context.canvas,
+                                  x * DPR, y * DPR, width * DPR, height * DPR,
+                                  0, 0, width, height);
+            abgrData = new Int32Array(tempContext.getImageData(0, 0, width, height).data.buffer);
+            tempContext.canvas.width = 0;
+            tempContext.canvas.height = 0;
+        }
+
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
     };
 
@@ -293,8 +413,8 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/nokia/mid/ui/DirectUtils.setPixels.(Ljavax/microedition/lcdui/Image;I)V"] = function(image, argb) {
-        var width = image.width;
-        var height = image.height;
+        var width = image.width * DPR;
+        var height = image.height * DPR;
         var imageData = image.imageData;
 
         // NOTE: This function will only ever be called by the variants
@@ -303,6 +423,8 @@ var currentlyFocusedTextEditor;
         // this `ImageData` were just created; nothing can be out of
         // sync yet.
         var ctx = imageData.contextInfo.context;
+
+        // XXX Shouldn't we be able to simply fillRect here?
 
         var ctxImageData = ctx.createImageData(width, height);
         var pixels = new Int32Array(ctxImageData.data.buffer);
@@ -331,7 +453,7 @@ var currentlyFocusedTextEditor;
     var SIZE_LARGE = 16;
 
     Native["javax/microedition/lcdui/Font.init.(III)V"] = function(face, style, size) {
-        var defaultSize = config.fontSize ? config.fontSize : Math.max(19, (offscreenCanvas.height / 35) | 0);
+        var defaultSize = (config.fontSize ? config.fontSize : 18);
         if (size & SIZE_SMALL)
             size = defaultSize / 1.25;
         else if (size & SIZE_LARGE)
@@ -357,20 +479,19 @@ var currentlyFocusedTextEditor;
         this.baseline = size | 0;
         this.height = (size * 1.3) | 0;
 
-        this.context = document.createElement("canvas").getContext("2d");
-        this.context.canvas.width = 0;
-        this.context.canvas.height = 0;
-        this.context.font = style + size + "px " + face;
         this.size = size;
+        // XXX Figure out why this works when these two fields are both int.
         this.style = style;
         this.face = face;
     };
 
-    function calcStringWidth(font, str) {
+    function calcStringWidth(font, str, scaleByDPR) {
         var emojiLen = 0;
+        var fontSize = font.size * (scaleByDPR ? DPR : 1);
 
-        var len = font.context.measureText(str.replace(emoji.regEx, function() {
-            emojiLen += font.size;
+        tempContext.font = font.style + " " + fontSize + "px " + font.face;
+        var len = tempContext.measureText(str.replace(emoji.regEx, function() {
+            emojiLen += fontSize;
             return "";
         })).width | 0;
 
@@ -400,7 +521,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        return this.context.measureText(String.fromCharCode(char)).width | 0;
+        return calcStringWidth(this, String.fromCharCode(char));
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -421,7 +542,7 @@ var currentlyFocusedTextEditor;
 
     function withTextAnchor(c, font, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            var w = calcStringWidth(font, str);
+            var w = calcStringWidth(font, str, true /* scaleByDPR */);
 
             if (anchor & RIGHT) {
                 x -= w;
@@ -532,11 +653,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
-        return this.info.contextInfo.context.canvas.width;
+        return this.info.contextInfo.context.canvas.unscaledWidth;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function() {
-        return this.info.contextInfo.context.canvas.height;
+        return this.info.contextInfo.context.canvas.unscaledHeight;
     };
 
     Native["javax/microedition/lcdui/Graphics.getCreator.()Ljava/lang/Object;"] = function() {
@@ -692,7 +813,19 @@ var currentlyFocusedTextEditor;
         }
 
         var context = this.graphics.info.contextInfo.context;
-        var abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
+        var abgrData;
+
+        if (DPR === 1) {
+            abgrData = new Int32Array(context.getImageData(x, y, width, height).data.buffer);
+        } else {
+            tempContext.canvas.width = width;
+            tempContext.canvas.height = height;
+            tempContext.drawImage(context.canvas, x * DPR, y * DPR, width * DPR, height * DPR, 0, 0, width, height);
+            abgrData = new Int32Array(tempContext.getImageData(0, 0, width, height).data.buffer);
+            tempContext.canvas.width = 0;
+            tempContext.canvas.height = 0;
+        }
+
         converterFunc(abgrData, pixels, width, height, offset, scanlength);
     };
 
@@ -722,7 +855,7 @@ var currentlyFocusedTextEditor;
 
         var c = graphics.info.getGraphicsContext();
 
-        c.drawImage(tempContext.canvas, x, y);
+        c.drawImage(tempContext.canvas, x * DPR, y * DPR, width * DPR, height * DPR);
         tempContext.canvas.width = 0;
         tempContext.canvas.height = 0;
     };
@@ -806,7 +939,8 @@ var currentlyFocusedTextEditor;
 
     GraphicsInfo.prototype.resetNonGC = function(x1, y1, x2, y2) {
         this.translate(-this.transX, -this.transY);
-        this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, this.contextInfo.context.canvas.width, this.contextInfo.context.canvas.height);
+        var canvas = this.contextInfo.context.canvas;
+        this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, canvas.unscaledWidth, canvas.unscaledHeight);
     }
 
     GraphicsInfo.prototype.translate = function(x, y) {
@@ -872,19 +1006,23 @@ var currentlyFocusedTextEditor;
         this.context.textAlign = "left";
 
         this.context.fillStyle = this.context.strokeStyle = util.rgbaToCSS(graphicsInfo.red, graphicsInfo.green, graphicsInfo.blue, graphicsInfo.alpha / 255);
-        this.context.font = graphicsInfo.currentFont.context.font;
+
+        var font = graphicsInfo.currentFont;
+        this.context.font = font.style + " " + font.size * DPR + "px " + font.face;
 
         this.context.beginPath();
-        this.context.rect(graphicsInfo.clipX1, graphicsInfo.clipY1, graphicsInfo.clipX2 - graphicsInfo.clipX1, graphicsInfo.clipY2 - graphicsInfo.clipY1);
+        this.context.rect(graphicsInfo.clipX1 * DPR, graphicsInfo.clipY1 * DPR,
+                          graphicsInfo.clipX2 * DPR - graphicsInfo.clipX1 * DPR,
+                          graphicsInfo.clipY2 * DPR - graphicsInfo.clipY1 * DPR);
         this.context.clip();
-        this.context.translate(graphicsInfo.transX, graphicsInfo.transY);
+        this.context.translate(graphicsInfo.transX * DPR, graphicsInfo.transY * DPR);
 
         this.currentlyAppliedGraphicsInfo = graphicsInfo;
     };
 
     Native["javax/microedition/lcdui/Graphics.initScreen0.(I)V"] = function(displayId) {
         this.displayId = displayId;
-        this.info = new GraphicsInfo(screenContextInfo);
+        this.info = new GraphicsInfo(offscreenContextInfo);
         this.creator = null;
     };
 
@@ -899,10 +1037,14 @@ var currentlyFocusedTextEditor;
     }
 
     Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
-        this.info.setClip(x, y, w, h, 0, 0, this.info.contextInfo.context.canvas.width, this.info.contextInfo.context.canvas.height);
+        var canvas = this.info.contextInfo.context.canvas;
+        this.info.setClip(x, y, w, h, 0, 0, canvas.unscaledWidth, canvas.unscaledHeight);
     };
 
     function drawString(g, str, x, y, anchor) {
+        x *= DPR;
+        y *= DPR;
+
         var c = g.info.getGraphicsContext();
 
         var finalText;
@@ -927,9 +1069,13 @@ var currentlyFocusedTextEditor;
                 // Calculate the string width.
                 x += c.measureText(text).width | 0;
 
-                var emojiData = emoji.getData(match0, font.size);
-                c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, font.size, font.size);
-                x += font.size;
+                // Scale the font size by the device pixel ratio, since we draw
+                // the emoji to the canvas, which has been scaled by that ratio.
+                var fontSize = font.size * DPR;
+
+                var emojiData = emoji.getData(match0, fontSize);
+                c.drawImage(emojiData.img, emojiData.x, 0, emoji.squareSize, emoji.squareSize, x, y, fontSize, fontSize);
+                x += fontSize;
             }
             finalText = str.substring(lastIndex);
         }
@@ -973,6 +1119,13 @@ var currentlyFocusedTextEditor;
         var dx2 = (x3 - x1) || 1;
         var dy2 = (y3 - y1) || 1;
 
+        x1 *= DPR;
+        y1 *= DPR;
+        dx1 *= DPR;
+        dy1 *= DPR;
+        dx2 *= DPR;
+        dy2 *= DPR;
+
         c.beginPath();
         c.moveTo(x1, y1);
         c.lineTo(x1 + dx1, y1 + dy1);
@@ -991,6 +1144,11 @@ var currentlyFocusedTextEditor;
         w = w || 1;
         h = h || 1;
 
+        x *= DPR;
+        y *= DPR;
+        w *= DPR;
+        h *= DPR;
+
         c.strokeRect(x, y, w, h);
     };
 
@@ -1003,6 +1161,13 @@ var currentlyFocusedTextEditor;
 
         w = w || 1;
         h = h || 1;
+
+        x *= DPR;
+        y *= DPR;
+        w *= DPR;
+        h *= DPR;
+        arcWidth *= DPR;
+        arcHeight *= DPR;
 
         c.beginPath();
         createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
@@ -1019,6 +1184,11 @@ var currentlyFocusedTextEditor;
         w = w || 1;
         h = h || 1;
 
+        x *= DPR;
+        y *= DPR;
+        w *= DPR;
+        h *= DPR;
+
         c.fillRect(x, y, w, h);
     };
 
@@ -1032,6 +1202,13 @@ var currentlyFocusedTextEditor;
         w = w || 1;
         h = h || 1;
 
+        x *= DPR;
+        y *= DPR;
+        w *= DPR;
+        h *= DPR;
+        arcWidth *= DPR;
+        arcHeight *= DPR;
+
         c.beginPath();
         createRoundRect(c, x, y, w, h, arcWidth, arcHeight);
         c.fill();
@@ -1043,6 +1220,14 @@ var currentlyFocusedTextEditor;
         }
 
         var c = this.info.getGraphicsContext();
+
+        // XXX Should we set width and height to a minimum value here,
+        // as we do in Graphics.drawRoundRect, Graphics.drawRect, etc.?
+
+        x *= DPR;
+        y *= DPR;
+        width *= DPR;
+        height *= DPR;
 
         var endRad = -startAngle * 0.0175;
         var startRad = endRad - arcAngle * 0.0175;
@@ -1057,6 +1242,14 @@ var currentlyFocusedTextEditor;
         }
 
         var c = this.info.getGraphicsContext();
+
+        // XXX Should we set width and height to a minimum value here,
+        // as we do in Graphics.drawRoundRect, Graphics.drawRect, etc.?
+
+        x *= DPR;
+        y *= DPR;
+        width *= DPR;
+        height *= DPR;
 
         var endRad = -startAngle * 0.0175;
         var startRad = endRad - arcAngle * 0.0175;
@@ -1077,6 +1270,13 @@ var currentlyFocusedTextEditor;
     var TRANS_MIRROR_ROT90 = 7;
 
     function renderRegion(dstContext, srcCanvas, sx, sy, sw, sh, transform, absX, absY, anchor) {
+        sx *= DPR;
+        sy *= DPR;
+        sw *= DPR;
+        sh *= DPR;
+        absX *= DPR;
+        absY *= DPR;
+
         var w, h;
         switch (transform) {
             case TRANS_NONE:
@@ -1187,6 +1387,14 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/Graphics.drawLine.(IIII)V"] = function(x1, y1, x2, y2) {
         var c = this.info.getGraphicsContext();
 
+        x1 *= DPR;
+        y1 *= DPR;
+        x2 *= DPR;
+        y2 *= DPR;
+
+        // XXX Figure out if we should scale a one-pixel-thick line
+        // by the device pixel ratio.
+
         // If we're drawing a completely vertical line that is
         // 1 pixel thick, we should draw it at half-pixel offsets.
         // Otherwise, half of the line's thickness lies to the left
@@ -1229,7 +1437,7 @@ var currentlyFocusedTextEditor;
 
         var c = this.info.getGraphicsContext();
 
-        c.drawImage(tempContext.canvas, x, y);
+        c.drawImage(tempContext.canvas, x * DPR, y * DPR, width * DPR, height * DPR);
         tempContext.canvas.width = 0;
         tempContext.canvas.height = 0;
     };

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import os
 import select
 import socket
@@ -9,6 +10,10 @@ import time
 import platform
 
 (system, node, release, version, machine, processor) = platform.uname()
+
+parser = argparse.ArgumentParser(description='run test automation scripts')
+parser.add_argument('scripts', help='the test automation scripts to run', nargs='*')
+arguments = parser.parse_args()
 
 httpsServer = ['node', 'httpsServer.js']
 sslEchoServer = ['node', 'sslEchoServer.js']
@@ -20,6 +25,7 @@ if system == "Darwin":
 # The test automation scripts to run via casperjs/slimerjs.
 automation_scripts = [
     ['tests', 'automation.js'],
+    ['tests', 'gfx.js'],
     ['tests', 'fs', 'automation.js'],
 ]
 
@@ -113,9 +119,15 @@ wait_server(50003)
 wait_server(4443)
 wait_server(54443)
 
-# Run each test automation script in turn.
-for scriptParts in automation_scripts:
-    run_test(os.path.join(os.getcwd(), *scriptParts))
+if (arguments.scripts):
+    # Run the test automation script(s) specified on the command line.
+    for script in arguments.scripts:
+        print "script: " + script
+        run_test(script)
+else:
+    # Run each test automation script in turn.
+    for scriptParts in automation_scripts:
+        run_test(os.path.join(os.getcwd(), *scriptParts))
 
 # Terminate all the server processes.
 for process in server_processes:
@@ -126,6 +138,7 @@ for process in server_processes:
 for stream in server_output_streams:
     sys.stdout.write(stream.read())
 
+# XXX Make it possible to run this script (or exclude it) via the command line.
 p = subprocess.Popen(['js', 'jsshell.js', 'Basic'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 shell_success = False
 for line in iter(p.stdout.readline, b''):
