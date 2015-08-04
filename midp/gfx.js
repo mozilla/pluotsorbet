@@ -5,57 +5,86 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
-    // An alias for the device pixel ratio, which we reference in many places.
     var DPR = window.devicePixelRatio || 1;
 
-    // Scale a canvas by the device pixel ratio.
-    // This function should only be called once per canvas (or once after
-    // the canvas has been resized), since it scales the canvas relative to
-    // its current size.
+    /**
+     * Scale a canvas by the device pixel ratio.
+     *
+     * This function should only be called once per canvas (or once after
+     * the canvas has been resized), since it scales the canvas relative to
+     * its current size, so multiple calls would be cumulative.
+     *
+     * Once you call this, you have to scale all images, text, and graphics
+     * that you draw to the canvas by the same ratio.
+     */
     function scaleCanvas(canvas) {
-        // The original, unscaled size of the canvas.
         canvas.unscaledWidth = canvas.width;
         canvas.unscaledHeight = canvas.height;
 
         if (DPR !== 1) {
+            // This only matters for canvases that actually get displayed,
+            // but it doesn't hurt the others, so we do it unconditionally.
+            // By setting the CSS width/height of the canvas, we ensure
+            // it appears in the specified size, even though it's scaled.
             canvas.style.width = canvas.width + 'px';
             canvas.style.height = canvas.height + 'px';
+
             canvas.width *= DPR;
             canvas.height *= DPR;
         }
     }
 
-    var offscreenCanvas, offscreenContext2D;
-    if (config.useOffscreenCanvas) {
-        offscreenCanvas = document.createElement("canvas");
-        offscreenCanvas.width = MIDP.deviceContext.canvas.width;
-        offscreenCanvas.height = MIDP.deviceContext.canvas.height;
-        offscreenContext2D = offscreenCanvas.getContext("2d");
-        scaleCanvas(MIDP.deviceContext.canvas);
-        scaleCanvas(offscreenCanvas);
-    } else {
-        offscreenCanvas = MIDP.deviceContext.canvas;
-        offscreenContext2D = MIDP.deviceContext;
-        scaleCanvas(MIDP.deviceContext.canvas);
-    }
-
-    var offscreenContextInfo = new ContextInfo(offscreenContext2D);
-
-    MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
+    /**
+     * Scale the device canvas (and, if enabled, the offscreen canvas)
+     * by the device pixel ratio so it appears sharp on HiDPI displays.
+     *
+     * We also scale all images, text, and graphics that we draw to the display
+     * by the same ratio.
+     */
+    function scaleDeviceCanvas() {
         // First, resize the offscreen canvas to the size of the device canvas.
+        //
+        // We do this first instead of simply setting its size after scaling
+        // the device canvas because the scaleCanvas() call also sets
+        // the unscaledWidth/unscaledHeight properties on a canvas, which we
+        // want to be set on both the device canvas and the offscreen canvas.
+        //
         if (config.useOffscreenCanvas) {
             offscreenCanvas.width = MIDP.deviceContext.canvas.width;
             offscreenCanvas.height = MIDP.deviceContext.canvas.height;
         }
 
-        // Then scale the device canvas by the DPR.
+        // Second, scale the device canvas by the device pixel ratio.
         scaleCanvas(MIDP.deviceContext.canvas);
 
-        // Finally, scale the offscreen canvas by the DPR.
+        // Third, scale the offscreen canvas by the device pixel ratio.
         if (config.useOffscreenCanvas) {
             scaleCanvas(offscreenCanvas);
         }
+    }
 
+    var offscreenCanvas, offscreenContext2D;
+
+    if (config.useOffscreenCanvas) {
+        offscreenCanvas = document.createElement("canvas");
+        offscreenCanvas.width = MIDP.deviceContext.canvas.width;
+        offscreenCanvas.height = MIDP.deviceContext.canvas.height;
+        offscreenContext2D = offscreenCanvas.getContext("2d");
+    } else {
+        // The offscreen canvas is disabled, so assign the offscreen variables
+        // to the device canvas/context so we can reference them elsewhere
+        // without always having to check if the offscreen canvas is enabled,
+        // since we'll draw directly to the device canvas in this case.
+        offscreenCanvas = MIDP.deviceContext.canvas;
+        offscreenContext2D = MIDP.deviceContext;
+    }
+
+    var offscreenContextInfo = new ContextInfo(offscreenContext2D);
+
+    scaleDeviceCanvas();
+
+    MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
+        scaleDeviceCanvas();
         offscreenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
