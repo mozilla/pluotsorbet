@@ -63,7 +63,7 @@ module J2ME {
   /**
    * Turns on caching of JIT-compiled methods.
    */
-  export var enableCompiledMethodCache = true && typeof CompiledMethodCache !== "undefined";
+  export var enableCompiledMethodCache = false && typeof CompiledMethodCache !== "undefined";
 
   /**
    * Traces method execution.
