@@ -626,6 +626,10 @@ module J2ME {
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
     id: number;
+    /**
+     * Short alias of initialized for compiled code.
+     */
+    I: any [];
 
     /**
      * Bailout callback whenever a JIT frame is unwound.
@@ -677,6 +681,7 @@ module J2ME {
     constructor(jvm: JVM) {
       super(jvm);
       this.id = Runtime._nextId ++;
+      this.I = this.initialized;
     }
   }
 

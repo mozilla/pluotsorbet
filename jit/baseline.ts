@@ -915,7 +915,7 @@ module J2ME {
         } else {
           baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
           emitDebugInfoComments && this.blockEmitter.writeLn("// ClassInitializationCheck " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("if($.initialized[" + classInfo.id + "]===undefined) J2ME.classInitCheck(" + classConstant(classInfo) + ");");
+          this.blockEmitter.writeLn("if(!$.I[" + classInfo.id + "]) J2ME.classInitCheck(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
