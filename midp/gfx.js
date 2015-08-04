@@ -487,11 +487,11 @@ var currentlyFocusedTextEditor;
 
     function calcStringWidth(font, str, scaleByDPR) {
         var emojiLen = 0;
+        var fontSize = font.size * (scaleByDPR ? DPR : 1);
 
-        tempContext.font = font.style + " " + font.size * (scaleByDPR ? DPR : 1) + "px " + font.face;
+        tempContext.font = font.style + " " + fontSize + "px " + font.face;
         var len = tempContext.measureText(str.replace(emoji.regEx, function() {
-            // XXX Multiply this by the DPR if scaled width requested?
-            emojiLen += font.size;
+            emojiLen += fontSize;
             return "";
         })).width | 0;
 
