@@ -415,9 +415,7 @@ module J2ME {
      * different threads that need trigger the Class.initialize() code so they block.
      */
     setClassInitialized(classId: number) {
-      var classInfo = classIdToClassInfoMap[classId];
-      var className = classInfo.getClassNameSlow();
-      this.initialized[className] = true;
+      this.initialized[classId] = true;
     }
 
     getClassObjectAddress(classInfo: ClassInfo): number {
@@ -1566,7 +1564,7 @@ module J2ME {
   }
 
   export function classInitCheck(classInfo: ClassInfo) {
-    if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.getClassNameSlow()]) {
+    if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.id]) {
       return;
     }
 
@@ -1806,6 +1804,9 @@ var O: J2ME.MethodInfo = null;
  * Runtime exports for compiled code.
  * DO NOT use these short names outside of compiled code.
  */
+
+var CI = J2ME.classIdToClassInfoMap;
+
 var IOK = J2ME.instanceOfKlass;
 var IOI = J2ME.instanceOfInterface;
 
