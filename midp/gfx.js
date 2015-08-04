@@ -390,6 +390,10 @@ var currentlyFocusedTextEditor;
         if (DPR === 1) {
             abgrData = new Int32Array(this.contextInfo.context.getImageData(x, y, width, height).data.buffer);
         } else {
+            // Un-scale the image relative to the DPR before getting its pixels.
+            // This reduces its resolution, which means it'll be blurry
+            // when the pixels are redrawn to the image via Graphics.drawRGB.
+            // XXX Figure out how to avoid blurring the image in this situation.
             tempContext.canvas.width = width;
             tempContext.canvas.height = height;
             tempContext.drawImage(this.contextInfo.context.canvas,
