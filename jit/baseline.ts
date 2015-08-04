@@ -1318,26 +1318,26 @@ module J2ME {
       }
       switch (opcode) {
         case Bytecodes.IADD:
-          this.emitPush(Kind.Int, al + "+" + bl + "|0", Precedence.Primary);
+          this.emitPush(Kind.Int, al + "+" + bl + "|0", Precedence.Addition);
           break;
         case Bytecodes.ISUB:
-          this.emitPush(Kind.Int, al + "-" + bl + "|0", Precedence.Primary);
+          this.emitPush(Kind.Int, al + "-" + bl + "|0", Precedence.Subtraction);
           break;
         case Bytecodes.IMUL:
-          this.emitPush(Kind.Int, "Math.imul(" + al + "," + bl + ")", Precedence.Primary);
+          this.emitPush(Kind.Int, "Math.imul(" + al + "," + bl + ")", Precedence.Multiplication);
           break;
         case Bytecodes.IDIV:
-          this.emitPush(Kind.Int, al + "/" + bl + "|0", Precedence.Primary);
+          this.emitPush(Kind.Int, al + "/" + bl + "|0", Precedence.Division);
           break;
         case Bytecodes.IREM:
-          this.emitPush(Kind.Int, al + "%" + bl, Precedence.Primary);
+          this.emitPush(Kind.Int, al + "%" + bl, Precedence.Remainder);
           break;
         case Bytecodes.FADD:
         case Bytecodes.FSUB:
         case Bytecodes.FMUL:
         case Bytecodes.FDIV:
         case Bytecodes.FREM:
-          this.emitPush(Kind.Float, Bytecodes[opcode].toLowerCase() + "(" + al + "," + bl + ")", Precedence.Primary);
+          this.emitPush(Kind.Float, Bytecodes[opcode].toLowerCase() + "(" + al + "," + bl + ")", Precedence.Sequence);
           break;
         case Bytecodes.LADD:
         case Bytecodes.LSUB:
@@ -1349,7 +1349,10 @@ module J2ME {
         case Bytecodes.DMUL:
         case Bytecodes.DDIV:
         case Bytecodes.DREM:
-          this.emitPush(Kind.Double, Bytecodes[opcode].toLowerCase() + "(" + al + "," + ah + "," + bl + "," + bh + ")", Precedence.Primary);
+          if (!jsGlobal[Bytecodes[opcode].toLowerCase()]) {
+            throwCompilerError(Bytecodes[opcode] + " not implemented.");
+          }
+          this.emitPush(Kind.Double, Bytecodes[opcode].toLowerCase() + "(" + al + "," + ah + "," + bl + "," + bh + ")", Precedence.Sequence);
           this.emitPush(Kind.Illegal, "tempReturn0", Precedence.Primary);
           break;
         default:
@@ -1423,13 +1426,13 @@ module J2ME {
           this.emitPush(Kind.Float, "i2f(" + this.popSlot() + ")", Precedence.Primary);
           break;
         case Bytecodes.I2B:
-          this.emitPush(Kind.Int, "(" + this.popSlot() + "<<24)>>24", Precedence.Primary);
+          this.emitPush(Kind.Int, "(" + this.popSlot() + "<<24)>>24", Precedence.BitwiseShift);
           break;
         case Bytecodes.I2C:
-          this.emitPush(Kind.Int, this.popSlot() + "&0xffff", Precedence.Primary);
+          this.emitPush(Kind.Int, this.popSlot() + "&0xffff", Precedence.BitwiseAND);
           break;
         case Bytecodes.I2S:
-          this.emitPush(Kind.Int, "(" + this.popSlot() + "<<16)>>16", Precedence.Primary);
+          this.emitPush(Kind.Int, "(" + this.popSlot() + "<<16)>>16", Precedence.BitwiseShift);
           break;
         case Bytecodes.I2D:
           this.emitPush(Kind.Double, "i2d(" + this.popSlot() + ")", Precedence.Primary);
