@@ -133,11 +133,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return MIDP.deviceContext.canvas.unscaledWidth;
+        return offscreenCanvas.unscaledWidth;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return MIDP.deviceContext.canvas.unscaledHeight;
+        return offscreenCanvas.unscaledHeight;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
@@ -170,6 +170,9 @@ var currentlyFocusedTextEditor;
     var refreshStr = "refresh";
     Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
         if (!config.useOffscreenCanvas) {
+            // If the offscreen canvas is disabled, then we draw directly
+            // to the device canvas, so it's always up-to-date and never needs
+            // to be refreshed.
             return;
         }
 
@@ -177,6 +180,9 @@ var currentlyFocusedTextEditor;
         y1 = Math.max(0, y1) * DPR;
         x2 = Math.max(0, x2) * DPR;
         y2 = Math.max(0, y2) * DPR;
+
+        // XXX Isn't the offscreen and device canvas width and height always
+        // the same, so it isn't necessary to compute which one is more minimal?
 
         var maxX = Math.min(offscreenCanvas.width, MIDP.deviceContext.canvas.width);
         x1 = Math.min(maxX, x1);
@@ -287,10 +293,9 @@ var currentlyFocusedTextEditor;
 
     function initImageData(imageData, width, height, isMutable) {
         var canvas = document.createElement("canvas");
-        canvas.unscaledWidth = width;
-        canvas.unscaledHeight = height;
-        canvas.width = width * DPR;
-        canvas.height = height * DPR;
+        canvas.width = width;
+        canvas.height = height;
+        scaleCanvas(canvas);
 
         imageData.contextInfo = new ContextInfo(canvas.getContext("2d"));
 
