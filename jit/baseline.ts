@@ -835,7 +835,9 @@ module J2ME {
       }
       var kind = getSignatureKind(fieldInfo.utf8Signature);
       var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.emitNullPointerCheck(objectAddr);
+      if (!isStatic) {
+        this.emitNullPointerCheck(objectAddr);
+      }
       var address = objectAddr + "+" + fieldInfo.byteOffset;
       // XXX the push kind is wrong here.
       this.emitPush(Kind.Int, "i32[" + address + ">>2]", Precedence.Member);
@@ -854,7 +856,9 @@ module J2ME {
         h = this.pop(Kind.Int, Precedence.Sequence);
       }
       var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.emitNullPointerCheck(objectAddr);
+      if (!isStatic) {
+        this.emitNullPointerCheck(objectAddr);
+      }
       var address = objectAddr + "+" + fieldInfo.byteOffset;
       this.blockEmitter.writeLn("i32[" + address + ">>2]=" + l + ";");
       if (isTwoSlot(fieldInfo.kind)) {
