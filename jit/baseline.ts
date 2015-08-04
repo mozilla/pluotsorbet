@@ -900,7 +900,7 @@ module J2ME {
         classInfo = (<ArrayClassInfo>classInfo).elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
-        if (this.initializedClasses[classInfo.getClassNameSlow()]) {
+        if (this.initializedClasses[classInfo.id]) {
           var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", block redundant.";
           emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
           baselineCounter && baselineCounter.count(message);
@@ -914,15 +914,15 @@ module J2ME {
           baselineCounter && baselineCounter.count(message);
         } else {
           baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          // XXX: is correct?
-          this.blockEmitter.writeLn("if($.initialized[\"" + classInfo.getClassNameSlow() + "\"]===undefined) J2ME.classInitCheck(" + classConstant(classInfo) + ");");
+          emitDebugInfoComments && this.blockEmitter.writeLn("// ClassInitializationCheck " + classInfo.getClassNameSlow());
+          this.blockEmitter.writeLn("if($.initialized[" + classInfo.id + "]===undefined) J2ME.classInitCheck(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
             emitCompilerAssertions && this.emitNoUnwindAssertion();
           }
         }
-        this.initializedClasses[classInfo.getClassNameSlow()] = true;
+        this.initializedClasses[classInfo.id] = true;
       }
     }
 
