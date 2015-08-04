@@ -384,7 +384,7 @@ module J2ME {
       this.pushFrame(null, 0, 0, null, frameType);
     }
 
-    pushFrame(methodInfo: MethodInfo, sp: number = 0, pc: number = 0, monitor: Object = null, frameType: FrameType = FrameType.Interpreter) {
+    pushFrame(methodInfo: MethodInfo, sp: number = 0, pc: number = 0, monitorAddr: number = Constants.NULL, frameType: FrameType = FrameType.Interpreter) {
       var fp = this.fp;
       if (methodInfo) {
         this.fp = this.sp + methodInfo.codeAttribute.max_locals;
@@ -396,8 +396,7 @@ module J2ME {
       i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
       ref[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo; // Callee
       i32[this.fp + FrameLayout.FrameTypeOffset] = frameType; // Frame Type
-      /* XXX: MONITOR! */
-      ref[this.fp + FrameLayout.MonitorOffset] = Constants.NULL; // Monitor 
+      i32[this.fp + FrameLayout.MonitorOffset] = monitorAddr; // Monitor
       this.sp = this.fp + FrameLayout.CallerSaveSize + sp;
       this.pc = pc;
     }
