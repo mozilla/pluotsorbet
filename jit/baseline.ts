@@ -636,7 +636,7 @@ module J2ME {
         // Restore locals.
         var restoreLocals = [];
         for (var i = 0; i < this.methodInfo.codeAttribute.max_locals; i++) {
-          restoreLocals.push(this.getLocal(i) + "=i32[lp+" + i + "]===(0xDEADBEEF|0)?ref[lp+" + i + "]:i32[lp+" + i + "]");
+          restoreLocals.push(this.getLocal(i) + "=i32[lp+" + i + "]");
         }
         this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
         this.needsVariable("re");
