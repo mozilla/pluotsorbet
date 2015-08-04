@@ -855,7 +855,9 @@ module J2ME {
       }
       var kind = getSignatureKind(fieldInfo.utf8Signature);
       var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.emitNullPointerCheck(objectAddr);
+      if (!isStatic) {
+        this.emitNullPointerCheck(objectAddr);
+      }
       var addr = objectAddr + "+" + fieldInfo.byteOffset;
       this.emitPush(kind, "i32[" + addr + ">>2]", Precedence.Member);
       if (isTwoSlot(kind)) {
@@ -876,7 +878,9 @@ module J2ME {
         l = this.pop(kind, Precedence.Sequence);
       }
       var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
-      this.emitNullPointerCheck(objectAddr);
+      if (!isStatic) {
+        this.emitNullPointerCheck(objectAddr);
+      }
       var addr = objectAddr + "+" + fieldInfo.byteOffset;
       this.blockEmitter.writeLn("i32[" + addr + ">>2]=" + l + ";");
       if (isTwoSlot(kind)) {

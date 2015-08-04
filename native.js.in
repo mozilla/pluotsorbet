@@ -297,7 +297,8 @@ Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(addr) {
 };
 
 Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
-    var superClassInfo = J2ME.getClassInfo(addr).superClass;
+    var self = getHandle(addr);
+    var superClassInfo = J2ME.classIdToClassInfoMap[self.vmClass].superClass;
     if (!superClassInfo) {
       return J2ME.Constants.NULL;
     }
@@ -379,11 +380,11 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function(addr) {
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, oAddr) {
   var classInfo = J2ME.getClassInfo(oAddr);
-  // The following can trigger an unwind.
   var methodInfo = classInfo.getLocalMethodByNameString("<init>", "()V", false);
   if (!methodInfo) {
     throw $.newInstantiationException("Can't instantiate classes without a nullary constructor");
   }
+  // The following can trigger an unwind.
   J2ME.getLinkedMethod(methodInfo)(oAddr);
   if (U) {
       $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESPECIAL);
