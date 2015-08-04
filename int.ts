@@ -183,20 +183,7 @@ module J2ME {
     }
 
     setParameter(kind: Kind, i: number, v: any) {
-      switch (kind) {
-        case Kind.Reference:
-          i32[this.fp + this.parameterOffset + i] = v;
-          break;
-        case Kind.Int:
-        case Kind.Byte:
-        case Kind.Char:
-        case Kind.Short:
-        case Kind.Boolean:
-          i32[this.fp + this.parameterOffset + i] = v;
-          break;
-        default:
-          release || assert(false, "Cannot set parameter of kind: " + Kind[kind]);
-      }
+      i32[this.fp + this.parameterOffset + i] = v;
     }
 
     setStackSlot(kind: Kind, i: number, v: any) {
@@ -643,8 +630,11 @@ module J2ME {
       if (!methodInfo.isStatic) {
         frame.setParameter(Kind.Reference, index++, arguments[0]);
       }
-      for (var i = 1; i < kinds.length; i++) {
-        frame.setParameter(kinds[i], index++, arguments[i]);
+      for (var i = 1, j = 1; i < kinds.length; i++) {
+        frame.setParameter(kinds[i], index++, arguments[j++]);
+        if (isTwoSlot(kinds[i])) {
+          frame.setParameter(kinds[i], index++, arguments[j++]);
+        }
       }
       if (methodInfo.isSynchronized) {
         var monitorAddr = methodInfo.isStatic ? $.getClassObjectAddress(methodInfo.classInfo) : arguments[0];

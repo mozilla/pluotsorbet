@@ -1474,11 +1474,11 @@ module J2ME {
       // Get the top stack slot and make sure it is also it in the |blockStack|.
       var s = this.blockStack[sp] = this.getStackName(sp);
       if (kind === Kind.Long) {
-        this.blockEmitter.writeLn(s + "=lcmp(" + al + "," + ah + "," + bl + "," + bh + ")");
+        this.blockEmitter.writeLn(s + "=lcmp(" + al + "," + ah + "," + bl + "," + bh + ");");
       } else if (kind === Kind.Double) {
-        this.blockEmitter.writeLn(s + "=dcmp(" + al + "," + ah + "," + bl + "," + bh + "," + isLessThan + ")");
+        this.blockEmitter.writeLn(s + "=dcmp(" + al + "," + ah + "," + bl + "," + bh + "," + isLessThan + ");");
       } else if (kind === Kind.Float) {
-        this.blockEmitter.writeLn(s + "=fcmp(" + al + "," + bl + "," + isLessThan + ")");
+        this.blockEmitter.writeLn(s + "=fcmp(" + al + "," + bl + "," + isLessThan + ");");
       }
     }
 

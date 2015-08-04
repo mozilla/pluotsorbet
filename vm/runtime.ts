@@ -1707,13 +1707,27 @@ module J2ME {
     }
   }
 
+  export function dcmp(al: number, ah: number, bl: number, bh: number, isLessThan: boolean) {
+    var a = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    var b = (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    if (isNaN(a) || isNaN(b)) {
+      return isLessThan ? -1 : 1;
+    } else if (a > b) {
+      return 1;
+    } else if (a < b) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+
   export function fneg(i32A: number): number {
     aliasedI32[0] = i32A;
     aliasedF32[0] = - aliasedF32[0];
     return aliasedI32[0];
   }
 
-  export function f2i(i32A: number) {
+  export function f2i(i32A: number): number {
     var a = (aliasedI32[0] = i32A, aliasedF32[0]);
     if (a > Constants.INT_MAX) {
       return Constants.INT_MAX;
@@ -1722,6 +1736,17 @@ module J2ME {
     } else {
       return a | 0;
     }
+  }
+
+  export function i2f(i32A: number): number {
+    aliasedF32[0] = i32A;
+    return aliasedI32[0];
+  }
+
+  export function i2d(i32A: number): number {
+    aliasedF64[0] = i32A;
+    tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
   }
 
   var tmpAddress = ASM._gcMalloc(32);
@@ -1819,7 +1844,10 @@ var frem = J2ME.frem;
 var fneg = J2ME.fneg;
 
 var f2i = J2ME.f2i;
+var i2f = J2ME.i2f;
+var i2d = J2ME.i2d;
 var fcmp = J2ME.fcmp;
+var dcmp = J2ME.dcmp;
 var lcmp = J2ME.lcmp;
 
 var getHandle = J2ME.getHandle;
