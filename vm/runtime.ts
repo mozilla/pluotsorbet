@@ -683,6 +683,7 @@ module J2ME {
   }
 
   export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
+  export var methodIdToMethodInfoMap: Map<number, MethodInfo> = Object.create(null);
 
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL);

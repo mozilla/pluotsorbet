@@ -17,7 +17,6 @@ var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
 var f32: Float32Array = ASM.HEAPF32;
 var f64: Float64Array = ASM.HEAPF64;
-var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
 
 var aliasedI32 = J2ME.IntegerUtilities.i32;
 var aliasedF32 = J2ME.IntegerUtilities.f32;

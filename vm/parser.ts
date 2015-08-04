@@ -859,11 +859,14 @@ module J2ME {
   }
 
   export class MethodInfo extends ByteStream {
+    private static nextId: number = 1;
+
     public classInfo: ClassInfo;
     public accessFlags: ACCESS_FLAGS;
 
     public fn: any = null;
     public index: number;
+    public id: number;
     public state: MethodState;
     public stats: MethodInfoStats;
     public codeAttribute: CodeAttribute;
@@ -896,6 +899,8 @@ module J2ME {
 
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
+      this.id = MethodInfo.nextId++;
+      methodIdToMethodInfoMap[this.id] = this;
       this.index = index;
       this.accessFlags = this.u2(0);
       this.classInfo = classInfo;
