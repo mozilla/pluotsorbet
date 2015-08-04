@@ -297,7 +297,8 @@ Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(addr) {
 };
 
 Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
-    var superClassInfo = J2ME.getClassInfo(addr).superClass;
+    var self = getHandle(addr);
+    var superClassInfo = J2ME.classIdToClassInfoMap[self.vmClass].superClass;
     if (!superClassInfo) {
       return J2ME.Constants.NULL;
     }
