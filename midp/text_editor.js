@@ -165,17 +165,6 @@ var TextEditorProvider = (function() {
 
         setFont: function(font) {
             this.font = font;
-
-            // We can't set the font style to *font.context.font* here,
-            // because the context's font size was multiplied by the device
-            // pixel ratio in order to scale the font correctly in contexts
-            // whose dimensions are also multiplied by that ratio.
-            //
-            // The text editor's dimensions aren't multiplied by the ratio,
-            // however, because they don't need to be scaled up in order to look
-            // sharp on HiDPI displays.  So instead we set the font size
-            // per the original font size value stored in the Java Font object.
-            //
             this._setStyle("font", font.style + " " + font.size + "px " + font.face);
         },
 
@@ -459,17 +448,6 @@ var TextEditorProvider = (function() {
         getContentHeight: function() {
             var div = document.getElementById("hidden-textarea-editor");
             div.style.setProperty("width", this.getWidth() + "px");
-
-            // We can't set the font style to *font.context.font* here,
-            // because the context's font size was multiplied by the device
-            // pixel ratio in order to scale the font correctly in contexts
-            // whose dimensions are also multiplied by that ratio.
-            //
-            // The text editor's dimensions aren't multiplied by the ratio,
-            // however, because they don't need to be scaled up in order to look
-            // sharp on HiDPI displays.  So instead we set the font size
-            // per the original font size value stored in the Java Font object.
-            //
             div.style.setProperty("font", this.font.style + " " + this.font.size + "px " + this.font.face);
 
             div.innerHTML = this.html;

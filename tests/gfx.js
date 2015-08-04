@@ -66,7 +66,7 @@ var gfxTests = [
   { name: "gfx/ImmutableImageFromByteArrayTest", maxDifferentLinux: 0, maxDifferentMac: 22113 },
   { name: "gfx/ClippingWithAnchorTest", maxDifferentLinux: 0, maxDifferentMac: 148 },
   { name: "gfx/DirectGraphicsDrawPixelsWithXY", maxDifferentLinux: 0, maxDifferentMac: 63 },
-  { name: "gfx/DrawStringRightAnchorTest", maxDifferentLinux: 269, maxDifferentMac: 310 },
+  { name: "gfx/DrawStringRightAnchorTest", maxDifferentLinux: 269, maxDifferentMac: 312 },
   { name: "gfx/DrawStringBaselineAnchorTest", maxDifferentLinux: 260, maxDifferentMac: 317 },
   { name: "gfx/DrawStringBottomAnchorTest", maxDifferentLinux: 260, maxDifferentMac: 324 },
   { name: "gfx/DrawStringHCenterAnchorTest", maxDifferentLinux: 213, maxDifferentMac: 303 },

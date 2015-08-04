@@ -479,28 +479,23 @@ var currentlyFocusedTextEditor;
         this.baseline = size | 0;
         this.height = (size * 1.3) | 0;
 
-        this.context = document.createElement("canvas").getContext("2d");
-        this.context.canvas.width = 0;
-        this.context.canvas.height = 0;
-        this.context.font = style + size * DPR + "px " + face;
         this.size = size;
         // XXX Figure out why this works when these two fields are both int.
         this.style = style;
         this.face = face;
     };
 
-    function calcStringWidth(font, str) {
+    function calcStringWidth(font, str, scaleByDPR) {
         var emojiLen = 0;
 
-        var len = font.context.measureText(str.replace(emoji.regEx, function() {
+        tempContext.font = font.style + " " + font.size * (scaleByDPR ? DPR : 1) + "px " + font.face;
+        var len = tempContext.measureText(str.replace(emoji.regEx, function() {
+            // XXX Multiply this by the DPR if scaled width requested?
             emojiLen += font.size;
             return "";
         })).width | 0;
 
-        // XXX Instead of dividing by the device pixel ratio here, we should
-        // divide the font size by the DPR to more accurately measure the width
-        // of the string (since string width doesn't scale exactly by DPR).
-        return (len + emojiLen) / DPR | 0;
+        return len + emojiLen;
     }
 
     var defaultFont;
@@ -526,7 +521,7 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Font.charWidth.(C)I"] = function(char) {
-        return this.context.measureText(String.fromCharCode(char)).width | 0;
+        return calcStringWidth(this, String.fromCharCode(char));
     };
 
     Native["javax/microedition/lcdui/Font.charsWidth.([CII)I"] = function(str, offset, len) {
@@ -547,13 +542,7 @@ var currentlyFocusedTextEditor;
 
     function withTextAnchor(c, font, anchor, x, str) {
         if (anchor & RIGHT || anchor & HCENTER) {
-            // calcStringWidth doesn't account for the device pixel ratio,
-            // but the functions that call this function expect its return value
-            // to be scaled by the device pixel ratio, so we scale it here.
-            // XXX Instead of scaling the result of calcStringWidth by the ratio,
-            // make calcStringWidth scale the font size by the ratio before it
-            // calculates the string width, so the result is more accurate.
-            var w = calcStringWidth(font, str) * DPR;
+            var w = calcStringWidth(font, str, true /* scaleByDPR */);
 
             if (anchor & RIGHT) {
                 x -= w;
@@ -1016,7 +1005,9 @@ var currentlyFocusedTextEditor;
         this.context.textAlign = "left";
 
         this.context.fillStyle = this.context.strokeStyle = util.rgbaToCSS(graphicsInfo.red, graphicsInfo.green, graphicsInfo.blue, graphicsInfo.alpha / 255);
-        this.context.font = graphicsInfo.currentFont.context.font;
+
+        var font = graphicsInfo.currentFont;
+        this.context.font = font.style + " " + font.size * DPR + "px " + font.face;
 
         this.context.beginPath();
         this.context.rect(graphicsInfo.clipX1, graphicsInfo.clipY1, graphicsInfo.clipX2 - graphicsInfo.clipX1, graphicsInfo.clipY2 - graphicsInfo.clipY1);
