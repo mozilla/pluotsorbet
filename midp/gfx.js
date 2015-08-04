@@ -7,9 +7,15 @@ var currentlyFocusedTextEditor;
 (function(Native) {
     var DPR = window.devicePixelRatio || 1;
 
+    // Scale a canvas by the device pixel ratio.
+    // This function should only be called once per canvas (or once after
+    // the canvas has been resized), since it scales the canvas relative to
+    // its current size.
     function scaleCanvas(canvas) {
-        canvas.logicalWidth = canvas.width;
-        canvas.logicalHeight = canvas.height;
+        // The original, unscaled size of the canvas.
+        canvas.unscaledWidth = canvas.width;
+        canvas.unscaledHeight = canvas.height;
+
         if (DPR !== 1) {
             canvas.style.width = canvas.width + 'px';
             canvas.style.height = canvas.height + 'px';
@@ -35,13 +41,16 @@ var currentlyFocusedTextEditor;
     var screenContextInfo = new ContextInfo(offscreenContext2D);
 
     MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
+        // First, resize the offscreen canvas to the size of the device canvas.
         if (config.useOffscreenCanvas) {
             offscreenCanvas.width = MIDP.deviceContext.canvas.width;
             offscreenCanvas.height = MIDP.deviceContext.canvas.height;
         }
 
+        // Then scale the device canvas by the DPR.
         scaleCanvas(MIDP.deviceContext.canvas);
 
+        // Finally, scale the offscreen canvas by the DPR.
         if (config.useOffscreenCanvas) {
             scaleCanvas(offscreenCanvas);
         }
@@ -94,11 +103,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenWidth0.(I)I"] = function(id) {
-        return MIDP.deviceContext.canvas.logicalWidth;
+        return MIDP.deviceContext.canvas.unscaledWidth;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.getScreenHeight0.(I)I"] = function(id) {
-        return MIDP.deviceContext.canvas.logicalHeight;
+        return MIDP.deviceContext.canvas.unscaledHeight;
     };
 
     Native["com/sun/midp/lcdui/DisplayDevice.displayStateChanged0.(II)V"] = function(hardwareId, state) {
@@ -248,8 +257,8 @@ var currentlyFocusedTextEditor;
 
     function initImageData(imageData, width, height, isMutable) {
         var canvas = document.createElement("canvas");
-        canvas.logicalWidth = width;
-        canvas.logicalHeight = height;
+        canvas.unscaledWidth = width;
+        canvas.unscaledHeight = height;
         canvas.width = width * DPR;
         canvas.height = height * DPR;
 
@@ -294,7 +303,7 @@ var currentlyFocusedTextEditor;
     Native["javax/microedition/lcdui/ImageDataFactory.createImmutableImageDataCopy.(Ljavax/microedition/lcdui/ImageData;Ljavax/microedition/lcdui/ImageData;)V"] =
     function(dest, source) {
         var srcCanvas = source.contextInfo.context.canvas;
-        var context = initImageData(dest, srcCanvas.logicalWidth, srcCanvas.logicalHeight, 0);
+        var context = initImageData(dest, srcCanvas.unscaledWidth, srcCanvas.unscaledHeight, 0);
         context.drawImage(srcCanvas, 0, 0);
     };
 
@@ -585,7 +594,6 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.reset.()V"] = function() {
         this.info.reset(0, 0, this.info.contextInfo.context.canvas.width, this.info.contextInfo.context.canvas.height);
-        // this.info.reset(0, 0, this.info.contextInfo.context.canvas.logicalWidth, this.info.contextInfo.context.canvas.logicalHeight);
     };
 
     Native["javax/microedition/lcdui/Graphics.copyArea.(IIIIIII)V"] = function(x_src, y_src, width, height, x_dest, y_dest, anchor) {
@@ -612,11 +620,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
-        return this.info.contextInfo.context.canvas.logicalWidth;
+        return this.info.contextInfo.context.canvas.unscaledWidth;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxHeight.()S"] = function() {
-        return this.info.contextInfo.context.canvas.logicalHeight;
+        return this.info.contextInfo.context.canvas.unscaledHeight;
     };
 
     Native["javax/microedition/lcdui/Graphics.getCreator.()Ljava/lang/Object;"] = function() {
@@ -851,8 +859,6 @@ var currentlyFocusedTextEditor;
         this.clipY1 = 0;
         this.clipX2 = contextInfo.context.canvas.width;
         this.clipY2 = contextInfo.context.canvas.height;
-        // this.clipX2 = contextInfo.context.canvas.logicalWidth;
-        // this.clipY2 = contextInfo.context.canvas.logicalHeight;
 
         // GC info
         this.currentFont = getDefaultFont();
@@ -901,7 +907,6 @@ var currentlyFocusedTextEditor;
     GraphicsInfo.prototype.resetNonGC = function(x1, y1, x2, y2) {
         this.translate(-this.transX, -this.transY);
         this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, this.contextInfo.context.canvas.width, this.contextInfo.context.canvas.height);
-        // this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, this.contextInfo.context.canvas.logicalWidth, this.contextInfo.context.canvas.logicalHeight);
     }
 
     GraphicsInfo.prototype.translate = function(x, y) {
@@ -995,7 +1000,6 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
         this.info.setClip(x, y, w, h, 0, 0, this.info.contextInfo.context.canvas.width, this.info.contextInfo.context.canvas.height);
-        // this.info.setClip(x, y, w, h, 0, 0, this.info.contextInfo.context.canvas.logicalWidth, this.info.contextInfo.context.canvas.logicalHeight);
     };
 
     function drawString(g, str, x, y, anchor) {
