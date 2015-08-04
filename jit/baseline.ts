@@ -1076,7 +1076,7 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "J2ME.allocObject(J2ME.classIdToClassInfoMap[" + classInfo.id + "])", Precedence.New);
+      this.emitPush(Kind.Reference, "J2ME.allocObject(" + this.localClassConstant(classInfo) + ")", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {
@@ -1134,7 +1134,7 @@ module J2ME {
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      this.emitPush(Kind.Reference, "J2ME.newArray(J2ME.classIdToClassInfoMap[" + classInfo.id + "], " + length + ")", Precedence.Call);
+      this.emitPush(Kind.Reference, "J2ME.newArray(" + this.localClassConstant(classInfo) + ", " + length + ")", Precedence.Call);
     }
 
     emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
