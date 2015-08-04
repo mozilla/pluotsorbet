@@ -755,26 +755,26 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipX.()I"] = function() {
-        return this.info.clipX1 / DPR - this.info.transX;
+        return this.info.clipX1 - this.info.transX;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipY.()I"] = function() {
-        return this.info.clipY1 / DPR - this.info.transY;
+        return this.info.clipY1 - this.info.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipWidth.()I"] = function() {
-        return this.info.clipX2 / DPR - this.info.clipX1 / DPR;
+        return this.info.clipX2 - this.info.clipX1;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipHeight.()I"] = function() {
-        return this.info.clipY2 / DPR - this.info.clipY1 / DPR;
+        return this.info.clipY2 - this.info.clipY1;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClip.([I)V"] = function(region) {
-        region[0] = this.info.clipX1 / DPR - this.info.transX;
-        region[1] = this.info.clipY1 / DPR - this.info.transY;
-        region[2] = this.info.clipX2 / DPR - this.info.transX;
-        region[3] = this.info.clipY2 / DPR - this.info.transY;
+        region[0] = this.info.clipX1 - this.info.transX;
+        region[1] = this.info.clipY1 - this.info.transY;
+        region[2] = this.info.clipX2 - this.info.transX;
+        region[3] = this.info.clipY2 - this.info.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.clipRect.(IIII)V"] = function(x, y, width, height) {
@@ -939,7 +939,8 @@ var currentlyFocusedTextEditor;
 
     GraphicsInfo.prototype.resetNonGC = function(x1, y1, x2, y2) {
         this.translate(-this.transX, -this.transY);
-        this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, this.contextInfo.context.canvas.width, this.contextInfo.context.canvas.height);
+        var canvas = this.contextInfo.context.canvas;
+        this.setClip(x1, y1, x2 - x1, y2 - y1, 0, 0, canvas.unscaledWidth, canvas.unscaledHeight);
     }
 
     GraphicsInfo.prototype.translate = function(x, y) {
@@ -956,10 +957,10 @@ var currentlyFocusedTextEditor;
     }
 
     GraphicsInfo.prototype.setClip = function(x, y, width, height, minX, minY, maxX, maxY) {
-        var newX1 = x * DPR + this.transX * DPR;
-        var newY1 = y * DPR + this.transY * DPR;
-        var newX2 = newX1 + width * DPR;
-        var newY2 = newY1 + height * DPR;
+        var newX1 = x + this.transX;
+        var newY1 = y + this.transY;
+        var newX2 = newX1 + width;
+        var newY2 = newY1 + height;
 
         newX1 = Math.max(minX, newX1) & 0x7fff;
         newY1 = Math.max(minY, newY1) & 0x7fff;
@@ -1010,7 +1011,9 @@ var currentlyFocusedTextEditor;
         this.context.font = font.style + " " + font.size * DPR + "px " + font.face;
 
         this.context.beginPath();
-        this.context.rect(graphicsInfo.clipX1, graphicsInfo.clipY1, graphicsInfo.clipX2 - graphicsInfo.clipX1, graphicsInfo.clipY2 - graphicsInfo.clipY1);
+        this.context.rect(graphicsInfo.clipX1 * DPR, graphicsInfo.clipY1 * DPR,
+                          graphicsInfo.clipX2 * DPR - graphicsInfo.clipX1 * DPR,
+                          graphicsInfo.clipY2 * DPR - graphicsInfo.clipY1 * DPR);
         this.context.clip();
         this.context.translate(graphicsInfo.transX * DPR, graphicsInfo.transY * DPR);
 
@@ -1034,7 +1037,8 @@ var currentlyFocusedTextEditor;
     }
 
     Native["javax/microedition/lcdui/Graphics.setClip.(IIII)V"] = function(x, y, w, h) {
-        this.info.setClip(x, y, w, h, 0, 0, this.info.contextInfo.context.canvas.width, this.info.contextInfo.context.canvas.height);
+        var canvas = this.info.contextInfo.context.canvas;
+        this.info.setClip(x, y, w, h, 0, 0, canvas.unscaledWidth, canvas.unscaledHeight);
     };
 
     function drawString(g, str, x, y, anchor) {
