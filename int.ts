@@ -759,9 +759,6 @@ module J2ME {
     // HEAD
     var lastPC = 0;
     while (true) {
-      //if (pc < lastPC) {
-      //  runtimeCounter.count(Bytecodes[code[lastPC]]);
-      //}
       opPC = pc, op = code[pc], pc = pc + 1 | 0;
       lastPC = opPC;
 
@@ -1366,7 +1363,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1378,7 +1374,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1390,7 +1385,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1402,7 +1396,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1414,7 +1407,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1426,7 +1418,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1438,7 +1429,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1450,7 +1440,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1462,7 +1451,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1474,7 +1462,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1486,7 +1473,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1498,7 +1484,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1510,7 +1495,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1522,7 +1506,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1534,7 +1517,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1546,7 +1528,6 @@ module J2ME {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               if (jumpOffset < 0) {
                 mi.stats.backwardsBranchCount++;
-                runtimeCounter.count(Bytecodes[code[opPC]]);
               }
               pc = opPC + jumpOffset;
               continue;
@@ -1560,7 +1541,6 @@ module J2ME {
               if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.BackwardBranchThreshold) {
                 compileAndLinkMethod(mi);
               }
-              //runtimeCounter.count(Bytecodes[code[opPC + jumpOffset]]);
               if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
                 traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
                 // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
