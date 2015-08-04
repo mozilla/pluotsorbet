@@ -49,4 +49,3 @@ public class GetPixelsDrawPixelsTest extends MIDlet {
     public void destroyApp(boolean unconditional) {
     }
 }
-

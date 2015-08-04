@@ -231,8 +231,12 @@ ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	BOOTCLASSPATH_SEPARATOR=;
 endif
 
+# The test automation suites to run.  If not specified, all suites will be run.
+# This can contain multiple space-separated values.
+SUITE ?=
+
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
-	SLIMERJSLAUNCHER=build_tools/$(XULRUNNER_PATH) tests/runtests.py
+	SLIMERJSLAUNCHER=build_tools/$(XULRUNNER_PATH) tests/runtests.py $(SUITE)
 
 build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 	rm -rf build_tools/slimerjs*
