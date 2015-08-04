@@ -39,7 +39,7 @@ var currentlyFocusedTextEditor;
         scaleCanvas(MIDP.deviceContext.canvas);
     }
 
-    var screenContextInfo = new ContextInfo(offscreenContext2D);
+    var offscreenContextInfo = new ContextInfo(offscreenContext2D);
 
     MIDP.deviceContext.canvas.addEventListener("canvasresize", function() {
         // First, resize the offscreen canvas to the size of the device canvas.
@@ -56,7 +56,7 @@ var currentlyFocusedTextEditor;
             scaleCanvas(offscreenCanvas);
         }
 
-        screenContextInfo.currentlyAppliedGraphicsInfo = null;
+        offscreenContextInfo.currentlyAppliedGraphicsInfo = null;
         offscreenContext2D.save();
     });
 
@@ -985,7 +985,7 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.initScreen0.(I)V"] = function(displayId) {
         this.displayId = displayId;
-        this.info = new GraphicsInfo(screenContextInfo);
+        this.info = new GraphicsInfo(offscreenContextInfo);
         this.creator = null;
     };
 
