@@ -5,6 +5,7 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+    // An alias for the device pixel ratio, which we reference in many places.
     var DPR = window.devicePixelRatio || 1;
 
     // Scale a canvas by the device pixel ratio.
