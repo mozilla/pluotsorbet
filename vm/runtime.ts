@@ -1770,6 +1770,9 @@ var O: J2ME.MethodInfo = null;
  * Runtime exports for compiled code.
  * DO NOT use these short names outside of compiled code.
  */
+
+var CI = J2ME.classIdToClassInfoMap;
+
 var IOK = J2ME.instanceOfKlass;
 var IOI = J2ME.instanceOfInterface;
 
