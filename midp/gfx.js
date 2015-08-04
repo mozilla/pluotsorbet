@@ -645,11 +645,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getTranslateX.()I"] = function() {
-        return this.info.transX / DPR;
+        return this.info.transX;
     };
 
     Native["javax/microedition/lcdui/Graphics.getTranslateY.()I"] = function() {
-        return this.info.transY / DPR;
+        return this.info.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.getMaxWidth.()S"] = function() {
@@ -755,11 +755,11 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipX.()I"] = function() {
-        return this.info.clipX1 / DPR - this.info.transX / DPR;
+        return this.info.clipX1 / DPR - this.info.transX;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipY.()I"] = function() {
-        return this.info.clipY1 / DPR - this.info.transY / DPR;
+        return this.info.clipY1 / DPR - this.info.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClipWidth.()I"] = function() {
@@ -771,10 +771,10 @@ var currentlyFocusedTextEditor;
     };
 
     Native["javax/microedition/lcdui/Graphics.getClip.([I)V"] = function(region) {
-        region[0] = this.info.clipX1 / DPR - this.info.transX / DPR;
-        region[1] = this.info.clipY1 / DPR - this.info.transY / DPR;
-        region[2] = this.info.clipX2 / DPR - this.info.transX / DPR;
-        region[3] = this.info.clipY2 / DPR - this.info.transY / DPR;
+        region[0] = this.info.clipX1 / DPR - this.info.transX;
+        region[1] = this.info.clipY1 / DPR - this.info.transY;
+        region[2] = this.info.clipX2 / DPR - this.info.transX;
+        region[3] = this.info.clipY2 / DPR - this.info.transY;
     };
 
     Native["javax/microedition/lcdui/Graphics.clipRect.(IIII)V"] = function(x, y, width, height) {
@@ -946,8 +946,8 @@ var currentlyFocusedTextEditor;
         x = x | 0;
         y = y | 0;
         if (x !== 0 || y !== 0) {
-            this.transX += x * DPR;
-            this.transY += y * DPR;
+            this.transX += x;
+            this.transY += y;
 
             if (this.contextInfo.currentlyAppliedGraphicsInfo === this) {
                 this.contextInfo.currentlyAppliedGraphicsInfo = null;
@@ -1012,7 +1012,7 @@ var currentlyFocusedTextEditor;
         this.context.beginPath();
         this.context.rect(graphicsInfo.clipX1, graphicsInfo.clipY1, graphicsInfo.clipX2 - graphicsInfo.clipX1, graphicsInfo.clipY2 - graphicsInfo.clipY1);
         this.context.clip();
-        this.context.translate(graphicsInfo.transX, graphicsInfo.transY);
+        this.context.translate(graphicsInfo.transX * DPR, graphicsInfo.transY * DPR);
 
         this.currentlyAppliedGraphicsInfo = graphicsInfo;
     };
