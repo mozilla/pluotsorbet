@@ -486,7 +486,7 @@ module J2ME {
         if (this.methodInfo.isSynchronized) {
           this.emitMonitorExit(this.bodyEmitter, this.lockObject);
         }
-        this.bodyEmitter.writeLn("throw J2ME.getHandle(" + this.peek(Kind.Reference) + ");");
+        this.bodyEmitter.writeLn("throw GH(" + this.peek(Kind.Reference) + ");");
         this.bodyEmitter.leave("}");
       }
       if (needsWhile) {
@@ -888,11 +888,11 @@ module J2ME {
     }
 
     runtimeClass(classInfo: ClassInfo) {
-      return "$.getStaticObjectAddress(" + classConstant(classInfo) + ")";
+      return "$.SA(" + classInfo.id + ")";
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
-      return "$.getClassObjectAddress(" + classConstant(classInfo) + ")";
+      return "$.SA(" + classInfo.id + ")";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
@@ -909,7 +909,7 @@ module J2ME {
           (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.");
         } else {
           (emitDebugInfoComments || baselineCounter) && (message = "ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("if(!$.I[" + classInfo.id + "]) J2ME.classInitCheck(" + classConstant(classInfo) + ");");
+          this.blockEmitter.writeLn("if(!$.I[" + classInfo.id + "]) CIC(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
@@ -947,7 +947,7 @@ module J2ME {
         var objectAddr = this.pop(Kind.Reference);
         this.emitNullPointerCheck(objectAddr);
         args.unshift(objectAddr);
-        var objClass = "CI[i32[(" + objectAddr + " + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET + ")  >> 2]]";
+        var objClass = "CI[i32[(" + objectAddr + " + " + Constants.OBJ_CLASS_ID_OFFSET + ")  >> 2]]";
         if (opcode === Bytecodes.INVOKESPECIAL) {
           methodId = methodInfo.id;
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
@@ -1067,13 +1067,13 @@ module J2ME {
     emitThrow(pc: number) {
       var objectAddr = this.peek(Kind.Reference);
       this.emitNullPointerCheck(objectAddr);
-      this.blockEmitter.writeLn("throw J2ME.getHandle(" + objectAddr + ");");
+      this.blockEmitter.writeLn("throw GH(" + objectAddr + ");");
     }
 
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "J2ME.allocObject(" + this.localClassConstant(classInfo) + ")", Precedence.New);
+      this.emitPush(Kind.Reference, "AO(" + this.localClassConstant(classInfo) + ")", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {
@@ -1081,7 +1081,7 @@ module J2ME {
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
       // TODO: inline the logic for allocating a new array.
-      this.emitPush(Kind.Reference, "J2ME.newArray(J2ME.PrimitiveClassInfo." + "????ZCFDBSIJ"[typeCode] + ", " + length + ")", Precedence.New);
+      this.emitPush(Kind.Reference, "NA(J2ME.PrimitiveClassInfo." + "????ZCFDBSIJ"[typeCode] + ", " + length + ")", Precedence.New);
     }
 
     emitCheckCast(cpi: number) {
@@ -1131,7 +1131,7 @@ module J2ME {
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      this.emitPush(Kind.Reference, "J2ME.newArray(" + this.localClassConstant(classInfo) + ", " + length + ")", Precedence.Call);
+      this.emitPush(Kind.Reference, "NA(" + this.localClassConstant(classInfo) + ", " + length + ")", Precedence.Call);
     }
 
     emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {

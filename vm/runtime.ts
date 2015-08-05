@@ -636,7 +636,7 @@ module J2ME {
     B(methodInfoId: number, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = methodIdToMethodInfoMap[methodInfoId];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, pc, local, stack, lockObject);
+      this.ctx.bailout(methodInfo, pc, local, stack, lockObject);
     }
 
     /**
@@ -646,7 +646,11 @@ module J2ME {
     T(methodInfoId: number, location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = methodIdToMethodInfoMap[methodInfoId];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
+      this.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
+    }
+
+    SA(classId: number) {
+      return this.getStaticObjectAddress(classIdToClassInfoMap[classId]);
     }
 
     yield(reason: string) {
@@ -655,7 +659,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
       profile && $.ctx.pauseMethodTimeline();
-      $.ctx.nativeThread.beginUnwind();
+      this.ctx.nativeThread.beginUnwind();
     }
 
     nativeBailout(returnKind: Kind, opCode?: Bytecode.Bytecodes) {
@@ -670,7 +674,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
       profile && $.ctx.pauseMethodTimeline();
-      $.ctx.nativeThread.beginUnwind();
+      this.ctx.nativeThread.beginUnwind();
     }
 
     stop() {
@@ -1751,6 +1755,9 @@ var CI = J2ME.classIdToClassInfoMap;
 var MI = J2ME.methodIdToMethodInfoMap;
 var LM = J2ME.linkedMethods;
 var GLM = J2ME.getLinkedMethod;
+var CIC = J2ME.classInitCheck;
+var GH = J2ME.getHandle;
+var AO = J2ME.allocObject;
 
 var IOK = J2ME.instanceOfKlass;
 var IOI = J2ME.instanceOfInterface;
