@@ -900,21 +900,15 @@ module J2ME {
         classInfo = (<ArrayClassInfo>classInfo).elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
+        var message;
         if (this.initializedClasses[classInfo.id]) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", block redundant.";
-          emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
-          baselineCounter && baselineCounter.count(message);
+          (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", block redundant.");
         } else if (classInfo === this.methodInfo.classInfo) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", self access.";
-          emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
-          baselineCounter && baselineCounter.count(message);
+          (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", self access.");
         } else if (!classInfo.isInterface && this.methodInfo.classInfo.isAssignableTo(classInfo)) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.";
-          emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
-          baselineCounter && baselineCounter.count(message);
+          (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.");
         } else {
-          baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          emitDebugInfoComments && this.blockEmitter.writeLn("// ClassInitializationCheck " + classInfo.getClassNameSlow());
+          (emitDebugInfoComments || baselineCounter) && (message = "ClassInitializationCheck: " + classInfo.getClassNameSlow());
           this.blockEmitter.writeLn("if(!$.I[" + classInfo.id + "]) J2ME.classInitCheck(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
@@ -922,6 +916,8 @@ module J2ME {
             emitCompilerAssertions && this.emitNoUnwindAssertion();
           }
         }
+        emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
+        baselineCounter && baselineCounter.count(message);
         this.initializedClasses[classInfo.id] = true;
       }
     }
