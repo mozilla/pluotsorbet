@@ -606,9 +606,11 @@ var fs = (function() {
   // losing data, we flush files periodically.
   // We start to flush periodically after startup has been completed (25 seconds
   // is a good estimate).
-  setTimeout(function() {
-    setInterval(flushAll, 5000);
-  }, 20000);
+  if (inBrowser) {
+    setTimeout(function() {
+      setInterval(flushAll, 5000);
+    }, 20000);
+  }
 
   // Flush files when app goes into background.
   window.addEventListener("pagehide", flushAll);

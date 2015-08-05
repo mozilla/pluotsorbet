@@ -5,6 +5,9 @@
 
 var currentlyFocusedTextEditor;
 (function(Native) {
+    if (!inBrowser) {
+        return;
+    }
     var offscreenCanvas = document.createElement("canvas");
     offscreenCanvas.width = MIDP.deviceContext.canvas.width;
     offscreenCanvas.height = MIDP.deviceContext.canvas.height;

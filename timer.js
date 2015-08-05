@@ -39,5 +39,5 @@
 
   window.addEventListener("message", recv, true);
 
-  window.nextTickDuringEvents = nextTickDuringEvents;
+  window.nextTickDuringEvents = inBrowser ? nextTickDuringEvents : setTimeout;
 })();
