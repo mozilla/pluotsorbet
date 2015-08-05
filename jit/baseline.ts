@@ -1337,20 +1337,25 @@ module J2ME {
       }
     }
 
-    emitNegateOp(kind: Kind) {
-      var x = this.pop(kind);
-      switch(kind) {
+    emitNegateOp(kind: Kind, opcode: Bytecodes) {
+      var l, h;
+      if (isTwoSlot(kind)) {
+        h = this.pop(kind);
+        l = this.pop(kind);
+      } else {
+        l = this.pop(kind);
+      }
+      switch (kind) {
         case Kind.Int:
-          this.emitPush(kind, "(- " + x + ")|0", Precedence.BitwiseOR);
-          break;
-        case Kind.Long:
-          this.emitPush(kind, x + ".negate()", Precedence.Member); // TODO: Or is it call?
+          this.emitPush(kind, "(- " + l + ")|0", Precedence.BitwiseOR);
           break;
         case Kind.Float:
-          this.emitPush(kind, "fneg(" + x + ")", Precedence.UnaryNegation)
+          this.emitPush(kind, "fneg(" + l + ")", Precedence.Primary);
           break;
+        case Kind.Long:
         case Kind.Double:
-          this.emitPush(kind, "- " + x, Precedence.UnaryNegation);
+          this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + ")", Precedence.Sequence);
+          this.emitPush(Kind.Illegal, "tempReturn0", Precedence.Primary);
           break;
         default:
           Debug.unexpected(Kind[kind]);
@@ -1641,10 +1646,10 @@ module J2ME {
         case Bytecodes.DMUL           :
         case Bytecodes.DDIV           :
         case Bytecodes.DREM           : this.emitArithmeticOp(Kind.Double, opcode, false); break;
-        case Bytecodes.INEG           : this.emitNegateOp(Kind.Int); break;
-        case Bytecodes.LNEG           : this.emitNegateOp(Kind.Long); break;
-        case Bytecodes.FNEG           : this.emitNegateOp(Kind.Float); break;
-        case Bytecodes.DNEG           : this.emitNegateOp(Kind.Double); break;
+        case Bytecodes.INEG           : this.emitNegateOp(Kind.Int, opcode); break;
+        case Bytecodes.LNEG           : this.emitNegateOp(Kind.Long, opcode); break;
+        case Bytecodes.FNEG           : this.emitNegateOp(Kind.Float, opcode); break;
+        case Bytecodes.DNEG           : this.emitNegateOp(Kind.Double, opcode); break;
         case Bytecodes.ISHL           :
         case Bytecodes.ISHR           :
         case Bytecodes.IUSHR          : this.emitShiftOp(Kind.Int, opcode); break;

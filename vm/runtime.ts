@@ -1656,49 +1656,49 @@ module J2ME {
     throwUnwind(pc, nextPC, 7);
   }
 
-  export function fadd(i32A: number, i32B: number): number {
-    aliasedI32[0] = i32A;
-    aliasedI32[1] = i32B;
+  export function fadd(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
     aliasedF32[2] = aliasedF32[0] + aliasedF32[1];
     return aliasedI32[2];
   }
 
-  export function fsub(i32A: number, i32B: number): number {
-    aliasedI32[0] = i32A;
-    aliasedI32[1] = i32B;
+  export function fsub(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
     aliasedF32[2] = aliasedF32[0] - aliasedF32[1];
     return aliasedI32[2];
   }
 
-  export function fmul(i32A: number, i32B: number): number {
-    aliasedI32[0] = i32A;
-    aliasedI32[1] = i32B;
+  export function fmul(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
     aliasedF32[2] = aliasedF32[0] * aliasedF32[1];
     return aliasedI32[2];
   }
 
-  export function fdiv(i32A: number, i32B: number): number {
-    aliasedI32[0] = i32A;
-    aliasedI32[1] = i32B;
+  export function fdiv(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
     aliasedF32[2] = Math.fround(aliasedF32[0] / aliasedF32[1]);
     return aliasedI32[2];
   }
 
-  export function frem(i32A: number, i32B: number): number {
-    aliasedI32[0] = i32A;
-    aliasedI32[1] = i32B;
+  export function frem(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
     aliasedF32[2] = Math.fround(aliasedF32[0] % aliasedF32[1]);
     return aliasedI32[2];
   }
 
-  export function fcmp(i32A: number, i32B: number, isLessThan: boolean): number {
-    var a = (aliasedI32[0] = i32A, aliasedF32[0]);
-    var b = (aliasedI32[0] = i32B, aliasedF32[0]);
-    if (isNaN(a) || isNaN(b)) {
+  export function fcmp(a: number, b: number, isLessThan: boolean): number {
+    var x = (aliasedI32[0] = a, aliasedF32[0]);
+    var y = (aliasedI32[0] = b, aliasedF32[0]);
+    if (isNaN(x) || isNaN(y)) {
       return isLessThan ? -1 : 1;
-    } else if (a > b) {
+    } else if (x > y) {
       return 1;
-    } else if (a < b) {
+    } else if (x < y) {
       return -1;
     } else {
       return 0;
@@ -1706,43 +1706,48 @@ module J2ME {
   }
 
   export function dcmp(al: number, ah: number, bl: number, bh: number, isLessThan: boolean) {
-    var a = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
-    var b = (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
-    if (isNaN(a) || isNaN(b)) {
+    var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    var y = (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    if (isNaN(x) || isNaN(y)) {
       return isLessThan ? -1 : 1;
-    } else if (a > b) {
+    } else if (x > y) {
       return 1;
-    } else if (a < b) {
+    } else if (x < y) {
       return -1;
     } else {
       return 0;
     }
   }
 
-  export function fneg(i32A: number): number {
-    aliasedI32[0] = i32A;
-    aliasedF32[0] = - aliasedF32[0];
+  export function fneg(a: number): number {
+    aliasedF32[0] = -(aliasedI32[0] = a, aliasedF32[0]);
     return aliasedI32[0];
   }
 
-  export function f2i(i32A: number): number {
-    var a = (aliasedI32[0] = i32A, aliasedF32[0]);
-    if (a > Constants.INT_MAX) {
+  export function dneg(al: number, ah: number): number {
+    aliasedF64[0] = - (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
+  }
+
+  export function f2i(a: number): number {
+    var x = (aliasedI32[0] = a, aliasedF32[0]);
+    if (x > Constants.INT_MAX) {
       return Constants.INT_MAX;
-    } else if (a < Constants.INT_MIN) {
+    } else if (x < Constants.INT_MIN) {
       return Constants.INT_MIN;
     } else {
-      return a | 0;
+      return x | 0;
     }
   }
 
-  export function i2f(i32A: number): number {
-    aliasedF32[0] = i32A;
+  export function i2f(a: number): number {
+    aliasedF32[0] = a;
     return aliasedI32[0];
   }
 
-  export function i2d(i32A: number): number {
-    aliasedF64[0] = i32A;
+  export function i2d(a: number): number {
+    aliasedF64[0] = a;
     tempReturn0 = aliasedI32[1];
     return aliasedI32[0];
   }
@@ -1753,8 +1758,16 @@ module J2ME {
     i32[tmpAddress +  0 >> 2] = al;
     i32[tmpAddress +  4 >> 2] = ah;
     i32[tmpAddress +  8 >> 2] = bl;
-    i32[tmpAddress + 16 >> 2] = bh;
-    ASM._lCmp(tmpAddress, tmpAddress + 8, tmpAddress);
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lCmp(tmpAddress, tmpAddress, tmpAddress + 8);
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lneg(al: number, ah: number): number {
+    i32[tmpAddress + 0 >> 2] = al;
+    i32[tmpAddress + 4 >> 2] = ah;
+    ASM._lNeg(tmpAddress, tmpAddress);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
     return i32[tmpAddress >> 2];
   }
 }
@@ -1844,12 +1857,16 @@ var fdiv = J2ME.fdiv;
 var frem = J2ME.frem;
 var fneg = J2ME.fneg;
 
+var dneg = J2ME.dneg;
+
 var f2i = J2ME.f2i;
 var i2f = J2ME.i2f;
 var i2d = J2ME.i2d;
 var fcmp = J2ME.fcmp;
 var dcmp = J2ME.dcmp;
 var lcmp = J2ME.lcmp;
+
+var lneg = J2ME.lneg;
 
 var getHandle = J2ME.getHandle;
 
