@@ -615,7 +615,7 @@ module J2ME {
 
       if (needsOSREntryPoint) {
         // Are we doing an OSR?
-        this.bodyEmitter.enter("if(O){debugger;");
+        this.bodyEmitter.enter("if(O){");
         this.bodyEmitter.writeLn("var nt=$.ctx.nativeThread;");
         this.bodyEmitter.writeLn("var fp=nt.fp;");
         this.bodyEmitter.writeLn("var lp=fp-" + this.methodInfo.codeAttribute.max_locals +";");
@@ -628,7 +628,7 @@ module J2ME {
         this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
         this.needsVariable("re");
         if (!this.methodInfo.isStatic) {
-          this.bodyEmitter.writeLn("ins=J2ME.getMonitor(i32[fp+" + FrameLayout.MonitorOffset + "])");
+          this.bodyEmitter.writeLn("ins=i32[fp+" + FrameLayout.MonitorOffset + "]");
         }
         this.bodyEmitter.writeLn("pc=nt.pc;");
         this.bodyEmitter.writeLn("nt.popFrame(O);");

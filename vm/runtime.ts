@@ -58,7 +58,7 @@ module J2ME {
   /**
    * Turns on onStackReplacement
    */
-  export var enableOnStackReplacement = false;
+  export var enableOnStackReplacement = true;
 
   /**
    * Turns on caching of JIT-compiled methods.
@@ -1167,6 +1167,7 @@ module J2ME {
       registerKlassSymbol(referencedClasses[i]);
     }
     */
+    methodInfo.fn = fn;
   }
 
   export function isAssignableTo(from: ClassInfo, to: ClassInfo): boolean {
