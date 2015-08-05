@@ -473,7 +473,7 @@ module J2ME {
         if (this.hasUnwindThrow) {
           var local = this.local.join(",");
           var stack = this.stack.join(",");
-          this.bodyEmitter.writeLn("if(U){$.T(ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+          this.bodyEmitter.writeLn("if(U){$.T(" + this.methodInfo.id + ",ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
         }
         this.bodyEmitter.writeLn(this.getStackName(0) + "=TE(ex)._address;");
         this.blockStack = [this.getStackName(0)];
@@ -946,25 +946,26 @@ module J2ME {
 
       var call;
       var classConstant = this.localClassConstant(methodInfo.classInfo);
+      var methodId = null;
       if (opcode !== Bytecodes.INVOKESTATIC) {
         var objectAddr = this.pop(Kind.Reference);
         this.emitNullPointerCheck(objectAddr);
         args.unshift(objectAddr);
         var objClass = "CI[i32[(" + objectAddr + " + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET + ")  >> 2]]";
         if (opcode === Bytecodes.INVOKESPECIAL) {
-          call = classConstant + ".getMethodByIndex(" + methodInfo.index + ")";
+          methodId = methodInfo.id;
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
-          call = objClass + ".vTable[" + methodInfo.vTableIndex + "]";
+          methodId = objClass + ".vTable[" + methodInfo.vTableIndex + "].id";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
-          call = objClass + ".iTable['" + methodInfo.mangledName + "']";
+          methodId = objClass + ".iTable['" + methodInfo.mangledName + "'].id";
         } else {
           Debug.unexpected(Bytecodes[opcode]);
         }
       } else {
         args.unshift(String(Constants.NULL));
-        call = classConstant + ".getMethodByIndex(" + methodInfo.index + ")";
+        methodId = methodInfo.id;
       }
-      call = "J2ME.getLinkedMethod(" + call + ")(" + args.join(",") + ")";
+      call = "(LM[" + methodId + "]||" + "GLM(MI[" + methodId + "]))(" + args.join(",") + ")";
 
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
@@ -1157,7 +1158,7 @@ module J2ME {
       } else {
         var local = this.local.join(",");
         var stack = this.blockStack.slice(0, this.sp).join(",");
-        emitter.writeLn("if(U){$.B(" + pc + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+        emitter.writeLn("if(U){$.B(" + this.methodInfo.id + "," + pc + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
       }
       baselineCounter && baselineCounter.count("emitUnwind");
     }
