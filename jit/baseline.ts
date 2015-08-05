@@ -909,7 +909,7 @@ module J2ME {
           (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.");
         } else {
           (emitDebugInfoComments || baselineCounter) && (message = "ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("if(!$.I[" + classInfo.id + "]) CIC(" + classConstant(classInfo) + ");");
+          this.blockEmitter.writeLn("$.I[" + classInfo.id + "] || CIC(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
