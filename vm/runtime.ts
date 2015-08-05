@@ -1504,8 +1504,8 @@ module J2ME {
   }
 
   export enum ConfigConstants {
-    InvokeThreshold = 1500,
-    BackwardBranchThreshold = 10000
+    InvokeThreshold = 1,
+    BackwardBranchThreshold = 1
   }
 
   export enum Constants {
@@ -1614,6 +1614,10 @@ module J2ME {
   }
 
   /**
+   * Helper methods used by the compiler.
+   */
+
+  /**
    * Generic unwind throw.
    */
   export function throwUnwind(pc: number, nextPC: number = pc + 3, sp: number = 0) {
@@ -1705,6 +1709,11 @@ module J2ME {
     }
   }
 
+  export function fneg(a: number): number {
+    aliasedF32[0] = -(aliasedI32[0] = a, aliasedF32[0]);
+    return aliasedI32[0];
+  }
+
   export function dcmp(al: number, ah: number, bl: number, bh: number, isLessThan: boolean) {
     var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
     var y = (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
@@ -1719,9 +1728,34 @@ module J2ME {
     }
   }
 
-  export function fneg(a: number): number {
-    aliasedF32[0] = -(aliasedI32[0] = a, aliasedF32[0]);
-    return aliasedI32[0];
+  export function dadd(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) +
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function dsub(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) -
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function dmul(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) *
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function ddiv(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) /
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function drem(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) %
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
   }
 
   export function dneg(al: number, ah: number): number {
@@ -1763,10 +1797,84 @@ module J2ME {
     return i32[tmpAddress >> 2];
   }
 
+  export function ladd(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lAdd(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lsub(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lSub(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lmul(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lSub(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function ldiv(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lDiv(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lrem(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lRem(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
   export function lneg(al: number, ah: number): number {
     i32[tmpAddress + 0 >> 2] = al;
     i32[tmpAddress + 4 >> 2] = ah;
     ASM._lNeg(tmpAddress, tmpAddress);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lshl(al: number, ah: number, shift: number): number {
+    i32[tmpAddress + 0 >> 2] = al;
+    i32[tmpAddress + 4 >> 2] = ah;
+    ASM._lShl(tmpAddress, tmpAddress, shift);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lshr(al: number, ah: number, shift: number): number {
+    i32[tmpAddress + 0 >> 2] = al;
+    i32[tmpAddress + 4 >> 2] = ah;
+    ASM._lShr(tmpAddress, tmpAddress, shift);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lushr(al: number, ah: number, shift: number): number {
+    i32[tmpAddress + 0 >> 2] = al;
+    i32[tmpAddress + 4 >> 2] = ah;
+    ASM._lUshr(tmpAddress, tmpAddress, shift);
     tempReturn0 = i32[tmpAddress + 4 >> 2];
     return i32[tmpAddress >> 2];
   }
@@ -1857,16 +1965,29 @@ var fdiv = J2ME.fdiv;
 var frem = J2ME.frem;
 var fneg = J2ME.fneg;
 
-var dneg = J2ME.dneg;
-
 var f2i = J2ME.f2i;
 var i2f = J2ME.i2f;
 var i2d = J2ME.i2d;
 var fcmp = J2ME.fcmp;
+
+var dneg = J2ME.dneg;
 var dcmp = J2ME.dcmp;
-var lcmp = J2ME.lcmp;
+var dadd = J2ME.dadd;
+var dsub = J2ME.dsub;
+var dmul = J2ME.dmul;
+var ddiv = J2ME.ddiv;
+var drem = J2ME.drem;
 
 var lneg = J2ME.lneg;
+var ladd = J2ME.ladd;
+var lsub = J2ME.lsub;
+var lmul = J2ME.lmul;
+var ldiv = J2ME.ldiv;
+var lrem = J2ME.lrem;
+var lcmp = J2ME.lcmp;
+var lshl = J2ME.lshl;
+var lshr = J2ME.lshr;
+var lushr = J2ME.lushr;
 
 var getHandle = J2ME.getHandle;
 

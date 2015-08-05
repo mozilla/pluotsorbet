@@ -1314,6 +1314,9 @@ module J2ME {
         case Bytecodes.FMUL:
         case Bytecodes.FDIV:
         case Bytecodes.FREM:
+          if (!jsGlobal[Bytecodes[opcode].toLowerCase()]) {
+            throwCompilerError(Bytecodes[opcode] + " not implemented.");
+          }
           this.emitPush(Kind.Float, Bytecodes[opcode].toLowerCase() + "(" + al + "," + bl + ")", Precedence.Sequence);
           break;
         case Bytecodes.LADD:
@@ -1354,6 +1357,9 @@ module J2ME {
           break;
         case Kind.Long:
         case Kind.Double:
+          if (!jsGlobal[Bytecodes[opcode].toLowerCase()]) {
+            throwCompilerError(Bytecodes[opcode] + " not implemented.");
+          }
           this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + ")", Precedence.Sequence);
           this.emitPush(Kind.Illegal, "tempReturn0", Precedence.Primary);
           break;
@@ -1364,38 +1370,54 @@ module J2ME {
 
     emitShiftOp(kind: Kind, opcode: Bytecodes) {
       var s = this.pop(Kind.Int);
-      var x = this.pop(kind);
+      var l, h;
+      if (isTwoSlot(kind)) {
+        h = this.pop(kind);
+        l = this.pop(kind);
+      } else {
+        l = this.pop(kind);
+      }
       var v;
       switch(opcode) {
-        case Bytecodes.ISHL:  this.emitPush(kind, x + "<<"  + s, Precedence.BitwiseShift); return;
-        case Bytecodes.ISHR:  this.emitPush(kind, x + ">>"  + s, Precedence.BitwiseShift); return;
-        case Bytecodes.IUSHR: this.emitPush(kind, x + ">>>" + s, Precedence.BitwiseShift); return;
-
-        //case Bytecodes.LSHL: v = x + ".shiftLeft(" + s + ")"; break;
-        //case Bytecodes.LSHR: v = x + ".shiftRight(" + s + ")"; break;
-        //case Bytecodes.LUSHR: v = x + ".shiftRightUnsigned(" + s + ")"; break;
+        case Bytecodes.ISHL:  this.emitPush(kind, l + "<<"  + s, Precedence.BitwiseShift); return;
+        case Bytecodes.ISHR:  this.emitPush(kind, l + ">>"  + s, Precedence.BitwiseShift); return;
+        case Bytecodes.IUSHR: this.emitPush(kind, l + ">>>" + s, Precedence.BitwiseShift); return;
+        case Bytecodes.LSHL:
+        case Bytecodes.LSHR:
+        case Bytecodes.LUSHR:
+          if (!jsGlobal[Bytecodes[opcode].toLowerCase()]) {
+            throwCompilerError(Bytecodes[opcode] + " not implemented.");
+          }
+          this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + "," + s + ")", Precedence.Sequence);
+          this.emitPush(Kind.Illegal, "tempReturn0", Precedence.Primary);
+          return;
         default:
           Debug.unexpected(Bytecodes[opcode]);
       }
-      this.emitPush(kind, v, Precedence.Call);
     }
 
     emitLogicOp(kind: Kind, opcode: Bytecodes) {
-      var y = this.pop(kind);
-      var x = this.pop(kind);
-      var v;
+      var al, ah;
+      var bl, bh;
+      if (isTwoSlot(kind)) {
+        bh = this.pop(kind), bl = this.pop(kind);
+        ah = this.pop(kind), al = this.pop(kind);
+      } else {
+        bl = this.pop(kind), al = this.pop(kind);
+      }
       switch(opcode) {
-        case Bytecodes.IAND: this.emitPush(kind, x + "&" + y, Precedence.BitwiseAND); return;
-        case Bytecodes.IOR:  this.emitPush(kind, x + "|" + y, Precedence.BitwiseOR);  return;
-        case Bytecodes.IXOR: this.emitPush(kind, x + "^" + y, Precedence.BitwiseXOR); return;
-
-        //case Bytecodes.LAND: v = x + ".and(" + y + ")"; break;
-        //case Bytecodes.LOR:  v = x + ".or(" + y + ")"; break;
-        //case Bytecodes.LXOR: v = x + ".xor(" + y + ")"; break;
+        case Bytecodes.IAND: this.emitPush(kind, al + "&" + bl, Precedence.BitwiseAND); return;
+        case Bytecodes.IOR:  this.emitPush(kind, al + "|" + bl, Precedence.BitwiseOR);  return;
+        case Bytecodes.IXOR: this.emitPush(kind, al + "^" + bl, Precedence.BitwiseXOR); return;
+        case Bytecodes.LAND: this.emitPush(kind, al + "&" + bl, Precedence.BitwiseAND);
+                             this.emitPush(kind, ah + "&" + bh, Precedence.BitwiseAND); return;
+        case Bytecodes.LOR:  this.emitPush(kind, al + "|" + bl, Precedence.BitwiseOR);
+                             this.emitPush(kind, ah + "|" + bh, Precedence.BitwiseOR); return;
+        case Bytecodes.LXOR: this.emitPush(kind, al + "^" + bl, Precedence.BitwiseXOR);
+                             this.emitPush(kind, ah + "^" + bh, Precedence.BitwiseXOR); return;
         default:
           Debug.unexpected(Bytecodes[opcode]);
       }
-      this.emitPush(kind, v, Precedence.Call);
     }
 
     emitConvertOp(from: Kind, to: Kind, opcode: Bytecodes) {
