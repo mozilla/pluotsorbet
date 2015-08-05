@@ -58,7 +58,7 @@ module J2ME {
   /**
    * Turns on onStackReplacement
    */
-  export var enableOnStackReplacement = false;
+  export var enableOnStackReplacement = true;
 
   /**
    * Turns on caching of JIT-compiled methods.
@@ -148,7 +148,6 @@ module J2ME {
   export var runtimeCounter = release ? null : new Metrics.Counter(true);
   export var baselineMethodCounter = release ? null : new Metrics.Counter(true);
   export var asyncCounter = release ? null : new Metrics.Counter(true);
-  export var jitMethodInfos = {};
 
   export var unwindCount = 0;
 
@@ -626,24 +625,32 @@ module J2ME {
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
     id: number;
+    /**
+     * Short alias of initialized for compiled code.
+     */
+    I: any [];
 
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
+    B(methodInfoId: number, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, pc, local, stack, lockObject);
+      this.ctx.bailout(methodInfo, pc, local, stack, lockObject);
     }
 
     /**
      * Bailout callback whenever a JIT frame is unwound that uses a slightly different calling
      * convetion that makes it more convenient to emit in some cases.
      */
-    T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
+    T(methodInfoId: number, location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
+      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
       release || assert(methodInfo !== undefined);
-      $.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
+      this.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
+    }
+
+    SA(classId: number) {
+      return this.getStaticObjectAddress(classIdToClassInfoMap[classId]);
     }
 
     yield(reason: string) {
@@ -652,7 +659,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
       profile && $.ctx.pauseMethodTimeline();
-      $.ctx.nativeThread.beginUnwind();
+      this.ctx.nativeThread.beginUnwind();
     }
 
     nativeBailout(returnKind: Kind, opCode?: Bytecode.Bytecodes) {
@@ -667,7 +674,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
       profile && $.ctx.pauseMethodTimeline();
-      $.ctx.nativeThread.beginUnwind();
+      this.ctx.nativeThread.beginUnwind();
     }
 
     stop() {
@@ -677,11 +684,13 @@ module J2ME {
     constructor(jvm: JVM) {
       super(jvm);
       this.id = Runtime._nextId ++;
+      this.I = this.initialized;
     }
   }
 
   export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
   export var methodIdToMethodInfoMap: Map<number, MethodInfo> = Object.create(null);
+  export var linkedMethods: Map<number, Function> = Object.create(null);
 
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL);
@@ -779,24 +788,25 @@ module J2ME {
   var frameView = new FrameView();
 
   function findCompiledMethod(methodInfo: MethodInfo): Function {
+    return;
     // Use aotMetaData to find AOT methods instead of jsGlobal because runtime compiled methods may
     // be on the jsGlobal.
-    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-    if (aotMetaData[mangledClassAndMethodName]) {
-      aotMethodCount++;
-      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
-      release || assert(jsGlobal[mangledClassAndMethodName], "function must be present when aotMetaData exists");
-      return jsGlobal[mangledClassAndMethodName];
-    }
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
-        cachedMethodCount ++;
-        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      }
-    }
-
-    return jsGlobal[mangledClassAndMethodName];
+    //var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
+    //if (aotMetaData[mangledClassAndMethodName]) {
+    //  aotMethodCount++;
+    //  methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
+    //  release || assert(jsGlobal[mangledClassAndMethodName], "function must be present when aotMetaData exists");
+    //  return jsGlobal[mangledClassAndMethodName];
+    //}
+    //if (enableCompiledMethodCache) {
+    //  var cachedMethod;
+    //  if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+    //    cachedMethodCount ++;
+    //    linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
+    //  }
+    //}
+    //
+    //return jsGlobal[mangledClassAndMethodName];
   }
 
   /**
@@ -967,13 +977,13 @@ module J2ME {
     if (methodInfo.fn) {
       return methodInfo.fn;
     }
-    linkClassMethod(methodInfo);
+    linkMethod(methodInfo);
     release || assert (methodInfo.fn);
     return methodInfo.fn;
   }
 
-  function linkClassMethod(methodInfo: MethodInfo) {
-    runtimeCounter && runtimeCounter.count("linkClassMethod");
+  function linkMethod(methodInfo: MethodInfo) {
+    runtimeCounter && runtimeCounter.count("linkMethod");
     var fn;
     var methodType;
     var nativeMethod = findNativeMethodImplementation(methodInfo);
@@ -987,9 +997,6 @@ module J2ME {
       if (fn) {
         linkWriter && linkWriter.greenLn("Method: " + methodInfo.name + methodInfo.signature + " -> Compiled");
         methodType = MethodType.Compiled;
-        // Save method info so that we can figure out where we are bailing
-        // out from.
-        jitMethodInfos[fn.name] = methodInfo;
         methodInfo.state = MethodState.Compiled;
       } else {
         linkWriter && linkWriter.warnLn("Method: " + methodInfo.name + methodInfo.signature + " -> Interpreter");
@@ -997,12 +1004,7 @@ module J2ME {
         fn = prepareInterpretedMethod(methodInfo);
       }
     }
-
-    if (profile || traceWriter) {
-      fn = wrapMethod(fn, methodInfo, methodType);
-    }
-
-    methodInfo.fn = fn;
+    linkMethodFunction(methodInfo, fn, methodType);
   }
 
   /**
@@ -1056,14 +1058,14 @@ module J2ME {
       return;
     }
 
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
-        cachedMethodCount ++;
-        jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      }
-    }
+    //if (enableCompiledMethodCache) {
+    //  var cachedMethod;
+    //  if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+    //    cachedMethodCount ++;
+    //    jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
+    //    return linkMethodSource(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
+    //  }
+    //}
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
@@ -1082,24 +1084,20 @@ module J2ME {
       return;
     }
     leaveTimeline("Compiling");
-    var compiledMethodName = mangledClassAndMethodName;
-    var source = "function " + compiledMethodName +
-                 "(" + compiledMethod.args.join(",") + ") {\n" +
-                   compiledMethod.body +
-                 "\n}";
-
-    codeWriter && codeWriter.writeLns(source);
+    codeWriter && codeWriter.writeLn("// Method: " + methodInfo.implKey);
+    codeWriter && codeWriter.writeLn("// Arguments: " + compiledMethod.args.join(", "));
+    codeWriter && codeWriter.writeLns(compiledMethod.body);
     var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.getClassNameSlow() });
 
-    if (enableCompiledMethodCache) {
-      CompiledMethodCache.put({
-        key: methodInfo.implKey,
-        source: source,
-        referencedClasses: referencedClasses,
-        onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
-      });
-    }
-    linkMethod(methodInfo, source, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
+    //if (enableCompiledMethodCache) {
+    //  CompiledMethodCache.put({
+    //    key: methodInfo.implKey,
+    //    source: source,
+    //    referencedClasses: referencedClasses,
+    //    onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
+    //  });
+    //}
+    linkMethodSource(methodInfo, compiledMethod.args, compiledMethod.body, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
     var methodJITTime = (performance.now() - s);
     totalJITTime += methodJITTime;
     if (jitWriter) {
@@ -1122,46 +1120,30 @@ module J2ME {
     return fn;
   }
 
+  function linkMethodFunction(methodInfo: MethodInfo, fn: Function, methodType: MethodType) {
+    if (profile || traceWriter) {
+      fn = wrapMethod(fn, methodInfo, methodType);
+    }
+
+    methodInfo.fn = fn;
+    linkedMethods[methodInfo.id] = fn;
+  }
+
   /**
    * Links up compiled method at runtime.
    */
-  export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
+  export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
-    (1, eval)(source);
+    var fn = new Function(args.join(','), body);
     leaveTimeline("Eval Compiled Code");
 
-    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-    var fn = jsGlobal[mangledClassAndMethodName];
-    if (profile || traceWriter) {
-      fn = wrapMethod(fn, methodInfo, MethodType.Compiled);
-    }
-    /* XXX:
-    var klass = methodInfo.classInfo.klass;
-    klass.M[methodInfo.index] = methodInfo.fn = fn;
-    */
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 
-    /* XXX:
-    // Link member methods on the prototype.
-    if (!methodInfo.isStatic && methodInfo.virtualName) {
-      klass.prototype[methodInfo.virtualName] = fn;
-    }
-    */
-
-    // Make JITed code available in the |jitMethodInfos| so that bailout
-    // code can figure out the caller.
-    jitMethodInfos[mangledClassAndMethodName] = methodInfo;
-
-    // Make sure all the referenced symbols are registered.
-    /* XXX:
-    for (var i = 0; i < referencedClasses.length; i++) {
-      registerKlassSymbol(referencedClasses[i]);
-    }
-    */
+    linkMethodFunction(methodInfo, fn, MethodType.Compiled);
   }
 
   export function isAssignableTo(from: ClassInfo, to: ClassInfo): boolean {
@@ -1927,6 +1909,12 @@ var O: J2ME.MethodInfo = null;
  */
 
 var CI = J2ME.classIdToClassInfoMap;
+var MI = J2ME.methodIdToMethodInfoMap;
+var LM = J2ME.linkedMethods;
+var GLM = J2ME.getLinkedMethod;
+var CIC = J2ME.classInitCheck;
+var GH = J2ME.getHandle;
+var AO = J2ME.allocObject;
 
 var IOK = J2ME.instanceOfKlass;
 var IOI = J2ME.instanceOfInterface;

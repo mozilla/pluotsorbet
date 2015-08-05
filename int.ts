@@ -1557,8 +1557,9 @@ module J2ME {
                   var frameTypeOffset = thread.fp - mi.codeAttribute.max_locals + FrameLayout.FrameTypeOffset;
 
                   returnValue = mi.fn.call();
+                  release || assert(O === null, "OSR frame must be removed.");
                   if (!release) {
-                    checkReturnValue(mi, returnValue, tempReturn0);
+                    //checkReturnValue(mi, returnValue, tempReturn0);
                   }
 
                   if (U) {

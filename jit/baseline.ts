@@ -469,7 +469,7 @@ module J2ME {
         if (this.hasUnwindThrow) {
           var local = this.local.join(",");
           var stack = this.stack.join(",");
-          this.bodyEmitter.writeLn("if(U){$.T(ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+          this.bodyEmitter.writeLn("if(U){$.T(" + this.methodInfo.id + ",ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
         }
         this.bodyEmitter.writeLn(this.getStackName(0) + "=TE(ex)._address;");
         this.blockStack = [this.getStackName(0)];
@@ -482,7 +482,7 @@ module J2ME {
         if (this.methodInfo.isSynchronized) {
           this.emitMonitorExit(this.bodyEmitter, this.lockObject);
         }
-        this.bodyEmitter.writeLn("throw J2ME.getHandle(" + this.peek(Kind.Reference) + ");");
+        this.bodyEmitter.writeLn("throw GH(" + this.peek(Kind.Reference) + ");");
         this.bodyEmitter.leave("}");
       }
       if (needsWhile) {
@@ -611,7 +611,7 @@ module J2ME {
 
       if (needsOSREntryPoint) {
         // Are we doing an OSR?
-        this.bodyEmitter.enter("if(O){debugger;");
+        this.bodyEmitter.enter("if(O){");
         this.bodyEmitter.writeLn("var nt=$.ctx.nativeThread;");
         this.bodyEmitter.writeLn("var fp=nt.fp;");
         this.bodyEmitter.writeLn("var lp=fp-" + this.methodInfo.codeAttribute.max_locals +";");
@@ -624,7 +624,7 @@ module J2ME {
         this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
         this.needsVariable("re");
         if (!this.methodInfo.isStatic) {
-          this.bodyEmitter.writeLn("ins=J2ME.getMonitor(i32[fp+" + FrameLayout.MonitorOffset + "])");
+          this.bodyEmitter.writeLn("ins=i32[fp+" + FrameLayout.MonitorOffset + "]");
         }
         this.bodyEmitter.writeLn("pc=nt.pc;");
         this.bodyEmitter.writeLn("nt.popFrame(O);");
@@ -909,11 +909,11 @@ module J2ME {
     }
 
     runtimeClass(classInfo: ClassInfo) {
-      return "$.getStaticObjectAddress(" + classConstant(classInfo) + ")";
+      return "$.SA(" + classInfo.id + ")";
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
-      return "$.getClassObjectAddress(" + classConstant(classInfo) + ")";
+      return "$.SA(" + classInfo.id + ")";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
@@ -921,28 +921,24 @@ module J2ME {
         classInfo = (<ArrayClassInfo>classInfo).elementClass;
       }
       if (!CLASSES.isPreInitializedClass(classInfo)) {
+        var message;
         if (this.initializedClasses[classInfo.id]) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", block redundant.";
-          emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
-          baselineCounter && baselineCounter.count(message);
+          (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", block redundant.");
         } else if (classInfo === this.methodInfo.classInfo) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", self access.";
-          emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
-          baselineCounter && baselineCounter.count(message);
+          (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", self access.");
         } else if (!classInfo.isInterface && this.methodInfo.classInfo.isAssignableTo(classInfo)) {
-          var message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.";
-          emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
-          baselineCounter && baselineCounter.count(message);
+          (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.");
         } else {
-          baselineCounter && baselineCounter.count("ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          emitDebugInfoComments && this.blockEmitter.writeLn("// ClassInitializationCheck " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("if($.initialized[" + classInfo.id + "]===undefined) J2ME.classInitCheck(" + classConstant(classInfo) + ");");
+          (emitDebugInfoComments || baselineCounter) && (message = "ClassInitializationCheck: " + classInfo.getClassNameSlow());
+          this.blockEmitter.writeLn("$.I[" + classInfo.id + "] || CIC(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
             emitCompilerAssertions && this.emitNoUnwindAssertion();
           }
         }
+        emitDebugInfoComments && this.blockEmitter.writeLn("// " + message);
+        baselineCounter && baselineCounter.count(message);
         this.initializedClasses[classInfo.id] = true;
       }
     }
@@ -967,25 +963,26 @@ module J2ME {
 
       var call;
       var classConstant = this.localClassConstant(methodInfo.classInfo);
+      var methodId = null;
       if (opcode !== Bytecodes.INVOKESTATIC) {
         var objectAddr = this.pop(Kind.Reference);
         this.emitNullPointerCheck(objectAddr);
         args.unshift(objectAddr);
-        var objClass = "CI[i32[(" + objectAddr + " + " + J2ME.Constants.OBJ_CLASS_ID_OFFSET + ")  >> 2]]";
+        var objClass = "CI[i32[(" + objectAddr + " + " + Constants.OBJ_CLASS_ID_OFFSET + ")  >> 2]]";
         if (opcode === Bytecodes.INVOKESPECIAL) {
-          call = classConstant + ".getMethodByIndex(" + methodInfo.index + ")";
+          methodId = methodInfo.id;
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
-          call = objClass + ".vTable[" + methodInfo.vTableIndex + "]";
+          methodId = objClass + ".vTable[" + methodInfo.vTableIndex + "].id";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
-          call = objClass + ".iTable['" + methodInfo.mangledName + "']";
+          methodId = objClass + ".iTable['" + methodInfo.mangledName + "'].id";
         } else {
           Debug.unexpected(Bytecodes[opcode]);
         }
       } else {
         args.unshift(String(Constants.NULL));
-        call = classConstant + ".getMethodByIndex(" + methodInfo.index + ")";
+        methodId = methodInfo.id;
       }
-      call = "J2ME.getLinkedMethod(" + call + ")(" + args.join(",") + ")";
+      call = "(LM[" + methodId + "]||" + "GLM(MI[" + methodId + "]))(" + args.join(",") + ")";
 
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);
@@ -1093,13 +1090,13 @@ module J2ME {
     emitThrow(pc: number) {
       var objectAddr = this.peek(Kind.Reference);
       this.emitNullPointerCheck(objectAddr);
-      this.blockEmitter.writeLn("throw J2ME.getHandle(" + objectAddr + ");");
+      this.blockEmitter.writeLn("throw GH(" + objectAddr + ");");
     }
 
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "J2ME.allocObject(J2ME.classIdToClassInfoMap[" + classInfo.id + "])", Precedence.New);
+      this.emitPush(Kind.Reference, "AO(" + this.localClassConstant(classInfo) + ")", Precedence.New);
     }
 
     emitNewTypeArray(typeCode: number) {
@@ -1107,7 +1104,7 @@ module J2ME {
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
       // TODO: inline the logic for allocating a new array.
-      this.emitPush(Kind.Reference, "J2ME.newArray(J2ME.PrimitiveClassInfo." + "????ZCFDBSIJ"[typeCode] + ", " + length + ")", Precedence.New);
+      this.emitPush(Kind.Reference, "NA(J2ME.PrimitiveClassInfo." + "????ZCFDBSIJ"[typeCode] + ", " + length + ")", Precedence.New);
     }
 
     emitCheckCast(cpi: number) {
@@ -1157,7 +1154,7 @@ module J2ME {
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      this.emitPush(Kind.Reference, "J2ME.newArray(J2ME.classIdToClassInfoMap[" + classInfo.id + "], " + length + ")", Precedence.Call);
+      this.emitPush(Kind.Reference, "NA(" + this.localClassConstant(classInfo) + ", " + length + ")", Precedence.Call);
     }
 
     emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
@@ -1180,7 +1177,7 @@ module J2ME {
       } else {
         var local = this.local.join(",");
         var stack = this.blockStack.slice(0, this.sp).join(",");
-        emitter.writeLn("if(U){$.B(" + pc + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+        emitter.writeLn("if(U){$.B(" + this.methodInfo.id + "," + pc + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
       }
       baselineCounter && baselineCounter.count("emitUnwind");
     }

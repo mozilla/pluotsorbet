@@ -90,7 +90,12 @@ if (files.length !== 1) {
 
 var navigator = {
   language: "en-US",
+  userAgent: "jsshell",
 };
+
+function Image() {}
+
+function alert() {}
 
 var document = {
   documentElement: {
@@ -124,9 +129,14 @@ var document = {
       dispatchEvent: function(event) {
       },
       style: "",
+      removeChild: function(elem) {
+      }
     };
   },
   addEventListener: function() {
+  },
+  createElementNS: function() {
+    return {}
   },
 };
 
@@ -139,7 +149,10 @@ var window = {
     getRandomValues: function() {
     },
   },
+  document: document,
+  console: console,
 };
+window.parent = window;
 
 this.nextTickBeforeEvents = window.nextTickBeforeEvents =
 this.nextTickDuringEvents = window.nextTickDuringEvents =
@@ -177,28 +190,10 @@ try {
   if (profileTimeline) {
     load("bld/shumway.js");
   }
-  load("polyfill/promise.js", "libs/encoding.js", "libs/relooper.js", "bld/native.js", "bld/j2me.js",
-    "libs/zipfile.js",
-    "blackBox.js",
-    "util.js",
-    "libs/jarstore.js",
-    "native.js",
-    "midp/content.js",
-    "midp/midp.js",
-    "midp/frameanimator.js",
-    "midp/fs.js",
-    "midp/crypto.js",
-    "midp/text_editor.js",
-    "midp/device_control.js",
-    "midp/crypto.js",
-    "libs/forge/util.js",
-    "libs/forge/md5.js",
-    "libs/jsbn/jsbn.js",
-    "libs/jsbn/jsbn2.js"
-    // "bld/classes.jar.js"
-  );
-
+  load("polyfill/promise.js", "libs/encoding.js", "libs/relooper.js", "bld/native.js", "bld/j2me.js");
   microTaskQueue = new J2ME.Shell.MicroTasksQueue();
+  load("bld/main-all.js");
+
 
   // load("bld/classes.jar.js");
   // load("bld/program.jar.js");
@@ -223,7 +218,6 @@ try {
   CLASSES.initializeBuiltinClasses();
 
   var start = dateNow();
-  var jvm = new JVM();
 
   var writers = J2ME.WriterFlags.None;
   if (options.writers.value.indexOf("t") >= 0) {

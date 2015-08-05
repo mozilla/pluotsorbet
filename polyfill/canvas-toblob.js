@@ -3,7 +3,7 @@
 
 'use strict';
 
-if (!HTMLCanvasElement.prototype.toBlob) {
+if (inBrowser && !HTMLCanvasElement.prototype.toBlob) {
  Object.defineProperty(HTMLCanvasElement.prototype, 'toBlob', {
   value: function (callback, type, quality) {
 
