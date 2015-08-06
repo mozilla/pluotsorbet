@@ -1547,7 +1547,7 @@ module J2ME {
 
       switch (opcode) {
         case Bytecodes.NOP            : break;
-        case Bytecodes.ACONST_NULL    : this.emitPush(Kind.Reference, "null", Precedence.Primary); break;
+        case Bytecodes.ACONST_NULL    : this.emitPushBits(Kind.Reference, Constants.NULL); break;
         case Bytecodes.ICONST_M1      :
         case Bytecodes.ICONST_0       :
         case Bytecodes.ICONST_1       :
