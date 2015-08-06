@@ -1437,12 +1437,6 @@ module J2ME {
     }
   }
 
-  export function checkDivideByZeroLong(low: number, high: number) {
-    if (low === 0 && high === 0) {
-      throwArithmeticException();
-    }
-  }
-
   /**
    * Do bounds check using only one branch. The math works out because array.length
    * can't be larger than 2^31 - 1. So |index| >>> 0 will be larger than
@@ -1927,8 +1921,7 @@ var CCI = J2ME.checkCastInterface;
 var NA = J2ME.newArray;
 var NM = J2ME.newMultiArray;
 
-var CDZ = J2ME.checkDivideByZero;
-var CDZL = J2ME.checkDivideByZeroLong;
+
 
 var CAB = J2ME.checkArrayBounds;
 var CAS = J2ME.checkArrayStore;

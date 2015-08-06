@@ -772,12 +772,7 @@ module J2ME {
 
     emitPushBits(kind: Kind, v: number) {
       release || assert((v | 0) === v);
-      var s = String(v);
-      if (v < 0) {
-        this.emitPush(kind, s, Precedence.UnaryNegation);
-      } else {
-        this.emitPush(kind, s, Precedence.Primary);
-      }
+      this.emitPush(kind, "(0x" + (v>>>0).toString(16) + "|0)", Precedence.Primary);
     }
 
     emitPushInt(v: number) {
@@ -1266,15 +1261,16 @@ module J2ME {
       }
     }
 
-    emitDivideByZeroCheck(kind: Kind, value: string) {
+    emitDivideByZeroCheck(kind: Kind, l: string, h: string) {
       if (this.isPrivileged) {
         return;
       }
-      if (inlineRuntimeCalls && kind !== Kind.Long) {
-        this.blockEmitter.writeLn(value + "===0&&TA();");
+      if (kind === Kind.Int) {
+        this.blockEmitter.writeLn(l + "===0&&TA();");
+      } else if (kind === Kind.Long) {
+        this.blockEmitter.writeLn(l + "===0&&" + h + "===0&&TA();");
       } else {
-        var checkName = kind === Kind.Long ? "CDZL" : "CDZ";
-        this.blockEmitter.writeLn(checkName + "(" + value + ");");
+        Debug.unexpected(Kind[kind]);
       }
     }
 
@@ -1288,7 +1284,7 @@ module J2ME {
         bl = this.pop(kind), al = this.pop(kind);
       }
       if (canTrap) {
-        this.emitDivideByZeroCheck(kind, bl);
+        this.emitDivideByZeroCheck(kind, bl, bh);
       }
       switch (opcode) {
         case Bytecodes.IADD:
