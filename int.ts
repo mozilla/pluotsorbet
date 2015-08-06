@@ -652,6 +652,9 @@ module J2ME {
         $.ctx.monitorEnter(getMonitor(monitorAddr));
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
+          // Splice out the marker frame so the interpreter doesn't return early when execution is resumed.
+          i32[calleeFP + FrameLayout.CallerFPOffset] = callerFP;
+          i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
           return;
         }
       }
