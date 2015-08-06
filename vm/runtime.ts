@@ -1486,8 +1486,8 @@ module J2ME {
   }
 
   export enum ConfigConstants {
-    InvokeThreshold = 1500,
-    BackwardBranchThreshold = 10000
+    InvokeThreshold = 100,
+    BackwardBranchThreshold = 100000
   }
 
   export enum Constants {
