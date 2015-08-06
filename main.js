@@ -64,10 +64,6 @@ function processJAD(data) {
   });
 }
 
-if (config.jad) {
-  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
-}
-
 function performDownload(url, callback) {
   showDownloadScreen();
   var progressBar = downloadDialog.querySelector('progress.pack-activity');
@@ -107,7 +103,9 @@ function performDownload(url, callback) {
   });
 }
 
-if (config.downloadJAD) {
+if (config.jad) {
+  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD));
+} else if (config.downloadJAD) {
   loadingMIDletPromises.push(new Promise(function(resolve, reject) {
     JARStore.loadJAR("midlet.jar").then(function(loaded) {
       if (loaded) {
@@ -125,12 +123,16 @@ if (config.downloadJAD) {
         showSplashScreen();
 
         JARStore.installJAR("midlet.jar", data.jarData, data.jadData).then(function() {
-          processJAD(data.jadData);
+          processJAD(JARStore.getJAD());
           resolve();
         });
       });
     });
-  }).then(backgroundCheck));
+  }));
+}
+
+if (config.jad || config.downloadJAD) {
+  Promise.all(loadingMIDletPromises).then(backgroundCheck);
 }
 
 var loadingFGPromises = [ emoji.loadData() ];

@@ -84,7 +84,10 @@ module J2ME {
       throw new Error(message);
     }
 
-    export function assert(condition: any, message: any = "assertion failed") {
+    export function assert(condition: any, message: string) {
+      if (!message) {
+        message = "Assertion failed with no message!!!";
+      }
       if (condition === "") {     // avoid inadvertent false positive
         condition = true;
       }
@@ -132,7 +135,7 @@ module J2ME {
      * popManyInto([1, 2, 3], 2, dst) => dst = [2, 3]
      */
     export function popManyInto(src: any [], count: number, dst: any []) {
-      release || assert(src.length >= count);
+      release || assert(src.length >= count, "bad length in popManyInto");
       for (var i = count - 1; i >= 0; i--) {
         dst[i] = src.pop();
       }
@@ -238,7 +241,7 @@ module J2ME {
     export function variableLengthEncodeInt32(n) {
       var e = _encoding;
       var bitCount = (32 - Math.clz32(n));
-      release || assert (bitCount <= 32, bitCount);
+      release || assert (bitCount <= 32, "variableLengthEncoding: " + bitCount);
       var l = Math.ceil(bitCount / 6);
       var a = arrays[l];
       // Encode length followed by six bit chunks.
@@ -787,7 +790,7 @@ module J2ME {
       }
 
       forEach(fn) {
-        release || assert(fn);
+        release || assert(fn, "bad fn in forEach");
         var bits = this.bits;
         for (var i = 0, j = bits.length; i < j; i++) {
           var word = bits[i];

@@ -456,8 +456,8 @@ module J2ME.Bytecode {
   if (!release) {
     function define(opcode: number, name: string, format: string, flags_: Flags = 0) {
       var instructionLength = format.length;
-      assert(length[opcode] === instructionLength);
-      assert(flags[opcode] === flags_);
+      assert(length[opcode] === instructionLength, "Wrong instruction length");
+      assert(flags[opcode] === flags_, "Wrong flags");
       assert(!isConditionalBranch(opcode) || isBranch(opcode), "a conditional branch must also be a branch");
     }
 
@@ -1057,7 +1057,7 @@ module J2ME.Bytecode {
      * Sets the current opcode.
      */
     public writeCurrentBC(bc: Bytecodes) {
-      assert(lengthOf(this.currentBC()) === lengthOf(bc));
+      assert(lengthOf(this.currentBC()) === lengthOf(bc), "Wrong BC length");
       this._code[this._currentBCI] = bc;
     }
 
