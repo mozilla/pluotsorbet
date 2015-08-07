@@ -767,14 +767,18 @@ module J2ME {
       } else {
         l = this.pop(kind);
       }
-      var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
+      var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       if (!isStatic) {
-        this.emitNullPointerCheck(objectAddr);
+        this.emitNullPointerCheck(object);
       }
-      var addr = objectAddr + "+" + fieldInfo.byteOffset;
-      this.blockEmitter.writeLn("i32[" + addr + ">>2]=" + l + ";");
+      var address = object + "+" + fieldInfo.byteOffset;
       if (isTwoSlot(kind)) {
-        this.blockEmitter.writeLn("i32[" + addr + "+4>>2]=" + h + ";");
+        this.needsVariable("ea");
+        this.blockEmitter.writeLn("ea=" + address + ";");
+        this.blockEmitter.writeLn("i32[ea>>2]=" + l + ";");
+        this.blockEmitter.writeLn("i32[ea+4>>2]=" + h + ";");
+      } else {
+        this.blockEmitter.writeLn("i32[" + address + ">>2]=" + l + ";");
       }
     }
 
@@ -868,10 +872,10 @@ module J2ME {
       var classConstant = this.localClassConstant(methodInfo.classInfo);
       var methodId = null;
       if (opcode !== Bytecodes.INVOKESTATIC) {
-        var objectAddr = this.pop(Kind.Reference);
-        this.emitNullPointerCheck(objectAddr);
-        args.unshift(objectAddr);
-        var objClass = "CI[i32[(" + objectAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + ")>>2]]";
+        var object = this.pop(Kind.Reference);
+        this.emitNullPointerCheck(object);
+        args.unshift(object);
+        var objClass = "CI[i32[(" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ")>>2]]";
         if (opcode === Bytecodes.INVOKESPECIAL) {
           methodId = methodInfo.id;
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
@@ -951,23 +955,25 @@ module J2ME {
       var base = array + "+" + Constants.ARRAY_HDR_SIZE;
       switch (kind) {
         case Kind.Byte:
-          this.blockEmitter.writeLn("i8[" + base + "+(" + index + ")]=" + l + ";");
+          this.blockEmitter.writeLn("i8[" + base + "+" + index + "]=" + l + ";");
           return;
         case Kind.Char:
-          this.blockEmitter.writeLn("u16[(" + base + ">>1)+(" + index + ")]=" + l + ";");
+          this.blockEmitter.writeLn("u16[(" + base + ">>1)+" + index + "]=" + l + ";");
           return;
         case Kind.Short:
-          this.blockEmitter.writeLn("i16[(" + base + ">>1)+(" + index + ")]=" + l + ";");
+          this.blockEmitter.writeLn("i16[(" + base + ">>1)+" + index + "]=" + l + ";");
           return;
         case Kind.Int:
         case Kind.Float:
         case Kind.Reference:
-          this.blockEmitter.writeLn("i32[(" + base + ">>2)+(" + index + ")]=" + l + ";");
+          this.blockEmitter.writeLn("i32[(" + base + ">>2)+" + index + "]=" + l + ";");
           return;
         case Kind.Long:
         case Kind.Double:
-          this.blockEmitter.writeLn("i32[(" + base + ">>2)+(" + index + "<<1)]=" + l + ";");
-          this.blockEmitter.writeLn("i32[(" + base + ">>2)+(" + index + "<<1)+1]=" + h + ";");
+          this.needsVariable("ea");
+          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1);");
+          this.blockEmitter.writeLn("i32[ea]=" + l + ";");
+          this.blockEmitter.writeLn("i32[ea+1]=" + h + ";");
           return;
         default:
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
@@ -983,18 +989,18 @@ module J2ME {
       var base = array + "+" + Constants.ARRAY_HDR_SIZE;
       switch (kind) {
         case Kind.Byte:
-          this.emitPush(kind, "i8[" + base + "+(" + index + ")]");
+          this.emitPush(kind, "i8[" + base + "+" + index + "]");
           break;
         case Kind.Char:
-          this.emitPush(kind, "u16[(" + base + ">>1)+(" + index + ")]");
+          this.emitPush(kind, "u16[(" + base + ">>1)+" + index + "]");
           break;
         case Kind.Short:
-          this.emitPush(kind, "i16[(" + base + ">>1)+(" + index + ")]");
+          this.emitPush(kind, "i16[(" + base + ">>1)+" + index + "]");
           break;
         case Kind.Int:
         case Kind.Float:
         case Kind.Reference:
-          this.emitPush(kind, "i32[(" + base + ">>2)+(" + index + ")]");
+          this.emitPush(kind, "i32[(" + base + ">>2)+" + index + "]");
           break;
         case Kind.Long:
         case Kind.Double:
@@ -1046,9 +1052,9 @@ module J2ME {
     }
 
     emitThrow(pc: number) {
-      var objectAddr = this.peek(Kind.Reference);
-      this.emitNullPointerCheck(objectAddr);
-      this.blockEmitter.writeLn("throw GH(" + objectAddr + ");");
+      var object = this.peek(Kind.Reference);
+      this.emitNullPointerCheck(object);
+      this.blockEmitter.writeLn("throw GH(" + object + ");");
     }
 
     emitNewInstance(cpi: number) {
@@ -1066,7 +1072,7 @@ module J2ME {
     }
 
     emitCheckCast(cpi: number) {
-      var objectAddr = this.peek(Kind.Reference);
+      var object = this.peek(Kind.Reference);
       if (this.isPrivileged) {
         return;
       }
@@ -1075,24 +1081,24 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "CCI";
       }
-      call = call + "(" + objectAddr + "," + classInfo.id + ")"
+      call = call + "(" + object + "," + classInfo.id + ")"
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("(!" + objectAddr + ")||i32[" + objectAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]===" + classInfo.id + "||" + call + ";");
+        this.blockEmitter.writeLn("(!" + object + ")||i32[" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]===" + classInfo.id + "||" + call + ";");
       } else {
         this.blockEmitter.writeLn(call + ";");
       }
     }
 
     emitInstanceOf(cpi: number) {
-      var objectAddr = this.pop(Kind.Reference);
+      var object = this.pop(Kind.Reference);
       var classInfo = this.lookupClass(cpi);
       var call = "IOK";
       if (classInfo.isInterface) {
         call = "IOI";
       }
-      call = call + "(" + objectAddr + "," + classInfo.id + ")|0";
+      call = call + "(" + object + "," + classInfo.id + ")|0";
       if (inlineRuntimeCalls) {
-        call = "((" + objectAddr + "&&i32[" + objectAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]=== " + classInfo.id + ")||" + call + ")|0";
+        call = "((" + object + "&&i32[" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]=== " + classInfo.id + ")||" + call + ")|0";
       }
       this.emitPush(Kind.Int, call);
     }
@@ -1102,9 +1108,9 @@ module J2ME {
     }
 
     emitArrayLength() {
-      var arrayAddr = this.pop(Kind.Reference);
-      this.emitNullPointerCheck(arrayAddr);
-      this.emitPush(Kind.Int, "i32[" + arrayAddr + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]");
+      var array = this.pop(Kind.Reference);
+      this.emitNullPointerCheck(array);
+      this.emitPush(Kind.Int, "i32[" + array + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]");
     }
 
     emitNewObjectArray(cpi: number) {
