@@ -17,6 +17,7 @@ module J2ME {
     Reference,
     Void,
     Illegal,
+    High,
     Store
   }
 
