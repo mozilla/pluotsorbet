@@ -984,6 +984,7 @@ module J2ME {
     emitLoadIndexed(kind: Kind) {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
+      this.emitNullPointerCheck(array);
       this.emitBoundsCheck(array, index);
 
       var base = array + "+" + Constants.ARRAY_HDR_SIZE;
