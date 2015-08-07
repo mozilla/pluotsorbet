@@ -818,14 +818,18 @@ module J2ME {
         this.emitClassInitializationCheck(fieldInfo.classInfo);
       }
       var kind = getSignatureKind(fieldInfo.utf8Signature);
-      var objectAddr = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
+      var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       if (!isStatic) {
-        this.emitNullPointerCheck(objectAddr);
+        this.emitNullPointerCheck(object);
       }
-      var addr = objectAddr + "+" + fieldInfo.byteOffset;
-      this.emitPush(kind, "i32[" + addr + ">>2]", Precedence.Member);
+      var address = object + "+" + fieldInfo.byteOffset;
       if (isTwoSlot(kind)) {
-        this.emitPush(Kind.High, "i32[" + addr + "+4>>2]", Precedence.Member);
+        this.needsVariable("ea");
+        this.blockEmitter.writeLn("ea=" + address + ";");
+        this.emitPush(kind, "i32[ea>>2]", Precedence.Member);
+        this.emitPush(Kind.High, "i32[ea+4>>2]", Precedence.Member);
+      } else {
+        this.emitPush(kind, "i32[" + address + ">>2]", Precedence.Member);
       }
     }
 
@@ -1055,26 +1059,28 @@ module J2ME {
       var array = this.pop(Kind.Reference, Precedence.Sequence);
       this.emitBoundsCheck(array, index);
 
-      var baseAddr = array + "+" + Constants.ARRAY_HDR_SIZE;
+      var base = array + "+" + Constants.ARRAY_HDR_SIZE;
       switch (kind) {
         case Kind.Byte:
-          this.emitPush(kind, "i8[" + baseAddr + "+(" + index + ")]", Precedence.Member);
+          this.emitPush(kind, "i8[" + base + "+(" + index + ")]", Precedence.Member);
           break;
         case Kind.Char:
-          this.emitPush(kind, "u16[(" + baseAddr + ">>1)+(" + index + ")]", Precedence.Member);
+          this.emitPush(kind, "u16[(" + base + ">>1)+(" + index + ")]", Precedence.Member);
           break;
         case Kind.Short:
-          this.emitPush(kind, "i16[(" + baseAddr + ">>1)+(" + index + ")]", Precedence.Member);
+          this.emitPush(kind, "i16[(" + base + ">>1)+(" + index + ")]", Precedence.Member);
           break;
         case Kind.Int:
         case Kind.Float:
         case Kind.Reference:
-          this.emitPush(kind, "i32[(" + baseAddr + ">>2)+(" + index + ")]", Precedence.Member);
+          this.emitPush(kind, "i32[(" + base + ">>2)+(" + index + ")]", Precedence.Member);
           break;
         case Kind.Long:
         case Kind.Double:
-          this.emitPush(kind, "i32[(" + baseAddr + ">>2)+(" + index + "<<1)]", Precedence.Member);
-          this.emitPush(kind, "i32[(" + baseAddr + ">>2)+(" + index + "<<1)+1]", Precedence.Member);
+          this.needsVariable("ea");
+          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1);");
+          this.emitPush(kind, "i32[ea]", Precedence.Member);
+          this.emitPush(kind, "i32[ea+1]", Precedence.Member);
           break;
         default:
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
