@@ -1798,7 +1798,7 @@ module J2ME {
     i32[tmpAddress +  4 >> 2] = ah;
     i32[tmpAddress +  8 >> 2] = bl;
     i32[tmpAddress + 12 >> 2] = bh;
-    ASM._lSub(tmpAddress, tmpAddress, tmpAddress + 8);
+    ASM._lMul(tmpAddress, tmpAddress, tmpAddress + 8);
     tempReturn0 = i32[tmpAddress + 4 >> 2];
     return i32[tmpAddress >> 2];
   }
