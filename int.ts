@@ -1997,9 +1997,20 @@ module J2ME {
           case Bytecodes.FRETURN:
           case Bytecodes.ARETURN:
           case Bytecodes.RETURN:
-            var lastSP = sp;
+            // Store the return values immediately since the values may be overwritten by a push pending frame.
+            var returnOne, returnTwo;
+            switch (op) {
+              case Bytecodes.LRETURN:
+              case Bytecodes.DRETURN:
+                returnTwo = i32[sp - 2];
+              // Fallthrough
+              case Bytecodes.IRETURN:
+              case Bytecodes.FRETURN:
+              case Bytecodes.ARETURN:
+                returnOne = i32[sp - 1];
+                break;
+            }
             var lastMI = mi;
-            var lastOP = op;
             if (lastMI.isSynchronized) {
               $.ctx.monitorExit(getMonitor(i32[fp + FrameLayout.MonitorOffset]));
             }
@@ -2014,15 +2025,15 @@ module J2ME {
             while (type !== FrameType.Interpreter) {
               if (type === FrameType.ExitInterpreter) {
                 thread.set(fp, sp, opPC);
-                switch (lastOP) {
+                switch (op) {
                   case Bytecodes.ARETURN:
                   case Bytecodes.IRETURN:
                   case Bytecodes.FRETURN:
-                    return i32[lastSP - 1];
+                    return returnOne;
                   case Bytecodes.LRETURN:
-                    return returnLong(i32[lastSP - 2], i32[lastSP - 1]);
+                    return returnLong(returnTwo, returnOne);
                   case Bytecodes.DRETURN:
-                    return returnDouble(i32[lastSP - 2], i32[lastSP - 1]);
+                    return returnDouble(returnTwo, returnOne);
                   case Bytecodes.RETURN:
                     return;
                 }
@@ -2065,17 +2076,15 @@ module J2ME {
             // Calculate the PC based on the size of the caller's invoke bytecode.
             pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
             // Push return value.
-            switch (lastOP) {
+            switch (op) {
               case Bytecodes.LRETURN:
               case Bytecodes.DRETURN:
-                i32[sp++] = i32[lastSP - 2]; // Low Bits
+                i32[sp++] = returnTwo; // Low Bits
               // Fallthrough
               case Bytecodes.IRETURN:
               case Bytecodes.FRETURN:
-                i32[sp++] = i32[lastSP - 1];
-                continue;
               case Bytecodes.ARETURN:
-                i32[sp++] = i32[lastSP - 1];
+                i32[sp++] = returnOne;
                 continue;
             }
 
