@@ -945,7 +945,7 @@ module J2ME {
         var objectAddr = this.pop(Kind.Reference);
         this.emitNullPointerCheck(objectAddr);
         args.unshift(objectAddr);
-        var objClass = "CI[i32[(" + objectAddr + " + " + Constants.OBJ_CLASS_ID_OFFSET + ")  >> 2]]";
+        var objClass = "CI[i32[(" + objectAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + ")>>2]]";
         if (opcode === Bytecodes.INVOKESPECIAL) {
           methodId = methodInfo.id;
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
@@ -995,7 +995,7 @@ module J2ME {
         return;
       }
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("if((" + index + " >>> 0)>=(i32[" + array + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]>>>0))TI(" + index + ");");
+        this.blockEmitter.writeLn("if((" + index + ">>>0)>=(i32[" + array + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]>>>0))TI(" + index + ");");
       } else {
         this.blockEmitter.writeLn("CAB(" + array + "," + index + ");");
       }
@@ -1041,8 +1041,8 @@ module J2ME {
           return;
         case Kind.Long:
         case Kind.Double:
-          this.blockEmitter.writeLn("i32[(" + base + ">>2)+(" + index + ")]=" + l + ";");
-          this.blockEmitter.writeLn("i32[(" + base + ">>2)+(" + index + ")+1]=" + h + ";");
+          this.blockEmitter.writeLn("i32[(" + base + ">>2)+(" + index + "<<1)]=" + l + ";");
+          this.blockEmitter.writeLn("i32[(" + base + ">>2)+(" + index + "<<1)+1]=" + h + ";");
           return;
         default:
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
@@ -1073,8 +1073,8 @@ module J2ME {
           break;
         case Kind.Long:
         case Kind.Double:
-          this.emitPush(kind, "i32[(" + baseAddr + ">>2)+(" + index + ")]", Precedence.Member);
-          this.emitPush(kind, "i32[(" + baseAddr + ">>2)+(" + index + ")+1]", Precedence.Member);
+          this.emitPush(kind, "i32[(" + baseAddr + ">>2)+(" + index + "<<1)]", Precedence.Member);
+          this.emitPush(kind, "i32[(" + baseAddr + ">>2)+(" + index + "<<1)+1]", Precedence.Member);
           break;
         default:
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
@@ -1150,7 +1150,7 @@ module J2ME {
       }
       call = call + "(" + objectAddr + "," + classInfo.id + ")"
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("(!" + objectAddr + ")||i32[" + objectAddr + " + " + Constants.OBJ_CLASS_ID_OFFSET + " >> 2]===" + classInfo.id + "||" + call + ";");
+        this.blockEmitter.writeLn("(!" + objectAddr + ")||i32[" + objectAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]===" + classInfo.id + "||" + call + ";");
       } else {
         this.blockEmitter.writeLn(call + ";");
       }
@@ -1165,7 +1165,7 @@ module J2ME {
       }
       call = call + "(" + objectAddr + "," + classInfo.id + ")|0";
       if (inlineRuntimeCalls) {
-        call = "((" + objectAddr + "&&i32[" + objectAddr + " + " + Constants.OBJ_CLASS_ID_OFFSET + " >> 2]=== " + classInfo.id + ")||" + call + ")|0";
+        call = "((" + objectAddr + "&&i32[" + objectAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]=== " + classInfo.id + ")||" + call + ")|0";
       }
       this.emitPush(Kind.Int, call, Precedence.BitwiseOR);
     }
@@ -1177,7 +1177,7 @@ module J2ME {
     emitArrayLength() {
       var arrayAddr = this.pop(Kind.Reference);
       this.emitNullPointerCheck(arrayAddr);
-      this.emitPush(Kind.Int, "i32[" + arrayAddr + " + " + Constants.ARRAY_LENGTH_OFFSET + " >> 2]", Precedence.Member);
+      this.emitPush(Kind.Int, "i32[" + arrayAddr + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]", Precedence.Member);
     }
 
     emitNewObjectArray(cpi: number) {
