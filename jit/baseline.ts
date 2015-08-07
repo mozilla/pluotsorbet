@@ -1228,9 +1228,9 @@ module J2ME {
         return;
       }
       if (kind === Kind.Int) {
-        this.blockEmitter.writeLn(l + "===0&&TA();");
+        this.blockEmitter.writeLn("!" + l + "&&TA();");
       } else if (kind === Kind.Long) {
-        this.blockEmitter.writeLn(l + "===0&&" + h + "===0&&TA();");
+        this.blockEmitter.writeLn("!" + l + "&&!" + h + "&&TA();");
       } else {
         Debug.unexpected(Kind[kind]);
       }
@@ -1269,9 +1269,6 @@ module J2ME {
         case Bytecodes.FMUL:
         case Bytecodes.FDIV:
         case Bytecodes.FREM:
-          if (!jsGlobal[Bytecodes[opcode].toLowerCase()]) {
-            throwCompilerError(Bytecodes[opcode] + " not implemented.");
-          }
           this.emitPush(Kind.Float, Bytecodes[opcode].toLowerCase() + "(" + al + "," + bl + ")");
           break;
         case Bytecodes.LADD:
@@ -1284,9 +1281,6 @@ module J2ME {
         case Bytecodes.DMUL:
         case Bytecodes.DDIV:
         case Bytecodes.DREM:
-          if (!jsGlobal[Bytecodes[opcode].toLowerCase()]) {
-            throwCompilerError(Bytecodes[opcode] + " not implemented.");
-          }
           this.emitPush(Kind.Double, Bytecodes[opcode].toLowerCase() + "(" + al + "," + ah + "," + bl + "," + bh + ")");
           this.emitPush(Kind.High, "tempReturn0");
           break;
@@ -1310,9 +1304,6 @@ module J2ME {
           break;
         case Kind.Long:
         case Kind.Double:
-          if (!jsGlobal[Bytecodes[opcode].toLowerCase()]) {
-            throwCompilerError(Bytecodes[opcode] + " not implemented.");
-          }
           this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + ")");
           this.emitPush(Kind.High, "tempReturn0");
           break;
@@ -1336,9 +1327,6 @@ module J2ME {
         case Bytecodes.LSHL:
         case Bytecodes.LSHR:
         case Bytecodes.LUSHR:
-          if (!jsGlobal[Bytecodes[opcode].toLowerCase()]) {
-            throwCompilerError(Bytecodes[opcode] + " not implemented.");
-          }
           this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + "," + s + ")");
           this.emitPush(Kind.High, "tempReturn0");
           return;
@@ -1380,7 +1368,6 @@ module J2ME {
 
       switch (opcode) {
         case Bytecodes.I2L:
-          // REDUX: Make sure that the first slot's kind is now marked as long instead of int.
           this.emitPush(Kind.Long, l);
           this.emitPush(Kind.High, "(" + l + "<0?-1:0)");
           break;
@@ -1445,15 +1432,12 @@ module J2ME {
       } else {
         bl = this.pop(kind), al = this.pop(kind);
       }
-      var sp = this.sp ++;
-      // Get the top stack slot.
-      var s = this.getStackName(sp);
       if (kind === Kind.Long) {
-        this.blockEmitter.writeLn(s + "=lcmp(" + al + "," + ah + "," + bl + "," + bh + ");");
+        this.emitPush(Kind.Int, "lcmp(" + al + "," + ah + "," + bl + "," + bh + ")");
       } else if (kind === Kind.Double) {
-        this.blockEmitter.writeLn(s + "=dcmp(" + al + "," + ah + "," + bl + "," + bh + "," + isLessThan + ");");
+        this.emitPush(Kind.Int, "dcmp(" + al + "," + ah + "," + bl + "," + bh + "," + isLessThan + ")");
       } else if (kind === Kind.Float) {
-        this.blockEmitter.writeLn(s + "=fcmp(" + al + "," + bl + "," + isLessThan + ");");
+        this.emitPush(Kind.Int, "fcmp(" + al + "," + bl + "," + isLessThan + ")");
       }
     }
 
