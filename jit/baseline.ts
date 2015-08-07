@@ -754,7 +754,11 @@ module J2ME {
 
     emitPushBits(kind: Kind, v: number) {
       release || assert((v | 0) === v);
-      this.emitPush(kind, "(0x" + (v>>>0).toString(16) + "|0)", Precedence.Primary);
+      if (v < 0) {
+        this.emitPush(kind, "-" + Math.abs(v), Precedence.Primary);
+      } else {
+        this.emitPush(kind, String(v), Precedence.Primary);
+      }
     }
 
     emitPushInt(v: number) {
@@ -1177,8 +1181,8 @@ module J2ME {
       this.emitPush(Kind.Int, call, Precedence.BitwiseOR);
     }
 
-    emitNullPointerCheck(addr) {
-      this.blockEmitter.writeLn(addr + "===" + Constants.NULL + "&&TN();");
+    emitNullPointerCheck(address) {
+      this.blockEmitter.writeLn("!" + address + "&&TN();");
     }
 
     emitArrayLength() {
