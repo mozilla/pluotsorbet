@@ -1364,6 +1364,7 @@ module J2ME {
           }
           this.emitPush(Kind.Double, Bytecodes[opcode].toLowerCase() + "(" + al + "," + ah + "," + bl + "," + bh + ")", Precedence.Sequence);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
+          this.flushBlockStack();
           break;
         default:
           release || assert(false, Bytecodes[opcode]);
@@ -1390,6 +1391,7 @@ module J2ME {
           }
           this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + ")", Precedence.Sequence);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
+          this.flushBlockStack();
           break;
         default:
           Debug.unexpected(Kind[kind]);
@@ -1416,6 +1418,7 @@ module J2ME {
           }
           this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + "," + s + ")", Precedence.Sequence);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
+          this.flushBlockStack();
           return;
         default:
           Debug.unexpected(Bytecodes[opcode]);
@@ -1467,6 +1470,7 @@ module J2ME {
         case Bytecodes.I2D:
           this.emitPush(Kind.Double, "i2d(" + this.popSlot() + ")", Precedence.Primary);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
+          this.flushBlockStack();
           break;
         case Bytecodes.L2I:
           this.pop(Kind.Long);
