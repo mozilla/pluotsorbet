@@ -231,35 +231,6 @@ module J2ME {
     return "CI[" + classInfo.id + "]";
   }
 
-  /**
-   * These bytecodes require stack flushing.
-   */
-  function needsStackFlushBefore(opcode: Bytecodes, sp: number) {
-    // Bytecodes that modify the order in which expressions are evaluated, like: SWAP and DUP
-    // must flush the stack.
-    switch (opcode) {
-      case Bytecodes.DUP:
-      case Bytecodes.DUP_X1:
-      case Bytecodes.DUP_X2:
-      case Bytecodes.DUP2:
-      case Bytecodes.DUP2_X1:
-      case Bytecodes.DUP2_X2:
-      case Bytecodes.SWAP:
-        return true;
-    }
-    // IINC can increment something that's on the stack, so we need to flush.
-    if (opcode === Bytecodes.IINC && sp > 0) {
-      return true;
-    }
-    // All other STORE bytecodes can also modify something that's on the stack. However,
-    // since these will pop the stack before the assignment, we only need to care about
-    // cases where sp > 1.
-    if (Bytecode.isStore(opcode) && sp > 1) {
-      return true;
-    }
-    return false;
-  }
-
   function throwCompilerError(message: string) {
     throw new Error(message);
   }
@@ -302,13 +273,11 @@ module J2ME {
     private parameters: string [];
     private hasHandlers: boolean;
     private hasMonitorEnter: boolean;
-    private blockStackHeightMap: number [];
+    private stackHeightMap: number [];
     private initializedClasses: any;
     private referencedClasses: ClassInfo [];
     private local: string [];
     private stack: string [];
-    private blockStack: string [];
-    private blockStackPrecedence: Precedence [];
     private variables: any;
     private lockObject: string;
     private hasOSREntryPoint = false;
@@ -330,18 +299,16 @@ module J2ME {
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
       this.local = [];
+      this.stack = [];
       this.variables = {};
       this.pc = 0;
       this.sp = 0;
-      this.stack = [];
-      this.blockStack = [];
-      this.blockStackPrecedence = [];
       this.parameters = [];
       this.referencedClasses = [];
       this.initializedClasses = null;
       this.hasHandlers = methodInfo.exception_table_length > 0;
       this.hasMonitorEnter = false;
-      this.blockStackHeightMap = [0];
+      this.stackHeightMap = [0];
       this.bodyEmitter = new Emitter(!release);
       this.blockEmitter = new Emitter(!release);
       this.target = target;
@@ -454,7 +421,6 @@ module J2ME {
           this.bodyEmitter.writeLn("if(U){$.T(" + this.methodInfo.id + ",ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
         }
         this.bodyEmitter.writeLn(this.getStackName(0) + "=TE(ex)._address;");
-        this.blockStack = [this.getStackName(0)];
         this.sp = 1;
         if (this.hasHandlers) {
           for (var i = 0; i < this.methodInfo.exception_table_length; i++) {
@@ -496,12 +462,7 @@ module J2ME {
 
     emitBlockBody(stream: BytecodeStream, block: Block) {
       this.resetOptimizationState();
-      this.sp = this.blockStackHeightMap[block.startBci];
-      this.blockStack = this.stack.slice(0, this.sp);
-      this.blockStackPrecedence = [];
-      for (var i = 0; i < this.sp; i++) {
-        this.blockStackPrecedence.push(Precedence.Primary);
-      }
+      this.sp = this.stackHeightMap[block.startBci];
       emitDebugInfoComments && this.blockEmitter.writeLn("// " + this.blockMap.blockToString(block));
       writer && writer.writeLn("emitBlock: " + block.startBci + " " + this.sp + " " + block.isExceptionEntry);
       release || assert(this.sp !== undefined, "Bad stack height");
@@ -515,7 +476,6 @@ module J2ME {
         stream.next();
       }
       if (this.sp >= 0) {
-        this.flushBlockStack();
         this.setSuccessorsBlockStackHeight(block, this.sp);
         if (!Bytecode.isBlockEnd(lastBC)) { // Fallthrough.
           Relooper.addBranch(block.relooperBlockID, this.getBlock(stream.currentBCI).relooperBlockID);
@@ -679,11 +639,7 @@ module J2ME {
     }
 
     getStack(i: number, contextPrecedence: Precedence): string {
-      var v = this.blockStack[i];
-      if (this.blockStackPrecedence[i] < contextPrecedence) {
-        v = "(" + v + ")";
-      }
-      return v;
+      return this.getStackName(i);
     }
 
     getLocalName(i: number): string {
@@ -783,20 +739,8 @@ module J2ME {
     }
 
     emitPush(kind: Kind, v: string, precedence: Precedence) {
-      this.blockStack[this.sp] = v;
-      this.blockStackPrecedence[this.sp] = precedence;
+      this.blockEmitter.writeLn(this.getStackName(this.sp) + "=" + v + ";");
       this.sp ++;
-    }
-
-    flushBlockStack() {
-      for (var i = 0; i < this.sp; i++) {
-        var name = this.getStackName(i);
-        if (name !== this.blockStack[i]) {
-          this.blockEmitter.writeLn(name + "=" + this.blockStack[i] + ";");
-          this.blockStack[i] = name;
-          this.blockStackPrecedence[i] = Precedence.Primary;
-        }
-      }
     }
 
     emitReturn(kind: Kind) {
@@ -862,10 +806,10 @@ module J2ME {
 
     setBlockStackHeight(pc: number, height: number) {
       writer && writer.writeLn("Setting Block Height " + pc + " " + height);
-      if (this.blockStackHeightMap[pc] !== undefined) {
-        release || assert(this.blockStackHeightMap[pc] === height, "Bad block height: " + pc + " " + this.blockStackHeightMap[pc] + " " + height);
+      if (this.stackHeightMap[pc] !== undefined) {
+        release || assert(this.stackHeightMap[pc] === height, "Bad block height: " + pc + " " + this.stackHeightMap[pc] + " " + height);
       }
-      this.blockStackHeightMap[pc] = height;
+      this.stackHeightMap[pc] = height;
     }
 
     emitIf(block: Block, stream: BytecodeStream, predicate: string) {
@@ -974,7 +918,6 @@ module J2ME {
         call = inlineMethods[methodInfo.implKey];
       }
       this.needsVariable("re");
-      this.flushBlockStack();
       emitDebugInfoComments && this.blockEmitter.writeLn("// " + Bytecodes[opcode] + ": " + methodInfo.implKey);
       this.blockEmitter.writeLn("re=" + call + ";");
       if (calleeCanYield) {
@@ -1090,7 +1033,6 @@ module J2ME {
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
           break;
       }
-      this.flushBlockStack();
     }
 
     emitIncrement(stream: BytecodeStream) {
@@ -1213,12 +1155,11 @@ module J2ME {
       // Only emit unwind throws if it saves on code size.
       if (!forceInline && this.blockMap.invokeCount > 2 &&
           this.stack.length < 8) {
-        this.flushBlockStack();
         emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
         this.hasUnwindThrow = true;
       } else {
         var local = this.local.join(",");
-        var stack = this.blockStack.slice(0, this.sp).join(",");
+        var stack = BaselineCompiler.stackNames.slice(0, this.sp).join(",");
         emitter.writeLn("if(U){$.B(" + this.methodInfo.id + "," + pc + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
       }
       baselineCounter && baselineCounter.count("emitUnwind");
@@ -1374,7 +1315,6 @@ module J2ME {
           }
           this.emitPush(Kind.Double, Bytecodes[opcode].toLowerCase() + "(" + al + "," + ah + "," + bl + "," + bh + ")", Precedence.Sequence);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
-          this.flushBlockStack();
           break;
         default:
           release || assert(false, Bytecodes[opcode]);
@@ -1401,7 +1341,6 @@ module J2ME {
           }
           this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + ")", Precedence.Sequence);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
-          this.flushBlockStack();
           break;
         default:
           Debug.unexpected(Kind[kind]);
@@ -1428,7 +1367,6 @@ module J2ME {
           }
           this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + "," + s + ")", Precedence.Sequence);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
-          this.flushBlockStack();
           return;
         default:
           Debug.unexpected(Bytecodes[opcode]);
@@ -1471,11 +1409,9 @@ module J2ME {
           // REDUX: Make sure that the first slot's kind is now marked as long instead of int.
           this.emitPush(Kind.Long, l, Precedence.Primary);
           this.emitPush(Kind.High, "(" + l + "<0?-1:0)", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.I2F:
           this.emitPush(Kind.Float, "i2f(" + l + ")", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.I2B:
           this.emitPush(Kind.Int, "(" + l + "<<24)>>24", Precedence.BitwiseShift);
@@ -1489,46 +1425,37 @@ module J2ME {
         case Bytecodes.I2D:
           this.emitPush(Kind.Double, "i2d(" + l + ")", Precedence.Primary);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.L2I:
           this.emitPush(Kind.Int, l, Precedence.Primary);
           break;
         case Bytecodes.L2F:
           this.emitPush(Kind.Float, "l2f(" + l + "," + h + ")", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.L2D:
           this.emitPush(Kind.Double, "l2d(" + l + "," + h + ")", Precedence.Primary);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.D2I:
           this.emitPush(Kind.Int, "d2i(" + l + "," + h + ")", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.F2I:
           this.emitPush(Kind.Int, "f2i(" + l + ")", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.F2L:
           this.emitPush(Kind.Long, "f2l(" + l + ")", Precedence.Primary);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.F2D:
           this.emitPush(Kind.Double, "f2d(" + l + ")", Precedence.Primary);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.D2L:
           this.emitPush(Kind.Long, "d2l(" + l + "," + h + ")", Precedence.Primary);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
-          this.flushBlockStack();
           break;
         case Bytecodes.D2F:
           this.emitPush(Kind.Float, "d2f(" + l + "," + h + ")", Precedence.Primary);
-          this.flushBlockStack();
           break;
         default:
           throwCompilerError(Bytecodes[opcode]);
@@ -1544,10 +1471,9 @@ module J2ME {
       } else {
         bl = this.pop(kind), al = this.pop(kind);
       }
-      this.flushBlockStack();
       var sp = this.sp ++;
       // Get the top stack slot and make sure it is also it in the |blockStack|.
-      var s = this.blockStack[sp] = this.getStackName(sp);
+      var s = this.getStackName(sp);
       if (kind === Kind.Long) {
         this.blockEmitter.writeLn(s + "=lcmp(" + al + "," + ah + "," + bl + "," + bh + ");");
       } else if (kind === Kind.Double) {
@@ -1613,14 +1539,8 @@ module J2ME {
       var opcode: Bytecodes = stream.currentBC();
       writer && writer.writeLn("emit: pc: " + stream.currentBCI + ", sp: " + this.sp + " " + Bytecodes[opcode]);
 
-      var flushBlockStackAfter = false;
       if ((block.isExceptionEntry || block.hasHandlers) && Bytecode.canTrap(opcode)) {
         this.blockEmitter.writeLn("pc=" + this.pc + ";");
-        flushBlockStackAfter = true;
-      }
-
-      if (needsStackFlushBefore(opcode, this.sp)) {
-        this.flushBlockStack();
       }
 
       switch (opcode) {
@@ -1833,9 +1753,6 @@ module J2ME {
         // case Bytecodes.RET            : ... break;
         default:
           throw new Error("Not Implemented " + Bytecodes[opcode]);
-      }
-      if (flushBlockStackAfter) {
-        this.flushBlockStack();
       }
       writer && writer.writeLn("");
     }
