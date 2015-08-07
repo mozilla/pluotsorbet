@@ -1751,6 +1751,17 @@ module J2ME {
     }
   }
 
+  export function d2i(al: number, ah: number): number {
+    var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    if (x > Constants.INT_MAX) {
+      return Constants.INT_MAX;
+    } else if (x < Constants.INT_MIN) {
+      return Constants.INT_MIN;
+    } else {
+      return x | 0;
+    }
+  }
+
   export function i2f(a: number): number {
     aliasedF32[0] = a;
     return aliasedI32[0];
@@ -1759,6 +1770,47 @@ module J2ME {
   export function i2d(a: number): number {
     aliasedF64[0] = a;
     tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
+  }
+
+  export function l2d(al: number, ah: number): number {
+    aliasedF64[0] = longToNumber(al, ah);
+    tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
+  }
+
+  export function l2f(al: number, ah: number): number {
+    aliasedF32[0] = Math.fround(longToNumber(al, ah));
+    return aliasedI32[0];
+  }
+
+  export function f2d(l: number): number {
+    aliasedF64[0] = (aliasedI32[0] = l, aliasedF32[0]);
+    tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
+  }
+
+  export function f2l(l: number): number {
+    var x = (aliasedI32[0] = l, aliasedF32[0]);
+    return returnLongValue(x);
+  }
+
+  export function d2l(al: number, ah: number): number {
+    var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    if (x === Number.POSITIVE_INFINITY) {
+      tempReturn0 = Constants.LONG_MAX_HIGH;
+      return Constants.LONG_MAX_LOW;
+    } else if (x === Number.NEGATIVE_INFINITY) {
+      tempReturn0 = Constants.LONG_MIN_HIGH;
+      return Constants.LONG_MIN_LOW;
+    } else {
+      return returnLongValue(x);
+    }
+  }
+
+  export function d2f(al: number, ah: number): number {
+    var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    aliasedF32[0] = Math.fround(x);
     return aliasedI32[0];
   }
 
@@ -1947,8 +1999,15 @@ var frem = J2ME.frem;
 var fneg = J2ME.fneg;
 
 var f2i = J2ME.f2i;
+var f2l = J2ME.f2l;
+var f2d = J2ME.f2d;
 var i2f = J2ME.i2f;
 var i2d = J2ME.i2d;
+var d2i = J2ME.d2i;
+var d2l = J2ME.d2l;
+var d2f = J2ME.d2f;
+var l2f = J2ME.l2f;
+var l2d = J2ME.l2d;
 var fcmp = J2ME.fcmp;
 
 var dneg = J2ME.dneg;

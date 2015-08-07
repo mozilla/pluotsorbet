@@ -1456,41 +1456,76 @@ module J2ME {
     }
 
     emitConvertOp(from: Kind, to: Kind, opcode: Bytecodes) {
+      var l, h;
+      if (isTwoSlot(from)) {
+        h = this.pop(from);
+      }
+      l = this.pop(from);
+
       switch (opcode) {
         case Bytecodes.I2L:
           // REDUX: Make sure that the first slot's kind is now marked as long instead of int.
-          this.emitPush(Kind.High, "(" + this.peek(Kind.Int) + "<0?-1:0)", Precedence.Primary);
+          this.emitPush(Kind.Long, l, Precedence.Primary);
+          this.emitPush(Kind.High, "(" + l + "<0?-1:0)", Precedence.Primary);
+          this.flushBlockStack();
           break;
         case Bytecodes.I2F:
-          this.emitPush(Kind.Float, "i2f(" + this.popSlot() + ")", Precedence.Primary);
+          this.emitPush(Kind.Float, "i2f(" + l + ")", Precedence.Primary);
+          this.flushBlockStack();
           break;
         case Bytecodes.I2B:
-          this.emitPush(Kind.Int, "(" + this.popSlot() + "<<24)>>24", Precedence.BitwiseShift);
+          this.emitPush(Kind.Int, "(" + l + "<<24)>>24", Precedence.BitwiseShift);
           break;
         case Bytecodes.I2C:
-          this.emitPush(Kind.Int, this.popSlot() + "&0xffff", Precedence.BitwiseAND);
+          this.emitPush(Kind.Int, l + "&0xffff", Precedence.BitwiseAND);
           break;
         case Bytecodes.I2S:
-          this.emitPush(Kind.Int, "(" + this.popSlot() + "<<16)>>16", Precedence.BitwiseShift);
+          this.emitPush(Kind.Int, "(" + l + "<<16)>>16", Precedence.BitwiseShift);
           break;
         case Bytecodes.I2D:
-          this.emitPush(Kind.Double, "i2d(" + this.popSlot() + ")", Precedence.Primary);
+          this.emitPush(Kind.Double, "i2d(" + l + ")", Precedence.Primary);
           this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
           this.flushBlockStack();
           break;
         case Bytecodes.L2I:
-          this.pop(Kind.Long);
+          this.emitPush(Kind.Int, l, Precedence.Primary);
           break;
-        //case Bytecodes.L2F: break;
-        //case Bytecodes.L2D: break;
-        //case Bytecodes.D2I:
+        case Bytecodes.L2F:
+          this.emitPush(Kind.Float, "l2f(" + l + "," + h + ")", Precedence.Primary);
+          this.flushBlockStack();
+          break;
+        case Bytecodes.L2D:
+          this.emitPush(Kind.Double, "l2d(" + l + "," + h + ")", Precedence.Primary);
+          this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
+          this.flushBlockStack();
+          break;
+        case Bytecodes.D2I:
+          this.emitPush(Kind.Int, "d2i(" + l + "," + h + ")", Precedence.Primary);
+          this.flushBlockStack();
+          break;
         case Bytecodes.F2I:
-          this.emitPush(Kind.Int, "f2i(" + this.popSlot() + ")", Precedence.Primary);
+          this.emitPush(Kind.Int, "f2i(" + l + ")", Precedence.Primary);
+          this.flushBlockStack();
           break;
-        //case Bytecodes.F2L: break;
-        //case Bytecodes.F2D: v = "f2d(" + x + ")"; break;
-        //case Bytecodes.D2L: break;
-        //case Bytecodes.D2F: break;
+        case Bytecodes.F2L:
+          this.emitPush(Kind.Long, "f2l(" + l + ")", Precedence.Primary);
+          this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
+          this.flushBlockStack();
+          break;
+        case Bytecodes.F2D:
+          this.emitPush(Kind.Double, "f2d(" + l + ")", Precedence.Primary);
+          this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
+          this.flushBlockStack();
+          break;
+        case Bytecodes.D2L:
+          this.emitPush(Kind.Long, "d2l(" + l + "," + h + ")", Precedence.Primary);
+          this.emitPush(Kind.High, "tempReturn0", Precedence.Primary);
+          this.flushBlockStack();
+          break;
+        case Bytecodes.D2F:
+          this.emitPush(Kind.Float, "d2f(" + l + "," + h + ")", Precedence.Primary);
+          this.flushBlockStack();
+          break;
         default:
           throwCompilerError(Bytecodes[opcode]);
       }
