@@ -653,6 +653,10 @@ module J2ME {
       return this.getStaticObjectAddress(classIdToClassInfoMap[classId]);
     }
 
+    CO(classId: number) {
+      return this.getClassObjectAddress(classIdToClassInfoMap[classId]);
+    }
+
     yield(reason: string) {
       unwindCount ++;
       threadWriter && threadWriter.writeLn("yielding " + reason);
