@@ -616,6 +616,14 @@ module J2ME {
 
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
     var method = function fastInterpreterFrameAdapter() {
+      var calleeStats = methodInfo.stats;
+      calleeStats.interpreterCallCount++;
+      if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+        compileAndLinkMethod(methodInfo);
+        if(methodInfo.state === MethodState.Compiled) {
+          return methodInfo.fn.apply(null, arguments);
+        }
+      }
       var ctx = $.ctx;
       var thread = ctx.nativeThread;
       var callerFP = thread.fp;
