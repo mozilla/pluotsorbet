@@ -1535,14 +1535,13 @@ module J2ME {
                 compileAndLinkMethod(mi);
               }
               if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
-                traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
                 // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
                 // at the beginning of a basic block. This is a really cheap test and a convenient place to perform an
                 // on stack replacement.
-
                 var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
-                if (previousFrameType === FrameType.Interpreter && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
+                if ((previousFrameType === FrameType.Interpreter || previousFrameType === FrameType.ExitInterpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
+                  traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
                   onStackReplacementCount++;
 
                   // Set the global OSR to the current method info.
@@ -1576,20 +1575,40 @@ module J2ME {
                   sp = thread.sp;
 
                   release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
+
+                  kind = signatureKinds[0];
+
+                  if (previousFrameType === FrameType.ExitInterpreter) {
+                    thread.set(fp, sp, opPC);
+                    switch (kind) {
+                      case Kind.Long:
+                      case Kind.Double:
+                        return returnLong(tempReturn0, returnValue);
+                      case Kind.Int:
+                      case Kind.Byte:
+                      case Kind.Char:
+                      case Kind.Float:
+                      case Kind.Short:
+                      case Kind.Boolean:
+                      case Kind.Reference:
+                        return returnValue;
+                      case Kind.Void:
+                        return;
+                      default:
+                        release || assert(false, "Invalid Kind: " + Kind[kind]);
+                    }
+                  }
+
                   mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
                   type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
                   maxLocals = mi.codeAttribute.max_locals;
                   lp = fp - maxLocals;
-
-                  kind = signatureKinds[0];
-
                   ci = mi.classInfo;
                   cp = ci.constantPool;
                   code = mi.codeAttribute.code;
 
                   pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
-
                   // Push return value.
                   switch (kind) {
                     case Kind.Long:
