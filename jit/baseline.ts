@@ -516,7 +516,7 @@ module J2ME {
       var blocks = blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
-        if (blockMap.invokeCount > 0 && block.isLoopHeader && !block.isInnerLoopHeader()) {
+        if (block.isLoopHeader && !block.isInnerLoopHeader()) {
           needsOSREntryPoint = true;
           needsEntryDispatch = true;
         }
