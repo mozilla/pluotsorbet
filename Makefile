@@ -278,9 +278,6 @@ $(PREPROCESS_DESTS): $(PREPROCESS_SRCS) .checksum
 jasmin:
 	make -C tools/jasmin-2.4
 
-relooper:
-	make -C jit/relooper/
-
 # Creates a stand alone shell build of j2me that you can use to file bug reports.
 bug: j2me
 	mkdir -p bug
