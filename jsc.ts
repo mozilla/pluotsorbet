@@ -20,7 +20,6 @@ console.error = function (c) {
 
 declare var load: (string) => void;
 
-load("libs/relooper.js"); // Load before we polyfill the window object.
 load("bld/native.js"); // Load before we polyfill the window object.
 
 var CC = {};
