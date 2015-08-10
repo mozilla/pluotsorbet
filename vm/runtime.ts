@@ -1051,7 +1051,7 @@ module J2ME {
     }
 
     // Don't compile if we've compiled too many methods.
-    if (maxCompiledMethodCount > 0 && compiledMethodCount >= maxCompiledMethodCount) {
+    if (maxCompiledMethodCount >= 0 && compiledMethodCount >= maxCompiledMethodCount) {
       return;
     }
     // Don't compile methods that are too large.
@@ -1483,9 +1483,9 @@ module J2ME {
     }
   }
 
-  export enum ConfigConstants {
-    InvokeThreshold = 1,
-    BackwardBranchThreshold = 1
+  export class ConfigThresholds {
+    static InvokeThreshold = 10;
+    static BackwardBranchThreshold = 10;
   }
 
   export enum Constants {

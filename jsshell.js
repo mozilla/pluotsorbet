@@ -77,6 +77,16 @@ var options = {
     short: "m",
     value: -1,
     type: "number"
+  },
+  "backwardBranchThreshold": {
+    short: "bbt",
+    value: 1,
+    type: "number"
+  },
+  "invokeThreshold": {
+    short: "it",
+    value: 1,
+    type: "number"
   }
 };
 
@@ -241,6 +251,9 @@ try {
   J2ME.writers = writers;
   J2ME.enableRuntimeCompilation = false;
   J2ME.maxCompiledMethodCount = options.maxCompiledMethodCount.value;
+
+  J2ME.ConfigThresholds.InvokeThreshold = options.invokeThreshold.value;
+  J2ME.ConfigThresholds.BackwardBranchThreshold = options.backwardBranchThreshold.value;
 
   start = dateNow();
   var runtime = jvm.startIsolate0(files[0], config.args);

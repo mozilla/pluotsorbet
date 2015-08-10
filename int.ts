@@ -618,7 +618,7 @@ module J2ME {
     var method = function fastInterpreterFrameAdapter() {
       var calleeStats = methodInfo.stats;
       calleeStats.interpreterCallCount++;
-      if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+      if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigThresholds.InvokeThreshold) {
         compileAndLinkMethod(methodInfo);
         if(methodInfo.state === MethodState.Compiled) {
           return methodInfo.fn.apply(null, arguments);
@@ -729,7 +729,7 @@ module J2ME {
     var mi = frame.methodInfo;
     release || assert(mi, "Must have method info.");
     mi.stats.interpreterCallCount++;
-    if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+    if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigThresholds.InvokeThreshold) {
       compileAndLinkMethod(mi);
       // TODO call the compiled method.
     }
@@ -1539,7 +1539,7 @@ module J2ME {
             jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (jumpOffset < 0) {
               mi.stats.backwardsBranchCount++;
-              if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.BackwardBranchThreshold) {
+              if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigThresholds.BackwardBranchThreshold) {
                 compileAndLinkMethod(mi);
               }
               if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
@@ -2161,7 +2161,7 @@ module J2ME {
             var calleeStats = calleeTargetMethodInfo.stats;
             calleeStats.interpreterCallCount++;
             if (callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
-              if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+              if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigThresholds.InvokeThreshold) {
                 compileAndLinkMethod(calleeTargetMethodInfo);
                 callMethod = calleeTargetMethodInfo.state === MethodState.Compiled;
               }
