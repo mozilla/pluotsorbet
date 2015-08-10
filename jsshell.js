@@ -55,6 +55,9 @@ function parseArguments(options, tokens) {
           case "string":
             options[name].value = value;
             break;
+          case "boolean":
+            options[name].value = value == "true" || value == "yes";
+            break;
         }
       } else {
         print("Illegal option: " + name);
@@ -87,6 +90,11 @@ var options = {
     short: "it",
     value: 1,
     type: "number"
+  },
+  "enableOnStackReplacement": {
+    short: "osr",
+    value: true,
+    type: "boolean"
   }
 };
 
@@ -254,6 +262,7 @@ try {
 
   J2ME.ConfigThresholds.InvokeThreshold = options.invokeThreshold.value;
   J2ME.ConfigThresholds.BackwardBranchThreshold = options.backwardBranchThreshold.value;
+  J2ME.enableOnStackReplacement = options.enableOnStackReplacement.value;
 
   start = dateNow();
   var runtime = jvm.startIsolate0(files[0], config.args);
