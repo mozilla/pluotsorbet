@@ -570,7 +570,7 @@ module J2ME {
      */
     beginUnwind() {
       // The |unwoundNativeFrames| stack should be empty at this point.
-      release || assert(this.unwoundNativeFrames.length === 0);
+      release || assert(this.unwoundNativeFrames.length === 0, "0 unwound native frames");
     }
 
     /*
