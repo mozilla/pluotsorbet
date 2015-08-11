@@ -1376,11 +1376,12 @@ module J2ME {
     var arrayAddr = newArray(classInfo.elementClass, length);
     if (lengths.length > 1) {
       setUncollectable(arrayAddr);
-      var array = getArrayFromAddr(arrayAddr);
 
       lengths = lengths.slice(1);
-      for (var i = 0; i < length; i++) {
-        array[i] = newMultiArray(classInfo.elementClass, lengths);
+
+      var start = (arrayAddr + Constants.ARRAY_HDR_SIZE >> 2);
+      for (var i = start; i < start + length; i++) {
+        i32[i] = newMultiArray(classInfo.elementClass, lengths);
       }
 
       unsetUncollectable(arrayAddr);
