@@ -25,6 +25,10 @@ public class DrawStringViaImageTest extends MIDlet {
             g.setStrokeStyle(Graphics.SOLID);
             g.drawString("Roxors", 50, 50, Graphics.TOP | Graphics.LEFT);
 
+            int[] rgbData = new int[150 * 150];
+            image.getRGB(rgbData, 0, 150, 0, 0, 150, 150);
+            g.drawRGB(rgbData, 0, 150, 0, 0, 150, 150, true);
+
             graphics.drawImage(image, 50, 50, Graphics.TOP | Graphics.LEFT);
 
             System.out.println("PAINTED");

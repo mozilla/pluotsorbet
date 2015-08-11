@@ -114,8 +114,9 @@ public class TestGraphicsClipping implements Testlet {
                         th.check(g.getClipWidth(), cw);
                         th.check(g.getClipHeight(), ch);
 
-                        // getClip returns a pair of coordinates rather than
-                        // a coordinate and a width/height.
+                        // getClip returns the coordinates of the top-left
+                        // and bottom-right corners rather than the top-left
+                        // coordinate and a width/height.
                         g.getClip(clip);
                         th.check(clip[0], cx);
                         th.check(clip[1], cy);
