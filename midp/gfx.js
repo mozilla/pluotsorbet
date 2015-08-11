@@ -425,6 +425,8 @@ var currentlyFocusedTextEditor;
         var ctx = imageData.contextInfo.context;
 
         // XXX Shouldn't we be able to simply fillRect here?
+        // Or maybe the canvas context could have some kind of transformation
+        // or clipping rect currently applied?
 
         var ctxImageData = ctx.createImageData(width, height);
         var pixels = new Int32Array(ctxImageData.data.buffer);
