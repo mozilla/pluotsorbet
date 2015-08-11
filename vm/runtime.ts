@@ -253,7 +253,7 @@ module J2ME {
 
     if (!release) { // Check to see that no collisions have ever happened.
       if (hashMap[hash] && hashMap[hash] !== s) {
-        assert(false, "This is very bad.")
+        assert(false, "Collision detected!!!")
       }
       hashMap[hash] = s;
     }
@@ -265,7 +265,7 @@ module J2ME {
     var hash = HashUtilities.hashBytesTo32BitsMurmur(s, 0, s.length);
     if (!release) { // Check to see that no collisions have ever happened.
       if (hashMap[hash] && hashMap[hash] !== s) {
-        assert(false, "This is very bad.")
+        assert(false, "Collision detected in hashUTF8String!!!")
       }
       hashMap[hash] = s;
     }
@@ -640,7 +640,7 @@ module J2ME {
      */
     B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
-      release || assert(methodInfo !== undefined);
+      release || assert(methodInfo !== undefined, "methodInfo undefined in B");
       $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
     }
 
@@ -650,7 +650,7 @@ module J2ME {
      */
     T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
       var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
-      release || assert(methodInfo !== undefined);
+      release || assert(methodInfo !== undefined, "methodInfo undefined in T");
       $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
     }
 
@@ -683,8 +683,9 @@ module J2ME {
   export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
 
   export function getClassInfo(addr: number) {
-    release || assert(addr !== Constants.NULL);
-    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0);
+    release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
+    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0,
+                      "i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0");
     return classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
   }
 
@@ -971,7 +972,7 @@ module J2ME {
       return methodInfo.fn;
     }
     linkClassMethod(methodInfo);
-    release || assert (methodInfo.fn);
+    release || assert(methodInfo.fn, "bad fn in getLinkedMethod");
     return methodInfo.fn;
   }
 
@@ -1169,7 +1170,7 @@ module J2ME {
   }
 
   export function instanceOfInterface(object: java.lang.Object, classInfo: ClassInfo): boolean {
-    release || assert(classInfo.isInterface);
+    release || assert(classInfo.isInterface, "instanceOfInterface called on non interface");
     return object !== null && isAssignableTo(object.classInfo, classInfo);
   }
 
@@ -1341,7 +1342,7 @@ module J2ME {
   }
 
   export function newArray(elementClassInfo: ClassInfo, size: number): number {
-    release || assert(elementClassInfo instanceof ClassInfo);
+    release || assert(elementClassInfo instanceof ClassInfo, "elementClassInfo instanceof ClassInfo");
     if (size < 0) {
       throwNegativeArraySizeException();
     }
@@ -1424,7 +1425,7 @@ module J2ME {
   var jStringDecoder = new TextDecoder('utf-16');
 
   export function fromJavaChars(charsAddr, offset, count) {
-    release || assert(charsAddr !== Constants.NULL);
+    release || assert(charsAddr !== Constants.NULL, "charsAddr !== Constants.NULL");
 
     var start = (Constants.ARRAY_HDR_SIZE + charsAddr >> 1) + offset;
 

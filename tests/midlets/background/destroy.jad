@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 MIDlet-1: DestroyMIDlet,,tests.background.DestroyMIDlet
-MIDlet-2: BackgroundMIDlet1,,tests.background.BackgroundMIDlet1
+MIDlet-2: BackgroundMIDlet1,,tests.midlets.background.BackgroundMIDlet1
 MIDlet-Permissions: com.nokia.mid.s40.io.Connector.localmsg
 MIDlet-Vendor: Mozilla
 Nokia-MIDlet-bg-memory-size: 350

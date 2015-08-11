@@ -338,7 +338,7 @@ module J2ME {
 
     popFrame(methodInfo: MethodInfo): MethodInfo {
       var mi = ref[this.fp + FrameLayout.CalleeMethodInfoOffset];
-      release || assert(mi === methodInfo);
+      release || assert(mi === methodInfo, "mi === methodInfo");
       this.pc = i32[this.fp + FrameLayout.CallerRAOffset];
       var maxLocals = mi ? mi.codeAttribute.max_locals : 0;
       this.sp = this.fp - maxLocals;
@@ -451,7 +451,7 @@ module J2ME {
         i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
         return;
       }
-      release || assert(callerFP === thread.fp);
+      release || assert(callerFP === thread.fp, "callerFP === thread.fp");
       // release || traceWriter && traceWriter.writeLn("<< I");
       return v;
     };
@@ -1441,7 +1441,7 @@ module J2ME {
                 i32[sp++] = i32[address + 4 >> 2];
                 continue;
               default:
-                release || assert(false);
+                release || assert(false, "fieldInfo.kind");
             }
             continue;
           case Bytecodes.PUTFIELD:
@@ -1483,7 +1483,7 @@ module J2ME {
                 i32[address     >> 2] = i32[--sp];
                 break;
               default:
-                release || assert(false);
+                release || assert(false, "fieldInfo.kind");
             }
             if (!isStatic) {
               sp--; // Pop Reference
