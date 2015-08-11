@@ -1374,15 +1374,18 @@ module J2ME {
   export function newMultiArray(classInfo: ClassInfo, lengths: number[]): number {
     var length = lengths[0];
     var arrayAddr = newArray(classInfo.elementClass, length);
-    setUncollectable(arrayAddr);
-    var array = getArrayFromAddr(arrayAddr);
     if (lengths.length > 1) {
+      setUncollectable(arrayAddr);
+
       lengths = lengths.slice(1);
-      for (var i = 0; i < length; i++) {
-        array[i] = newMultiArray(classInfo.elementClass, lengths);
+
+      var start = (arrayAddr + Constants.ARRAY_HDR_SIZE >> 2);
+      for (var i = start; i < start + length; i++) {
+        i32[i] = newMultiArray(classInfo.elementClass, lengths);
       }
+
+      unsetUncollectable(arrayAddr);
     }
-    unsetUncollectable(arrayAddr);
     return arrayAddr;
   }
 
