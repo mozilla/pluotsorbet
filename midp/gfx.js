@@ -406,6 +406,9 @@ var currentlyFocusedTextEditor;
         }
 
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
+        if (config.ignoreRGBDataChanges) {
+            rgbData.scaledData = new Int32Array(this.contextInfo.context.getImageData(x * DPR, y * DPR, width * DPR, height * DPR).data.buffer);
+        }
         rgbDataMap.set(rgbData, this.contextInfo.context);
     };
 
@@ -1455,11 +1458,43 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] =
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
-        // Ignore the modified RGB data and draw the original image instead.
-        var context = rgbDataMap.get(rgbData);
+        if (config.ignoreRGBDataChanges) {
+            // Ignore the modified RGB data and draw the original image instead.
+            rgbData = rgbData.scaledData;
+            x *= DPR;
+            y *= DPR;
+            width *= DPR;
+            height *= DPR;
+            scanlength *= DPR;
+            // var context = rgbDataMap.get(rgbData);
+            // var c = this.info.getGraphicsContext();
+            // c.drawImage(context.canvas, x * DPR, y * DPR, width * DPR, height * DPR);
+            // return;
+        }
+
+        tempContext.canvas.height = height;
+        tempContext.canvas.width = width;
+        var imageData = tempContext.createImageData(width, height);
+        var abgrData = new Int32Array(imageData.data.buffer);
+
+        if (1 === processAlpha) {
+            ARGBToABGR(rgbData, abgrData, width, height, offset, scanlength);
+        } else {
+            ARGBTo1BGR(rgbData, abgrData, width, height, offset, scanlength);
+        }
+
+        tempContext.putImageData(imageData, 0, 0);
+
         var c = this.info.getGraphicsContext();
-        c.drawImage(context.canvas, x * DPR, y * DPR, width * DPR, height * DPR);
-        return;
+
+        if (config.ignoreRGBDataChanges) {
+            c.drawImage(tempContext.canvas, x, y, width, height);
+        } else {
+            c.drawImage(tempContext.canvas, x * DPR, y * DPR, width * DPR, height * DPR);
+        }
+
+        tempContext.canvas.width = 0;
+        tempContext.canvas.height = 0;
     };
 
     var textEditorId = 0,
