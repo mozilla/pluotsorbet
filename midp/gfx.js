@@ -1301,8 +1301,8 @@ var currentlyFocusedTextEditor;
         textEditorResolve = null,
         dirtyEditors = [];
 
-    function wakeTextEditorThread(textEditor) {
-        dirtyEditors.push(textEditor);
+    function wakeTextEditorThread(textEditorAddr) {
+        dirtyEditors.push(textEditorAddr);
         if (textEditorResolve) {
             textEditorResolve();
             textEditorResolve = null;
@@ -1352,7 +1352,7 @@ var currentlyFocusedTextEditor;
         setTextEditorCaretPosition(self, textEditor.getContentSize());
 
         textEditor.oninput(function(e) {
-            wakeTextEditorThread(self);
+            wakeTextEditorThread(addr);
         });
     };
 
@@ -1554,12 +1554,12 @@ var currentlyFocusedTextEditor;
 
     Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;"] = function(addr) {
         if (dirtyEditors.length) {
-            return dirtyEditors.shift()._address;
+            return dirtyEditors.shift();
         }
 
         asyncImpl("Lcom/nokia/mid/ui/TextEditor;", new Promise(function(resolve, reject) {
             textEditorResolve = function() {
-                resolve(dirtyEditors.shift()._address);
+                resolve(dirtyEditors.shift());
             }
         }));
     };
