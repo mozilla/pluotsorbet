@@ -272,8 +272,12 @@ try {
     return true;
   });
 
-  print("Time: " + (dateNow() - start).toFixed(4) + " ms");
-  J2ME.bytecodeCount && print("Bytecodes: " + J2ME.bytecodeCount);
+  print("-------------------------------------------------------");
+  print("Total Time: " + (dateNow() - start).toFixed(4) + " ms");
+  print("bytecodeCount: " + J2ME.bytecodeCount);
+  print("compiledMethodCount: " + J2ME.compiledMethodCount);
+  print("onStackReplacementCount: " + J2ME.onStackReplacementCount);
+  print("-------------------------------------------------------");
   J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter(false, function (x) {
     print(x);
   }));
