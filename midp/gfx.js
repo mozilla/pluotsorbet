@@ -181,8 +181,8 @@ var currentlyFocusedTextEditor;
         x2 = Math.max(0, x2) * DPR;
         y2 = Math.max(0, y2) * DPR;
 
-        // XXX Isn't the offscreen and device canvas width and height always
-        // the same, so it isn't necessary to compute which one is more minimal?
+        // XXX Aren't the offscreen and device canvas always the same size,
+        // so it isn't necessary to compute their minimum width and height?
 
         var maxX = Math.min(offscreenCanvas.width, MIDP.deviceContext.canvas.width);
         x1 = Math.min(maxX, x1);
