@@ -482,18 +482,47 @@ var currentlyFocusedTextEditor;
         this.height = (size * 1.3) | 0;
 
         this.size = size;
+        this.scaledSize = size * DPR;
+
         // XXX Figure out why this works when these two fields are both int.
         this.style = style;
         this.face = face;
+
+        this.context = document.createElement("canvas").getContext("2d");
+        this.context.canvas.width = 0;
+        this.context.canvas.height = 0;
+        this.context.font = style + " " + size + "px " + face;
+
+        // Sometimes we need to calculate the unscaled width of a string of text
+        // in the font, while other times we need to calculate the scaled width.
+        // But setting a canvas context's font property is expensive, according
+        // to the graphics benchmark.  So we create a second canvas to measure
+        // the scaled width of a string when we're scaling by the DPR.
+        //
+        // We could instead approximate the result by calculating the unscaled
+        // width and then simply multiplying that by the DPR, but it wouldn't
+        // give us the exact equivalent, since string widths don't scale exactly
+        // by font size (i.e. a string with width x in font size y isn't exactly
+        // x * 2 wide in font size y * 2).
+        //
+        // XXX Figure out if the approximate result would be close enough.
+        //
+        if (DPR === 1) {
+            this.scaledContext = this.context;
+        } else {
+            this.scaledContext = document.createElement("canvas").getContext("2d");
+            this.scaledContext.canvas.width = 0;
+            this.scaledContext.canvas.height = 0;
+            this.scaledContext.font = style + " " + size * DPR + "px " + face;
+        }
     };
 
     function calcStringWidth(font, str, scaleByDPR) {
         var emojiLen = 0;
-        var fontSize = font.size * (scaleByDPR ? DPR : 1);
-
-        tempContext.font = font.style + " " + fontSize + "px " + font.face;
-        var len = tempContext.measureText(str.replace(emoji.regEx, function() {
-            emojiLen += fontSize;
+        var context = scaleByDPR ? font.scaledContext : font.context;
+        var size = scaleByDPR ? font.scaledSize : font.size;
+        var len = context.measureText(str.replace(emoji.regEx, function() {
+            emojiLen += size;
             return "";
         })).width | 0;
 
