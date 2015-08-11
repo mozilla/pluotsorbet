@@ -1330,7 +1330,7 @@ module J2ME {
           case Bytecodes.FCMPG:
             var FCMP_fb = f32[--sp];
             var FCMP_fa = f32[--sp];
-            if (isNaN(FCMP_fa) || isNaN(FCMP_fb)) {
+            if (FCMP_fa !== FCMP_fa || FCMP_fb !== FCMP_fb) {
               i32[sp++] = op === Bytecodes.FCMPL ? -1 : 1;
             } else if (FCMP_fa > FCMP_fb) {
               i32[sp++] = 1;
@@ -1349,7 +1349,7 @@ module J2ME {
             aliasedI32[1] = i32[sp - 3];
             var DCMP_fa = aliasedF64[0];
             sp -= 4;
-            if (isNaN(DCMP_fa) || isNaN(DCMP_fb)) {
+            if (DCMP_fa !== DCMP_fa || DCMP_fb !== DCMP_fb) {
               i32[sp++] = op === Bytecodes.DCMPL ? -1 : 1;
             } else if (DCMP_fa > DCMP_fb) {
               i32[sp++] = 1;

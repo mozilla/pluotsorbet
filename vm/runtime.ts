@@ -1678,7 +1678,7 @@ module J2ME {
   export function fcmp(a: number, b: number, isLessThan: boolean): number {
     var x = (aliasedI32[0] = a, aliasedF32[0]);
     var y = (aliasedI32[0] = b, aliasedF32[0]);
-    if (isNaN(x) || isNaN(y)) {
+    if (x !== x || y !== y) {
       return isLessThan ? -1 : 1;
     } else if (x > y) {
       return 1;
@@ -1697,7 +1697,7 @@ module J2ME {
   export function dcmp(al: number, ah: number, bl: number, bh: number, isLessThan: boolean) {
     var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
     var y = (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
-    if (isNaN(x) || isNaN(y)) {
+    if (x !== x || y !== y) {
       return isLessThan ? -1 : 1;
     } else if (x > y) {
       return 1;
