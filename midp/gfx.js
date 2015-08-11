@@ -3,6 +3,8 @@
 
 'use strict';
 
+var FONT_HEIGHT_MULTIPLIER = 1.3;
+
 var currentlyFocusedTextEditor;
 (function(Native) {
     var offscreenCanvas = document.createElement("canvas");
@@ -367,7 +369,7 @@ var currentlyFocusedTextEditor;
             face = "Arial,Helvetica,sans-serif";
 
         self.baseline = size | 0;
-        self.height = (size * 1.3) | 0;
+        self.height = (size * FONT_HEIGHT_MULTIPLIER) | 0;
 
         var context = document.createElement("canvas").getContext("2d");
         setNative(addr, context);
@@ -1343,8 +1345,7 @@ var currentlyFocusedTextEditor;
         textEditor.setAttribute("maxlength", maxSize);
         textEditor.setSize(width, height);
         textEditor.setVisible(false);
-        var font = getHandle(self.font);
-        textEditor.setFont(font);
+        textEditor.setFont(self.font);
 
         textEditor.setContent(J2ME.fromStringAddr(textAddr));
         setTextEditorCaretPosition(textEditor, self, textEditor.getContentSize());
@@ -1549,7 +1550,7 @@ var currentlyFocusedTextEditor;
         var self = getHandle(addr);
         self.font = fontAddr;
         var nativeTextEditor = NativeMap.get(addr);
-        nativeTextEditor.setFont(getHandle(fontAddr));
+        nativeTextEditor.setFont(fontAddr);
     };
 
     Native["com/nokia/mid/ui/TextEditorThread.getNextDirtyEditor.()Lcom/nokia/mid/ui/TextEditor;"] = function(addr) {
