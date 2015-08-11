@@ -317,6 +317,7 @@ module J2ME {
         // Rethrow so the exception is not silent.
         throw "classInfo" in e ? e.classInfo : e;
       }
+      release || assert(this.nativeThread.nativeFrameCount === 0, "All native frames should be gone.")
       if (U) {
         this.nativeThread.endUnwind();
         switch (U) {
@@ -453,9 +454,9 @@ module J2ME {
       this.unblock(monitor, "waiting", notifyAll);
     }
 
-    bailout(methodInfo: MethodInfo, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      traceWriter && traceWriter.writeLn("Bailout: " + methodInfo.implKey);
-      this.nativeThread.unwoundNativeFrames.push({frameType: FrameType.Interpreter, methodInfo: methodInfo, pc: pc, local: local, stack: stack, lockObject: lockObject});
+    bailout(bailoutFrameAddress: number) {
+      traceWriter && traceWriter.writeLn("Bailout: " + methodIdToMethodInfoMap[i32[bailoutFrameAddress + BailoutFrameLayout.MethodInfoIdOffset >> 2]].implKey);
+      this.nativeThread.unwoundNativeFrames.push(bailoutFrameAddress);
     }
 
     pauseMethodTimeline() {

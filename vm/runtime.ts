@@ -633,20 +633,17 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(methodInfoId: number, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
-      release || assert(methodInfo !== undefined);
-      this.ctx.bailout(methodInfo, pc, local, stack, lockObject);
-    }
-
-    /**
-     * Bailout callback whenever a JIT frame is unwound that uses a slightly different calling
-     * convetion that makes it more convenient to emit in some cases.
-     */
-    T(methodInfoId: number, location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
-      release || assert(methodInfo !== undefined);
-      this.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
+    B(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number) {
+      // TODO: use specialized $.B functions based on the local and stack size so we don't have to use the arguments variable.
+      var bailoutFrameAddress = createBailoutFrame(methodInfoId, pc, localCount, stackCount, lockObjectAddress);
+      var argumentOffset = 5;
+      for (var j = 0; j < localCount; j++) {
+        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j] = arguments[argumentOffset + j];
+      }
+      for (var j = 0; j < stackCount; j++) {
+        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j + localCount] = arguments[argumentOffset + localCount + j];
+      }
+      this.ctx.bailout(bailoutFrameAddress);
     }
 
     SA(classId: number) {
@@ -669,7 +666,8 @@ module J2ME {
     nativeBailout(returnKind: Kind, opCode?: Bytecode.Bytecodes) {
       var pc = returnKind === Kind.Void ? 0 : 1;
       var methodInfo = CLASSES.getUnwindMethodInfo(returnKind, opCode);
-      $.ctx.bailout(methodInfo, pc, [], [], null);
+      var bailoutFrameAddress = createBailoutFrame(methodInfo.id, pc, 0, 0, Constants.NULL);
+      this.ctx.bailout(bailoutFrameAddress);
     }
 
     pause(reason: string) {
@@ -1196,6 +1194,26 @@ module J2ME {
     NativeMap.delete(addr);
   }
 
+  export enum BailoutFrameLayout {
+    MethodInfoIdOffset = 0,
+    PCOffset = 4,
+    LocalCountOffset = 8,
+    StackCountOffset = 12,
+    LockOffset = 16,
+    HeaderSize = 20
+  }
+
+  export function createBailoutFrame(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
+    var address = ASM._gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
+    release || assert(typeof methodInfoId === "number" && methodInfoId in methodIdToMethodInfoMap, "Must be valid method info.");
+    i32[address + BailoutFrameLayout.MethodInfoIdOffset >> 2] = methodInfoId;
+    i32[address + BailoutFrameLayout.PCOffset >> 2] = pc;
+    i32[address + BailoutFrameLayout.LocalCountOffset >> 2] = localCount;
+    i32[address + BailoutFrameLayout.StackCountOffset >> 2] = stackCount;
+    i32[address + BailoutFrameLayout.LockOffset >> 2] = lockObjectAddress;
+    return address;
+  }
+
   /**
    * A map from Java object addresses to native objects.
    *
@@ -1556,6 +1574,7 @@ module J2ME {
     getLinkedMethod(CLASSES.java_lang_Class.getMethodByNameString("initialize", "()V"))($.getClassObjectAddress(classInfo));
     if (U) {
       i32[frameTypeOffset] = FrameType.PushPendingFrames;
+      thread.nativeFrameCount--;
       thread.unwoundNativeFrames.push(null);
       return;
     }

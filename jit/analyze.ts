@@ -67,6 +67,7 @@ module J2ME {
     "java/lang/Thread.start0.()V": YieldReason.Root,
     "java/lang/Class.forName0.(Ljava/lang/String;)V": YieldReason.Root,
     "java/lang/Class.newInstance1.(Ljava/lang/Object;)V": YieldReason.Root,
+    "java/lang/Runtime.gc.()V": YieldReason.Root,
     // Test Files:
     "gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,

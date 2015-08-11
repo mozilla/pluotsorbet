@@ -325,6 +325,8 @@ module J2ME {
      */
     pc: number
 
+    nativeFrameCount: number;
+
     /**
      * Context associated with this thread.
      */
@@ -353,6 +355,7 @@ module J2ME {
       this.ctx = ctx;
       this.unwoundNativeFrames = [];
       this.pendingNativeFrames = [];
+      this.nativeFrameCount = 0;
       release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp) + " " + toHEX(this.tp + Constants.MAX_STACK_SIZE));
     }
 
@@ -374,6 +377,9 @@ module J2ME {
     }
 
     pushMarkerFrame(frameType: FrameType) {
+      if (frameType === FrameType.Native) {
+        this.nativeFrameCount++;
+      }
       this.pushFrame(null, 0, 0, null, frameType);
     }
 
@@ -394,6 +400,9 @@ module J2ME {
     }
 
     popMarkerFrame(frameType: FrameType): MethodInfo {
+      if (frameType === FrameType.Native) {
+        this.nativeFrameCount--;
+      }
       return this.popFrame(undefined, frameType);
     }
 
@@ -525,26 +534,29 @@ module J2ME {
         // We should have a |PushPendingFrames| marker frame on the stack at this point.
         this.popMarkerFrame(FrameType.PushPendingFrames);
 
-        var pendingNativeFrame = null;
+        var pendingNativeFrameAddress = null;
         var frames = [];
-        while (pendingNativeFrame = this.pendingNativeFrames.pop()) {
-          frames.push(pendingNativeFrame);
+        while (pendingNativeFrameAddress = this.pendingNativeFrames.pop()) {
+          frames.push(pendingNativeFrameAddress);
         }
-        while (pendingNativeFrame = frames.pop()) {
-          traceWriter && traceWriter.writeLn("Pushing frame: " + pendingNativeFrame.methodInfo.implKey);
-          this.pushFrame(pendingNativeFrame.methodInfo, pendingNativeFrame.stack.length, pendingNativeFrame.pc, pendingNativeFrame.lockObject);
-          // TODO: Figure out how to copy floats and doubles.
+        while (pendingNativeFrameAddress = frames.pop()) {
+          var methodInfo = methodIdToMethodInfoMap[i32[pendingNativeFrameAddress + BailoutFrameLayout.MethodInfoIdOffset >> 2]];
+          var stackCount = i32[pendingNativeFrameAddress + BailoutFrameLayout.StackCountOffset >> 2];
+          var localCount = i32[pendingNativeFrameAddress + BailoutFrameLayout.LocalCountOffset >> 2];
+          var pc = i32[pendingNativeFrameAddress + BailoutFrameLayout.PCOffset >> 2];
+          var lockObjectAddress = i32[pendingNativeFrameAddress + BailoutFrameLayout.LockOffset >> 2];
+          traceWriter && traceWriter.writeLn("Pushing frame: " + methodInfo.implKey);
+          this.pushFrame(methodInfo, stackCount, pc, lockObjectAddress);
           var frame = this.frame;
-          for (var j = 0; j < pendingNativeFrame.local.length; j++) {
-            var value = pendingNativeFrame.local[j];
-            var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
-            frame.setParameter(kind, j, value);
+          for (var j = 0; j < localCount; j++) {
+            var value = i32[(pendingNativeFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j];
+            frame.setParameter(Kind.Int, j, value);
           }
-          for (var j = 0; j < pendingNativeFrame.stack.length; j++) {
-            var value = pendingNativeFrame.stack[j];
-            var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
-            frame.setStackSlot(kind, j, value);
+          for (var j = 0; j < stackCount; j++) {
+            var value = i32[(pendingNativeFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j + localCount];
+            frame.setStackSlot(Kind.Int, j, value);
           }
+          ASM._gcFree(pendingNativeFrameAddress);
         }
         var frameType = i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
@@ -1575,6 +1587,7 @@ module J2ME {
                   if (U) {
                     traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
                     release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
+                    thread.nativeFrameCount--;
                     i32[frameTypeOffset] = FrameType.PushPendingFrames;
                     thread.unwoundNativeFrames.push(null);
                     return;
@@ -2081,7 +2094,7 @@ module J2ME {
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
             release || traceWriter && traceWriter.outdent();
-            release || traceWriter && traceWriter.writeLn(">> I " + lastMI.implKey);
+            release || traceWriter && traceWriter.writeLn("<< I " + lastMI.implKey);
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
@@ -2232,6 +2245,7 @@ module J2ME {
               if (U) {
                 traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
                 release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
+                thread.nativeFrameCount--;
                 i32[frameTypeOffset] = FrameType.PushPendingFrames;
                 thread.unwoundNativeFrames.push(null);
                 return;
@@ -2317,6 +2331,13 @@ module J2ME {
         release || traceWriter && traceWriter.writeLn(e.stack);
         // release || traceWriter && traceWriter.writeLn(jsGlobal.getBacktrace());
 
+        // If an exception is thrown from a native there will be a native marker frame at the top of the stack
+        // which will be cut off when the the fp is set on the thread below. To keep the nativeFrameCount in
+        // sync the native marker must be popped.
+        if (thread.fp > fp) {
+          release || assert(i32[thread.fp + FrameLayout.CallerFPOffset] === fp, "Only one extra frame is on the stack. " + (thread.fp - fp));
+          thread.popMarkerFrame(FrameType.Native);
+        }
         thread.set(fp, sp, opPC);
         e = translateException(e);
         if (!e.classInfo) {

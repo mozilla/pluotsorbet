@@ -390,9 +390,7 @@ module J2ME {
       if (needsTry) {
         this.bodyEmitter.leaveAndEnter("}catch(ex){");
         if (this.hasUnwindThrow) {
-          var local = this.local.join(",");
-          var stack = this.stack.join(",");
-          this.bodyEmitter.writeLn("if(U){$.T(" + this.methodInfo.id + ",ex,[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+          this.emitBailout(this.bodyEmitter, "ex.getPC()", "ex.getSP()", this.stack);
         }
         this.bodyEmitter.writeLn(this.getStackName(0) + "=TE(ex)._address;");
         this.sp = 1;
@@ -1139,11 +1137,23 @@ module J2ME {
         emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
         this.hasUnwindThrow = true;
       } else {
-        var local = this.local.join(",");
-        var stack = BaselineCompiler.stackNames.slice(0, this.sp).join(",");
-        emitter.writeLn("if(U){$.B(" + this.methodInfo.id + "," + pc + ",[" + local + "],[" + stack + "]," + this.lockObject + ");return;}");
+        this.emitBailout(emitter, pc, String(this.sp), BaselineCompiler.stackNames.slice(0, this.sp));
       }
       baselineCounter && baselineCounter.count("emitUnwind");
+    }
+
+    private emitBailout(emitter: Emitter, pc: string, sp: string, stack: string[]) {
+      var localCount = this.local.length;
+      var args = [this.methodInfo.id, pc, localCount, sp, this.lockObject];
+      for (var i = 0; i < localCount; i++) {
+        args.push(this.local[i]);
+      }
+      for (var i = 0; i < stack.length; i++) {
+        args.push(stack[i]);
+      }
+      emitter.writeLn("if(U){" +
+        "$.B(" + args.join(",") + ");" +
+        "return;}");
     }
 
     emitNoUnwindAssertion() {
