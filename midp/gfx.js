@@ -1309,8 +1309,7 @@ var currentlyFocusedTextEditor;
         }
     }
 
-    function getTextEditorCaretPosition(textEditor) {
-        var nativeTextEditor = getNative(textEditor);
+    function getTextEditorCaretPosition(nativeTextEditor, textEditor) {
         if (nativeTextEditor.isAttached()) {
             return nativeTextEditor.getSelectionStart();
         }
@@ -1320,8 +1319,7 @@ var currentlyFocusedTextEditor;
         return 0;
     }
 
-    function setTextEditorCaretPosition(textEditor, index) {
-        var nativeTextEditor = getNative(textEditor);
+    function setTextEditorCaretPosition(nativeTextEditor, textEditor, index) {
         if (nativeTextEditor.isAttached()) {
             nativeTextEditor.setSelectionRange(index, index);
         } else {
@@ -1349,7 +1347,7 @@ var currentlyFocusedTextEditor;
         textEditor.setFont(font);
 
         textEditor.setContent(J2ME.fromStringAddr(textAddr));
-        setTextEditorCaretPosition(self, textEditor.getContentSize());
+        setTextEditorCaretPosition(textEditor, self, textEditor.getContentSize());
 
         textEditor.oninput(function(e) {
             wakeTextEditorThread(addr);
@@ -1449,12 +1447,13 @@ var currentlyFocusedTextEditor;
             throw $.newStringIndexOutOfBoundsException();
         }
 
-        setTextEditorCaretPosition(self, index);
+        setTextEditorCaretPosition(textEditor, self, index);
     };
 
     Native["com/nokia/mid/ui/TextEditor.getCaretPosition.()I"] = function(addr) {
         var self = getHandle(addr);
-        return getTextEditorCaretPosition(self);
+        var nativeTextEditor = NativeMap.get(addr);
+        return getTextEditorCaretPosition(nativeTextEditor, self);
     };
 
     Native["com/nokia/mid/ui/TextEditor.getBackgroundColor.()I"] = function(addr) {
@@ -1479,7 +1478,7 @@ var currentlyFocusedTextEditor;
         var nativeTextEditor = NativeMap.get(addr);
         var content = J2ME.fromStringAddr(contentAddr);
         nativeTextEditor.setContent(content);
-        setTextEditorCaretPosition(self, nativeTextEditor.getContentSize());
+        setTextEditorCaretPosition(nativeTextEditor, self, nativeTextEditor.getContentSize());
     };
 
     addUnimplementedNative("com/nokia/mid/ui/TextEditor.getLineMarginHeight.()I", 0);
@@ -1498,7 +1497,7 @@ var currentlyFocusedTextEditor;
             throw $.newIllegalArgumentException();
         }
         nativeTextEditor.setContent(nativeTextEditor.getSlice(0, pos) + text + nativeTextEditor.getSlice(pos));
-        setTextEditorCaretPosition(self, pos + len);
+        setTextEditorCaretPosition(nativeTextEditor, self, pos + len);
     };
 
     Native["com/nokia/mid/ui/TextEditor.delete.(II)V"] = function(addr, offset, length) {
@@ -1512,7 +1511,7 @@ var currentlyFocusedTextEditor;
         }
 
         nativeTextEditor.setContent(nativeTextEditor.getSlice(0, offset) + nativeTextEditor.getSlice(offset + length));
-        setTextEditorCaretPosition(self, offset);
+        setTextEditorCaretPosition(nativeTextEditor, self, offset);
     };
 
     Native["com/nokia/mid/ui/TextEditor.getMaxSize.()I"] = function(addr) {
@@ -1523,13 +1522,14 @@ var currentlyFocusedTextEditor;
         var nativeTextEditor = NativeMap.get(addr);
         if (nativeTextEditor.getContentSize() > maxSize) {
             var self = getHandle(addr);
+            var nativeTextEditor = NativeMap.get(addr);
 
-            var oldCaretPosition = getTextEditorCaretPosition(self);
+            var oldCaretPosition = getTextEditorCaretPosition(nativeTextEditor, self);
 
             nativeTextEditor.setContent(nativeTextEditor.getSlice(0, maxSize));
 
             if (oldCaretPosition > maxSize) {
-                setTextEditorCaretPosition(self, maxSize);
+                setTextEditorCaretPosition(nativeTextEditor, self, maxSize);
             }
         }
 
