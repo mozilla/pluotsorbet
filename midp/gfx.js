@@ -403,13 +403,13 @@ var currentlyFocusedTextEditor;
             abgrData = new Int32Array(tempContext.getImageData(0, 0, width, height).data.buffer);
             tempContext.canvas.width = 0;
             tempContext.canvas.height = 0;
+
+            if (config.ignoreRgbChanges && width === this.width && height === this.height) {
+                rgbData.originalContext = this.contextInfo.context;
+            }
         }
 
         ABGRToARGB(abgrData, rgbData, width, height, offset, scanlength);
-        if (config.ignoreRGBDataChanges) {
-            rgbData.scaledData = new Int32Array(this.contextInfo.context.getImageData(x * DPR, y * DPR, width * DPR, height * DPR).data.buffer);
-        }
-        rgbDataMap.set(rgbData, this.contextInfo.context);
     };
 
     Native["com/nokia/mid/ui/DirectUtils.makeMutable.(Ljavax/microedition/lcdui/Image;)V"] = function(image) {
@@ -1458,18 +1458,11 @@ var currentlyFocusedTextEditor;
 
     Native["javax/microedition/lcdui/Graphics.drawRGB.([IIIIIIIZ)V"] =
     function(rgbData, offset, scanlength, x, y, width, height, processAlpha) {
-        if (config.ignoreRGBDataChanges) {
-            // Ignore the modified RGB data and draw the original image instead.
-            rgbData = rgbData.scaledData;
-            x *= DPR;
-            y *= DPR;
-            width *= DPR;
-            height *= DPR;
-            scanlength *= DPR;
-            // var context = rgbDataMap.get(rgbData);
-            // var c = this.info.getGraphicsContext();
-            // c.drawImage(context.canvas, x * DPR, y * DPR, width * DPR, height * DPR);
-            // return;
+        if (config.ignoreRgbChanges && rgbData.originalContext) {
+            // Ignore the modifications and draw the original image instead.
+            var c = this.info.getGraphicsContext();
+            c.drawImage(rgbData.originalContext.canvas, x * DPR, y * DPR, scanlength * DPR, height * DPR);
+            return;
         }
 
         tempContext.canvas.height = height;
@@ -1487,11 +1480,7 @@ var currentlyFocusedTextEditor;
 
         var c = this.info.getGraphicsContext();
 
-        if (config.ignoreRGBDataChanges) {
-            c.drawImage(tempContext.canvas, x, y, width, height);
-        } else {
-            c.drawImage(tempContext.canvas, x * DPR, y * DPR, width * DPR, height * DPR);
-        }
+        c.drawImage(tempContext.canvas, x * DPR, y * DPR, width * DPR, height * DPR);
 
         tempContext.canvas.width = 0;
         tempContext.canvas.height = 0;

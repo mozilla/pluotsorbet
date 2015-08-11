@@ -51,4 +51,4 @@ config.chRegisteredClassName = "com.whatsapp.client.test.ContactListMidlet";
 config.chRegisteredStorageID = 1;
 config.chRegisteredRegistrationMethod = 0;
 config.useOffscreenCanvas = false;
-config.ignoreRGBDataChanges = true;
+config.ignoreRgbChanges = true;
