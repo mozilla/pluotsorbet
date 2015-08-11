@@ -151,7 +151,6 @@ module J2ME {
       var ascii = true;
       var utf8Length = utf8.length;
       var utf16Addr = newCharArray(utf8Length);
-      var utf16 = getArrayFromAddr(utf16Addr);
       for (var i = 0; i < utf8Length; i++) {
         var ch1 = utf8[i];
         if (ch1 === 0) {
@@ -161,7 +160,7 @@ module J2ME {
           ascii = false;
           break;
         }
-        utf16[i] = ch1;
+        u16[(utf16Addr + Constants.ARRAY_HDR_SIZE >> 1) + i] = ch1;
       }
       if (ascii) {
         return utf16Addr;
@@ -223,8 +222,7 @@ module J2ME {
       }
 
       var retAddr = newCharArray(a.length);
-      var ret = getArrayFromAddr(retAddr);
-      ret.set(a);
+      u16.set(a, retAddr + Constants.ARRAY_HDR_SIZE >> 1);
       return retAddr;
     }
 
