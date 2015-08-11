@@ -1215,14 +1215,14 @@ module J2ME {
    * Will we ever want to map multiple natives to an address?  If so, we'll need
    * to do something more sophisticated here.
    */
-  export var NativeMap = new Map<number,Object|number>();
+  export var NativeMap = new Map<number,Object>();
 
-  export function setNative(addr: number, obj: Object|number): void {
+  export function setNative(addr: number, obj: Object): void {
     NativeMap.set(addr, obj);
     ASM._registerFinalizer(addr);
   }
 
-  export function getNative(javaObj: java.lang.Object): Object|number {
+  export function getNative(javaObj: java.lang.Object): Object {
       return NativeMap.get(javaObj._address);
   }
 
