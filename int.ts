@@ -1591,7 +1591,7 @@ module J2ME {
                     switch (kind) {
                       case Kind.Long:
                       case Kind.Double:
-                        return returnLong(tempReturn0, returnValue);
+                        return returnLong(returnValue, tempReturn0);
                       case Kind.Int:
                       case Kind.Byte:
                       case Kind.Char:
