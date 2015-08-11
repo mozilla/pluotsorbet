@@ -121,6 +121,9 @@ var currentlyFocusedTextEditor;
         var ctx = $.ctx;
         window.requestAnimationFrame(function() {
             MIDP.deviceContext.drawImage(offscreenCanvas, x1, y1, width, height, x1, y1, width, height);
+            var thread = ctx.nativeThread;
+            // The caller's |pc| is currently at the invoke bytecode, we need to skip over the invoke when resuming.
+            thread.advancePastInvokeBytecode();
             J2ME.Scheduler.enqueue(ctx);
         });
         $.pause(refreshStr);
