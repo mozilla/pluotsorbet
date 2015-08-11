@@ -764,13 +764,12 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(addr, s
 Native["java/lang/String.intern.()Ljava/lang/String;"] = function(addr) {
   var self = getHandle(addr);
   var value = J2ME.getArrayFromAddr(self.value);
-  var internedStrings = J2ME.internedStrings;
-  var internedString = internedStrings.getByRange(value, self.offset, self.count);
-  if (internedString !== null) {
-    return internedString._address;
+  var internedStringAddr = J2ME.internedStrings.getByRange(value, self.offset, self.count);
+  if (internedStringAddr !== null) {
+    return internedStringAddr;
   }
-  internedStrings.put(value.subarray(self.offset, self.offset + self.count), self);
-  return self._address;
+  J2ME.internedStrings.put(value.subarray(self.offset, self.offset + self.count), addr);
+  return addr;
 };
 
 var profileStarted = false;

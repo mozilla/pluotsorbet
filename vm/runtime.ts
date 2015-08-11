@@ -495,9 +495,9 @@ module J2ME {
 
     newStringConstant(utf16ArrayAddr: number): number {
       var utf16Array = getArrayFromAddr(utf16ArrayAddr);
-      var javaString = internedStrings.get(utf16Array);
-      if (javaString !== null) {
-        return javaString._address;
+      var javaStringAddr = internedStrings.get(utf16Array);
+      if (javaStringAddr !== null) {
+        return javaStringAddr;
       }
 
       setUncollectable(utf16ArrayAddr);
@@ -506,15 +506,16 @@ module J2ME {
       // to ConstantPool.resolve, which itself is only called by a few callers,
       // which should be able to convert it into an address if needed.  But we
       // should confirm that all callers of ConstantPool.resolve really do that.
-      javaString = <java.lang.String>getHandle(allocUncollectableObject(CLASSES.java_lang_String));
+      javaStringAddr = allocUncollectableObject(CLASSES.java_lang_String);
+      var javaString = <java.lang.String>getHandle(javaStringAddr);
       javaString.value = utf16ArrayAddr;
       javaString.offset = 0;
       javaString.count = utf16Array.length;
-      internedStrings.put(utf16Array, javaString);
+      internedStrings.put(utf16Array, javaStringAddr);
 
       unsetUncollectable(utf16ArrayAddr);
 
-      return javaString._address;
+      return javaStringAddr;
     }
 
     newIOException(str?: string): java.io.IOException {
@@ -1207,22 +1208,15 @@ module J2ME {
   /**
    * A map from Java object addresses to native objects.
    *
-   * Use getNative to simplify accessing this map. getNative takes a handle, so
-   * callers don't need to dereference its address.
-   *
    * Currently this only supports mapping an address to a single native.
    * Will we ever want to map multiple natives to an address?  If so, we'll need
    * to do something more sophisticated here.
    */
-  export var NativeMap = new Map<number,Object|number>();
+  export var NativeMap = new Map<number,Object>();
 
-  export function setNative(addr: number, obj: Object|number): void {
+  export function setNative(addr: number, obj: Object): void {
     NativeMap.set(addr, obj);
     ASM._registerFinalizer(addr);
-  }
-
-  export function getNative(javaObj: java.lang.Object): Object|number {
-      return NativeMap.get(javaObj._address);
   }
 
   /**
@@ -1715,4 +1709,3 @@ var getHandle = J2ME.getHandle;
 
 var NativeMap = J2ME.NativeMap;
 var setNative = J2ME.setNative;
-var getNative = J2ME.getNative;
