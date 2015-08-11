@@ -689,41 +689,6 @@ module J2ME {
       return !!(this.accessFlags & ACCESS_FLAGS.ACC_STATIC);
     }
 
-    public get(object: java.lang.Object) {
-      switch (this.kind) {
-        case Kind.Int:
-          return i32[object._address + this.byteOffset >> 2];
-        case Kind.Reference:
-          return i32[object._address + this.byteOffset >> 2];
-        case Kind.Float:
-          return f32[object._address + this.byteOffset >> 2];
-        default:
-          Debug.assert(false, Kind[this.kind]);
-      }
-    }
-
-    public set(object: java.lang.Object, value: any) {
-      switch (this.kind) {
-        case Kind.Int:
-          i32[object._address + this.byteOffset >> 2] = value;
-          break;
-        case Kind.Reference:
-          i32[object._address + this.byteOffset >> 2] = value._address;
-          break;
-        default:
-          Debug.assert(false, Kind[this.kind]);
-      }
-      // object[this.mangledName] = value
-    }
-    //
-    //public getStatic() {
-    //  return this.get(this.classInfo.getStaticObject($.ctx));
-    //}
-    //
-    //public setStatic(value: any) {
-    //  return this.set(this.classInfo.getStaticObject($.ctx), value);
-    //}
-
     private scanFieldInfoAttributes() {
       var s = this;
       var attributes_count = s.readU2();
