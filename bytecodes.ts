@@ -331,11 +331,11 @@ module J2ME.Bytecode {
     GETFIELD             = 180, // 0xB4
     PUTFIELD             = 181, // 0xB5
     FIRST_INVOKE         = 182,
+    LAST_INVOKE          = 185,
     INVOKEVIRTUAL        = 182, // 0xB6
     INVOKESPECIAL        = 183, // 0xB7
     INVOKESTATIC         = 184, // 0xB8
     INVOKEINTERFACE      = 185, // 0xB9
-    LAST_INVOKE          = 185,
     XXXUNUSEDXXX         = 186, // 0xBA
     NEW                  = 187, // 0xBB
     NEWARRAY             = 188, // 0xBC

@@ -609,7 +609,9 @@ module J2ME {
             case TAGS.CONSTANT_Long:
               var high = s.readS4();
               var low = s.readS4();
-              r = this.resolved[i] = Long.fromBits(low, high);
+              // REDUX
+              //r = this.resolved[i] = Long.fromBits(low, high);
+              Debug.error("TODO constant pool longs");
               break;
             case TAGS.CONSTANT_Double:
               r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readS4(), s.readS4());
@@ -857,11 +859,14 @@ module J2ME {
   }
 
   export class MethodInfo extends ByteStream {
+    private static nextId: number = 1;
+
     public classInfo: ClassInfo;
     public accessFlags: ACCESS_FLAGS;
 
     public fn: any = null;
     public index: number;
+    public id: number;
     public state: MethodState;
     public stats: MethodInfoStats;
     public codeAttribute: CodeAttribute;
@@ -894,6 +899,8 @@ module J2ME {
 
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
+      this.id = MethodInfo.nextId++;
+      methodIdToMethodInfoMap[this.id] = this;
       this.index = index;
       this.accessFlags = this.u2(0);
       this.classInfo = classInfo;

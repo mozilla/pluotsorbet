@@ -72,234 +72,6 @@ module J2ME {
     return this[this.length - i];
   };
 
-  //export class Frame {
-  //  methodInfo: MethodInfo;
-  //  local: any [];
-  //  stack: any [];
-  //  code: Uint8Array;
-  //  pc: number;
-  //  opPC: number;
-  //  lockObject: java.lang.Object;
-  //
-  //  static dirtyStack: Frame [] = [];
-  //
-  //  /**
-  //   * Denotes the start of the context frame stack.
-  //   */
-  //  static Start: Frame = Frame.create(null, null);
-  //
-  //  /**
-  //   * Marks a frame set.
-  //   */
-  //  static Marker: Frame = Frame.create(null, null);
-  //
-  //  static isMarker(frame: Frame) {
-  //    return frame.methodInfo === null;
-  //  }
-  //
-  //  constructor(methodInfo: MethodInfo, local: any []) {
-  //    frameCount ++;
-  //    this.stack = [];
-  //    this.reset(methodInfo, local);
-  //  }
-  //
-  //  reset(methodInfo: MethodInfo, local: any []) {
-  //    this.methodInfo = methodInfo;
-  //    this.code = methodInfo ? methodInfo.codeAttribute.code : null;
-  //    this.pc = 0;
-  //    this.opPC = 0;
-  //    this.stack.length = 0;
-  //    this.local = local;
-  //    this.lockObject = null;
-  //  }
-  //
-  //  static create(methodInfo: MethodInfo, local: any []): Frame {
-  //    var dirtyStack = Frame.dirtyStack;
-  //    if (dirtyStack.length) {
-  //      var frame = dirtyStack.pop();
-  //      frame.reset(methodInfo, local);
-  //      return frame;
-  //    } else {
-  //      return new Frame(methodInfo, local);
-  //    }
-  //  }
-  //
-  //  free() {
-  //    release || assert(!Frame.isMarker(this), "Freeing a marker frame");
-  //    Frame.dirtyStack.push(this);
-  //  }
-  //
-  //  incLocal(i: number, value: any) {
-  //    this.local[i] += value | 0;
-  //  }
-  //
-  //  read8(): number {
-  //    return this.code[this.pc++];
-  //  }
-  //
-  //  peek8(): number {
-  //    return this.code[this.pc];
-  //  }
-  //
-  //  read16(): number {
-  //    var code = this.code
-  //    return code[this.pc++] << 8 | code[this.pc++];
-  //  }
-  //
-  //  patch(offset: number, oldValue: Bytecodes, newValue: Bytecodes) {
-  //    release || assert(this.code[this.pc - offset] === oldValue, "patch target doesn't match");
-  //    this.code[this.pc - offset] = newValue;
-  //  }
-  //
-  //  read32(): number {
-  //    return this.read32Signed() >>> 0;
-  //  }
-  //
-  //  read8Signed(): number {
-  //    return this.code[this.pc++] << 24 >> 24;
-  //  }
-  //
-  //  read16Signed(): number {
-  //    var pc = this.pc;
-  //    var code = this.code;
-  //    this.pc = pc + 2
-  //    return (code[pc] << 8 | code[pc + 1]) << 16 >> 16;
-  //  }
-  //
-  //  readTargetPC(): number {
-  //    var pc = this.pc;
-  //    var code = this.code;
-  //    this.pc = pc + 2
-  //    var offset = (code[pc] << 8 | code[pc + 1]) << 16 >> 16;
-  //    return pc - 1 + offset;
-  //  }
-  //
-  //  read32Signed(): number {
-  //    return this.read16() << 16 | this.read16();
-  //  }
-  //
-  //  tableSwitch(): number {
-  //    var start = this.pc;
-  //    while ((this.pc & 3) != 0) {
-  //      this.pc++;
-  //    }
-  //    var def = this.read32Signed();
-  //    var low = this.read32Signed();
-  //    var high = this.read32Signed();
-  //    var value = this.stack.pop();
-  //    var pc;
-  //    if (value < low || value > high) {
-  //      pc = def;
-  //    } else {
-  //      this.pc += (value - low) << 2;
-  //      pc = this.read32Signed();
-  //    }
-  //    return start - 1 + pc;
-  //  }
-  //
-  //  lookupSwitch(): number {
-  //    var start = this.pc;
-  //    while ((this.pc & 3) != 0) {
-  //      this.pc++;
-  //    }
-  //    var pc = this.read32Signed();
-  //    var size = this.read32();
-  //    var value = this.stack.pop();
-  //    lookup:
-  //    for (var i = 0; i < size; i++) {
-  //      var key = this.read32Signed();
-  //      var offset = this.read32Signed();
-  //      if (key === value) {
-  //        pc = offset;
-  //      }
-  //      if (key >= value) {
-  //        break lookup;
-  //      }
-  //    }
-  //    return start - 1 + pc;
-  //  }
-  //
-  //  wide() {
-  //    var stack = this.stack;
-  //    var op = this.read8();
-  //    switch (op) {
-  //      case Bytecodes.ILOAD:
-  //      case Bytecodes.FLOAD:
-  //      case Bytecodes.ALOAD:
-  //        stack.push(this.local[this.read16()]);
-  //        break;
-  //      case Bytecodes.LLOAD:
-  //      case Bytecodes.DLOAD:
-  //        stack.push2(this.local[this.read16()]);
-  //        break;
-  //      case Bytecodes.ISTORE:
-  //      case Bytecodes.FSTORE:
-  //      case Bytecodes.ASTORE:
-  //        this.local[this.read16()] = stack.pop();
-  //        break;
-  //      case Bytecodes.LSTORE:
-  //      case Bytecodes.DSTORE:
-  //        this.local[this.read16()] = stack.pop2();
-  //        break;
-  //      case Bytecodes.IINC:
-  //        var index = this.read16();
-  //        var value = this.read16Signed();
-  //        this.local[index] += value;
-  //        break;
-  //      case Bytecodes.RET:
-  //        this.pc = this.local[this.read16()];
-  //        break;
-  //      default:
-  //        var opName = Bytecodes[op];
-  //        throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
-  //    }
-  //  }
-  //
-  //  /**
-  //   * Returns the |object| on which a call to the specified |methodInfo| would be
-  //   * called.
-  //   */
-  //  peekInvokeObject(methodInfo: MethodInfo): java.lang.Object {
-  //    release || assert(!methodInfo.isStatic, "peekInvokeObject called on static method");
-  //    var i = this.stack.length - methodInfo.argumentSlots - 1;
-  //    release || assert (i >= 0, "not enough stack in peekInvokeObject");
-  //    release || assert (this.stack[i] !== undefined, "unexpected undefined in peekInvokeObject");
-  //    return this.stack[i];
-  //  }
-  //
-  //  popArgumentsInto(methodInfo: MethodInfo, args): any [] {
-  //    var stack = this.stack;
-  //    var signatureKinds = methodInfo.signatureKinds;
-  //    var argumentSlots = methodInfo.argumentSlots;
-  //    for (var i = 1, j = stack.length - argumentSlots, k = 0; i < signatureKinds.length; i++) {
-  //      args[k++] = stack[j++];
-  //      if (isTwoSlot(signatureKinds[i])) {
-  //        j++;
-  //      }
-  //    }
-  //    release || assert(j === stack.length && k === signatureKinds.length - 1, "lengths don't match in popArgumentsInto");
-  //    stack.length -= argumentSlots;
-  //    args.length = k;
-  //    return args;
-  //  }
-  //
-  //  toString() {
-  //    return this.methodInfo.implKey + " " + this.pc;
-  //  }
-  //
-  //  trace(writer: IndentingWriter) {
-  //    var localStr = this.local.map(function (x) {
-  //      return toDebugString(x);
-  //    }).join(", ");
-  //
-  //    var stackStr = this.stack.map(function (x) {
-  //      return toDebugString(x);
-  //    }).join(", ");
-  //
-  //    writer.writeLn(("" + this.pc).padLeft(" ", 4) + " " + localStr + " | " + stackStr);
-  //  }
-  //}
-
   export var CLASSES = new ClassRegistry();
   declare var util;
 
@@ -328,7 +100,7 @@ module J2ME {
 
       var sys = CLASSES.getClass("org/mozilla/internal/Sys");
 
-      ctx.nativeThread.pushFrame(null);
+      ctx.nativeThread.pushMarkerFrame(FrameType.ExitInterpreter);
       ctx.nativeThread.pushFrame(sys.getMethodByNameString("isolate0Entry", "(Ljava/lang/String;[Ljava/lang/String;)V"));
       ctx.nativeThread.frame.setParameter(Kind.Reference, 0, J2ME.newString(className.replace(/\./g, "/")));
 
@@ -367,7 +139,7 @@ module J2ME {
       if (!entryPoint)
         throw new Error("Could not find isolate entry point.");
 
-      ctx.nativeThread.pushFrame(null);
+      ctx.nativeThread.pushMarkerFrame(FrameType.ExitInterpreter);
       ctx.nativeThread.pushFrame(entryPoint);
       ctx.nativeThread.frame.setParameter(Kind.Reference, 0, isolateAddr);
       ctx.start();
@@ -480,28 +252,6 @@ module J2ME {
 
     executeMethod(methodInfo: MethodInfo) {
       return getLinkedMethod(methodInfo)();
-      // this.nativeThread.pushFrame(methodInfo);
-      // var returnValue = J2ME.interpret(this.nativeThread);
-
-      //try {
-      //  var returnValue = J2ME.interpret(this.nativeThread);
-      //  if (U) {
-      //    // Prepend all frames up until the first marker to the bailout frames.
-      //    while (true) {
-      //      var frame = frames.pop();
-      //      if (Frame.isMarker(frame)) {
-      //        break;
-      //      }
-      //      this.bailoutFrames.unshift(frame);
-      //    }
-      //    return;
-      //  }
-      //} catch (e) {
-      //  this.popMarkerFrame();
-      //  throwHelper(e);
-      //}
-      //this.popMarkerFrame();
-      // return returnValue;
     }
 
     createException(className: string, message?: string): java.lang.Object {
@@ -562,10 +312,7 @@ module J2ME {
         throw "classInfo" in e ? e.classInfo : e;
       }
       if (U) {
-        //if (this.bailoutFrames.length) {
-        //  Array.prototype.push.apply(this.frames, this.bailoutFrames);
-        //  this.bailoutFrames = [];
-        //}
+        this.nativeThread.endUnwind();
         switch (U) {
           case VMState.Yielding:
             this.resume();
@@ -694,19 +441,15 @@ module J2ME {
       var monitor = getMonitor(objectAddr);
       if (!monitor._lock || monitor._lock.threadAddress !== this.threadAddress)
         throw $.newIllegalMonitorStateException();
-
+      // TODO Unblock can call wakeup on a different ctx which in turn calls monitorEnter and can cause unwinds
+      // on another ctx, but we shouldn't unwind this ctx. After figuring out why this is, remove assertions in
+      // "java/lang/Object.notify.()V" and "java/lang/Object.notifyAll.()V"
       this.unblock(monitor, "waiting", notifyAll);
     }
 
-    bailout(methodInfo: MethodInfo, pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      // perfWriter && perfWriter.writeLn("C Unwind: " + methodInfo.implKey);
-      //REDUX
-      //var frame = Frame.create(methodInfo, local);
-      //frame.stack = stack;
-      //frame.pc = nextPC;
-      //frame.opPC = pc;
-      //frame.lockObject = lockObject;
-      //this.bailoutFrames.unshift(frame);
+    bailout(methodInfo: MethodInfo, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+      traceWriter && traceWriter.writeLn("Bailout: " + methodInfo.implKey);
+      this.nativeThread.unwoundNativeFrames.push({frameType: FrameType.Interpreter, methodInfo: methodInfo, pc: pc, local: local, stack: stack, lockObject: lockObject});
     }
 
     pauseMethodTimeline() {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-declare var trackedOpts;
+declare var pc2line;
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
-var inBrowser = typeof trackedOpts === "undefined";
+var inBrowser = typeof pc2line === "undefined";
 
 
 declare var putstr;
@@ -350,7 +350,7 @@ module J2ME {
   }
 
   export module IntegerUtilities {
-    var sharedBuffer = new ArrayBuffer(8);
+    var sharedBuffer = new ArrayBuffer(24);
     export var i32 = new Int32Array(sharedBuffer);
     export var f32 = new Float32Array(sharedBuffer);
     export var f64 = new Float64Array(sharedBuffer);

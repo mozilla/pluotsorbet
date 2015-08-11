@@ -10,17 +10,6 @@ var tempReturn0 = 0;
 interface Math {
   fround(value: number): number;
 }
-interface Long {
-  isZero(): boolean;
-  toNumber(): number;
-}
-declare var Long: {
-  new (low: number, high: number): Long;
-  ZERO: Long;
-  fromBits(lowBits: number, highBits: number): Long;
-  fromInt(value: number);
-  fromNumber(value: number);
-}
 
 interface CompiledMethodCache {
   get(key: string): { key: string; source: string; referencedClasses: string[]; };
@@ -45,9 +34,14 @@ module J2ME {
     return l;
   }
 
-  export function returnLongValue(v: number) {
-    var value = Long.fromNumber(v);
-    return returnLong(value.low_, value.high_);
+  export function returnDouble(l: number, h: number) {
+    tempReturn0 = h;
+    return l;
+  }
+
+  export function returnDoubleValue(v: number) {
+    aliasedF64[0] = v;
+    return returnDouble(aliasedI32[0], aliasedI32[1]);
   }
 
   declare var Native, config;
@@ -69,7 +63,7 @@ module J2ME {
   /**
    * Turns on caching of JIT-compiled methods.
    */
-  export var enableCompiledMethodCache = true && typeof CompiledMethodCache !== "undefined";
+  export var enableCompiledMethodCache = false && typeof CompiledMethodCache !== "undefined";
 
   /**
    * Traces method execution.
@@ -154,7 +148,6 @@ module J2ME {
   export var runtimeCounter = release ? null : new Metrics.Counter(true);
   export var baselineMethodCounter = release ? null : new Metrics.Counter(true);
   export var asyncCounter = release ? null : new Metrics.Counter(true);
-  export var jitMethodInfos = {};
 
   export var unwindCount = 0;
 
@@ -421,9 +414,7 @@ module J2ME {
      * different threads that need trigger the Class.initialize() code so they block.
      */
     setClassInitialized(classId: number) {
-      var classInfo = classIdToClassInfoMap[classId];
-      var className = classInfo.getClassNameSlow();
-      this.initialized[className] = true;
+      this.initialized[classId] = true;
     }
 
     getClassObjectAddress(classInfo: ClassInfo): number {
@@ -634,24 +625,36 @@ module J2ME {
   export class Runtime extends RuntimeTemplate {
     private static _nextId: number = 0;
     id: number;
+    /**
+     * Short alias of initialized for compiled code.
+     */
+    I: any [];
 
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(pc: number, nextPC: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
+    B(methodInfoId: number, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
+      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
       release || assert(methodInfo !== undefined, "methodInfo undefined in B");
-      $.ctx.bailout(methodInfo, pc, nextPC, local, stack, lockObject);
+      this.ctx.bailout(methodInfo, pc, local, stack, lockObject);
     }
 
     /**
      * Bailout callback whenever a JIT frame is unwound that uses a slightly different calling
      * convetion that makes it more convenient to emit in some cases.
      */
-    T(location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = jitMethodInfos[(<any>arguments.callee.caller).name];
+    T(methodInfoId: number, location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
+      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
       release || assert(methodInfo !== undefined, "methodInfo undefined in T");
-      $.ctx.bailout(methodInfo, location.getPC(), location.getNextPC(), local, stack.slice(0, location.getSP()), lockObject);
+      this.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
+    }
+
+    SA(classId: number) {
+      return this.getStaticObjectAddress(classIdToClassInfoMap[classId]);
+    }
+
+    CO(classId: number) {
+      return this.getClassObjectAddress(classIdToClassInfoMap[classId]);
     }
 
     yield(reason: string) {
@@ -660,6 +663,13 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("yielding " + reason);
       U = VMState.Yielding;
       profile && $.ctx.pauseMethodTimeline();
+      this.ctx.nativeThread.beginUnwind();
+    }
+
+    nativeBailout(returnKind: Kind, opCode?: Bytecode.Bytecodes) {
+      var pc = returnKind === Kind.Void ? 0 : 1;
+      var methodInfo = CLASSES.getUnwindMethodInfo(returnKind, opCode);
+      $.ctx.bailout(methodInfo, pc, [], [], null);
     }
 
     pause(reason: string) {
@@ -668,6 +678,7 @@ module J2ME {
       runtimeCounter && runtimeCounter.count("pausing " + reason);
       U = VMState.Pausing;
       profile && $.ctx.pauseMethodTimeline();
+      this.ctx.nativeThread.beginUnwind();
     }
 
     stop() {
@@ -677,10 +688,13 @@ module J2ME {
     constructor(jvm: JVM) {
       super(jvm);
       this.id = Runtime._nextId ++;
+      this.I = this.initialized;
     }
   }
 
   export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
+  export var methodIdToMethodInfoMap: Map<number, MethodInfo> = Object.create(null);
+  export var linkedMethods: Map<number, Function> = Object.create(null);
 
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
@@ -779,28 +793,25 @@ module J2ME {
   var frameView = new FrameView();
 
   function findCompiledMethod(methodInfo: MethodInfo): Function {
-    // REDUX when compiler is enabled again
-    return null;
-    /*
+    return;
     // Use aotMetaData to find AOT methods instead of jsGlobal because runtime compiled methods may
     // be on the jsGlobal.
-    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-    if (aotMetaData[mangledClassAndMethodName]) {
-      aotMethodCount++;
-      methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
-      release || assert(jsGlobal[mangledClassAndMethodName], "function must be present when aotMetaData exists");
-      return jsGlobal[mangledClassAndMethodName];
-    }
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
-        cachedMethodCount ++;
-        linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      }
-    }
-
-    return jsGlobal[mangledClassAndMethodName];
-    */
+    //var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
+    //if (aotMetaData[mangledClassAndMethodName]) {
+    //  aotMethodCount++;
+    //  methodInfo.onStackReplacementEntryPoints = aotMetaData[methodInfo.mangledClassAndMethodName].osr;
+    //  release || assert(jsGlobal[mangledClassAndMethodName], "function must be present when aotMetaData exists");
+    //  return jsGlobal[mangledClassAndMethodName];
+    //}
+    //if (enableCompiledMethodCache) {
+    //  var cachedMethod;
+    //  if ((cachedMethod = CompiledMethodCache.get(methodInfo.implKey))) {
+    //    cachedMethodCount ++;
+    //    linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
+    //  }
+    //}
+    //
+    //return jsGlobal[mangledClassAndMethodName];
   }
 
   /**
@@ -854,7 +865,7 @@ module J2ME {
                 break;
               case Kind.Long:
                 setter = new Function("value",
-                  "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.numberToLong(value);" +
+                  "i32[this._address + " + field.byteOffset + " >> 2] = J2ME.returnLongValue(value);" +
                   "i32[this._address + " + field.byteOffset + " + 4 >> 2] = tempReturn0;");
                 getter = new Function("return J2ME.longToNumber(i32[this._address + " + field.byteOffset + " >> 2]," +
                   "                         i32[this._address + " + field.byteOffset + " + 4 >> 2]);");
@@ -971,13 +982,13 @@ module J2ME {
     if (methodInfo.fn) {
       return methodInfo.fn;
     }
-    linkClassMethod(methodInfo);
-    release || assert(methodInfo.fn, "bad fn in getLinkedMethod");
+    linkMethod(methodInfo);
+    release || assert (methodInfo.fn, "bad fn in getLinkedMethod");
     return methodInfo.fn;
   }
 
-  function linkClassMethod(methodInfo: MethodInfo) {
-    runtimeCounter && runtimeCounter.count("linkClassMethod");
+  function linkMethod(methodInfo: MethodInfo) {
+    runtimeCounter && runtimeCounter.count("linkMethod");
     var fn;
     var methodType;
     var nativeMethod = findNativeMethodImplementation(methodInfo);
@@ -991,9 +1002,6 @@ module J2ME {
       if (fn) {
         linkWriter && linkWriter.greenLn("Method: " + methodInfo.name + methodInfo.signature + " -> Compiled");
         methodType = MethodType.Compiled;
-        // Save method info so that we can figure out where we are bailing
-        // out from.
-        jitMethodInfos[fn.name] = methodInfo;
         methodInfo.state = MethodState.Compiled;
       } else {
         linkWriter && linkWriter.warnLn("Method: " + methodInfo.name + methodInfo.signature + " -> Interpreter");
@@ -1001,18 +1009,18 @@ module J2ME {
         fn = prepareInterpretedMethod(methodInfo);
       }
     }
-
-    if (profile || traceWriter) {
-      fn = wrapMethod(fn, methodInfo, methodType);
-    }
-
-    methodInfo.fn = fn;
+    linkMethodFunction(methodInfo, fn, methodType);
   }
 
   /**
    * Number of methods that have been compiled thus far.
    */
   export var compiledMethodCount = 0;
+
+  /**
+   * Maximum number of methods to compile.
+   */
+  export var maxCompiledMethodCount = -1;
 
   /**
    * Number of methods that have not been compiled thus far.
@@ -1038,13 +1046,15 @@ module J2ME {
    * Compiles method and links it up at runtime.
    */
   export function compileAndLinkMethod(methodInfo: MethodInfo) {
-    // REDUX when compiler is enabled again
-    /*
     // Don't do anything if we're past the compiled state.
     if (methodInfo.state >= MethodState.Compiled) {
       return;
     }
 
+    // Don't compile if we've compiled too many methods.
+    if (maxCompiledMethodCount > 0 && compiledMethodCount >= maxCompiledMethodCount) {
+      return;
+    }
     // Don't compile methods that are too large.
     if (methodInfo.codeAttribute.code.length > 4000 && !config.forceRuntimeCompilation) {
       jitWriter && jitWriter.writeLn("Not compiling: " + methodInfo.implKey + " because it's too large. " + methodInfo.codeAttribute.code.length);
@@ -1053,18 +1063,18 @@ module J2ME {
       return;
     }
 
-    if (enableCompiledMethodCache) {
-      var cachedMethod;
-      if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
-        cachedMethodCount ++;
-        jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-        return linkMethod(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-      }
-    }
+    //if (enableCompiledMethodCache) {
+    //  var cachedMethod;
+    //  if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+    //    cachedMethodCount ++;
+    //    jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
+    //    return linkMethodSource(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
+    //  }
+    //}
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
-    jitWriter && jitWriter.enter("Compiling: " + methodInfo.implKey + ", currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
+    jitWriter && jitWriter.enter("Compiling: " + compiledMethodCount + " " + methodInfo.implKey + ", interpreterCallCount: " + methodInfo.stats.interpreterCallCount + " backwardsBranchCount: " + methodInfo.stats.backwardsBranchCount + " currentBytecodeCount: " + methodInfo.stats.bytecodeCount);
     var s = performance.now();
 
     var compiledMethod;
@@ -1079,26 +1089,20 @@ module J2ME {
       return;
     }
     leaveTimeline("Compiling");
-    var compiledMethodName = mangledClassAndMethodName;
-    var source = "function " + compiledMethodName +
-                 "(" + compiledMethod.args.join(",") + ") {\n" +
-                   compiledMethod.body +
-                 "\n}";
-
-    codeWriter && codeWriter.writeLns(source);
+    codeWriter && codeWriter.writeLn("// Method: " + methodInfo.implKey);
+    codeWriter && codeWriter.writeLn("// Arguments: " + compiledMethod.args.join(", "));
+    codeWriter && codeWriter.writeLns(compiledMethod.body);
     var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.getClassNameSlow() });
 
-    if (enableCompiledMethodCache) {
-      CompiledMethodCache.put({
-        key: methodInfo.implKey,
-        source: source,
-        referencedClasses: referencedClasses,
-        onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
-      });
-    }
-
-    linkMethod(methodInfo, source, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
-
+    //if (enableCompiledMethodCache) {
+    //  CompiledMethodCache.put({
+    //    key: methodInfo.implKey,
+    //    source: source,
+    //    referencedClasses: referencedClasses,
+    //    onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
+    //  });
+    //}
+    linkMethodSource(methodInfo, compiledMethod.args, compiledMethod.body, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
     var methodJITTime = (performance.now() - s);
     totalJITTime += methodJITTime;
     if (jitWriter) {
@@ -1108,7 +1112,6 @@ module J2ME {
         "sourceSize: " + compiledMethod.body.length);
       jitWriter.writeLn("Total: " + totalJITTime.toFixed(2) + " ms");
     }
-    */
   }
 
   function wrapMethod(fn, methodInfo: MethodInfo, methodType: MethodType) {
@@ -1122,66 +1125,56 @@ module J2ME {
     return fn;
   }
 
+  function linkMethodFunction(methodInfo: MethodInfo, fn: Function, methodType: MethodType) {
+    if (profile || traceWriter) {
+      fn = wrapMethod(fn, methodInfo, methodType);
+    }
+
+    methodInfo.fn = fn;
+    linkedMethods[methodInfo.id] = fn;
+  }
+
   /**
    * Links up compiled method at runtime.
    */
-  export function linkMethod(methodInfo: MethodInfo, source: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
-    // REDUX when compiler is enabled
-    /*
+  export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
-    (1, eval)(source);
+    var fn = new Function(args.join(','), body);
     leaveTimeline("Eval Compiled Code");
 
-    var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
-    var fn = jsGlobal[mangledClassAndMethodName];
-    if (profile || traceWriter) {
-      fn = wrapMethod(fn, methodInfo, MethodType.Compiled);
-    }
-    var klass = methodInfo.classInfo.klass;
-    klass.M[methodInfo.index] = methodInfo.fn = fn;
     methodInfo.state = MethodState.Compiled;
     methodInfo.onStackReplacementEntryPoints = onStackReplacementEntryPoints;
 
-    // Link member methods on the prototype.
-    if (!methodInfo.isStatic && methodInfo.virtualName) {
-      klass.prototype[methodInfo.virtualName] = fn;
-    }
-
-    // Make JITed code available in the |jitMethodInfos| so that bailout
-    // code can figure out the caller.
-    jitMethodInfos[mangledClassAndMethodName] = methodInfo;
-
-    // Make sure all the referenced symbols are registered.
-    for (var i = 0; i < referencedClasses.length; i++) {
-      registerKlassSymbol(referencedClasses[i]);
-    }
-    */
+    linkMethodFunction(methodInfo, fn, MethodType.Compiled);
   }
 
   export function isAssignableTo(from: ClassInfo, to: ClassInfo): boolean {
     return from.isAssignableTo(to);
   }
 
-  export function instanceOfKlass(object: java.lang.Object, classInfo: ClassInfo): boolean {
-    return object !== null && isAssignableTo(object.classInfo, classInfo);
+  export function instanceOfKlass(objectAddr: number, classId: number): boolean {
+    release || assert(typeof classId === "number", "Class id must be a number.");
+    return objectAddr !== Constants.NULL && isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId]);
   }
 
-  export function instanceOfInterface(object: java.lang.Object, classInfo: ClassInfo): boolean {
-    release || assert(classInfo.isInterface, "instanceOfInterface called on non interface");
-    return object !== null && isAssignableTo(object.classInfo, classInfo);
+  export function instanceOfInterface(objectAddr: number, classId: number): boolean {
+    release || assert(typeof classId === "number", "Class id must be a number.");
+    release || assert(classIdToClassInfoMap[classId].isInterface, "instanceOfInterface called on non interface");
+    return objectAddr !== Constants.NULL && isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId]);
   }
 
-  export function checkCastKlass(object: java.lang.Object, classInfo: ClassInfo) {
-    if (object !== null && !isAssignableTo(object.classInfo, classInfo)) {
-      throw $.newClassCastException();
-    }
-  }
+  export function checkCastKlass(objectAddr: number, classId: number) {
+    release || assert(typeof classId === "number", "Class id must be a number.");
+    if (objectAddr !== Constants.NULL && !isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId])) {
+       throw $.newClassCastException();
+     }
+   }
 
-  export function checkCastInterface(object: java.lang.Object, classInfo: ClassInfo) {
-    if (object !== null && !isAssignableTo(object.classInfo, classInfo)) {
+  export function checkCastInterface(objectAddr: number, classId: number) {
+    if (objectAddr !== Constants.NULL && !isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId])) {
       throw $.newClassCastException();
     }
   }
@@ -1449,12 +1442,6 @@ module J2ME {
     }
   }
 
-  export function checkDivideByZeroLong(value: Long) {
-    if (value.isZero()) {
-      throwArithmeticException();
-    }
-  }
-
   /**
    * Do bounds check using only one branch. The math works out because array.length
    * can't be larger than 2^31 - 1. So |index| >>> 0 will be larger than
@@ -1497,6 +1484,11 @@ module J2ME {
     }
   }
 
+  export enum ConfigConstants {
+    InvokeThreshold = 1,
+    BackwardBranchThreshold = 1
+  }
+
   export enum Constants {
     BYTE_MIN = -128,
     BYTE_MAX = 127,
@@ -1513,7 +1505,10 @@ module J2ME {
     LONG_MIN_LOW = 0,
     LONG_MIN_HIGH = 0x80000000,
 
+    MAX_STACK_SIZE = 4 * 1024,
+
     TWO_PWR_32_DBL = 4294967296,
+    TWO_PWR_63_DBL = 9223372036854776000,
 
     // The size in bytes of the header in the memory allocated to the object.
     OBJ_HDR_SIZE = 8,
@@ -1550,11 +1545,23 @@ module J2ME {
   }
 
   export function classInitCheck(classInfo: ClassInfo) {
-    if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.getClassNameSlow()]) {
+    if (classInfo instanceof ArrayClassInfo || $.initialized[classInfo.id]) {
       return;
     }
+
     // TODO: make this more efficient when we decide on how to invoke code.
+    var thread = $.ctx.nativeThread;
+    thread.pushMarkerFrame(FrameType.Interrupt);
+    thread.pushMarkerFrame(FrameType.Native);
+    var frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
     getLinkedMethod(CLASSES.java_lang_Class.getMethodByNameString("initialize", "()V"))($.getClassObjectAddress(classInfo));
+    if (U) {
+      i32[frameTypeOffset] = FrameType.PushPendingFrames;
+      thread.unwoundNativeFrames.push(null);
+      return;
+    }
+    thread.popMarkerFrame(FrameType.Native);
+    thread.popMarkerFrame(FrameType.Interrupt);
   }
 
   export function preempt() {
@@ -1585,10 +1592,11 @@ module J2ME {
     getSP() {
       return this.sp;
     }
-    getNextPC() {
-      return this.nextPC;
-    }
   }
+
+  /**
+   * Helper methods used by the compiler.
+   */
 
   /**
    * Generic unwind throw.
@@ -1632,6 +1640,277 @@ module J2ME {
   export function throwUnwind7(pc: number, nextPC: number = pc + 3) {
     throwUnwind(pc, nextPC, 7);
   }
+
+  export function fadd(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = aliasedF32[0] + aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fsub(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = aliasedF32[0] - aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fmul(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = aliasedF32[0] * aliasedF32[1];
+    return aliasedI32[2];
+  }
+
+  export function fdiv(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = Math.fround(aliasedF32[0] / aliasedF32[1]);
+    return aliasedI32[2];
+  }
+
+  export function frem(a: number, b: number): number {
+    aliasedI32[0] = a;
+    aliasedI32[1] = b;
+    aliasedF32[2] = Math.fround(aliasedF32[0] % aliasedF32[1]);
+    return aliasedI32[2];
+  }
+
+  export function fcmp(a: number, b: number, isLessThan: boolean): number {
+    var x = (aliasedI32[0] = a, aliasedF32[0]);
+    var y = (aliasedI32[0] = b, aliasedF32[0]);
+    if (isNaN(x) || isNaN(y)) {
+      return isLessThan ? -1 : 1;
+    } else if (x > y) {
+      return 1;
+    } else if (x < y) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+
+  export function fneg(a: number): number {
+    aliasedF32[0] = -(aliasedI32[0] = a, aliasedF32[0]);
+    return aliasedI32[0];
+  }
+
+  export function dcmp(al: number, ah: number, bl: number, bh: number, isLessThan: boolean) {
+    var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    var y = (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    if (isNaN(x) || isNaN(y)) {
+      return isLessThan ? -1 : 1;
+    } else if (x > y) {
+      return 1;
+    } else if (x < y) {
+      return -1;
+    } else {
+      return 0;
+    }
+  }
+
+  export function dadd(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) +
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function dsub(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) -
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function dmul(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) *
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function ddiv(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) /
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function drem(al: number, ah: number, bl: number, bh: number): number {
+    aliasedF64[0] = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]) %
+                    (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
+    return (tempReturn0 = aliasedI32[1], aliasedI32[0]);
+  }
+
+  export function dneg(al: number, ah: number): number {
+    aliasedF64[0] = - (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
+  }
+
+  export function f2i(a: number): number {
+    var x = (aliasedI32[0] = a, aliasedF32[0]);
+    if (x > Constants.INT_MAX) {
+      return Constants.INT_MAX;
+    } else if (x < Constants.INT_MIN) {
+      return Constants.INT_MIN;
+    } else {
+      return x | 0;
+    }
+  }
+
+  export function d2i(al: number, ah: number): number {
+    var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    if (x > Constants.INT_MAX) {
+      return Constants.INT_MAX;
+    } else if (x < Constants.INT_MIN) {
+      return Constants.INT_MIN;
+    } else {
+      return x | 0;
+    }
+  }
+
+  export function i2f(a: number): number {
+    aliasedF32[0] = a;
+    return aliasedI32[0];
+  }
+
+  export function i2d(a: number): number {
+    aliasedF64[0] = a;
+    tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
+  }
+
+  export function l2d(al: number, ah: number): number {
+    aliasedF64[0] = longToNumber(al, ah);
+    tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
+  }
+
+  export function l2f(al: number, ah: number): number {
+    aliasedF32[0] = Math.fround(longToNumber(al, ah));
+    return aliasedI32[0];
+  }
+
+  export function f2d(l: number): number {
+    aliasedF64[0] = (aliasedI32[0] = l, aliasedF32[0]);
+    tempReturn0 = aliasedI32[1];
+    return aliasedI32[0];
+  }
+
+  export function f2l(l: number): number {
+    var x = (aliasedI32[0] = l, aliasedF32[0]);
+    return returnLongValue(x);
+  }
+
+  export function d2l(al: number, ah: number): number {
+    var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    if (x === Number.POSITIVE_INFINITY) {
+      tempReturn0 = Constants.LONG_MAX_HIGH;
+      return Constants.LONG_MAX_LOW;
+    } else if (x === Number.NEGATIVE_INFINITY) {
+      tempReturn0 = Constants.LONG_MIN_HIGH;
+      return Constants.LONG_MIN_LOW;
+    } else {
+      return returnLongValue(x);
+    }
+  }
+
+  export function d2f(al: number, ah: number): number {
+    var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
+    aliasedF32[0] = Math.fround(x);
+    return aliasedI32[0];
+  }
+
+  var tmpAddress = ASM._gcMalloc(32);
+
+  export function lcmp(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lCmp(tmpAddress, tmpAddress, tmpAddress + 8);
+    return i32[tmpAddress >> 2];
+  }
+
+  export function ladd(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lAdd(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lsub(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lSub(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lmul(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lMul(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function ldiv(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lDiv(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lrem(al: number, ah: number, bl: number, bh: number) {
+    i32[tmpAddress +  0 >> 2] = al;
+    i32[tmpAddress +  4 >> 2] = ah;
+    i32[tmpAddress +  8 >> 2] = bl;
+    i32[tmpAddress + 12 >> 2] = bh;
+    ASM._lRem(tmpAddress, tmpAddress, tmpAddress + 8);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lneg(al: number, ah: number): number {
+    i32[tmpAddress + 0 >> 2] = al;
+    i32[tmpAddress + 4 >> 2] = ah;
+    ASM._lNeg(tmpAddress, tmpAddress);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lshl(al: number, ah: number, shift: number): number {
+    i32[tmpAddress + 0 >> 2] = al;
+    i32[tmpAddress + 4 >> 2] = ah;
+    ASM._lShl(tmpAddress, tmpAddress, shift);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lshr(al: number, ah: number, shift: number): number {
+    i32[tmpAddress + 0 >> 2] = al;
+    i32[tmpAddress + 4 >> 2] = ah;
+    ASM._lShr(tmpAddress, tmpAddress, shift);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
+
+  export function lushr(al: number, ah: number, shift: number): number {
+    i32[tmpAddress + 0 >> 2] = al;
+    i32[tmpAddress + 4 >> 2] = ah;
+    ASM._lUshr(tmpAddress, tmpAddress, shift);
+    tempReturn0 = i32[tmpAddress + 4 >> 2];
+    return i32[tmpAddress >> 2];
+  }
 }
 
 var Runtime = J2ME.Runtime;
@@ -1673,12 +1952,21 @@ var B7 = J2ME.throwUnwind7;
  * OSR Frame.
  */
 // REDUX
-var O = null;
+var O: J2ME.MethodInfo = null;
 
 /**
  * Runtime exports for compiled code.
  * DO NOT use these short names outside of compiled code.
  */
+
+var CI = J2ME.classIdToClassInfoMap;
+var MI = J2ME.methodIdToMethodInfoMap;
+var LM = J2ME.linkedMethods;
+var GLM = J2ME.getLinkedMethod;
+var CIC = J2ME.classInitCheck;
+var GH = J2ME.getHandle;
+var AO = J2ME.allocObject;
+
 var IOK = J2ME.instanceOfKlass;
 var IOI = J2ME.instanceOfInterface;
 
@@ -1690,8 +1978,7 @@ var CCI = J2ME.checkCastInterface;
 var NA = J2ME.newArray;
 var NM = J2ME.newMultiArray;
 
-var CDZ = J2ME.checkDivideByZero;
-var CDZL = J2ME.checkDivideByZeroLong;
+
 
 var CAB = J2ME.checkArrayBounds;
 var CAS = J2ME.checkArrayStore;
@@ -1703,10 +1990,49 @@ var MX = J2ME.monitorExit;
 var TE = J2ME.translateException;
 var TI = J2ME.throwArrayIndexOutOfBoundsException;
 var TA = J2ME.throwArithmeticException;
-var TN = J2ME.throwNegativeArraySizeException;
+var TS = J2ME.throwNegativeArraySizeException;
+var TN = J2ME.throwNullPointerException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
+
+var fadd = J2ME.fadd;
+var fsub = J2ME.fsub;
+var fmul = J2ME.fmul;
+var fdiv = J2ME.fdiv;
+var frem = J2ME.frem;
+var fneg = J2ME.fneg;
+
+var f2i = J2ME.f2i;
+var f2l = J2ME.f2l;
+var f2d = J2ME.f2d;
+var i2f = J2ME.i2f;
+var i2d = J2ME.i2d;
+var d2i = J2ME.d2i;
+var d2l = J2ME.d2l;
+var d2f = J2ME.d2f;
+var l2f = J2ME.l2f;
+var l2d = J2ME.l2d;
+var fcmp = J2ME.fcmp;
+
+var dneg = J2ME.dneg;
+var dcmp = J2ME.dcmp;
+var dadd = J2ME.dadd;
+var dsub = J2ME.dsub;
+var dmul = J2ME.dmul;
+var ddiv = J2ME.ddiv;
+var drem = J2ME.drem;
+
+var lneg = J2ME.lneg;
+var ladd = J2ME.ladd;
+var lsub = J2ME.lsub;
+var lmul = J2ME.lmul;
+var ldiv = J2ME.ldiv;
+var lrem = J2ME.lrem;
+var lcmp = J2ME.lcmp;
+var lshl = J2ME.lshl;
+var lshr = J2ME.lshr;
+var lushr = J2ME.lushr;
 
 var getHandle = J2ME.getHandle;
 
