@@ -62,7 +62,7 @@ module J2ME.Options {
     }
     public parse(value) {
       if (this.type === "boolean") {
-        release || assert(typeof value === "boolean");
+        release || assert(typeof value === "boolean", "bad value type in Options.parse");
         this.value = value;
       } else  if (this.type === "number") {
         release || assert(!isNaN(value), value + " is not a number");
@@ -98,7 +98,7 @@ module J2ME.Options {
         if (x instanceof OptionSet) {
           self.addBoundOptionSet(x);
         } else {
-          release || assert(x instanceof Option);
+          release || assert(x instanceof Option, "bad option type in ArgumentParser.addBoundOptionSet");
           self.addBoundOption(x);
         }
       });

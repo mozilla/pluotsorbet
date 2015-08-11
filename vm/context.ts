@@ -125,7 +125,7 @@ module J2ME {
   //  }
   //
   //  free() {
-  //    release || assert(!Frame.isMarker(this));
+  //    release || assert(!Frame.isMarker(this), "Freeing a marker frame");
   //    Frame.dirtyStack.push(this);
   //  }
   //
@@ -147,7 +147,7 @@ module J2ME {
   //  }
   //
   //  patch(offset: number, oldValue: Bytecodes, newValue: Bytecodes) {
-  //    release || assert(this.code[this.pc - offset] === oldValue);
+  //    release || assert(this.code[this.pc - offset] === oldValue, "patch target doesn't match");
   //    this.code[this.pc - offset] = newValue;
   //  }
   //
@@ -260,10 +260,10 @@ module J2ME {
   //   * called.
   //   */
   //  peekInvokeObject(methodInfo: MethodInfo): java.lang.Object {
-  //    release || assert(!methodInfo.isStatic);
+  //    release || assert(!methodInfo.isStatic, "peekInvokeObject called on static method");
   //    var i = this.stack.length - methodInfo.argumentSlots - 1;
-  //    release || assert (i >= 0);
-  //    release || assert (this.stack[i] !== undefined);
+  //    release || assert (i >= 0, "not enough stack in peekInvokeObject");
+  //    release || assert (this.stack[i] !== undefined, "unexpected undefined in peekInvokeObject");
   //    return this.stack[i];
   //  }
   //
@@ -277,7 +277,7 @@ module J2ME {
   //        j++;
   //      }
   //    }
-  //    release || assert(j === stack.length && k === signatureKinds.length - 1);
+  //    release || assert(j === stack.length && k === signatureKinds.length - 1, "lengths don't match in popArgumentsInto");
   //    stack.length -= argumentSlots;
   //    args.length = k;
   //    return args;

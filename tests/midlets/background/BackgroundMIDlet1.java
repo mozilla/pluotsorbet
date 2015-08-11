@@ -1,4 +1,4 @@
-package tests.background;
+package tests.midlets.background;
 
 import java.io.IOException;
 import javax.microedition.midlet.MIDlet;
