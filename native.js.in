@@ -505,7 +505,14 @@ Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
 };
 
 Native["java/lang/Runtime.gc.()V"] = function(addr) {
-    ASM._forceCollection();
+    // Force a bailout so that there are no native frames on the stack
+    // so GC can be safely run.
+    asyncImpl("V", new Promise(function(resolve, reject) {
+        setTimeout(function() {
+            ASM._forceCollection();
+            resolve();
+        });
+    }));
 };
 
 Native["java/lang/Math.floor.(D)D"] = function(addr, valLow, valHigh) {

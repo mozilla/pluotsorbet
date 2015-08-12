@@ -9,6 +9,11 @@
 #include <inttypes.h>
 #include <emscripten.h>
 
+// #define GC_NONE 1
+// #define GC_NONE_HEAP_SIZE (128 * 1024 * 1024)
+
+uint32_t * heap, * head;
+
 // Formatting: Printing longs.
 // printf("L: %" PRId64 ", R: %" PRId64, *l, *r);
 
@@ -56,6 +61,15 @@ extern "C" {
     }, (int)obj);
   }
 
+  int stop() {
+    return EM_ASM_INT_V({
+      if (!$) {
+        return 0;
+      }
+      return $.ctx.nativeThread.nativeFrameCount;
+    });
+  }
+
   uintptr_t gcMallocUncollectable(int32_t size) {
     return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
   }
@@ -65,11 +79,28 @@ extern "C" {
   }
 
   uintptr_t gcMalloc(int32_t size) {
-    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
+  #ifdef GC_NONE
+    size = (size + 3) & ~0x03;
+    uint32_t * curr = head;
+    uint32_t * p = head;
+    head += size;
+    if (head > heap + GC_NONE_HEAP_SIZE) {
+      printf("Out of memory, max: %d", GC_NONE_HEAP_SIZE);
+      return 0;
+    }
+    while (curr < head) *curr++ = 0;
+    return (uintptr_t)p;
+  #else
+    return (uintptr_t)GC_MALLOC(size);
+  #endif
   }
 
   uintptr_t gcMallocAtomic(int32_t size) {
-    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
+  #ifdef GC_NONE
+    return gcMalloc(size);
+  #else
+    return (uintptr_t)GC_MALLOC_ATOMIC(size);
+  #endif
   }
 
   void gcRegisterDisappearingLink(uintptr_t p, uintptr_t objAddr) {
@@ -98,5 +129,9 @@ extern "C" {
 
 int main() {
   GC_set_all_interior_pointers(0);
+  GC_set_stop_func(stop);
+  #ifdef GC_NONE
+  heap = head = (uint32_t *)malloc(GC_NONE_HEAP_SIZE);
+  #endif
   GC_INIT();
 }

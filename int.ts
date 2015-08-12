@@ -325,6 +325,8 @@ module J2ME {
      */
     pc: number
 
+    nativeFrameCount: number;
+
     /**
      * Context associated with this thread.
      */
@@ -353,6 +355,7 @@ module J2ME {
       this.ctx = ctx;
       this.unwoundNativeFrames = [];
       this.pendingNativeFrames = [];
+      this.nativeFrameCount = 0;
       release || threadWriter && threadWriter.writeLn("creatingThread: tp: " + toHEX(this.tp) + " " + toHEX(this.tp + Constants.MAX_STACK_SIZE));
     }
 
@@ -374,6 +377,9 @@ module J2ME {
     }
 
     pushMarkerFrame(frameType: FrameType) {
+      if (frameType === FrameType.Native) {
+        this.nativeFrameCount++;
+      }
       this.pushFrame(null, 0, 0, null, frameType);
     }
 
@@ -394,6 +400,9 @@ module J2ME {
     }
 
     popMarkerFrame(frameType: FrameType): MethodInfo {
+      if (frameType === FrameType.Native) {
+        this.nativeFrameCount--;
+      }
       return this.popFrame(undefined, frameType);
     }
 
@@ -504,7 +513,7 @@ module J2ME {
     tracePendingFrames(writer: IndentingWriter) {
       for (var i = 0; i < this.pendingNativeFrames.length; i++) {
         var pendingFrame = this.pendingNativeFrames[i];
-        writer.writeLn(pendingFrame ? pendingFrame.methodInfo.implKey : "-marker-");
+        writer.writeLn(pendingFrame ? methodIdToMethodInfoMap[i32[pendingFrame + BailoutFrameLayout.MethodInfoIdOffset >> 2]].implKey : "-marker-");
       }
     }
 
@@ -525,26 +534,29 @@ module J2ME {
         // We should have a |PushPendingFrames| marker frame on the stack at this point.
         this.popMarkerFrame(FrameType.PushPendingFrames);
 
-        var pendingNativeFrame = null;
+        var pendingNativeFrameAddress = null;
         var frames = [];
-        while (pendingNativeFrame = this.pendingNativeFrames.pop()) {
-          frames.push(pendingNativeFrame);
+        while (pendingNativeFrameAddress = this.pendingNativeFrames.pop()) {
+          frames.push(pendingNativeFrameAddress);
         }
-        while (pendingNativeFrame = frames.pop()) {
-          traceWriter && traceWriter.writeLn("Pushing frame: " + pendingNativeFrame.methodInfo.implKey);
-          this.pushFrame(pendingNativeFrame.methodInfo, pendingNativeFrame.stack.length, pendingNativeFrame.pc, pendingNativeFrame.lockObject);
-          // TODO: Figure out how to copy floats and doubles.
+        while (pendingNativeFrameAddress = frames.pop()) {
+          var methodInfo = methodIdToMethodInfoMap[i32[pendingNativeFrameAddress + BailoutFrameLayout.MethodInfoIdOffset >> 2]];
+          var stackCount = i32[pendingNativeFrameAddress + BailoutFrameLayout.StackCountOffset >> 2];
+          var localCount = i32[pendingNativeFrameAddress + BailoutFrameLayout.LocalCountOffset >> 2];
+          var pc = i32[pendingNativeFrameAddress + BailoutFrameLayout.PCOffset >> 2];
+          var lockObjectAddress = i32[pendingNativeFrameAddress + BailoutFrameLayout.LockOffset >> 2];
+          traceWriter && traceWriter.writeLn("Pushing frame: " + methodInfo.implKey);
+          this.pushFrame(methodInfo, stackCount, pc, lockObjectAddress);
           var frame = this.frame;
-          for (var j = 0; j < pendingNativeFrame.local.length; j++) {
-            var value = pendingNativeFrame.local[j];
-            var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
-            frame.setParameter(kind, j, value);
+          for (var j = 0; j < localCount; j++) {
+            var value = i32[(pendingNativeFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j];
+            frame.setParameter(Kind.Int, j, value);
           }
-          for (var j = 0; j < pendingNativeFrame.stack.length; j++) {
-            var value = pendingNativeFrame.stack[j];
-            var kind = typeof value === "object" ? Kind.Reference : Kind.Int;
-            frame.setStackSlot(kind, j, value);
+          for (var j = 0; j < stackCount; j++) {
+            var value = i32[(pendingNativeFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j + localCount];
+            frame.setStackSlot(Kind.Int, j, value);
           }
+          ASM._gcFree(pendingNativeFrameAddress);
         }
         var frameType = i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
@@ -618,7 +630,7 @@ module J2ME {
     var method = function fastInterpreterFrameAdapter() {
       var calleeStats = methodInfo.stats;
       calleeStats.interpreterCallCount++;
-      if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+      if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigThresholds.InvokeThreshold) {
         compileAndLinkMethod(methodInfo);
         if(methodInfo.state === MethodState.Compiled) {
           return methodInfo.fn.apply(null, arguments);
@@ -731,7 +743,7 @@ module J2ME {
     var mi = frame.methodInfo;
     release || assert(mi, "Must have method info.");
     mi.stats.interpreterCallCount++;
-    if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+    if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigThresholds.InvokeThreshold) {
       compileAndLinkMethod(mi);
       // TODO call the compiled method.
     }
@@ -1332,7 +1344,7 @@ module J2ME {
           case Bytecodes.FCMPG:
             var FCMP_fb = f32[--sp];
             var FCMP_fa = f32[--sp];
-            if (isNaN(FCMP_fa) || isNaN(FCMP_fb)) {
+            if (FCMP_fa !== FCMP_fa || FCMP_fb !== FCMP_fb) {
               i32[sp++] = op === Bytecodes.FCMPL ? -1 : 1;
             } else if (FCMP_fa > FCMP_fb) {
               i32[sp++] = 1;
@@ -1351,7 +1363,7 @@ module J2ME {
             aliasedI32[1] = i32[sp - 3];
             var DCMP_fa = aliasedF64[0];
             sp -= 4;
-            if (isNaN(DCMP_fa) || isNaN(DCMP_fb)) {
+            if (DCMP_fa !== DCMP_fa || DCMP_fb !== DCMP_fb) {
               i32[sp++] = op === Bytecodes.DCMPL ? -1 : 1;
             } else if (DCMP_fa > DCMP_fb) {
               i32[sp++] = 1;
@@ -1541,7 +1553,7 @@ module J2ME {
             jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
             if (jumpOffset < 0) {
               mi.stats.backwardsBranchCount++;
-              if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigConstants.BackwardBranchThreshold) {
+              if (mi.state === MethodState.Cold && mi.stats.interpreterCallCount + mi.stats.backwardsBranchCount > ConfigThresholds.BackwardBranchThreshold) {
                 compileAndLinkMethod(mi);
               }
               if (enableOnStackReplacement && mi.state === MethodState.Compiled) {
@@ -1550,7 +1562,7 @@ module J2ME {
                 // on stack replacement.
                 var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
-                if ((previousFrameType === FrameType.Interpreter || previousFrameType === FrameType.ExitInterpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
+                if ((previousFrameType === FrameType.Interpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
                   traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
                   onStackReplacementCount++;
 
@@ -1577,6 +1589,7 @@ module J2ME {
                   if (U) {
                     traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
                     release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
+                    thread.nativeFrameCount--;
                     i32[frameTypeOffset] = FrameType.PushPendingFrames;
                     thread.unwoundNativeFrames.push(null);
                     return;
@@ -1587,27 +1600,6 @@ module J2ME {
                   release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
 
                   kind = signatureKinds[0];
-
-                  if (previousFrameType === FrameType.ExitInterpreter) {
-                    thread.set(fp, sp, opPC);
-                    switch (kind) {
-                      case Kind.Long:
-                      case Kind.Double:
-                        return returnLong(returnValue, tempReturn0);
-                      case Kind.Int:
-                      case Kind.Byte:
-                      case Kind.Char:
-                      case Kind.Float:
-                      case Kind.Short:
-                      case Kind.Boolean:
-                      case Kind.Reference:
-                        return returnValue;
-                      case Kind.Void:
-                        return;
-                      default:
-                        release || assert(false, "Invalid Kind: " + Kind[kind]);
-                    }
-                  }
 
                   mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
                   type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
@@ -2083,7 +2075,7 @@ module J2ME {
             maxLocals = mi.codeAttribute.max_locals;
             lp = fp - maxLocals;
             release || traceWriter && traceWriter.outdent();
-            release || traceWriter && traceWriter.writeLn(">> I " + lastMI.implKey);
+            release || traceWriter && traceWriter.writeLn("<< I " + lastMI.implKey);
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
@@ -2163,7 +2155,7 @@ module J2ME {
             var calleeStats = calleeTargetMethodInfo.stats;
             calleeStats.interpreterCallCount++;
             if (callMethod === false && calleeTargetMethodInfo.state === MethodState.Cold) {
-              if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigConstants.InvokeThreshold) {
+              if (calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigThresholds.InvokeThreshold) {
                 compileAndLinkMethod(calleeTargetMethodInfo);
                 callMethod = calleeTargetMethodInfo.state === MethodState.Compiled;
               }
@@ -2234,6 +2226,7 @@ module J2ME {
               if (U) {
                 traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
                 release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
+                thread.nativeFrameCount--;
                 i32[frameTypeOffset] = FrameType.PushPendingFrames;
                 thread.unwoundNativeFrames.push(null);
                 return;
@@ -2319,6 +2312,13 @@ module J2ME {
         release || traceWriter && traceWriter.writeLn(e.stack);
         // release || traceWriter && traceWriter.writeLn(jsGlobal.getBacktrace());
 
+        // If an exception is thrown from a native there will be a native marker frame at the top of the stack
+        // which will be cut off when the the fp is set on the thread below. To keep the nativeFrameCount in
+        // sync the native marker must be popped.
+        if (thread.fp > fp && thread.frame.type === FrameType.Native) {
+          release || assert(i32[thread.fp + FrameLayout.CallerFPOffset] === fp, "Only one extra frame is on the stack. " + (thread.fp - fp));
+          thread.popMarkerFrame(FrameType.Native);
+        }
         thread.set(fp, sp, opPC);
         e = translateException(e);
         if (!e.classInfo) {

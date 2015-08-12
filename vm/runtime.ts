@@ -633,20 +633,17 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(methodInfoId: number, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
-      release || assert(methodInfo !== undefined, "methodInfo undefined in B");
-      this.ctx.bailout(methodInfo, pc, local, stack, lockObject);
-    }
-
-    /**
-     * Bailout callback whenever a JIT frame is unwound that uses a slightly different calling
-     * convetion that makes it more convenient to emit in some cases.
-     */
-    T(methodInfoId: number, location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
-      release || assert(methodInfo !== undefined, "methodInfo undefined in T");
-      this.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
+    B(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number) {
+      // TODO: use specialized $.B functions based on the local and stack size so we don't have to use the arguments variable.
+      var bailoutFrameAddress = createBailoutFrame(methodInfoId, pc, localCount, stackCount, lockObjectAddress);
+      var argumentOffset = 5;
+      for (var j = 0; j < localCount; j++) {
+        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j] = arguments[argumentOffset + j];
+      }
+      for (var j = 0; j < stackCount; j++) {
+        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j + localCount] = arguments[argumentOffset + localCount + j];
+      }
+      this.ctx.bailout(bailoutFrameAddress);
     }
 
     SA(classId: number) {
@@ -669,7 +666,8 @@ module J2ME {
     nativeBailout(returnKind: Kind, opCode?: Bytecode.Bytecodes) {
       var pc = returnKind === Kind.Void ? 0 : 1;
       var methodInfo = CLASSES.getUnwindMethodInfo(returnKind, opCode);
-      $.ctx.bailout(methodInfo, pc, [], [], null);
+      var bailoutFrameAddress = createBailoutFrame(methodInfo.id, pc, 0, 0, Constants.NULL);
+      this.ctx.bailout(bailoutFrameAddress);
     }
 
     pause(reason: string) {
@@ -1052,7 +1050,7 @@ module J2ME {
     }
 
     // Don't compile if we've compiled too many methods.
-    if (maxCompiledMethodCount > 0 && compiledMethodCount >= maxCompiledMethodCount) {
+    if (maxCompiledMethodCount >= 0 && compiledMethodCount >= maxCompiledMethodCount) {
       return;
     }
     // Don't compile methods that are too large.
@@ -1195,6 +1193,26 @@ module J2ME {
 
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
+  }
+
+  export enum BailoutFrameLayout {
+    MethodInfoIdOffset = 0,
+    PCOffset = 4,
+    LocalCountOffset = 8,
+    StackCountOffset = 12,
+    LockOffset = 16,
+    HeaderSize = 20
+  }
+
+  export function createBailoutFrame(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
+    var address = ASM._gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
+    release || assert(typeof methodInfoId === "number" && methodInfoId in methodIdToMethodInfoMap, "Must be valid method info.");
+    i32[address + BailoutFrameLayout.MethodInfoIdOffset >> 2] = methodInfoId;
+    i32[address + BailoutFrameLayout.PCOffset >> 2] = pc;
+    i32[address + BailoutFrameLayout.LocalCountOffset >> 2] = localCount;
+    i32[address + BailoutFrameLayout.StackCountOffset >> 2] = stackCount;
+    i32[address + BailoutFrameLayout.LockOffset >> 2] = lockObjectAddress;
+    return address;
   }
 
   /**
@@ -1484,9 +1502,9 @@ module J2ME {
     }
   }
 
-  export enum ConfigConstants {
-    InvokeThreshold = 1,
-    BackwardBranchThreshold = 1
+  export class ConfigThresholds {
+    static InvokeThreshold = 10;
+    static BackwardBranchThreshold = 10;
   }
 
   export enum Constants {
@@ -1557,6 +1575,7 @@ module J2ME {
     getLinkedMethod(CLASSES.java_lang_Class.getMethodByNameString("initialize", "()V"))($.getClassObjectAddress(classInfo));
     if (U) {
       i32[frameTypeOffset] = FrameType.PushPendingFrames;
+      thread.nativeFrameCount--;
       thread.unwoundNativeFrames.push(null);
       return;
     }
@@ -1679,7 +1698,7 @@ module J2ME {
   export function fcmp(a: number, b: number, isLessThan: boolean): number {
     var x = (aliasedI32[0] = a, aliasedF32[0]);
     var y = (aliasedI32[0] = b, aliasedF32[0]);
-    if (isNaN(x) || isNaN(y)) {
+    if (x !== x || y !== y) {
       return isLessThan ? -1 : 1;
     } else if (x > y) {
       return 1;
@@ -1698,7 +1717,7 @@ module J2ME {
   export function dcmp(al: number, ah: number, bl: number, bh: number, isLessThan: boolean) {
     var x = (aliasedI32[0] = al, aliasedI32[1] = ah, aliasedF64[0]);
     var y = (aliasedI32[0] = bl, aliasedI32[1] = bh, aliasedF64[0]);
-    if (isNaN(x) || isNaN(y)) {
+    if (x !== x || y !== y) {
       return isLessThan ? -1 : 1;
     } else if (x > y) {
       return 1;
