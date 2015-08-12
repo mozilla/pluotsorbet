@@ -137,5 +137,7 @@ extern "C" {
 }
 
 int main() {
+  GC_set_all_interior_pointers(0);
+  GC_set_stop_func(stop);
   GC_INIT();
 }
