@@ -208,7 +208,9 @@ try {
   if (profileTimeline) {
     load("bld/shumway.js");
   }
-  load("polyfill/promise.js", "libs/encoding.js", "libs/relooper.js", "bld/native.js", "bld/j2me.js");
+
+  load("polyfill/promise.js", "libs/encoding.js", "bld/native.js", "bld/j2me.js");
+
   microTaskQueue = new J2ME.Shell.MicroTasksQueue();
   load("bld/main-all.js");
 

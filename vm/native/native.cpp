@@ -128,6 +128,7 @@ extern "C" {
 }
 
 int main() {
+  GC_set_all_interior_pointers(0);
   GC_set_stop_func(stop);
   #ifdef GC_NONE
   heap = head = (uint32_t *)malloc(GC_NONE_HEAP_SIZE);

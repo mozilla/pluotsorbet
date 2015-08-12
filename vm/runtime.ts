@@ -246,7 +246,7 @@ module J2ME {
 
     if (!release) { // Check to see that no collisions have ever happened.
       if (hashMap[hash] && hashMap[hash] !== s) {
-        assert(false, "This is very bad.")
+        assert(false, "Collision detected!!!")
       }
       hashMap[hash] = s;
     }
@@ -258,7 +258,7 @@ module J2ME {
     var hash = HashUtilities.hashBytesTo32BitsMurmur(s, 0, s.length);
     if (!release) { // Check to see that no collisions have ever happened.
       if (hashMap[hash] && hashMap[hash] !== s) {
-        assert(false, "This is very bad.")
+        assert(false, "Collision detected in hashUTF8String!!!")
       }
       hashMap[hash] = s;
     }
@@ -695,8 +695,9 @@ module J2ME {
   export var linkedMethods: Map<number, Function> = Object.create(null);
 
   export function getClassInfo(addr: number) {
-    release || assert(addr !== Constants.NULL);
-    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0);
+    release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
+    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0,
+                      "i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0");
     return classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
   }
 
@@ -980,7 +981,7 @@ module J2ME {
       return methodInfo.fn;
     }
     linkMethod(methodInfo);
-    release || assert (methodInfo.fn);
+    release || assert (methodInfo.fn, "bad fn in getLinkedMethod");
     return methodInfo.fn;
   }
 
@@ -1159,7 +1160,7 @@ module J2ME {
 
   export function instanceOfInterface(objectAddr: number, classId: number): boolean {
     release || assert(typeof classId === "number", "Class id must be a number.");
-    release || assert(classIdToClassInfoMap[classId].isInterface);
+    release || assert(classIdToClassInfoMap[classId].isInterface, "instanceOfInterface called on non interface");
     return objectAddr !== Constants.NULL && isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId]);
   }
 
@@ -1352,7 +1353,7 @@ module J2ME {
   }
 
   export function newArray(elementClassInfo: ClassInfo, size: number): number {
-    release || assert(elementClassInfo instanceof ClassInfo);
+    release || assert(elementClassInfo instanceof ClassInfo, "elementClassInfo instanceof ClassInfo");
     if (size < 0) {
       throwNegativeArraySizeException();
     }
@@ -1435,7 +1436,7 @@ module J2ME {
   var jStringDecoder = new TextDecoder('utf-16');
 
   export function fromJavaChars(charsAddr, offset, count) {
-    release || assert(charsAddr !== Constants.NULL);
+    release || assert(charsAddr !== Constants.NULL, "charsAddr !== Constants.NULL");
 
     var start = (Constants.ARRAY_HDR_SIZE + charsAddr >> 1) + offset;
 
@@ -1522,7 +1523,7 @@ module J2ME {
     LONG_MIN_LOW = 0,
     LONG_MIN_HIGH = 0x80000000,
 
-    MAX_STACK_SIZE = 1024 * 128,
+    MAX_STACK_SIZE = 4 * 1024,
 
     TWO_PWR_32_DBL = 4294967296,
     TWO_PWR_63_DBL = 9223372036854776000,

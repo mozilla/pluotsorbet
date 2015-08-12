@@ -681,7 +681,7 @@ module J2ME {
     }
 
     emitPushBits(kind: Kind, v: number) {
-      release || assert((v | 0) === v);
+      release || assert((v | 0) === v, "(v | 0) === v");
       if (v < 0) {
         this.emitPush(kind, "-" + Math.abs(v));
       } else {
@@ -690,7 +690,7 @@ module J2ME {
     }
 
     emitPushInt(v: number) {
-      release || assert((v | 0) === v);
+      release || assert((v | 0) === v, "(v | 0) === v");
       this.emitPushBits(Kind.Int, v);
     }
 
@@ -1302,7 +1302,7 @@ module J2ME {
           this.emitPush(Kind.High, "tempReturn0");
           break;
         default:
-          release || assert(false, Bytecodes[opcode]);
+          release || assert(false, "emitArithmeticOp: " + Bytecodes[opcode]);
       }
     }
 

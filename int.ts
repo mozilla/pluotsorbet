@@ -409,7 +409,7 @@ module J2ME {
     popFrame(methodInfo: MethodInfo, frameType: FrameType = FrameType.Interpreter): MethodInfo {
       var mi = methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
       var type = i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
-      release || assert(mi === methodInfo && type === frameType);
+      release || assert(mi === methodInfo && type === frameType, "mi === methodInfo && type === frameType");
       this.pc = i32[this.fp + FrameLayout.CallerRAOffset];
       var maxLocals = mi ? mi.codeAttribute.max_locals : 0;
       this.sp = this.fp - maxLocals;
@@ -582,7 +582,7 @@ module J2ME {
      */
     beginUnwind() {
       // The |unwoundNativeFrames| stack should be empty at this point.
-      release || assert(this.unwoundNativeFrames.length === 0);
+      release || assert(this.unwoundNativeFrames.length === 0, "0 unwound native frames");
     }
 
     /*
@@ -675,8 +675,10 @@ module J2ME {
         i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
         return;
       }
+
       thread.popMarkerFrame(FrameType.ExitInterpreter);
-      release || assert(callerFP === thread.fp);
+      release || assert(callerFP === thread.fp, "callerFP === thread.fp");
+
       // release || traceWriter && traceWriter.writeLn("<< I");
       return v;
     };
@@ -1844,7 +1846,7 @@ module J2ME {
                 i32[sp++] = i32[address + 4 >> 2];
                 continue;
               default:
-                release || assert(false);
+                release || assert(false, "fieldInfo.kind");
             }
             continue;
           case Bytecodes.PUTFIELD:
@@ -1886,7 +1888,7 @@ module J2ME {
                 i32[address     >> 2] = i32[--sp];
                 break;
               default:
-                release || assert(false);
+                release || assert(false, "fieldInfo.kind");
             }
             if (!isStatic) {
               sp--; // Pop Reference
