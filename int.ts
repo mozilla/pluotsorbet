@@ -513,7 +513,7 @@ module J2ME {
     tracePendingFrames(writer: IndentingWriter) {
       for (var i = 0; i < this.pendingNativeFrames.length; i++) {
         var pendingFrame = this.pendingNativeFrames[i];
-        writer.writeLn(pendingFrame ? pendingFrame.methodInfo.implKey : "-marker-");
+        writer.writeLn(pendingFrame ? methodIdToMethodInfoMap[i32[pendingFrame + BailoutFrameLayout.MethodInfoIdOffset >> 2]].implKey : "-marker-");
       }
     }
 
