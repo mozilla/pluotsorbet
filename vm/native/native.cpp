@@ -70,21 +70,13 @@ extern "C" {
     });
   }
 
-  uintptr_t gcMallocUncollectable(int32_t size) {
-#ifdef GC_NONE
-      return gcMalloc(size);
-#else
-    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
-#endif
-  }
-
   void gcFree(uintptr_t p) {
     GC_FREE((void*)p);
   }
 
   uintptr_t gcMalloc(int32_t size) {
 #ifdef GC_NONE
-    size = (size + 3) & ~0x03;
+    size = (size + 7) & ~0x07;
     if (head + size > tail) {
       // Not enough space in current chunk, allocate a new one.
       int32_t chunkSize = GC_NONE_HEAP_CHUNK_SIZE;
@@ -101,6 +93,14 @@ extern "C" {
     return (uintptr_t)addr;
 #else
     return (uintptr_t)GC_MALLOC(size);
+#endif
+  }
+
+  uintptr_t gcMallocUncollectable(int32_t size) {
+#ifdef GC_NONE
+    return gcMalloc(size);
+#else
+    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
 #endif
   }
 
