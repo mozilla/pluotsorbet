@@ -358,12 +358,14 @@ module J2ME {
     status: RuntimeStatus;
     waiting: any [];
     threadCount: number;
-    initialized: any;
-    pending: any;
+    initialized: Int8Array;
     staticObjectAddresses: Int32Array;
     classObjectAddresses: Int32Array;
-    SA: Int32Array; // Alias for staticObjectAddresses
-    CO: Int32Array; // Alias for classObjectAddresses
+
+    I: Int8Array; // Compiler alias for initialized
+    SA: Int32Array; // Compiler alias for staticObjectAddresses
+    CO: Int32Array; // Compiler alias for classObjectAddresses
+
     ctx: Context;
     allCtxs: Set<Context>;
 
@@ -382,8 +384,7 @@ module J2ME {
       this.status = RuntimeStatus.New;
       this.waiting = [];
       this.threadCount = 0;
-      this.initialized = Object.create(null);
-      this.pending = {};
+      this.I = this.initialized = new Int8Array(Constants.MAX_CLASS_ID);
       this.SA = this.staticObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
       this.CO = this.classObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
       this.ctx = null;
@@ -416,7 +417,7 @@ module J2ME {
      * different threads that need trigger the Class.initialize() code so they block.
      */
     setClassInitialized(classId: number) {
-      this.initialized[classId] = true;
+      this.initialized[classId] = 1;
     }
 
     getClassObjectAddress(classInfo: ClassInfo): number {
@@ -626,11 +627,6 @@ module J2ME {
     private static _nextId: number = 0;
     id: number;
     /**
-     * Short alias of initialized for compiled code.
-     */
-    I: any [];
-
-    /**
      * Bailout callback whenever a JIT frame is unwound.
      */
     B(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number) {
@@ -678,7 +674,6 @@ module J2ME {
     constructor(jvm: JVM) {
       super(jvm);
       this.id = Runtime._nextId ++;
-      this.I = this.initialized;
     }
   }
 
@@ -1535,6 +1530,7 @@ module J2ME {
     ARRAY_LENGTH_OFFSET = 4,
     NULL = 0,
 
+    MAX_CLASS_ID = 1024,
     INITIAL_MAX_CLASS_ID = 512
   }
 
