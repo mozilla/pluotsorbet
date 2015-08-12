@@ -2313,7 +2313,7 @@ module J2ME {
         // If an exception is thrown from a native there will be a native marker frame at the top of the stack
         // which will be cut off when the the fp is set on the thread below. To keep the nativeFrameCount in
         // sync the native marker must be popped.
-        if (thread.fp > fp) {
+        if (thread.fp > fp && thread.frame.type === FrameType.Native) {
           release || assert(i32[thread.fp + FrameLayout.CallerFPOffset] === fp, "Only one extra frame is on the stack. " + (thread.fp - fp));
           thread.popMarkerFrame(FrameType.Native);
         }
