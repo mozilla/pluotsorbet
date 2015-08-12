@@ -1560,7 +1560,7 @@ module J2ME {
                 // on stack replacement.
                 var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
-                if ((previousFrameType === FrameType.Interpreter || previousFrameType === FrameType.ExitInterpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
+                if ((previousFrameType === FrameType.Interpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
                   traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
                   onStackReplacementCount++;
 
@@ -1598,27 +1598,6 @@ module J2ME {
                   release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
 
                   kind = signatureKinds[0];
-
-                  if (previousFrameType === FrameType.ExitInterpreter) {
-                    thread.set(fp, sp, opPC);
-                    switch (kind) {
-                      case Kind.Long:
-                      case Kind.Double:
-                        return returnLong(returnValue, tempReturn0);
-                      case Kind.Int:
-                      case Kind.Byte:
-                      case Kind.Char:
-                      case Kind.Float:
-                      case Kind.Short:
-                      case Kind.Boolean:
-                      case Kind.Reference:
-                        return returnValue;
-                      case Kind.Void:
-                        return;
-                      default:
-                        release || assert(false, "Invalid Kind: " + Kind[kind]);
-                    }
-                  }
 
                   mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
                   type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
