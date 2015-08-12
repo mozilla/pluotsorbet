@@ -55,6 +55,9 @@ function parseArguments(options, tokens) {
           case "string":
             options[name].value = value;
             break;
+          case "boolean":
+            options[name].value = value == "true" || value == "yes";
+            break;
         }
       } else {
         print("Illegal option: " + name);
@@ -77,6 +80,21 @@ var options = {
     short: "m",
     value: -1,
     type: "number"
+  },
+  "backwardBranchThreshold": {
+    short: "bbt",
+    value: 1,
+    type: "number"
+  },
+  "invokeThreshold": {
+    short: "it",
+    value: 1,
+    type: "number"
+  },
+  "enableOnStackReplacement": {
+    short: "osr",
+    value: true,
+    type: "boolean"
   }
 };
 
@@ -242,6 +260,10 @@ try {
   J2ME.enableRuntimeCompilation = false;
   J2ME.maxCompiledMethodCount = options.maxCompiledMethodCount.value;
 
+  J2ME.ConfigThresholds.InvokeThreshold = options.invokeThreshold.value;
+  J2ME.ConfigThresholds.BackwardBranchThreshold = options.backwardBranchThreshold.value;
+  J2ME.enableOnStackReplacement = options.enableOnStackReplacement.value;
+
   start = dateNow();
   var runtime = jvm.startIsolate0(files[0], config.args);
 
@@ -250,8 +272,12 @@ try {
     return true;
   });
 
-  print("Time: " + (dateNow() - start).toFixed(4) + " ms");
-  J2ME.bytecodeCount && print("Bytecodes: " + J2ME.bytecodeCount);
+  print("-------------------------------------------------------");
+  print("Total Time: " + (dateNow() - start).toFixed(4) + " ms");
+  print("bytecodeCount: " + J2ME.bytecodeCount);
+  print("compiledMethodCount: " + J2ME.compiledMethodCount);
+  print("onStackReplacementCount: " + J2ME.onStackReplacementCount);
+  print("-------------------------------------------------------");
   J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter(false, function (x) {
     print(x);
   }));
