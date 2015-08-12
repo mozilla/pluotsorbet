@@ -61,8 +61,21 @@ extern "C" {
     }, (int)obj);
   }
 
+  int stop() {
+    return EM_ASM_INT_V({
+      if (!$) {
+        return 0;
+      }
+      return $.ctx.nativeThread.nativeFrameCount;
+    });
+  }
+
   uintptr_t gcMallocUncollectable(int32_t size) {
+#ifdef GC_NONE
+      return gcMalloc(size);
+#else
     return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
+#endif
   }
 
   void gcFree(uintptr_t p) {
@@ -70,7 +83,7 @@ extern "C" {
   }
 
   uintptr_t gcMalloc(int32_t size) {
-  #ifdef GC_NONE
+#ifdef GC_NONE
     size = (size + 3) & ~0x03;
     if (head + size > tail) {
       // Not enough space in current chunk, allocate a new one.
@@ -86,17 +99,17 @@ extern "C" {
     head += size;
     while (curr < head) *curr++ = 0;
     return (uintptr_t)addr;
-  #else
-    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
-  #endif
+#else
+    return (uintptr_t)GC_MALLOC(size);
+#endif
   }
 
   uintptr_t gcMallocAtomic(int32_t size) {
-  #ifdef GC_NONE
+#ifdef GC_NONE
     return gcMalloc(size);
-  #else
-    return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
-  #endif
+#else
+    return (uintptr_t)GC_MALLOC_ATOMIC(size);
+#endif
   }
 
   void gcRegisterDisappearingLink(uintptr_t p, uintptr_t objAddr) {

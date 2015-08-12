@@ -246,7 +246,7 @@ module J2ME {
 
     if (!release) { // Check to see that no collisions have ever happened.
       if (hashMap[hash] && hashMap[hash] !== s) {
-        assert(false, "This is very bad.")
+        assert(false, "Collision detected!!!")
       }
       hashMap[hash] = s;
     }
@@ -258,7 +258,7 @@ module J2ME {
     var hash = HashUtilities.hashBytesTo32BitsMurmur(s, 0, s.length);
     if (!release) { // Check to see that no collisions have ever happened.
       if (hashMap[hash] && hashMap[hash] !== s) {
-        assert(false, "This is very bad.")
+        assert(false, "Collision detected in hashUTF8String!!!")
       }
       hashMap[hash] = s;
     }
@@ -633,20 +633,17 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(methodInfoId: number, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
-      release || assert(methodInfo !== undefined);
-      this.ctx.bailout(methodInfo, pc, local, stack, lockObject);
-    }
-
-    /**
-     * Bailout callback whenever a JIT frame is unwound that uses a slightly different calling
-     * convetion that makes it more convenient to emit in some cases.
-     */
-    T(methodInfoId: number, location: UnwindThrowLocation, local: any [], stack: any [], lockObject: java.lang.Object) {
-      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
-      release || assert(methodInfo !== undefined);
-      this.ctx.bailout(methodInfo, location.getPC(), local, stack.slice(0, location.getSP()), lockObject);
+    B(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number) {
+      // TODO: use specialized $.B functions based on the local and stack size so we don't have to use the arguments variable.
+      var bailoutFrameAddress = createBailoutFrame(methodInfoId, pc, localCount, stackCount, lockObjectAddress);
+      var argumentOffset = 5;
+      for (var j = 0; j < localCount; j++) {
+        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j] = arguments[argumentOffset + j];
+      }
+      for (var j = 0; j < stackCount; j++) {
+        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j + localCount] = arguments[argumentOffset + localCount + j];
+      }
+      this.ctx.bailout(bailoutFrameAddress);
     }
 
     SA(classId: number) {
@@ -669,7 +666,8 @@ module J2ME {
     nativeBailout(returnKind: Kind, opCode?: Bytecode.Bytecodes) {
       var pc = returnKind === Kind.Void ? 0 : 1;
       var methodInfo = CLASSES.getUnwindMethodInfo(returnKind, opCode);
-      $.ctx.bailout(methodInfo, pc, [], [], null);
+      var bailoutFrameAddress = createBailoutFrame(methodInfo.id, pc, 0, 0, Constants.NULL);
+      this.ctx.bailout(bailoutFrameAddress);
     }
 
     pause(reason: string) {
@@ -697,8 +695,9 @@ module J2ME {
   export var linkedMethods: Map<number, Function> = Object.create(null);
 
   export function getClassInfo(addr: number) {
-    release || assert(addr !== Constants.NULL);
-    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0);
+    release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
+    release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0,
+                      "i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0");
     return classIdToClassInfoMap[i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2]];
   }
 
@@ -982,7 +981,7 @@ module J2ME {
       return methodInfo.fn;
     }
     linkMethod(methodInfo);
-    release || assert (methodInfo.fn);
+    release || assert (methodInfo.fn, "bad fn in getLinkedMethod");
     return methodInfo.fn;
   }
 
@@ -1161,7 +1160,7 @@ module J2ME {
 
   export function instanceOfInterface(objectAddr: number, classId: number): boolean {
     release || assert(typeof classId === "number", "Class id must be a number.");
-    release || assert(classIdToClassInfoMap[classId].isInterface);
+    release || assert(classIdToClassInfoMap[classId].isInterface, "instanceOfInterface called on non interface");
     return objectAddr !== Constants.NULL && isAssignableTo(classIdToClassInfoMap[i32[objectAddr + Constants.OBJ_CLASS_ID_OFFSET >> 2]], classIdToClassInfoMap[classId]);
   }
 
@@ -1194,6 +1193,26 @@ module J2ME {
 
   export function onFinalize(addr: number): void {
     NativeMap.delete(addr);
+  }
+
+  export enum BailoutFrameLayout {
+    MethodInfoIdOffset = 0,
+    PCOffset = 4,
+    LocalCountOffset = 8,
+    StackCountOffset = 12,
+    LockOffset = 16,
+    HeaderSize = 20
+  }
+
+  export function createBailoutFrame(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
+    var address = ASM._gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
+    release || assert(typeof methodInfoId === "number" && methodInfoId in methodIdToMethodInfoMap, "Must be valid method info.");
+    i32[address + BailoutFrameLayout.MethodInfoIdOffset >> 2] = methodInfoId;
+    i32[address + BailoutFrameLayout.PCOffset >> 2] = pc;
+    i32[address + BailoutFrameLayout.LocalCountOffset >> 2] = localCount;
+    i32[address + BailoutFrameLayout.StackCountOffset >> 2] = stackCount;
+    i32[address + BailoutFrameLayout.LockOffset >> 2] = lockObjectAddress;
+    return address;
   }
 
   /**
@@ -1334,7 +1353,7 @@ module J2ME {
   }
 
   export function newArray(elementClassInfo: ClassInfo, size: number): number {
-    release || assert(elementClassInfo instanceof ClassInfo);
+    release || assert(elementClassInfo instanceof ClassInfo, "elementClassInfo instanceof ClassInfo");
     if (size < 0) {
       throwNegativeArraySizeException();
     }
@@ -1417,7 +1436,7 @@ module J2ME {
   var jStringDecoder = new TextDecoder('utf-16');
 
   export function fromJavaChars(charsAddr, offset, count) {
-    release || assert(charsAddr !== Constants.NULL);
+    release || assert(charsAddr !== Constants.NULL, "charsAddr !== Constants.NULL");
 
     var start = (Constants.ARRAY_HDR_SIZE + charsAddr >> 1) + offset;
 
@@ -1504,7 +1523,7 @@ module J2ME {
     LONG_MIN_LOW = 0,
     LONG_MIN_HIGH = 0x80000000,
 
-    MAX_STACK_SIZE = 1024 * 128,
+    MAX_STACK_SIZE = 4 * 1024,
 
     TWO_PWR_32_DBL = 4294967296,
     TWO_PWR_63_DBL = 9223372036854776000,
@@ -1556,6 +1575,7 @@ module J2ME {
     getLinkedMethod(CLASSES.java_lang_Class.getMethodByNameString("initialize", "()V"))($.getClassObjectAddress(classInfo));
     if (U) {
       i32[frameTypeOffset] = FrameType.PushPendingFrames;
+      thread.nativeFrameCount--;
       thread.unwoundNativeFrames.push(null);
       return;
     }

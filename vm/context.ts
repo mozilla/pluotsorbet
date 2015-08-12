@@ -148,6 +148,12 @@ module J2ME {
 
   }
 
+  enum ThreadDataLayout {
+    AddressOffset = 0,
+    StackTopOffset = 1,
+    Size = 2
+  }
+
   export class Context {
     private static _nextId: number = 0;
     private static _colors = [
@@ -191,17 +197,17 @@ module J2ME {
       }
 
       setUncollectable(this.nativeThread.tp);
-      this.threadData = new Int32Array(ASM.buffer, ASM._gcMallocUncollectable(8), 2);
-      this.threadData[1] = this.nativeThread.tp;
+      this.threadData = new Int32Array(ASM.buffer, ASM._gcMallocUncollectable(ThreadDataLayout.Size << 2), ThreadDataLayout.Size);
+      this.threadData[ThreadDataLayout.StackTopOffset] = this.nativeThread.tp;
       unsetUncollectable(this.nativeThread.tp);
     }
 
     public set threadAddress(addr: number) {
-      this.threadData[0] = addr;
+      this.threadData[ThreadDataLayout.AddressOffset] = addr;
     }
 
     public get threadAddress() {
-      return this.threadData[0];
+      return this.threadData[ThreadDataLayout.AddressOffset];
     }
 
     public static color(id) {
@@ -311,6 +317,7 @@ module J2ME {
         // Rethrow so the exception is not silent.
         throw "classInfo" in e ? e.classInfo : e;
       }
+      release || assert(this.nativeThread.nativeFrameCount === 0, "All native frames should be gone.")
       if (U) {
         this.nativeThread.endUnwind();
         switch (U) {
@@ -447,9 +454,9 @@ module J2ME {
       this.unblock(monitor, "waiting", notifyAll);
     }
 
-    bailout(methodInfo: MethodInfo, pc: number, local: any [], stack: any [], lockObject: java.lang.Object) {
-      traceWriter && traceWriter.writeLn("Bailout: " + methodInfo.implKey);
-      this.nativeThread.unwoundNativeFrames.push({frameType: FrameType.Interpreter, methodInfo: methodInfo, pc: pc, local: local, stack: stack, lockObject: lockObject});
+    bailout(bailoutFrameAddress: number) {
+      traceWriter && traceWriter.writeLn("Bailout: " + methodIdToMethodInfoMap[i32[bailoutFrameAddress + BailoutFrameLayout.MethodInfoIdOffset >> 2]].implKey);
+      this.nativeThread.unwoundNativeFrames.push(bailoutFrameAddress);
     }
 
     pauseMethodTimeline() {

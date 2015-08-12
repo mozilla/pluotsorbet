@@ -82,7 +82,7 @@ module J2ME {
     var r = new Uint8Array(s.length);
     for (var i = 0; i < s.length; i++) {
       var c = s.charCodeAt(i);
-      release || assert(c <= 0x7f);
+      release || assert(c <= 0x7f, "bad char in toUTF8");
       r[i] = c;
     }
     return r;
@@ -539,7 +539,7 @@ module J2ME {
      */
     readTagU2(i: number, tag: TAGS, offset: number) {
       var b = this.buffer;
-      release || assert(b[this.entries[i]] === tag);
+      release || assert(b[this.entries[i]] === tag, "readTagU2 failure");
       var o = this.entries[i] + offset;
       return b[o] << 8 | b[o + 1];
     }
@@ -583,7 +583,7 @@ module J2ME {
     resolveString(i: number): string {
       var s = this;
       var tag = s.seekTag(i);
-      release || assert(tag === TAGS.CONSTANT_String);
+      release || assert(tag === TAGS.CONSTANT_String, "resolveString failure");
       s.readU1();
       return this.resolveUtf8String(s.readU2())
     }
@@ -595,7 +595,7 @@ module J2ME {
       var s = this, r = this.resolved[i];
       if (r === undefined) {
         var tag = this.seekTag(i);
-        release || Debug.assert(expectedTag === TAGS.CONSTANT_Any || expectedTag === tag || (expectedTag === TAGS.CONSTANT_Methodref && tag === TAGS.CONSTANT_InterfaceMethodref));
+        release || Debug.assert(expectedTag === TAGS.CONSTANT_Any || expectedTag === tag || (expectedTag === TAGS.CONSTANT_Methodref && tag === TAGS.CONSTANT_InterfaceMethodref), "bad expectedTag in resolve");
         switch (s.readU1()) {
             case TAGS.CONSTANT_Integer:
               r = this.resolved[i] = s.readS4();
@@ -645,7 +645,7 @@ module J2ME {
             this.resolved[i] = r;
             break;
           default:
-            assert(false);
+            assert(false, "bad type in resolve");
             break;
         }
       }
@@ -1311,8 +1311,8 @@ module J2ME {
       for (var i = 0; i < vTable.length; i++) {
         var methodInfo = vTable[i];
         // TODO: Find out why only doing this when |methodInfo.implementsInterface| is |true|, fails.
-        release || assert(methodInfo.mangledName);
-        release || assert(!iTable[methodInfo.mangledName]);
+        release || assert(methodInfo.mangledName, "methodInfo.mangledName");
+        release || assert(!iTable[methodInfo.mangledName], "!iTable[methodInfo.mangledName]");
         iTable[methodInfo.mangledName] = methodInfo;
       }
     }
@@ -1623,7 +1623,7 @@ module J2ME {
         display[i--] = classInfo;
         classInfo = classInfo.superClass;
       }
-      release || assert(i === -1, i);
+      release || assert(i === -1, "i === -1");
       return this.display;
     }
   }

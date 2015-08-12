@@ -25,7 +25,7 @@ module J2ME {
    * at the right spots.
    */
   export var yieldMap = {
-    "com/sun/midp/lcdui/RepaintEventProducer.waitForAnimationFrame.()V": YieldReason.Root,
+    "com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V": YieldReason.Root,
     "com/sun/midp/main/MIDletSuiteUtils.vmBeginStartUp.(I)V": YieldReason.Root,
     "com/sun/midp/lcdui/DisplayDevice.gainedForeground0.(II)V": YieldReason.Root,
     "com/sun/cdc/io/j2me/file/DefaultFileHandler.openForRead.()V": YieldReason.Root,
@@ -67,6 +67,7 @@ module J2ME {
     "java/lang/Thread.start0.()V": YieldReason.Root,
     "java/lang/Class.forName0.(Ljava/lang/String;)V": YieldReason.Root,
     "java/lang/Class.newInstance1.(Ljava/lang/Object;)V": YieldReason.Root,
+    "java/lang/Runtime.gc.()V": YieldReason.Root,
     // Test Files:
     "gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
@@ -246,7 +247,7 @@ module J2ME {
       return YieldReason.Cycle;
     }
     if (!methodInfo.codeAttribute) {
-      assert (methodInfo.isNative || methodInfo.isAbstract);
+      assert (methodInfo.isNative || methodInfo.isAbstract, "bad method type in canYield");
       yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " Abstract");
       return yieldMap[methodInfo.implKey] = YieldReason.None;
     }

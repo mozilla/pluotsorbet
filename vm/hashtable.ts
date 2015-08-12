@@ -66,7 +66,7 @@ module J2ME {
     private static loadFactorPercent = 75;
 
     constructor(initialCapacity: number) {
-      release || assert(initialCapacity >= 0);
+      release || assert(initialCapacity >= 0, "bad initialCapacity in Uint8Hashtable constructor");
       if (initialCapacity == 0) {
         initialCapacity = 1;
       }
@@ -112,7 +112,7 @@ module J2ME {
 
     put(key: Uint8Array, value: any) {
       // Make sure the value is not null
-      release || assert(value !== null);
+      release || assert(value !== null, "bad value in Uin8Hashtable put");
 
       // Makes sure the key is not already in the hashtable.
       var table = this.table;

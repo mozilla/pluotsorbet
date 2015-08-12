@@ -8,10 +8,20 @@ public class TestRuntime implements Testlet {
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
 
+    void collectAll() {
+        long freeMemory;
+        long endFreeMemory;
+        do {
+            freeMemory = Runtime.getRuntime().freeMemory();
+            Runtime.getRuntime().gc();
+            endFreeMemory = Runtime.getRuntime().freeMemory();
+        } while (endFreeMemory > freeMemory);
+    }
+
     public void test(TestHarness th) {
         System.out.println("freeMemory0: " + Runtime.getRuntime().freeMemory());
 
-        Runtime.getRuntime().gc();
+        collectAll();
 
         long totalMemory = Runtime.getRuntime().totalMemory();
         long freeMemory = Runtime.getRuntime().freeMemory();
@@ -21,7 +31,7 @@ public class TestRuntime implements Testlet {
         th.check(totalMemory > freeMemory, "Total memory is strictly greater than free memory");
         th.check(freeMemory > 0, "Free memory is strictly greater than 0");
 
-        long[] array = new long[1048576];
+        long[] array = new long[1024];
 
         System.out.println("freeMemory2: " + Runtime.getRuntime().freeMemory());
 
@@ -32,7 +42,7 @@ public class TestRuntime implements Testlet {
 
         array = null;
 
-        Runtime.getRuntime().gc();
+        collectAll();
 
         System.out.println("freeMemory3: " + Runtime.getRuntime().freeMemory());
 
