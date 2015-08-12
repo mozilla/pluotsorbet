@@ -1811,7 +1811,7 @@ module J2ME {
               if (U) {
                 return;
               }
-              address = $.getStaticObjectAddress(fieldInfo.classInfo) + fieldInfo.byteOffset;
+              address = $.staticObjectAddresses[fieldInfo.classInfo.id] + fieldInfo.byteOffset;
 
               if (address === Constants.NULL) {
                 thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
@@ -1859,7 +1859,7 @@ module J2ME {
               if (U) {
                 return;
               }
-              address = $.getStaticObjectAddress(fieldInfo.classInfo) + fieldInfo.byteOffset;
+              address = $.staticObjectAddresses[fieldInfo.classInfo.id] + fieldInfo.byteOffset;
             } else {
               address = i32[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
 

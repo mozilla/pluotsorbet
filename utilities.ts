@@ -181,6 +181,19 @@ module J2ME {
       }
       return array;
     }
+
+    /**
+     * Resizes a Int32Array to have the given length.
+     */
+    export function ensureInt32ArrayLength(array: Int32Array, length: number): Int32Array {
+      if (array.length >= length) {
+        return array;
+      }
+      var newLength = Math.max(array.length + length, ((array.length * 3) >> 1) + 1);
+      var newArray = new Int32Array(newLength);
+      newArray.set(array);
+      return newArray;
+    }
   }
 
   export module ObjectUtilities {

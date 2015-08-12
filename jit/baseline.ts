@@ -814,11 +814,11 @@ module J2ME {
     }
 
     runtimeClass(classInfo: ClassInfo) {
-      return "$.SA(" + classInfo.id + ")";
+      return "$.SA[" + classInfo.id + "]";
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
-      return "$.CO(" + classInfo.id + ")";
+      return "$.CO[" + classInfo.id + "]";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {

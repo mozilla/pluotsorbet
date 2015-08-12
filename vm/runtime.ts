@@ -360,8 +360,10 @@ module J2ME {
     threadCount: number;
     initialized: any;
     pending: any;
-    staticObjectAddresses: any;
-    classObjectAddresses: any;
+    staticObjectAddresses: Int32Array;
+    classObjectAddresses: Int32Array;
+    SA: Int32Array; // Alias for staticObjectAddresses
+    CO: Int32Array; // Alias for classObjectAddresses
     ctx: Context;
     allCtxs: Set<Context>;
 
@@ -382,8 +384,8 @@ module J2ME {
       this.threadCount = 0;
       this.initialized = Object.create(null);
       this.pending = {};
-      this.staticObjectAddresses = {};
-      this.classObjectAddresses = {};
+      this.SA = this.staticObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
+      this.CO = this.classObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
       this.ctx = null;
       this.allCtxs = new Set();
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
@@ -418,28 +420,26 @@ module J2ME {
     }
 
     getClassObjectAddress(classInfo: ClassInfo): number {
-      if (!this.classObjectAddresses[classInfo.mangledName]) {
+      var id = classInfo.id;
+      if (!this.classObjectAddresses[classInfo.id]) {
         var addr = allocUncollectableObject(CLASSES.java_lang_Class);
         var handle = <java.lang.Class>getHandle(addr);
-        handle.vmClass = classInfo.id;
-        this.classObjectAddresses[classInfo.mangledName] = addr;
+        handle.vmClass = id;
+        // Ensure that maps are large enough.
+        this.SA = this.staticObjectAddresses = ArrayUtilities.ensureInt32ArrayLength(this.staticObjectAddresses, id + 1);
+        this.CO = this.classObjectAddresses = ArrayUtilities.ensureInt32ArrayLength(this.classObjectAddresses, id + 1);
+        this.classObjectAddresses[id] = addr;
+        this.staticObjectAddresses[id] = ASM._gcMallocUncollectable(J2ME.Constants.OBJ_HDR_SIZE + classInfo.sizeOfStaticFields);
         linkWriter && linkWriter.writeLn("Initializing Class Object For: " + classInfo.getClassNameSlow());
         if (classInfo === CLASSES.java_lang_Object ||
             classInfo === CLASSES.java_lang_Class ||
             classInfo === CLASSES.java_lang_String ||
             classInfo === CLASSES.java_lang_Thread) {
           handle.status = 4;
-          this.setClassInitialized(classInfo.id);
+          this.setClassInitialized(id);
         }
       }
-      return this.classObjectAddresses[classInfo.mangledName];
-    }
-
-    getStaticObjectAddress(classInfo: ClassInfo): number {
-      if (!this.staticObjectAddresses[classInfo.mangledName]) {
-        $.staticObjectAddresses[classInfo.mangledName] = ASM._gcMallocUncollectable(J2ME.Constants.OBJ_HDR_SIZE + classInfo.sizeOfStaticFields);
-      }
-      return this.staticObjectAddresses[classInfo.mangledName];
+      return this.classObjectAddresses[id];
     }
 
     /**
@@ -644,14 +644,6 @@ module J2ME {
         i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j + localCount] = arguments[argumentOffset + localCount + j];
       }
       this.ctx.bailout(bailoutFrameAddress);
-    }
-
-    SA(classId: number) {
-      return this.getStaticObjectAddress(classIdToClassInfoMap[classId]);
-    }
-
-    CO(classId: number) {
-      return this.getClassObjectAddress(classIdToClassInfoMap[classId]);
     }
 
     yield(reason: string) {
@@ -1542,6 +1534,8 @@ module J2ME {
 
     ARRAY_LENGTH_OFFSET = 4,
     NULL = 0,
+
+    INITIAL_MAX_CLASS_ID = 512
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
