@@ -887,7 +887,7 @@ module J2ME {
         args.unshift(String(Constants.NULL));
         methodId = methodInfo.id;
       }
-      call = "(LM[" + methodId + "]||" + "GLM(MI[" + methodId + "]))(" + args.join(",") + ")";
+      call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
 
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);

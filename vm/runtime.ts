@@ -972,6 +972,10 @@ module J2ME {
     return methodInfo.fn;
   }
 
+  export function getLinkedMethodById(methodId: number) {
+    return getLinkedMethod(methodIdToMethodInfoMap[methodId]);
+  }
+
   function linkMethod(methodInfo: MethodInfo) {
     runtimeCounter && runtimeCounter.count("linkMethod");
     var fn;
@@ -1971,7 +1975,8 @@ var O: J2ME.MethodInfo = null;
 var CI = J2ME.classIdToClassInfoMap;
 var MI = J2ME.methodIdToMethodInfoMap;
 var LM = J2ME.linkedMethods;
-var GLM = J2ME.getLinkedMethod;
+var GLM = J2ME.getLinkedMethodById;
+
 var CIC = J2ME.classInitCheck;
 var GH = J2ME.getHandle;
 var AO = J2ME.allocObject;
