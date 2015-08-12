@@ -9,10 +9,10 @@
 #include <inttypes.h>
 #include <emscripten.h>
 
-#define GC_NONE 1
-#define GC_NONE_HEAP_SIZE (128 * 1024 * 1024)
+// #define GC_NONE
+#define GC_NONE_HEAP_CHUNK_SIZE (2 * 1024 * 1024)
 
-uint32_t * heap, * head;
+uint8_t * head = 0, * tail = 0;
 
 // Formatting: Printing longs.
 // printf("L: %" PRId64 ", R: %" PRId64, *l, *r);
@@ -72,15 +72,20 @@ extern "C" {
   uintptr_t gcMalloc(int32_t size) {
   #ifdef GC_NONE
     size = (size + 3) & ~0x03;
-    uint32_t * curr = head;
-    uint32_t * p = head;
-    head += size;
-    if (head > heap + GC_NONE_HEAP_SIZE) {
-      printf("Out of memory, max: %d", GC_NONE_HEAP_SIZE);
-      return 0;
+    if (head + size > tail) {
+      // Not enough space in current chunk, allocate a new one.
+      int32_t chunkSize = GC_NONE_HEAP_CHUNK_SIZE;
+      if (size > chunkSize) {
+        chunkSize = size;
+      }
+      head = (uint8_t *)malloc(chunkSize);
+      tail = head + chunkSize;
     }
+    uint8_t * addr = head;
+    uint8_t * curr = head;
+    head += size;
     while (curr < head) *curr++ = 0;
-    return (uintptr_t)p;
+    return (uintptr_t)addr;
   #else
     return (uintptr_t)GC_MALLOC_UNCOLLECTABLE(size);
   #endif
@@ -119,8 +124,5 @@ extern "C" {
 }
 
 int main() {
-  #ifdef GC_NONE
-  heap = head = (uint32_t *)malloc(GC_NONE_HEAP_SIZE);
-  #endif
   GC_INIT();
 }
