@@ -1,3 +1,4 @@
+package benchmark;
 /* vim: set filetype=java shiftwidth=4 tabstop=4 autoindent cindent expandtab : */
 
 import com.sun.cldchi.jvm.JVM;
