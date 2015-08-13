@@ -96,6 +96,7 @@ MAIN_JS_SRCS = \
   polyfill/find.js \
   polyfill/findIndex.js \
   polyfill/fround.js \
+  polyfill/TypedArray.js \
   blackBox.js \
   timer.js \
   util.js \
