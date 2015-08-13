@@ -455,7 +455,7 @@ module J2ME {
     }
 
     bailout(bailoutFrameAddress: number) {
-      traceWriter && traceWriter.writeLn("Bailout: " + methodIdToMethodInfoMap[i32[bailoutFrameAddress + BailoutFrameLayout.MethodInfoIdOffset >> 2]].implKey);
+      traceWriter && traceWriter.writeLn("Bailout: " + methodIdToMethodInfoMap[i32[bailoutFrameAddress + BailoutFrameLayout.MethodIdOffset >> 2]].implKey);
       this.nativeThread.unwoundNativeFrames.push(bailoutFrameAddress);
     }
 

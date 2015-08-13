@@ -629,14 +629,14 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(methodInfoId: number, pc: number, lockObjectAddress: number) {
-      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
+    B(methodId: number, pc: number, lockObjectAddress: number) {
+      var methodInfo = methodIdToMethodInfoMap[methodId];
       var localCount = methodInfo.codeAttribute.max_locals;
       var argumentCount = 3;
       // Figure out the |stackCount| from the number of arguments.
       var stackCount = arguments.length - argumentCount - localCount;
       // TODO: use specialized $.B functions based on the local and stack size so we don't have to use the arguments variable.
-      var bailoutFrameAddress = createBailoutFrame(methodInfoId, pc, localCount, stackCount, lockObjectAddress);
+      var bailoutFrameAddress = createBailoutFrame(methodId, pc, localCount, stackCount, lockObjectAddress);
       for (var j = 0; j < localCount; j++) {
         i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j] = arguments[argumentCount + j];
       }
@@ -1204,7 +1204,7 @@ module J2ME {
   }
 
   export enum BailoutFrameLayout {
-    MethodInfoIdOffset = 0,
+    MethodIdOffset = 0,
     PCOffset = 4,
     LocalCountOffset = 8,
     StackCountOffset = 12,
@@ -1212,10 +1212,10 @@ module J2ME {
     HeaderSize = 20
   }
 
-  export function createBailoutFrame(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
+  export function createBailoutFrame(methodId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
     var address = ASM._gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
-    release || assert(typeof methodInfoId === "number" && methodInfoId in methodIdToMethodInfoMap, "Must be valid method info.");
-    i32[address + BailoutFrameLayout.MethodInfoIdOffset >> 2] = methodInfoId;
+    release || assert(typeof methodId === "number" && methodId in methodIdToMethodInfoMap, "Must be valid method info.");
+    i32[address + BailoutFrameLayout.MethodIdOffset >> 2] = methodId;
     i32[address + BailoutFrameLayout.PCOffset >> 2] = pc;
     i32[address + BailoutFrameLayout.LocalCountOffset >> 2] = localCount;
     i32[address + BailoutFrameLayout.StackCountOffset >> 2] = stackCount;

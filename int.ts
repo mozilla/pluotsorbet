@@ -513,7 +513,7 @@ module J2ME {
     tracePendingFrames(writer: IndentingWriter) {
       for (var i = 0; i < this.pendingNativeFrames.length; i++) {
         var pendingFrame = this.pendingNativeFrames[i];
-        writer.writeLn(pendingFrame ? methodIdToMethodInfoMap[i32[pendingFrame + BailoutFrameLayout.MethodInfoIdOffset >> 2]].implKey : "-marker-");
+        writer.writeLn(pendingFrame ? methodIdToMethodInfoMap[i32[pendingFrame + BailoutFrameLayout.MethodIdOffset >> 2]].implKey : "-marker-");
       }
     }
 
@@ -540,7 +540,7 @@ module J2ME {
           frames.push(pendingNativeFrameAddress);
         }
         while (pendingNativeFrameAddress = frames.pop()) {
-          var methodInfo = methodIdToMethodInfoMap[i32[pendingNativeFrameAddress + BailoutFrameLayout.MethodInfoIdOffset >> 2]];
+          var methodInfo = methodIdToMethodInfoMap[i32[pendingNativeFrameAddress + BailoutFrameLayout.MethodIdOffset >> 2]];
           var stackCount = i32[pendingNativeFrameAddress + BailoutFrameLayout.StackCountOffset >> 2];
           var localCount = i32[pendingNativeFrameAddress + BailoutFrameLayout.LocalCountOffset >> 2];
           var pc = i32[pendingNativeFrameAddress + BailoutFrameLayout.PCOffset >> 2];
