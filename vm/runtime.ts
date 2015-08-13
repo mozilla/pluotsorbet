@@ -616,6 +616,17 @@ module J2ME {
         "java/lang/Exception", str);
     }
 
+    static classInfoComplete(classInfo: ClassInfo) {
+      if (phase !== ExecutionPhase.Runtime) {
+        return;
+      }
+
+      if (!classInfo.isInterface) {
+        // Pre-allocate linkedVTableMap.
+        classIdToLinkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
+      }
+    }
+
   }
 
   export enum VMState {

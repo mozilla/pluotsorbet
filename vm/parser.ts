@@ -1214,6 +1214,10 @@ module J2ME {
         this.buildITable();
         this.buildFTable();
       }
+      // Notify the runtime so it can perform and necessary setup.
+      if (RuntimeTemplate) {
+        RuntimeTemplate.classInfoComplete(this);
+      }
       loadWriter && this.trace(loadWriter);
     }
 
@@ -1267,9 +1271,6 @@ module J2ME {
           }
         }
       }
-
-      // Pre-allocate linkedVTableMap.
-      classIdToLinkedVTableMap[this.id] = ArrayUtilities.makeDenseArray(this.vTable.length, null);
     }
 
     private buildITable() {
