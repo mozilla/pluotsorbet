@@ -9,6 +9,9 @@ class All {
         com.sun.midp.crypto.ARC4_Bench.main(args);
         System.out.println(">> com.sun.midp.crypto.ARC4_Bench: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
 
+        com.sun.midp.crypto.Cipher_Bench.main(args);
+        System.out.println(">> com.sun.midp.crypto.Cipher_Bench: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
+
         Arithmetic.main(args);
         System.out.println(">> Arithmetic: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
 
