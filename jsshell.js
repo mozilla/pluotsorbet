@@ -95,6 +95,16 @@ var options = {
     short: "osr",
     value: true,
     type: "boolean"
+  },
+  "emitCheckArrayBounds": {
+    short: "cab",
+    value: true,
+    type: "boolean"
+  },
+  "emitCheckArrayStore": {
+    short: "cas",
+    value: true,
+    type: "boolean"
   }
 };
 
@@ -265,6 +275,8 @@ try {
   J2ME.ConfigThresholds.InvokeThreshold = options.invokeThreshold.value;
   J2ME.ConfigThresholds.BackwardBranchThreshold = options.backwardBranchThreshold.value;
   J2ME.enableOnStackReplacement = options.enableOnStackReplacement.value;
+  J2ME.emitCheckArrayBounds = options.emitCheckArrayBounds.value;
+  J2ME.emitCheckArrayStore = options.emitCheckArrayStore.value;
 
   start = dateNow();
   var runtime = jvm.startIsolate0(files[0], config.args);
@@ -277,6 +289,7 @@ try {
   print("-------------------------------------------------------");
   print("Total Time: " + (dateNow() - start).toFixed(4) + " ms");
   print("bytecodeCount: " + J2ME.bytecodeCount);
+  print("interpreterCount: " + J2ME.interpreterCount);
   print("compiledMethodCount: " + J2ME.compiledMethodCount);
   print("onStackReplacementCount: " + J2ME.onStackReplacementCount);
   print("-------------------------------------------------------");

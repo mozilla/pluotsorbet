@@ -732,6 +732,7 @@ module J2ME {
    * the thread state is property saved.
    */
   export function interpret(thread: Thread) {
+    release || interpreterCount ++;
     var frame = thread.frame;
     // Special case where a |PushPendingFrames| marker is on top of the stack. This happens when
     // native code is on top of the stack.
