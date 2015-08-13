@@ -624,6 +624,21 @@ module J2ME {
         pending.push(unwound.pop());
       }
     }
+
+    /**
+     * Walks the stack from the current fp to find the frame that will return
+     * to the removeFP and make it instead return to the newCallerFP.
+     */
+    removeFrame(removeFP: number, newCallerFP: number, newCallerPC: number) {
+      var fp = this.fp;
+      release || assert(fp !== removeFP, "Cannot remove current fp.");
+      while ((i32[fp + FrameLayout.CallerFPOffset]) !== removeFP) {
+        fp = i32[fp + FrameLayout.CallerFPOffset];
+      }
+      release || assert(i32[fp + FrameLayout.CallerFPOffset] === removeFP, "Did not find the frame to remove.");
+      i32[fp + FrameLayout.CallerFPOffset] = newCallerFP;
+      i32[fp + FrameLayout.CallerRAOffset] = newCallerPC;
+    }
   }
 
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
@@ -642,6 +657,7 @@ module J2ME {
       var callerPC = thread.pc;
       // release || traceWriter && traceWriter.writeLn(">> I");
       thread.pushMarkerFrame(FrameType.ExitInterpreter);
+      var exitFP = thread.fp;
       thread.pushFrame(methodInfo);
       var calleeFP = thread.fp;
       var frame = thread.frame;
@@ -663,16 +679,18 @@ module J2ME {
         release || assert(U !== VMState.Yielding, "Monitors should never yield.");
         if (U === VMState.Pausing || U === VMState.Stopping) {
           // Splice out the marker frame so the interpreter doesn't return early when execution is resumed.
-          i32[calleeFP + FrameLayout.CallerFPOffset] = callerFP;
-          i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
+          // The simple solution of using the calleeFP to splice the frame cannot be used since the frame
+          // stack may have changed if an OSR occurred.
+          thread.removeFrame(exitFP, callerFP, callerPC);
           return;
         }
       }
       var v = interpret(thread);
       if (U) {
         // Splice out the marker frame so the interpreter doesn't return early when execution is resumed.
-        i32[calleeFP + FrameLayout.CallerFPOffset] = callerFP;
-        i32[calleeFP + FrameLayout.CallerRAOffset] = callerPC;
+        // The simple solution of using the calleeFP to splice the frame cannot be used since the frame
+        // stack may have changed if an OSR occurred.
+        thread.removeFrame(exitFP, callerFP, callerPC);
         return;
       }
 
@@ -1563,7 +1581,7 @@ module J2ME {
                 // on stack replacement.
                 var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
-                if ((previousFrameType === FrameType.Interpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
+                if ((previousFrameType === FrameType.Interpreter || previousFrameType === FrameType.ExitInterpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
                   traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
                   onStackReplacementCount++;
 
@@ -1601,6 +1619,27 @@ module J2ME {
                   release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
 
                   kind = signatureKinds[0];
+
+                  if (previousFrameType === FrameType.ExitInterpreter) {
+                    thread.set(fp, sp, opPC);
+                    switch (kind) {
+                      case Kind.Long:
+                      case Kind.Double:
+                        return returnLong(returnValue, tempReturn0);
+                      case Kind.Int:
+                      case Kind.Byte:
+                      case Kind.Char:
+                      case Kind.Float:
+                      case Kind.Short:
+                      case Kind.Boolean:
+                      case Kind.Reference:
+                        return returnValue;
+                      case Kind.Void:
+                        return;
+                      default:
+                        release || assert(false, "Invalid Kind: " + Kind[kind]);
+                    }
+                  }
 
                   mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
                   type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
