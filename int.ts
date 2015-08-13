@@ -2198,11 +2198,12 @@ module J2ME {
             var callMethod = calleeTargetMethodInfo.isNative || calleeTargetMethodInfo.state === MethodState.Compiled;
             var calleeStats = calleeTargetMethodInfo.stats;
             calleeStats.interpreterCallCount++;
-            if (config.forceRuntimeCompilation || (callMethod === false &&
-                calleeTargetMethodInfo.state === MethodState.Cold &&
-                calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigThresholds.InvokeThreshold)) {
-              compileAndLinkMethod(calleeTargetMethodInfo);
-              callMethod = calleeTargetMethodInfo.state === MethodState.Compiled;
+            if (callMethod === false) {
+              if (config.forceRuntimeCompilation || (calleeTargetMethodInfo.state === MethodState.Cold &&
+                  calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigThresholds.InvokeThreshold)) {
+                compileAndLinkMethod(calleeTargetMethodInfo);
+                callMethod = calleeTargetMethodInfo.state === MethodState.Compiled;
+              }
             }
             if (callMethod) {
               var kind = Kind.Void;
