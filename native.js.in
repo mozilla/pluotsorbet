@@ -259,32 +259,32 @@ Native["java/lang/System.currentTimeMillis.()J"] = function(addr) {
 
 Native["com/sun/cldchi/jvm/JVM.unchecked_char_arraycopy.([CI[CII)V"] =
 function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
-  var src = J2ME.getArrayFromAddr(srcAddr);
-  var dst = J2ME.getArrayFromAddr(dstAddr);
-  dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
+    var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 1) + srcOffset;
+    var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 1) + dstOffset;
+    i16.set(i16.subarray(src, src + length), dst);
 };
 
 Native["com/sun/cldchi/jvm/JVM.unchecked_int_arraycopy.([II[III)V"] =
 function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
-  var src = J2ME.getArrayFromAddr(srcAddr);
-  var dst = J2ME.getArrayFromAddr(dstAddr);
-  dst.set(src.subarray(srcOffset, srcOffset + length), dstOffset);
+    var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + srcOffset;
+    var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + dstOffset;
+    i32.set(i32.subarray(src, src + length), dst);
 };
 
 Native["com/sun/cldchi/jvm/JVM.unchecked_obj_arraycopy.([Ljava/lang/Object;I[Ljava/lang/Object;II)V"] =
 function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
-    var src = J2ME.getArrayFromAddr(srcAddr);
-    var dst = J2ME.getArrayFromAddr(dstAddr);
+    var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + srcOffset;
+    var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + dstOffset;
 
     if (srcAddr !== dstAddr || dstOffset < srcOffset) {
         for (var n = 0; n < length; ++n) {
-            dst[dstOffset++] = src[srcOffset++];
+            i32[dst++] = i32[src++];
         }
     } else {
-        dstOffset += length;
-        srcOffset += length;
+        dst += length;
+        src += length;
         for (var n = 0; n < length; ++n)
-            dst[--dstOffset] = src[--srcOffset];
+            i32[--dst] = src[--src];
     }
 };
 
@@ -813,13 +813,12 @@ Native["org/mozilla/internal/Sys.eval.(Ljava/lang/String;)V"] = function(addr, s
 Native["java/lang/String.intern.()Ljava/lang/String;"] = function(addr) {
   var self = getHandle(addr);
   var value = J2ME.getArrayFromAddr(self.value);
-  var internedStrings = J2ME.internedStrings;
-  var internedString = internedStrings.getByRange(value, self.offset, self.count);
-  if (internedString !== null) {
-    return internedString._address;
+  var internedStringAddr = J2ME.internedStrings.getByRange(value, self.offset, self.count);
+  if (internedStringAddr !== null) {
+    return internedStringAddr;
   }
-  internedStrings.put(value.subarray(self.offset, self.offset + self.count), self);
-  return self._address;
+  J2ME.internedStrings.put(value.subarray(self.offset, self.offset + self.count), addr);
+  return addr;
 };
 
 var profileStarted = false;
