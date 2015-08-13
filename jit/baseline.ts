@@ -250,8 +250,6 @@ module J2ME {
     private blockStackHeightMap: number [];
     private initializedClasses: any;
     private referencedClasses: ClassInfo [];
-    private local: string [];
-    private stack: string [];
     private variables: any;
     private lockObject: string;
     private hasOSREntryPoint = false;
@@ -272,8 +270,6 @@ module J2ME {
 
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
       this.methodInfo = methodInfo;
-      this.local = [];
-      this.stack = [];
       this.variables = {};
       this.pc = 0;
       this.sp = 0;
@@ -319,7 +315,13 @@ module J2ME {
       if (this.hasMonitorEnter) {
         this.bodyEmitter.prependLn("var th=$.ctx.threadAddress;");
       }
-      this.parameters.unshift("addr");
+
+      // All methods get passed in a |self| address. For static methods this parameter is always null but we still
+      // need it in front.
+      if (this.methodInfo.isStatic) {
+        this.parameters.unshift("self");
+      }
+
       return new CompiledMethodInfo(this.parameters, this.bodyEmitter.toString(), this.referencedClasses, this.hasOSREntryPoint ? this.blockMap.getOSREntryPoints() : []);
     }
 
@@ -390,7 +392,7 @@ module J2ME {
       if (needsTry) {
         this.bodyEmitter.leaveAndEnter("}catch(ex){");
         if (this.hasUnwindThrow) {
-          this.emitBailout(this.bodyEmitter, "ex.getPC()", "ex.getSP()", this.stack);
+          this.emitBailout(this.bodyEmitter, "ex.getPC()", "ex.getSP()", this.sp);
         }
         this.bodyEmitter.writeLn(this.getStackName(0) + "=TE(ex)._address;");
         this.sp = 1;
@@ -459,10 +461,13 @@ module J2ME {
     }
 
     private emitPrologue() {
-      var local = this.local;
-      var parameterLocalIndex = this.methodInfo.isStatic ? 0 : 1;
-
       var signatureKinds = this.methodInfo.signatureKinds;
+      var parameterLocalIndex = 0;
+
+      // For virtual methods, the first parameter is the self address.
+      if (!this.methodInfo.isStatic) {
+        this.parameters.push(this.getLocalName(parameterLocalIndex++));
+      }
 
       // Skip the first typeDescriptor since it is the return type.
       for (var i = 1; i < signatureKinds.length; i++) {
@@ -474,21 +479,23 @@ module J2ME {
       }
 
       var maxLocals = this.methodInfo.codeAttribute.max_locals;
-      for (var i = 0; i < maxLocals; i++) {
-        local.push(this.getLocalName(i));
+      var nonParameterLocals = [];
+      for (var i = parameterLocalIndex; i < maxLocals; i++) {
+        nonParameterLocals.push(this.getLocalName(i));
       }
-      if (local.length) {
-        this.bodyEmitter.writeLn("var " + local.join(",") + ";");
+      if (nonParameterLocals.length) {
+        this.bodyEmitter.writeLn("var " + nonParameterLocals.map(x => x + "=0").join(",") + ";");
       }
       if (!this.methodInfo.isStatic) {
-        this.bodyEmitter.writeLn("var ins="+ this.getLocal(0) + "=addr;");
+        this.bodyEmitter.writeLn("var self="+ this.getLocal(0) + ";");
       }
-      var stack = this.stack;
-      for (var i = 0; i < this.methodInfo.codeAttribute.max_stack; i++) {
-        stack.push(this.getStackName(i));
-      }
-      if (stack.length) {
-        this.bodyEmitter.writeLn("var " + stack.join(",") + ";");
+      var maxStack = this.methodInfo.codeAttribute.max_stack;
+      if (maxStack) {
+        var stack = [];
+        for (var i = 0; i < maxStack; i++) {
+          stack.push(this.getStackName(i));
+        }
+        this.bodyEmitter.writeLn("var " + stack.map(x => x + "=0").join(",") + ";");
       }
       this.bodyEmitter.writeLn("var pc=0;");
       if (this.hasHandlers) {
@@ -500,7 +507,7 @@ module J2ME {
       }
 
       this.lockObject = this.methodInfo.isSynchronized ?
-        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "ins"
+        this.methodInfo.isStatic ? this.runtimeClassObject(this.methodInfo.classInfo) : "self"
         : "null";
 
       this.emitEntryPoints();
@@ -538,7 +545,7 @@ module J2ME {
         this.bodyEmitter.writeLn(restoreLocals.join(",") + ";");
         this.needsVariable("re");
         if (!this.methodInfo.isStatic) {
-          this.bodyEmitter.writeLn("ins=i32[fp+" + FrameLayout.MonitorOffset + "]");
+          this.bodyEmitter.writeLn("self=i32[fp+" + FrameLayout.MonitorOffset + "]");
         }
         this.bodyEmitter.writeLn("pc=nt.pc;");
         this.bodyEmitter.writeLn("nt.popFrame(O);");
@@ -622,10 +629,10 @@ module J2ME {
     }
 
     getLocal(i: number): string {
-      if (i < 0 || i >= this.local.length) {
+      if (i < 0 || i >= this.methodInfo.codeAttribute.max_locals) {
         throw new Error("Out of bounds local read");
       }
-      return this.local[i];
+      return this.getLocalName(i);
     }
 
     emitLoadLocal(kind: Kind, i: number) {
@@ -1135,28 +1142,26 @@ module J2ME {
 
     private emitUnwind(emitter: Emitter, pc: string, forceInline: boolean = false) {
       // Only emit unwind throws if it saves on code size.
-      if (!forceInline && this.blockMap.invokeCount > 2 &&
-          this.stack.length < 8) {
+      if (false && !forceInline && this.blockMap.invokeCount > 2 &&
+          this.methodInfo.codeAttribute.max_stack < 8) {
         emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
         this.hasUnwindThrow = true;
       } else {
-        this.emitBailout(emitter, pc, String(this.sp), BaselineCompiler.stackNames.slice(0, this.sp));
+        this.emitBailout(emitter, pc, String(this.sp), this.sp);
       }
       baselineCounter && baselineCounter.count("emitUnwind");
     }
 
-    private emitBailout(emitter: Emitter, pc: string, sp: string, stack: string[]) {
-      var localCount = this.local.length;
-      var args = [this.methodInfo.id, pc, localCount, sp, this.lockObject];
+    private emitBailout(emitter: Emitter, pc: string, sp: string, stackCount: number) {
+      var localCount = this.methodInfo.codeAttribute.max_locals;
+      var args = [this.methodInfo.id, pc, this.lockObject];
       for (var i = 0; i < localCount; i++) {
-        args.push(this.local[i]);
+        args.push(this.getLocalName(i));
       }
-      for (var i = 0; i < stack.length; i++) {
-        args.push(stack[i]);
+      for (var i = 0; i < stackCount; i++) {
+        args.push(this.getStackName(i));
       }
-      emitter.writeLn("if(U){" +
-        "$.B(" + args.join(",") + ");" +
-        "return;}");
+      emitter.writeLn("if(U){$.B(" + args.join(",") + ");return;}");
     }
 
     emitNoUnwindAssertion() {

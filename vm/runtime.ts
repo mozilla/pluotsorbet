@@ -629,15 +629,19 @@ module J2ME {
     /**
      * Bailout callback whenever a JIT frame is unwound.
      */
-    B(methodInfoId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number) {
+    B(methodInfoId: number, pc: number, lockObjectAddress: number) {
+      var methodInfo = methodIdToMethodInfoMap[methodInfoId];
+      var localCount = methodInfo.codeAttribute.max_locals;
+      var argumentCount = 3;
+      // Figure out the |stackCount| from the number of arguments.
+      var stackCount = arguments.length - argumentCount - localCount;
       // TODO: use specialized $.B functions based on the local and stack size so we don't have to use the arguments variable.
       var bailoutFrameAddress = createBailoutFrame(methodInfoId, pc, localCount, stackCount, lockObjectAddress);
-      var argumentOffset = 5;
       for (var j = 0; j < localCount; j++) {
-        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j] = arguments[argumentOffset + j];
+        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j] = arguments[argumentCount + j];
       }
       for (var j = 0; j < stackCount; j++) {
-        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j + localCount] = arguments[argumentOffset + localCount + j];
+        i32[(bailoutFrameAddress + BailoutFrameLayout.HeaderSize >> 2) + j + localCount] = arguments[argumentCount + localCount + j];
       }
       this.ctx.bailout(bailoutFrameAddress);
     }
