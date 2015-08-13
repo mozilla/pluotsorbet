@@ -7,16 +7,22 @@ class BaseClass {
 }
 
 class NextClass extends BaseClass {
-    public int method() {
-        return 6;
+    public int method(int x) {
+        return x + 1;
     }
 }
 
 class InvokeVirtual {
     public static void main(String[] args) {
         NextClass foo = new NextClass();
-        for (int i = 0; i < 10000000; i++) {
-            foo.method();
+        int x = 0;
+        for (int i = 0; i < 100000000; i++) {
+            x += foo.method(x);
+            x += foo.method(x);
+            x += foo.method(x);
+            x += foo.method(x);
+            x += foo.method(x);
+            x = i;
         }
     }
 }
