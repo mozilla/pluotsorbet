@@ -987,7 +987,10 @@ module J2ME {
   }
 
   export function getLinkedVirtualMethodById(classId: number, vTableIndex: number) {
-    return getLinkedMethod(classIdToClassInfoMap[classId].vTable[vTableIndex]);
+    var fn = getLinkedMethod(classIdToClassInfoMap[classId].vTable[vTableIndex]);
+    // Cache linked method in the |linkedVTableMap|.
+    classIdToLinkedVTableMap[classId][vTableIndex] = fn;
+    return fn;
   }
 
   function linkMethod(methodInfo: MethodInfo) {
@@ -1135,10 +1138,6 @@ module J2ME {
 
     methodInfo.fn = fn;
     linkedMethods[methodInfo.id] = fn;
-
-    if (methodInfo.vTableIndex >= 0) {
-      classIdToLinkedVTableMap[methodInfo.classInfo.id][methodInfo.vTableIndex] = fn;
-    }
   }
 
   /**
