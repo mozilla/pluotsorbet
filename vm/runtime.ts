@@ -672,7 +672,7 @@ module J2ME {
     ARRAY_LENGTH_OFFSET = 4,
     NULL = 0,
 
-    MAX_CLASS_ID = 1024,
+    MAX_CLASS_ID = 4096,
     INITIAL_MAX_CLASS_ID = 512
   }
 
