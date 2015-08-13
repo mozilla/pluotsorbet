@@ -115,7 +115,7 @@ module J2ME {
    */
   export var codeWriter = null;
 
-  export enum MethodState {
+  export const enum MethodState {
     /**
      * All methods start in this state.
      */
@@ -197,7 +197,7 @@ module J2ME {
   export var stdoutWriter = new IndentingWriter();
   export var stderrWriter = new IndentingWriter(false, IndentingWriter.stderr);
 
-  export enum ExecutionPhase {
+  export const enum ExecutionPhase {
     /**
      * Default runtime behaviour.
      */
@@ -616,6 +616,17 @@ module J2ME {
         "java/lang/Exception", str);
     }
 
+    static classInfoComplete(classInfo: ClassInfo) {
+      if (phase !== ExecutionPhase.Runtime) {
+        return;
+      }
+
+      if (!classInfo.isInterface) {
+        // Pre-allocate linkedVTableMap.
+        classIdToLinkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
+      }
+    }
+
   }
 
   export enum VMState {
@@ -623,6 +634,46 @@ module J2ME {
     Yielding = 1,
     Pausing = 2,
     Stopping = 3
+  }
+
+  export enum Constants {
+    BYTE_MIN = -128,
+    BYTE_MAX = 127,
+    SHORT_MIN = -32768,
+    SHORT_MAX = 32767,
+    CHAR_MIN = 0,
+    CHAR_MAX = 65535,
+    INT_MIN = -2147483648,
+    INT_MAX =  2147483647,
+
+    LONG_MAX_LOW = 0xFFFFFFFF,
+    LONG_MAX_HIGH = 0x7FFFFFFF,
+
+    LONG_MIN_LOW = 0,
+    LONG_MIN_HIGH = 0x80000000,
+
+    MAX_STACK_SIZE = 4 * 1024,
+
+    TWO_PWR_32_DBL = 4294967296,
+    TWO_PWR_63_DBL = 9223372036854776000,
+
+    // The size in bytes of the header in the memory allocated to the object.
+    OBJ_HDR_SIZE = 8,
+
+    // The offset in bytes from the beginning of the allocated memory
+    // to the location of the class id.
+    OBJ_CLASS_ID_OFFSET = 0,
+    // The offset in bytes from the beginning of the allocated memory
+    // to the location of the hash code.
+    HASH_CODE_OFFSET = 4,
+
+    ARRAY_HDR_SIZE = 8,
+
+    ARRAY_LENGTH_OFFSET = 4,
+    NULL = 0,
+
+    MAX_CLASS_ID = 1024,
+    INITIAL_MAX_CLASS_ID = 512
   }
 
   export class Runtime extends RuntimeTemplate {
@@ -1204,7 +1255,7 @@ module J2ME {
     NativeMap.delete(addr);
   }
 
-  export enum BailoutFrameLayout {
+  export const enum BailoutFrameLayout {
     MethodIdOffset = 0,
     PCOffset = 4,
     LocalCountOffset = 8,
@@ -1510,46 +1561,6 @@ module J2ME {
   export class ConfigThresholds {
     static InvokeThreshold = 10;
     static BackwardBranchThreshold = 10;
-  }
-
-  export enum Constants {
-    BYTE_MIN = -128,
-    BYTE_MAX = 127,
-    SHORT_MIN = -32768,
-    SHORT_MAX = 32767,
-    CHAR_MIN = 0,
-    CHAR_MAX = 65535,
-    INT_MIN = -2147483648,
-    INT_MAX =  2147483647,
-
-    LONG_MAX_LOW = 0xFFFFFFFF,
-    LONG_MAX_HIGH = 0x7FFFFFFF,
-
-    LONG_MIN_LOW = 0,
-    LONG_MIN_HIGH = 0x80000000,
-
-    MAX_STACK_SIZE = 4 * 1024,
-
-    TWO_PWR_32_DBL = 4294967296,
-    TWO_PWR_63_DBL = 9223372036854776000,
-
-    // The size in bytes of the header in the memory allocated to the object.
-    OBJ_HDR_SIZE = 8,
-
-    // The offset in bytes from the beginning of the allocated memory
-    // to the location of the class id.
-    OBJ_CLASS_ID_OFFSET = 0,
-    // The offset in bytes from the beginning of the allocated memory
-    // to the location of the hash code.
-    HASH_CODE_OFFSET = 4,
-
-    ARRAY_HDR_SIZE = 8,
-
-    ARRAY_LENGTH_OFFSET = 4,
-    NULL = 0,
-
-    MAX_CLASS_ID = 1024,
-    INITIAL_MAX_CLASS_ID = 512
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {

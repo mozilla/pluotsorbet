@@ -10,7 +10,7 @@ module J2ME {
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
   import hashBytesTo32BitsMurmur = HashUtilities.hashBytesTo32BitsMurmur;
-  export enum UTF8Chars {
+  export const enum UTF8Chars {
     a = 97,
     Z = 90,
     C = 67,
@@ -431,7 +431,7 @@ module J2ME {
     }
   }
 
-  export enum ACCESS_FLAGS {
+  export const enum ACCESS_FLAGS {
     ACC_PUBLIC        = 0x0001,
     ACC_PRIVATE       = 0x0002,
     ACC_PROTECTED     = 0x0004,
@@ -988,7 +988,7 @@ module J2ME {
     }
   }
 
-  enum ResolvedFlags {
+  const enum ResolvedFlags {
     None          = 0,
     Fields        = 1,
     Methods       = 2,
@@ -1214,6 +1214,10 @@ module J2ME {
         this.buildITable();
         this.buildFTable();
       }
+      // Notify the runtime so it can perform and necessary setup.
+      if (RuntimeTemplate) {
+        RuntimeTemplate.classInfoComplete(this);
+      }
       loadWriter && this.trace(loadWriter);
     }
 
@@ -1267,9 +1271,6 @@ module J2ME {
           }
         }
       }
-
-      // Pre-allocate linkedVTableMap.
-      classIdToLinkedVTableMap[this.id] = ArrayUtilities.makeDenseArray(this.vTable.length, null);
     }
 
     private buildITable() {
