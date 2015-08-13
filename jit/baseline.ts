@@ -873,21 +873,24 @@ module J2ME {
         var object = this.pop(Kind.Reference);
         this.emitNullPointerCheck(object);
         args.unshift(object);
-        var objClass = "CI[i32[(" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ")>>2]]";
         if (opcode === Bytecodes.INVOKESPECIAL) {
           methodId = methodInfo.id;
+          call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
-          methodId = objClass + ".vTable[" + methodInfo.vTableIndex + "].id";
+          var classId = "i32[(" + object + "|0)>>2]";
+          call = "(VT[" + classId + "][" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
+          var objClass = "CI[i32[(" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ")>>2]]";
           methodId = objClass + ".iTable['" + methodInfo.mangledName + "'].id";
+          call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
         } else {
           Debug.unexpected(Bytecodes[opcode]);
         }
       } else {
         args.unshift(String(Constants.NULL));
         methodId = methodInfo.id;
+        call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
       }
-      call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
 
       if (methodInfo.implKey in inlineMethods) {
         emitDebugInfoComments && this.blockEmitter.writeLn("// Inlining: " + methodInfo.implKey);

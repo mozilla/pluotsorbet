@@ -681,6 +681,11 @@ module J2ME {
   export var methodIdToMethodInfoMap: Map<number, MethodInfo> = Object.create(null);
   export var linkedMethods: Map<number, Function> = Object.create(null);
 
+  /**
+   * Maps classIds to vTables containing JS functions.
+   */
+  export var classIdToLinkedVTableMap = ArrayUtilities.makeDenseArray(Constants.MAX_CLASS_ID + 1, null);
+
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
     release || assert(i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] != 0,
@@ -976,6 +981,10 @@ module J2ME {
     return getLinkedMethod(methodIdToMethodInfoMap[methodId]);
   }
 
+  export function getLinkedVirtualMethodById(classId: number, vTableIndex: number) {
+    return getLinkedMethod(classIdToClassInfoMap[classId].vTable[vTableIndex]);
+  }
+
   function linkMethod(methodInfo: MethodInfo) {
     runtimeCounter && runtimeCounter.count("linkMethod");
     var fn;
@@ -1121,6 +1130,10 @@ module J2ME {
 
     methodInfo.fn = fn;
     linkedMethods[methodInfo.id] = fn;
+
+    if (methodInfo.vTableIndex >= 0) {
+      classIdToLinkedVTableMap[methodInfo.classInfo.id][methodInfo.vTableIndex] = fn;
+    }
   }
 
   /**
@@ -1976,6 +1989,8 @@ var CI = J2ME.classIdToClassInfoMap;
 var MI = J2ME.methodIdToMethodInfoMap;
 var LM = J2ME.linkedMethods;
 var GLM = J2ME.getLinkedMethodById;
+var GLVM = J2ME.getLinkedVirtualMethodById;
+var VT = J2ME.classIdToLinkedVTableMap;
 
 var CIC = J2ME.classInitCheck;
 var GH = J2ME.getHandle;

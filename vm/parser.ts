@@ -1304,6 +1304,9 @@ module J2ME {
           }
         }
       }
+
+      // Pre-allocate linkedVTableMap.
+      classIdToLinkedVTableMap[this.id] = ArrayUtilities.makeDenseArray(this.vTable.length, null);
     }
 
     private buildITable() {
