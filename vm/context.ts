@@ -197,7 +197,7 @@ module J2ME {
       }
 
       setUncollectable(this.nativeThread.tp);
-      this.threadData = new Int32Array(ASM.buffer, ASM._gcMallocUncollectable(ThreadDataLayout.Size << 2), ThreadDataLayout.Size);
+      this.threadData = new Int32Array(ASM.buffer, gcMallocUncollectable(ThreadDataLayout.Size << 2), ThreadDataLayout.Size);
       this.threadData[ThreadDataLayout.StackTopOffset] = this.nativeThread.tp;
       unsetUncollectable(this.nativeThread.tp);
     }

@@ -280,9 +280,13 @@ try {
   print("compiledMethodCount: " + J2ME.compiledMethodCount);
   print("onStackReplacementCount: " + J2ME.onStackReplacementCount);
   print("-------------------------------------------------------");
-  J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter(false, function (x) {
+  var writer = new J2ME.IndentingWriter(false, function (x) {
     print(x);
-  }));
+  });
+  if (J2ME.gcCounter) {
+    J2ME.gcCounter.traceSorted(writer);
+  }
+  J2ME.interpreterCounter.traceSorted(writer);
   if (profileTimeline) {
     J2ME.timeline.createSnapshot().trace(new J2ME.IndentingWriter());
   }

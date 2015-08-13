@@ -144,6 +144,7 @@ module J2ME {
   export var timeline;
   export var threadTimeline;
   export var methodTimelines = [];
+  export var gcCounter = release ? null : new Metrics.Counter(true);
   export var nativeCounter = release ? null : new Metrics.Counter(true);
   export var runtimeCounter = release ? null : new Metrics.Counter(true);
   export var baselineMethodCounter = release ? null : new Metrics.Counter(true);
@@ -430,7 +431,7 @@ module J2ME {
         this.SA = this.staticObjectAddresses = ArrayUtilities.ensureInt32ArrayLength(this.staticObjectAddresses, id + 1);
         this.CO = this.classObjectAddresses = ArrayUtilities.ensureInt32ArrayLength(this.classObjectAddresses, id + 1);
         this.classObjectAddresses[id] = addr;
-        this.staticObjectAddresses[id] = ASM._gcMallocUncollectable(J2ME.Constants.OBJ_HDR_SIZE + classInfo.sizeOfStaticFields);
+        this.staticObjectAddresses[id] = gcMallocUncollectable(J2ME.Constants.OBJ_HDR_SIZE + classInfo.sizeOfStaticFields);
         linkWriter && linkWriter.writeLn("Initializing Class Object For: " + classInfo.getClassNameSlow());
         if (classInfo === CLASSES.java_lang_Object ||
             classInfo === CLASSES.java_lang_Class ||
@@ -1188,13 +1189,13 @@ module J2ME {
   var handleConstructors = Object.create(null);
 
   export function allocUncollectableObject(classInfo: ClassInfo): number {
-    var address = ASM._gcMallocUncollectable(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
+    var address = gcMallocUncollectable(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
     i32[address >> 2] = classInfo.id | 0;
     return address;
   }
 
   export function allocObject(classInfo: ClassInfo): number {
-    var address = ASM._gcMalloc(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
+    var address = gcMalloc(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
     i32[address >> 2] = classInfo.id | 0;
     return address;
   }
@@ -1213,7 +1214,7 @@ module J2ME {
   }
 
   export function createBailoutFrame(methodId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
-    var address = ASM._gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
+    var address = gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
     release || assert(typeof methodId === "number" && methodId in methodIdToMethodInfoMap, "Must be valid method info.");
     i32[address + BailoutFrameLayout.MethodIdOffset >> 2] = methodId;
     i32[address + BailoutFrameLayout.PCOffset >> 2] = pc;
@@ -1347,7 +1348,7 @@ module J2ME {
     return arrayObject;
   }
 
-  var uncollectableAddress = ASM._gcMallocUncollectable(16);
+  var uncollectableAddress = gcMallocUncollectable(16);
   var uncollectableMaxNumber = 4;
   var uncollectableNumber = -1;
   export function setUncollectable(addr: number) {
@@ -1370,7 +1371,7 @@ module J2ME {
     var addr;
 
     if (elementClassInfo instanceof PrimitiveClassInfo) {
-      addr = ASM._gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * (<PrimitiveArrayClassInfo>arrayClassInfo).bytesPerElement);
+      addr = gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * (<PrimitiveArrayClassInfo>arrayClassInfo).bytesPerElement);
 
       // Zero-out memory because GC_MALLOC_ATOMIC doesn't do it automatically.
       var off = Constants.ARRAY_HDR_SIZE + addr;
@@ -1381,7 +1382,7 @@ module J2ME {
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
-      addr = ASM._gcMalloc(Constants.ARRAY_HDR_SIZE + size * 4);
+      addr = gcMalloc(Constants.ARRAY_HDR_SIZE + size * 4);
     }
 
     i32[addr + Constants.OBJ_CLASS_ID_OFFSET >> 2] = arrayClassInfo.id;
@@ -1849,7 +1850,22 @@ module J2ME {
     return aliasedI32[0];
   }
 
-  var tmpAddress = ASM._gcMalloc(32);
+  export function gcMalloc(size: number): number {
+    release || gcCounter.count("gcMalloc");
+    return ASM._gcMalloc(size);
+  }
+
+  export function gcMallocAtomic(size: number): number {
+    release || gcCounter.count("gcMallocAtomic");
+    return ASM._gcMallocAtomic(size);
+  }
+
+  export function gcMallocUncollectable(size: number): number {
+    release || gcCounter.count("gcMallocUncollectable");
+    return ASM._gcMallocUncollectable(size);
+  }
+
+  var tmpAddress = gcMalloc(32);
 
   export function lcmp(al: number, ah: number, bl: number, bh: number) {
     i32[tmpAddress +  0 >> 2] = al;

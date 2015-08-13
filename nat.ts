@@ -143,7 +143,7 @@ module J2ME {
       }
 
       var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
-      weakRef.holder = ASM._gcMallocAtomic(4);
+      weakRef.holder = gcMallocAtomic(4);
       i32[weakRef.holder >> 2] = targetAddr;
       ASM._gcRegisterDisappearingLink(weakRef.holder, targetAddr);
   };

@@ -346,7 +346,7 @@ module J2ME {
     pendingNativeFrames: any [];
 
     constructor(ctx: Context) {
-      this.tp = ASM._gcMalloc(Constants.MAX_STACK_SIZE);
+      this.tp = gcMalloc(Constants.MAX_STACK_SIZE);
       this.bp = this.tp >> 2;
       this.fp = this.bp;
       this.sp = this.fp;

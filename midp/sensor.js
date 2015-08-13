@@ -295,7 +295,7 @@ Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(ad
         return J2ME.newByteArray(0);
     }
 
-    var resultHolder = ASM._gcMallocUncollectable(4);
+    var resultHolder = J2ME.gcMallocUncollectable(4);
 
     asyncImpl("[B", new Promise(function(resolve, reject) {
         var resultAddr = AccelerometerSensor.readBuffer(channelNumber);
