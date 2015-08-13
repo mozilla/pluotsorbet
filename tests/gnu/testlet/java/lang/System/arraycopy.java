@@ -26,23 +26,99 @@ import gnu.testlet.TestHarness;
 
 public class arraycopy implements Testlet
 {
-  public int getExpectedPass() { return 30; }
+  public int getExpectedPass() { return 62; }
   public int getExpectedFail() { return 0; }
   public int getExpectedKnownFail() { return 0; }
-  public void fill (int[] a)
-  {
-    for (int i = 0; i < a.length; ++i)
-      a[i] = i;
+
+  public void fill(int[] a) {
+      for (int i = 0; i < a.length; ++i) {
+          a[i] = i;
+      }
   }
 
-  public void check (TestHarness harness, int[] expect, int[] result)
-    {
+  public void fill(byte[] a) {
+      for (int i = 0; i < a.length; ++i) {
+          a[i] = (byte)i;
+      }
+  }
+
+  public void fill(char[] a) {
+      for (int i = 0; i < a.length; ++i) {
+          a[i] = (char)i;
+      }
+  }
+
+  public void fill(long[] a) {
+      for (int i = 0; i < a.length; ++i) {
+          a[i] = i;
+      }
+  }
+
+  public void fill(double[] a) {
+      for (int i = 0; i < a.length; ++i) {
+          a[i] = i;
+      }
+  }
+
+  public void check (TestHarness harness, int[] expect, int[] result) {
       boolean ok = expect.length == result.length;
-      for (int i = 0; ok && i < expect.length; ++i)
-	if (expect[i] != result[i])
-	  ok = false;
-      harness.check (ok);
-    }
+
+      for (int i = 0; ok && i < expect.length; ++i) {
+          if (expect[i] != result[i]) {
+	            ok = false;
+          }
+
+          harness.check (ok);
+      }
+  }
+
+  public void check (TestHarness harness, byte[] expect, byte[] result) {
+      boolean ok = expect.length == result.length;
+
+      for (int i = 0; ok && i < expect.length; ++i) {
+          if (expect[i] != result[i]) {
+              ok = false;
+          }
+
+          harness.check (ok);
+      }
+  }
+
+  public void check (TestHarness harness, char[] expect, char[] result) {
+      boolean ok = expect.length == result.length;
+
+      for (int i = 0; ok && i < expect.length; ++i) {
+          if (expect[i] != result[i]) {
+              ok = false;
+          }
+
+          harness.check (ok);
+      }
+  }
+
+  public void check (TestHarness harness, long[] expect, long[] result) {
+      boolean ok = expect.length == result.length;
+
+      for (int i = 0; ok && i < expect.length; ++i) {
+          if (expect[i] != result[i]) {
+              ok = false;
+          }
+
+          harness.check (ok);
+      }
+  }
+
+  public void check (TestHarness harness, double[] expect, double[] result) {
+      boolean ok = expect.length == result.length;
+
+      for (int i = 0; ok && i < expect.length; ++i) {
+          if (expect[i] != result[i]) {
+              ok = false;
+          }
+
+          harness.check (ok);
+      }
+  }
 
   public Object copy (Object from, int a, Object to, int b, int c)
     {
@@ -87,6 +163,38 @@ public class arraycopy implements Testlet
       harness.check (copy (x, 0, y, x.length - 1, 1), null);
       int[] two = { 1, 2, 3, 4, 0 };
       check (harness, y, two);
+
+      harness.checkPoint("Copying byte array");
+      byte[] xBytes = new byte[5];
+      byte[] yBytes = new byte[5];
+      fill(xBytes);
+      harness.check(copy(xBytes, 0, yBytes, 0, xBytes.length), null);
+      byte[] oneBytes = { 0, 1, 2, 3, 4 };
+      check(harness, yBytes, oneBytes);
+
+      harness.checkPoint("Copying char array");
+      char[] xChars = new char[5];
+      char[] yChars = new char[5];
+      fill(xChars);
+      harness.check(copy(xChars, 0, yChars, 0, xChars.length), null);
+      char[] oneChars = { 0, 1, 2, 3, 4 };
+      check(harness, yChars, oneChars);
+
+      harness.checkPoint("Copying long array");
+      long[] xLongs = new long[5];
+      long[] yLongs = new long[5];
+      fill(xLongs);
+      harness.check(copy(xLongs, 0, yLongs, 0, xLongs.length), null);
+      long[] oneLongs = { 0, 1, 2, 3, 4 };
+      check(harness, yLongs, oneLongs);
+
+      harness.checkPoint("Copying double array");
+      double[] xDoubles = new double[5];
+      double[] yDoubles = new double[5];
+      fill(xDoubles);
+      harness.check(copy(xDoubles, 0, yDoubles, 0, xDoubles.length), null);
+      double[] oneDoubles = { 0, 1, 2, 3, 4 };
+      check(harness, yDoubles, oneDoubles);
 
       harness.checkPoint("Incompatible arrays");
 
