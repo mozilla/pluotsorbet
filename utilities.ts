@@ -356,7 +356,7 @@ module J2ME {
     }
   }
 
-  export enum Numbers {
+  export const enum Numbers {
     MaxU16 = 0xFFFF,
     MaxI16 = 0x7FFF,
     MinI16 = -0x8000
@@ -426,7 +426,7 @@ module J2ME {
     }
   }
 
-  export enum LogLevel {
+  export const enum LogLevel {
     Error = 0x1,
     Warn = 0x2,
     Debug = 0x4,

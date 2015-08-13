@@ -138,7 +138,7 @@ module J2ME {
     Native = 0x40000000
   }
 
-  export enum FrameLayout {
+  export const enum FrameLayout {
     /**
      * Stored in the lower 28 bits.
      */
@@ -692,7 +692,7 @@ module J2ME {
 
   var args = new Array(16);
 
-  export enum ExceptionType {
+  export const enum ExceptionType {
     ArithmeticException,
     ArrayIndexOutOfBoundsException,
     NegativeArraySizeException,

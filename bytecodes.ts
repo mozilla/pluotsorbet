@@ -371,7 +371,7 @@ module J2ME.Bytecode {
     LAST_JVM_OPCODE     = Bytecodes.JSR_W
   }
 
-  enum Flags {
+  const enum Flags {
     /**
      * Denotes an instruction that ends a basic block and does not let control flow fall through to its lexical successor.
      */

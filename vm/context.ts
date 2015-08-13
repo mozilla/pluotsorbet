@@ -148,7 +148,7 @@ module J2ME {
 
   }
 
-  enum ThreadDataLayout {
+  const enum ThreadDataLayout {
     AddressOffset = 0,
     StackTopOffset = 1,
     Size = 2
