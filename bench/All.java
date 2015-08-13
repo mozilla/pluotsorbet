@@ -21,6 +21,9 @@ class All {
         BubbleSort.main(args);
         System.out.println(">> BubbleSort: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
 
+        ArrayCopyBench.main(args);
+        System.out.println(">> ArrayCopyBench: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
+
         // ByteArrayInputOutputStreamBench.main(args); // Memory problem, too slow.
         // CallNativeBench.main(args);
         ClassLoading.main(args);
