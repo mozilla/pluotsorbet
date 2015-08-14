@@ -1,7 +1,6 @@
 //#define GC_DEBUG
 //#define GC_MAXIMUM_HEAP_SIZE (128 * 1024 * 1024)
 #define GC_IGNORE_WARN
-#define GC_INITIAL_HEAP_SIZE 2285568
 
 #include "gc.h"
 #include <stdio.h>
