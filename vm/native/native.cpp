@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <emscripten.h>
+#include <string.h>
 
 // #define GC_NONE
 #define GC_NONE_HEAP_CHUNK_SIZE (2 * 1024 * 1024)
@@ -108,7 +109,9 @@ extern "C" {
 #ifdef GC_NONE
     return gcMalloc(size);
 #else
-    return (uintptr_t)GC_MALLOC_ATOMIC(size);
+    uintptr_t ptr = (uintptr_t)GC_MALLOC_ATOMIC(size);
+    memset((void*)ptr, 0, size);
+    return ptr;
 #endif
   }
 

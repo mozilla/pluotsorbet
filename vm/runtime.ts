@@ -1420,13 +1420,6 @@ module J2ME {
 
     if (elementClassInfo instanceof PrimitiveClassInfo) {
       addr = gcMallocAtomic(Constants.ARRAY_HDR_SIZE + size * (<PrimitiveArrayClassInfo>arrayClassInfo).bytesPerElement);
-
-      // Zero-out memory because GC_MALLOC_ATOMIC doesn't do it automatically.
-      var off = Constants.ARRAY_HDR_SIZE + addr;
-      var end = off + size * (<PrimitiveArrayClassInfo>arrayClassInfo).bytesPerElement;
-      for (var i = off; i < end; i++) {
-        i8[i] = 0;
-      }
     } else {
       // We need to hold an integer to define the length of the array
       // and *size* references.
