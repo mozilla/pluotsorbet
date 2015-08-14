@@ -17,7 +17,7 @@ public class ArrayBench {
                 int[] array = new int[len];
             }
             time = JVM.monotonicTimeMillis() - start;
-            System.out.println(len + ": " + time);
+            System.out.println("ArrayBench-" + len + ": " + time);
 
             len = len * 2;
         }
