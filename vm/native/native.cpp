@@ -69,9 +69,9 @@ extern "C" {
     return (uintptr_t)GC_MALLOC(size);
   }
 
-  uintptr_t gcMallocAtomic(int32_t size, int32_t offset) {
+  uintptr_t gcMallocAtomic(int32_t size) {
     uintptr_t ptr = (uintptr_t)GC_MALLOC_ATOMIC(size);
-    memset((void*)(ptr + offset), 0, size - offset);
+    memset((void*)ptr, 0, size);
     return ptr;
   }
 
