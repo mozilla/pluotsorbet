@@ -271,7 +271,7 @@ try {
     writers |= J2ME.WriterFlags.Code;
   }
   J2ME.writers = writers;
-  J2ME.enableRuntimeCompilation = false;
+  J2ME.enableRuntimeCompilation = true;
   J2ME.maxCompiledMethodCount = options.maxCompiledMethodCount.value;
 
   J2ME.ConfigThresholds.InvokeThreshold = options.invokeThreshold.value;
