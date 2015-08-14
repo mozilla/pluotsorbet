@@ -23,8 +23,12 @@ CONFIG ?= config/runtests.js
 export CONFIG
 
 # Amount of memory for Emscripten-compiled code.
-ASMJS_TOTAL_MEMORY ?= 128*1024*1024
+ASMJS_TOTAL_MEMORY ?= 16*1024*1024
 export ASMJS_TOTAL_MEMORY
+
+# Initial size of the GC heap
+GC_INITIAL_HEAP_SIZE ?= 0
+export GC_INITIAL_HEAP_SIZE
 
 # Whether or not to package test files like tests.jar and support scripts.
 # Set this to 1 if running tests on a device or building an app for a midlet
@@ -325,7 +329,9 @@ endif
 bld/native.js: Makefile vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB) jit/relooper/Relooper.cpp jit/relooper/Relooper.h
 	mkdir -p bld
 	rm -f bld/native.js
-	emcc -DNDEBUG -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz -O3 vm/native/native.cpp jit/relooper/Relooper.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=16*1024 -s TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) \
+	emcc -DNDEBUG -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz -O3 \
+	vm/native/native.cpp jit/relooper/Relooper.cpp -o native.raw.js --memory-init-file 0 \
+	-s TOTAL_STACK=16*1024 -s TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) -DGC_INITIAL_HEAP_SIZE=$(GC_INITIAL_HEAP_SIZE) \
 	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMallocUncollectable", "_gcFree", "_gcMalloc", "_gcMallocAtomic", "_gcRegisterDisappearingLink", "_gcUnregisterDisappearingLink", "_registerFinalizer", "_forceCollection", "_getUsedHeapSize", "_rl_set_output_buffer","_rl_make_output_buffer","_rl_new_block","_rl_set_block_code","_rl_delete_block","_rl_block_add_branch_to","_rl_new_relooper","_rl_delete_relooper","_rl_relooper_add_block","_rl_relooper_calculate","_rl_relooper_render", "_rl_set_asm_js_mode"]' \
 	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts"]' \
 	-s NO_EXIT_RUNTIME=1 -s NO_BROWSER=1 -s NO_FILESYSTEM=1 --post-js jit/relooper/glue.js
