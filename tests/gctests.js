@@ -273,11 +273,12 @@ tests.push(function() {
   next();
 });
 
-tests.push(function() {
-  // Since we can't control where the memory is allocated by Boehm, we allocate it multiple times
-  // hoping that within 1000 iterations the areas allocated by the gcMallocAtomic calls will
-  // collide (in my testing this happens within 2 iterations, so 1000 should be a safe bet).
+// For the zero-out tests below, since we can't control where the memory
+// is allocated by Boehm, we allocate it multiple times hoping that within 1000
+// iterations the areas allocated by the allocations will collide (in my testing
+// this happens within 2 iterations, so 1000 should be a safe bet).
 
+tests.push(function() {
   var zeroedOut = true;
   for (var i = 0; i < 1000; i++) {
     var addr = ASM._gcMallocAtomic(8);
@@ -299,7 +300,7 @@ tests.push(function() {
     ASM._forceCollection();
   }
 
-  ok(!zeroedOut, "gcMallocAtomic doesn't zero-out allocated memory");
+  ok(zeroedOut, "gcMallocAtomic does zero-out allocated memory");
 
   next();
 });
@@ -326,7 +327,7 @@ tests.push(function() {
     ASM._forceCollection();
   }
 
-  ok(zeroedOut, "newArray does zero-out allocated memory");
+  ok(zeroedOut, "newIntArray does zero-out allocated memory");
 
   next();
 });
