@@ -1227,8 +1227,6 @@ interface Int8Array extends ArrayBufferView {
       * @param end The index of the end of the array.
       */
     subarray(begin: number, end?: number): Int8Array;
-
-    fill(value: number, start?: number, end?: number): void;
 }
 declare var Int8Array: {
     prototype: Int8Array;

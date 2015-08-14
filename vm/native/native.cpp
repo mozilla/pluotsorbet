@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <emscripten.h>
+#include <string.h>
 
 // Formatting: Printing longs.
 // printf("L: %" PRId64 ", R: %" PRId64, *l, *r);
@@ -69,7 +70,9 @@ extern "C" {
   }
 
   uintptr_t gcMallocAtomic(int32_t size) {
-    return (uintptr_t)GC_MALLOC_ATOMIC(size);
+    uintptr_t ptr = (uintptr_t)GC_MALLOC_ATOMIC(size);
+    memset((void*)ptr, 0, size);
+    return ptr;
   }
 
   void gcRegisterDisappearingLink(uintptr_t p, uintptr_t objAddr) {

@@ -299,7 +299,7 @@ tests.push(function() {
     ASM._forceCollection();
   }
 
-  ok(!zeroedOut, "gcMallocAtomic doesn't zero-out allocated memory");
+  ok(zeroedOut, "gcMallocAtomic does zero-out allocated memory");
 
   next();
 });
@@ -326,7 +326,7 @@ tests.push(function() {
     ASM._forceCollection();
   }
 
-  ok(zeroedOut, "newArray does zero-out allocated memory");
+  ok(zeroedOut, "newIntArray does zero-out allocated memory");
 
   next();
 });
