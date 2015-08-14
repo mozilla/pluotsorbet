@@ -180,7 +180,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 37 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 38 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -231,12 +231,12 @@ casper.test.begin("unit tests", 37 + gfxTests.length, function(test) {
     // Run the same unit tests again to test the compiled method cache.
     /*casper
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
-    .withFrame(0, basicUnitTests);
+    .withFrame(0, basicUnitTests);*/
 
     // Run the same unit tests again with baseline JIT enabled for all methods.
     casper
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log&forceRuntimeCompilation=1")
-    .withFrame(0, basicUnitTests);*/
+    .withFrame(0, basicUnitTests);
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
