@@ -74,8 +74,8 @@ class All {
         // SocketBench.main(args);
         // SocketStressBench.main(args);
         // SSLSocketBench.main(args);
-        Stress.main(args);
-        System.out.println(">> Stress: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
+        DoubleBench.main(args);
+        System.out.println(">> DoubleBench: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
 
         // SystemOutBench.main(args);
         // TestFileSystemPerf.main(args);
