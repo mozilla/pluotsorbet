@@ -1341,7 +1341,28 @@ module J2ME {
       throwNegativeArraySizeException();
     }
 
-    var arrayClassInfo = CLASSES.getClass("[" + elementClassInfo.getClassNameSlow());
+    var arrayClassInfo;
+
+    if (elementClassInfo === PrimitiveClassInfo.Z) {
+      arrayClassInfo = PrimitiveArrayClassInfo.Z;
+    } else if (elementClassInfo === PrimitiveClassInfo.C) {
+      arrayClassInfo = PrimitiveArrayClassInfo.C;
+    } else if (elementClassInfo === PrimitiveClassInfo.F) {
+      arrayClassInfo = PrimitiveArrayClassInfo.F;
+    } else if (elementClassInfo === PrimitiveClassInfo.D) {
+      arrayClassInfo = PrimitiveArrayClassInfo.D;
+    } else if (elementClassInfo === PrimitiveClassInfo.B) {
+      arrayClassInfo = PrimitiveArrayClassInfo.B;
+    } else if (elementClassInfo === PrimitiveClassInfo.S) {
+      arrayClassInfo = PrimitiveArrayClassInfo.S;
+    } else if (elementClassInfo === PrimitiveClassInfo.I) {
+      arrayClassInfo = PrimitiveArrayClassInfo.I;
+    } else if (elementClassInfo === PrimitiveClassInfo.J) {
+      arrayClassInfo = PrimitiveArrayClassInfo.J;
+    } else {
+      arrayClassInfo = CLASSES.getClass("[" + elementClassInfo.getClassNameSlow());
+    }
+
     var addr;
 
     if (elementClassInfo instanceof PrimitiveClassInfo) {
