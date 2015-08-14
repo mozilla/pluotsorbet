@@ -1556,8 +1556,8 @@ module J2ME {
   }
 
   export class ConfigThresholds {
-    static InvokeThreshold = 10;
-    static BackwardBranchThreshold = 10;
+    static InvokeThreshold = config.invokeThreshold;
+    static BackwardBranchThreshold = config.backwardBranchThreshold;
   }
 
   export function monitorEnter(object: J2ME.java.lang.Object) {
