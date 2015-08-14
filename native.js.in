@@ -21,18 +21,22 @@ function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
         throw $.newNullPointerException("Cannot copy to/from a null array.");
     }
 
-    var src = getHandle(srcAddr);
-    var dst = getHandle(dstAddr);
-
-    var srcClassInfo = src.classInfo;
-    var dstClassInfo = dst.classInfo;
+    var srcClassInfo = J2ME.getClassInfo(srcAddr);
+    var dstClassInfo = J2ME.getClassInfo(dstAddr);
 
     if (!(srcClassInfo instanceof J2ME.ArrayClassInfo) || !(dstClassInfo instanceof J2ME.ArrayClassInfo)) {
         throw $.newArrayStoreException("Can only copy to/from array types.");
     }
-    if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0) {
+
+    var srcLength = i32[srcAddr + J2ME.Constants.ARRAY_LENGTH_OFFSET >> 2];
+    var dstLength = i32[dstAddr + J2ME.Constants.ARRAY_LENGTH_OFFSET >> 2];
+
+    if (srcOffset < 0 || (srcOffset+length) > srcLength ||
+        dstOffset < 0 || (dstOffset+length) > dstLength ||
+        length < 0) {
         throw $.newArrayIndexOutOfBoundsException("Invalid index.");
     }
+
     var srcIsPrimitive = srcClassInfo instanceof J2ME.PrimitiveArrayClassInfo;
     var dstIsPrimitive = dstClassInfo instanceof J2ME.PrimitiveArrayClassInfo;
     if ((srcIsPrimitive && dstIsPrimitive && srcClassInfo !== dstClassInfo) ||
@@ -42,36 +46,72 @@ function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
     }
 
     if (!dstIsPrimitive) {
+        var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + srcOffset;
+        var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + dstOffset;
+
         if (srcClassInfo !== dstClassInfo && !J2ME.isAssignableTo(srcClassInfo.elementClass, dstClassInfo.elementClass)) {
             var copy = function(to, from) {
-                var addr = src[from];
-                var obj = getHandle(addr);
-                if (obj && !J2ME.isAssignableTo(obj.classInfo, dstClassInfo.elementClass)) {
-                    throw $.newArrayStoreException("Incompatible component types.");
+                var addr = i32[from];
+                if (addr !== J2ME.Constants.NULL) {
+                    var objClassInfo = J2ME.getClassInfo(addr);
+                    if (!J2ME.isAssignableTo(objClassInfo, dstClassInfo.elementClass)) {
+                        throw $.newArrayStoreException("Incompatible component types.");
+                    }
                 }
-                dst[to] = addr;
+                i32[to] = addr;
             };
-            if (dst !== src || dstOffset < srcOffset) {
-                for (var n = 0; n < length; ++n)
-                    copy(dstOffset++, srcOffset++);
+            if (dstAddr !== srcAddr || dstOffset < srcOffset) {
+                for (var n = 0; n < length; ++n) {
+                    copy(dst++, src++);
+                }
             } else {
-                dstOffset += length;
-                srcOffset += length;
-                for (var n = 0; n < length; ++n)
-                    copy(--dstOffset, --srcOffset);
+                dst += length;
+                src += length;
+                for (var n = 0; n < length; ++n) {
+                    copy(--dst, --src);
+                }
             }
-            return;
+        } else {
+            if (srcAddr !== dstAddr || dstOffset < srcOffset) {
+                for (var n = 0; n < length; ++n) {
+                    i32[dst++] = i32[src++];
+                }
+            } else {
+                dst += length;
+                src += length;
+                for (var n = 0; n < length; ++n) {
+                    i32[--dst] = src[--src];
+                }
+            }
         }
+
+        return;
     }
 
-    if (srcAddr !== dstAddr || dstOffset < srcOffset) {
-        for (var n = 0; n < length; ++n)
-            dst[dstOffset++] = src[srcOffset++];
-    } else {
-        dstOffset += length;
-        srcOffset += length;
-        for (var n = 0; n < length; ++n)
-            dst[--dstOffset] = src[--srcOffset];
+    switch (srcClassInfo.bytesPerElement) {
+        case 1:
+            var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE) + srcOffset;
+            var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE) + dstOffset;
+            i8.set(i8.subarray(src, src + length), dst);
+            break;
+
+        case 2:
+            var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 1) + srcOffset;
+            var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 1) + dstOffset;
+            i16.set(i16.subarray(src, src + length), dst);
+            break;
+
+        case 4:
+            var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + srcOffset;
+            var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + dstOffset;
+            i32.set(i32.subarray(src, src + length), dst);
+            break;
+
+        case 8:
+            var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 3) + srcOffset;
+            var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 3) + dstOffset;
+            f64.set(f64.subarray(src, src + length), dst);
+            break;
     }
 };
 
