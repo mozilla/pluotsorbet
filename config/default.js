@@ -33,6 +33,8 @@ var config = {
   // to which midlets write frequently but never read.  Specify one by adding
   // the string pathname to the set via config.ignoredFiles.add().
   ignoredFiles: new Set(),
+  invokeThreshold: 10,
+  backwardBranchThreshold: 10
 };
 
 // The base directory of the app, relative to the current page.  Normally this

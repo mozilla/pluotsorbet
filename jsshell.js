@@ -70,6 +70,8 @@ function parseArguments(options, tokens) {
   return leftover;
 }
 
+load("config/default.js");
+
 var options = {
   "writers": {
     short: "w",
@@ -83,12 +85,12 @@ var options = {
   },
   "backwardBranchThreshold": {
     short: "bbt",
-    value: 1,
+    value: config.backwardBranchThreshold,
     type: "number"
   },
   "invokeThreshold": {
     short: "it",
-    value: 1,
+    value: config.invokeThreshold,
     type: "number"
   },
   "enableOnStackReplacement": {
