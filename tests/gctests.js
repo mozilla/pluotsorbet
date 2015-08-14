@@ -400,7 +400,7 @@ tests.push(function() {
 });
 
 try {
-  load("polyfill/promise.js", "bld/native.js", "libs/encoding.js", "bld/j2me.js", "libs/zipfile.js",
+  load("config/default.js", "polyfill/promise.js", "bld/native.js", "libs/encoding.js", "bld/j2me.js", "libs/zipfile.js",
        "libs/jarstore.js", "native.js");
 
   var dump = putstr;
