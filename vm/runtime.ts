@@ -53,7 +53,7 @@ module J2ME {
   /**
    * Turns on just-in-time compilation of methods.
    */
-  export var enableRuntimeCompilation = false;
+  export var enableRuntimeCompilation = true;
 
   /**
    * Turns on onStackReplacement
@@ -672,7 +672,7 @@ module J2ME {
     ARRAY_LENGTH_OFFSET = 4,
     NULL = 0,
 
-    MAX_CLASS_ID = 1024,
+    MAX_CLASS_ID = 4096,
     INITIAL_MAX_CLASS_ID = 512
   }
 
@@ -1104,6 +1104,10 @@ module J2ME {
    * Compiles method and links it up at runtime.
    */
   export function compileAndLinkMethod(methodInfo: MethodInfo) {
+    if (!enableRuntimeCompilation) {
+      return;
+    }
+
     // Don't do anything if we're past the compiled state.
     if (methodInfo.state >= MethodState.Compiled) {
       return;

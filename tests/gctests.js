@@ -206,6 +206,12 @@ tests.push(function() {
   ASM._forceCollection();
   is(nextFinalized(), objAddr, "Object that isn't referenced by anyone anymore is freed");
 
+  ASM._gcFree(addr);
+
+  ASM._forceCollection();
+  ASM._forceCollection();
+  is(nextFinalized(), addr, "Finalizer is called for a freed object");
+
   next();
 });
 
@@ -225,6 +231,12 @@ tests.push(function() {
 
   ASM._forceCollection();
   is(nextFinalized(), objAddr, "Object that isn't referenced by anyone anymore is freed");
+
+  ASM._gcFree(addr);
+
+  ASM._forceCollection();
+  ASM._forceCollection();
+  is(nextFinalized(), addr, "Finalizer is called for a freed object");
 
   next();
 });
