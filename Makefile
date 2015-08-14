@@ -231,8 +231,18 @@ ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	BOOTCLASSPATH_SEPARATOR=;
 endif
 
+# The path to the XULRunner executable that is actually used by the test runner.
+# Set this on the command line to run tests against a different version
+# of XULRunner than the default (which is specified by XULRUNNER_PATH),
+# so you can test changes for compatibility with older and newer versions
+# of Gecko than the default.  For example:
+#
+#   make test XULRUNNER=/Applications/Firefox28.app/Contents/MacOS/firefox
+#
+XULRUNNER ?= build_tools/$(XULRUNNER_PATH)
+
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
-	SLIMERJSLAUNCHER=build_tools/$(XULRUNNER_PATH) tests/runtests.py
+	SLIMERJSLAUNCHER=$(XULRUNNER) tests/runtests.py
 
 build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 	rm -rf build_tools/slimerjs*
