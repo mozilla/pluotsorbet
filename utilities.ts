@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+declare var trackedOpts;
+
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
-var inBrowser = typeof console !== "undefined" && console.info;
+var inBrowser = typeof trackedOpts === "undefined";
+
 
 declare var putstr;
 declare var printErr;
@@ -195,9 +198,9 @@ module J2ME {
       return <(any) => void> new Function("value", "this[\"" + target + "\"] = value;");
     }
 
-    export function makeDebugForwardingSetter(target: string, checker: (x: any) => boolean): (any) => void {
+    export function makeDebugForwardingSetter(target: string, checker: (l: any, h: number) => boolean): (any) => void {
       return function (value) {
-        Debug.assert(checker(value), "Unexpected value for target " + target);
+        Debug.assert(checker(value, 0), "Unexpected value for target " + target);
         this[target] = value;
       }
     }
@@ -327,6 +330,17 @@ module J2ME {
       return h >>> 0;
     }
     // end of imported section
+
+    export function hashBytesTo32BitsAdler(data: Uint8Array, offset: number, length: number): number {
+      var a = 1;
+      var b = 0;
+      var end = offset + length;
+      for (var i = offset; i < end; ++i) {
+        a = (a + (data[i] & 0xff)) % 65521;
+        b = (b + a) % 65521;
+      }
+      return (b << 16) | a;
+    }
   }
 
   export enum Numbers {
@@ -362,6 +376,11 @@ module J2ME {
       i = i - ((i >> 1) & 0x55555555);
       i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
       return ((i + (i >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+    }
+
+    export function toHEX(i: number) {
+      var i = (i < 0 ? 0xFFFFFFFF + i + 1 : i);
+      return "0x" + ("00000000" + i.toString(16)).substr(-8);
     }
 
     /**
@@ -922,3 +941,111 @@ module J2ME {
     return this.indexOf(str, this.length - str.length) !== -1;
   });
 })();
+
+module J2ME.Shell {
+  export class MicroTask {
+    runAt: number;
+    constructor(public id: number, public fn: () => any, public args: any[],
+                public interval: number, public repeat: boolean) {
+    }
+  }
+
+  export class MicroTasksQueue {
+    private tasks: MicroTask[] = [];
+    private nextId: number = 1;
+    private stopped: boolean = true;
+
+    constructor() {
+    }
+
+    public get isEmpty(): boolean {
+      return this.tasks.length === 0;
+    }
+
+    public scheduleInterval(fn: () => any, args: any[], interval: number, repeat: boolean) {
+      var MIN_INTERVAL = 4;
+      interval = Math.round((interval || 0)/10) * 10;
+      if (interval < MIN_INTERVAL) {
+        interval = MIN_INTERVAL;
+      }
+      var taskId = this.nextId++;
+      var task = new MicroTask(taskId, fn, args, interval, repeat);
+      this.enqueue(task);
+      return task;
+    }
+
+    public enqueue(task: MicroTask) {
+      var tasks = this.tasks;
+      task.runAt = dateNow() + task.interval;
+      var i = tasks.length;
+      while (i > 0 && tasks[i - 1].runAt > task.runAt) {
+        i--;
+      }
+      if (i === tasks.length) {
+        tasks.push(task);
+      } else {
+        tasks.splice(i, 0, task);
+      }
+    }
+
+    public dequeue(runAt: number): MicroTask {
+      if (this.tasks[0].runAt > runAt) {
+        return null;
+      }
+      var task = this.tasks.shift();
+      return task;
+    }
+
+    public remove(id: number) {
+      var tasks = this.tasks;
+      for (var i = 0; i < tasks.length; i++) {
+        if (tasks[i].id === id) {
+          tasks.splice(i, 1);
+          return;
+        }
+      }
+    }
+
+    public clear() {
+      this.tasks.length = 0;
+    }
+
+    /**
+     * Runs micro tasks for a certain |duration| and |count| whichever comes first. Optionally,
+     * if the |clear| option is specified, the micro task queue is cleared even if not all the
+     * tasks have been executed.
+     *
+     * If a |preCallback| function is specified, only continue execution if |preCallback()| returns true.
+     */
+    run(duration: number = 0, count: number = 0, clear: boolean = false, preCallback: Function = null) {
+      this.stopped = false;
+      var executedTasks = 0;
+      var stopAt = Date.now() + duration;
+      while (!this.isEmpty && !this.stopped) {
+        if (duration > 0 && Date.now() >= stopAt) {
+          break;
+        }
+        if (count > 0 && executedTasks >= count) {
+          break;
+        }
+        var task = null;
+        do {
+          task = this.dequeue(dateNow());
+        } while (!task);
+        if (preCallback && !preCallback(task)) {
+          return;
+        }
+        task.fn.apply(null, task.args);
+        executedTasks ++;
+      }
+      if (clear) {
+        this.clear();
+      }
+      this.stopped = true;
+    }
+
+    stop() {
+      this.stopped = true;
+    }
+  }
+}

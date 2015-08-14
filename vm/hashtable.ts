@@ -3,10 +3,10 @@
  */
 module J2ME {
   import assert = Debug.assert;
-  export class Uint8HashtableEntry {
+  export class TypedArrayHashtableEntry {
     hash: number = 0;
     value: any = null;
-    next: Uint8HashtableEntry = null;
+    next: TypedArrayHashtableEntry = null;
     key: Uint8Array = null;
   }
 
@@ -59,8 +59,8 @@ module J2ME {
     return array;
   }
 
-  export class Uint8Hashtable {
-    table: Uint8HashtableEntry []
+  export class TypedArrayHashtable {
+    table: TypedArrayHashtableEntry []
     count: number = 0;
     private threshold: number;
     private static loadFactorPercent = 75;
@@ -71,7 +71,7 @@ module J2ME {
         initialCapacity = 1;
       }
       this.table = nullArray(initialCapacity);
-      this.threshold = ((initialCapacity * Uint8Hashtable.loadFactorPercent) / 100) | 0;
+      this.threshold = ((initialCapacity * TypedArrayHashtable.loadFactorPercent) / 100) | 0;
     }
 
     contains(key: Uint8Array) {
@@ -133,7 +133,7 @@ module J2ME {
       }
 
       // Creates the new entry.
-      var e = new Uint8HashtableEntry();
+      var e = new TypedArrayHashtableEntry();
       e.hash = hash;
       e.key = key;
       e.value = value;
@@ -150,7 +150,7 @@ module J2ME {
       var newCapacity = oldCapacity * 2 + 1;
       var newTable = nullArray(newCapacity);
 
-      this.threshold = ((newCapacity * Uint8Hashtable.loadFactorPercent) / 100) | 0;
+      this.threshold = ((newCapacity * TypedArrayHashtable.loadFactorPercent) / 100) | 0;
       this.table = newTable;
 
       for (var i = oldCapacity; i-- > 0;) {

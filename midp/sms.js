@@ -126,38 +126,41 @@ function promptForMessageText() {
     }, MIDlet.SMSDialogTimeout);
 }
 
-Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(host, msid, port) {
+Native["com/sun/midp/io/j2me/sms/Protocol.open0.(Ljava/lang/String;II)I"] = function(addr, hostAddr, msid, port) {
     MIDP.smsConnections[++MIDP.lastSMSConnection] = {
       port: port,
       msid: msid,
-      host: J2ME.fromJavaString(host),
+      host: J2ME.fromStringAddr(hostAddr),
     };
 
     return ++MIDP.lastSMSConnection;
 };
 
 Native["com/sun/midp/io/j2me/sms/Protocol.receive0.(IIILcom/sun/midp/io/j2me/sms/Protocol$SMSPacket;)I"] =
-function(port, msid, handle, smsPacket) {
+function(addr, port, msid, handle, smsPacketAddr) {
+    var smsPacket = getHandle(smsPacketAddr);
     asyncImpl("I", new Promise(function(resolve, reject) {
         function receiveSMS() {
             var sms = MIDP.j2meSMSMessages.shift();
             var text = sms.text;
             var addr = sms.addr;
 
-            var message = J2ME.newByteArray(text.length);
+            var messageAddr = J2ME.newByteArray(text.length);
+            smsPacket.message = messageAddr;
+            var message = J2ME.getArrayFromAddr(messageAddr);
             for (var i = 0; i < text.length; i++) {
                 message[i] = text.charCodeAt(i);
             }
 
-            var address = J2ME.newByteArray(addr.length);
+            var addressAddr = J2ME.newByteArray(addr.length);
+            smsPacket.address = addressAddr;
+            var address = J2ME.getArrayFromAddr(addressAddr);
             for (var i = 0; i < addr.length; i++) {
                 address[i] = addr.charCodeAt(i);
             }
 
-            smsPacket.message = message;
-            smsPacket.address = address;
             smsPacket.port = port;
-            smsPacket.sentAt = Long.fromNumber(Date.now());
+            smsPacket.sentAt = Date.now();
             smsPacket.messageType = 0; // GSM_TEXT
 
             return text.length;
@@ -174,25 +177,27 @@ function(port, msid, handle, smsPacket) {
     }));
 };
 
-Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(port, handle, deRegister) {
+Native["com/sun/midp/io/j2me/sms/Protocol.close0.(III)I"] = function(addr, port, handle, deRegister) {
     delete MIDP.smsConnections[handle];
     return 0;
 };
 
-Native["com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I"] = function(msgBuffer, msgLen, msgType, hasPort) {
+Native["com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I"] =
+function(addr, msgBufferAddr, msgLen, msgType, hasPort) {
     console.warn("com/sun/midp/io/j2me/sms/Protocol.numberOfSegments0.([BIIZ)I not implemented");
     return 1;
 };
 
 Native["com/sun/midp/io/j2me/sms/Protocol.send0.(IILjava/lang/String;II[B)I"] =
-function(handle, type, host, destPort, sourcePort, message) {
+function(addr, handle, type, hostAddr, destPort, sourcePort, messageAddr) {
+    var message = J2ME.getArrayFromAddr(messageAddr);
     var ctx = $.ctx;
     asyncImpl("I", new Promise(function(resolve, reject) {
         var pipe = DumbPipe.open("mozActivity", {
             name: "new",
             data: {
                 type: "websms/sms",
-                number: J2ME.fromJavaString(host),
+                number: J2ME.fromStringAddr(hostAddr),
                 body: new TextDecoder('utf-16be').decode(message),
             },
         }, function(message) {

@@ -19,9 +19,9 @@ var Content = (function() {
 
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.init.()Z", 1);
 
-  Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(suiteID) {
+  Native["com/sun/j2me/content/RegistryStore.forSuite0.(I)Ljava/lang/String;"] = function(addr, suiteID) {
     if (!chRegisteredClassName) {
-      return null;
+      return J2ME.Constants.NULL;
     }
 
     var serializedString = serializeString([
@@ -34,15 +34,17 @@ var Content = (function() {
     return J2ME.newString(String.fromCharCode(serializedString.length * 2) + serializedString);
   };
 
-  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", null);
+  addUnimplementedNative("com/sun/j2me/content/RegistryStore.findHandler0.(Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;", J2ME.Constants.NULL);
 
-  Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] = function(storageId, className, handlerData) {
-    var registerID = J2ME.fromJavaString(handlerData.ID);
+  Native["com/sun/j2me/content/RegistryStore.register0.(ILjava/lang/String;Lcom/sun/j2me/content/ContentHandlerRegData;)Z"] =
+  function(addr, storageId, classNameAddr, handlerDataAddr) {
+    var handlerData = getHandle(handlerDataAddr);
+    var registerID = J2ME.fromStringAddr(handlerData.ID);
     if (chRegisteredID && chRegisteredID != registerID) {
       console.warn("Dynamic registration ID doesn't match the configuration");
     }
 
-    var registerClassName = J2ME.fromJavaString(className);
+    var registerClassName = J2ME.fromStringAddr(classNameAddr);
     if (chRegisteredClassName && chRegisteredClassName != registerClassName) {
       console.warn("Dynamic registration class name doesn't match the configuration");
     }
@@ -69,17 +71,18 @@ var Content = (function() {
   // registered and unregisters it.
   addUnimplementedNative("com/sun/j2me/content/RegistryStore.unregister0.(Ljava/lang/String;)Z", 1);
 
-  Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] = function(callerId, id, mode) {
+  Native["com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;"] =
+  function(addr, callerIdAddr, idAddr, mode) {
     if (!chRegisteredClassName) {
-      return null;
+      return J2ME.Constants.NULL;
     }
 
     if (mode != 0) {
       console.warn("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String; expected mode = 0");
     }
 
-    if (callerId) {
-      console.warn("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String; expected callerId = null");
+    if (callerIdAddr !== J2ME.Constants.NULL) {
+      console.warn("com/sun/j2me/content/RegistryStore.getHandler0.(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String; expected callerIdAddr = null");
     }
 
     return J2ME.newString(serializeString([
@@ -90,7 +93,7 @@ var Content = (function() {
                                           ]));
   };
 
-  Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function() {
+  Native["com/sun/j2me/content/AppProxy.isInSvmMode.()Z"] = function(addr) {
     // We are in MVM mode (multiple MIDlets running concurrently)
     return 0;
   };
@@ -118,28 +121,33 @@ var Content = (function() {
       addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
     } else {
       MIDP.setDestroyedForRestart(true);
-      MIDP.sendDestroyMIDletEvent(J2ME.newString(chRegisteredClassName));
+      MIDP.sendDestroyMIDletEvent(chRegisteredClassName);
       MIDP.registerDestroyedListener(function() {
         MIDP.registerDestroyedListener(null);
         addInvocation("url=file:///Private/j2meshare/" + uniqueFileName, "share");
-        MIDP.sendExecuteMIDletEvent(chRegisteredStorageID, J2ME.newString(chRegisteredClassName));
+        MIDP.sendExecuteMIDletEvent(chRegisteredStorageID, chRegisteredClassName);
       });
     }
   });
 
-  Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] = function(invoc, suiteId, className, mode, shouldBlock) {
+  Native["com/sun/j2me/content/InvocationStore.get0.(Lcom/sun/j2me/content/InvocationImpl;ILjava/lang/String;IZ)I"] =
+  function(addr, invocAddr, suiteId, classNameAddr, mode, shouldBlock) {
+    var invoc = getHandle(invocAddr);
+
     getInvocationCalled = true;
 
     if (!invocation) {
       return 0;
     }
 
-    if (invoc.arguments.length != 1) {
+    var invocArguments = J2ME.getArrayFromAddr(invoc.arguments);
+
+    if (invocArguments.length != 1) {
       invoc.argsLen = 1;
       return -1;
     }
 
-    invoc.arguments[0] = J2ME.newString(invocation.argument);
+    invocArguments[0] = J2ME.newString(invocation.argument);
     invoc.action = J2ME.newString(invocation.action);
     invoc.status = 2; // Invocation.ACTIVE
 

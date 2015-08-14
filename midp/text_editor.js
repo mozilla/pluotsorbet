@@ -59,7 +59,7 @@ var TextEditorProvider = (function() {
 
             this.setSelectionRange(this.selectionRange[0], this.selectionRange[1]);
             this.setSize(this.width, this.height);
-            this.setFont(this.font);
+            this.setFont(this.fontAddr);
             this.setPosition(this.left, this.top);
             this.setBackgroundColor(this.backgroundColor);
             this.setForegroundColor(this.foregroundColor);
@@ -163,9 +163,12 @@ var TextEditorProvider = (function() {
             return this.attributes[attrName];
         },
 
-        setFont: function(font) {
-            this.font = font;
-            this._setStyle("font", font.context.font);
+        setFont: function(fontAddr) {
+            // The *fontAddr* argument is an address to the Java Font instance.
+            // We mostly access its native, which is a CanvasRenderingContext2D.
+            this.fontAddr = fontAddr;
+            this.fontContext = NativeMap.get(fontAddr);
+            this._setStyle("font", this.fontContext.font);
         },
 
         setSize: function(width, height) {
@@ -300,15 +303,15 @@ var TextEditorProvider = (function() {
             }
 
             var toImg = function(str) {
-                var emojiData = emoji.getData(str, this.font.size);
+                var emojiData = emoji.getData(str, this.fontContext.fontSize);
 
-                var scale = this.font.size / emoji.squareSize;
+                var scale = this.fontContext.fontSize / emoji.squareSize;
 
                 var style = 'display:inline-block;';
-                style += 'width:' + this.font.size + 'px;';
-                style += 'height:' + this.font.size + 'px;';
+                style += 'width:' + this.fontContext.fontSize + 'px;';
+                style += 'height:' + this.fontContext.fontSize + 'px;';
                 style += 'background:url(' + emojiData.img.src + ') -' + (emojiData.x * scale) + 'px 0px no-repeat;';
-                style += 'background-size:' + (emojiData.img.naturalWidth * scale) + 'px ' + this.font.size + 'px;';
+                style += 'background-size:' + (emojiData.img.naturalWidth * scale) + 'px ' + this.fontContext.fontSize + 'px;';
 
                 // We use <object> instead of <img> to not allow image resizing.
                 return '<object style="' + style + '" name="' + str + '"></object>';
@@ -448,7 +451,7 @@ var TextEditorProvider = (function() {
         getContentHeight: function() {
             var div = document.getElementById("hidden-textarea-editor");
             div.style.setProperty("width", this.getWidth() + "px");
-            div.style.setProperty("font", this.font.context.font);
+            div.style.setProperty("font", this.fontContext.font);
             div.innerHTML = this.html;
             var height = div.offsetHeight;
 
@@ -541,7 +544,7 @@ var TextEditorProvider = (function() {
         },
 
         getContentHeight: function() {
-            return ((this.content.match(/\n/g) || []).length + 1) * this.font.height;
+            return ((this.content.match(/\n/g) || []).length + 1) * ((this.fontContext.fontSize * FONT_HEIGHT_MULTIPLIER) | 0);
         },
     }, CommonEditorPrototype);
 
@@ -638,7 +641,7 @@ var TextEditorProvider = (function() {
              "backgroundColor", "foregroundColor",
              "attached",
              "content",
-             "font",
+             "fontAddr",
              "oninputCallback"].forEach(function(attr) {
                 newEditor[attr] = oldEditor[attr];
             });

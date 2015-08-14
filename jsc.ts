@@ -10,9 +10,17 @@ if (!jsGlobal.performance.now) {
   jsGlobal.performance.now = typeof dateNow !== 'undefined' ? dateNow : Date.now;
 }
 
+console.info = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
+console.error = function (c) {
+  putstr(String.fromCharCode(c));
+};
+
 declare var load: (string) => void;
 
-load("libs/relooper.js"); // Load before we polyfill the window object.
+load("bld/native.js"); // Load before we polyfill the window object.
 
 var CC = {};
 
@@ -71,8 +79,6 @@ jsGlobal.config = {
 jsGlobal.Promise = function() {
 }
 
-var Native = {};
-
 module J2ME {
   declare var process, require, global, quit, help, scriptArgs, arguments, snarf, ZipFile, JARStore;
 
@@ -86,7 +92,8 @@ module J2ME {
     }
   }
 
-  loadFiles("libs/long.js", "blackBox.js", "bld/j2me-jsc.js", "libs/zipfile.js", "libs/jarstore.js", "libs/encoding.js", "util.js");
+  loadFiles("libs/long.js", "blackBox.js", "libs/encoding.js", "bld/j2me-jsc.js", "libs/zipfile.js",
+            "libs/jarstore.js", "libs/encoding.js");
 
   phase = ExecutionPhase.Compiler;
 

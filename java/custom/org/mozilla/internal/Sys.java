@@ -26,6 +26,8 @@
 
 package org.mozilla.internal;
 
+import com.sun.cldc.isolate.Isolate;
+
 /**
  * The <code>Sys</code> class contains several useful privileged functions.
  */
@@ -72,6 +74,11 @@ public final class Sys {
    */
   public native static void eval(String src);
 
+  /**
+   * Returns the total number of times the VM has unwound threads.
+   */
+  public native static int getUnwindCount();
+
   public static void throwException(Exception e) throws Exception {
     throw e;
   }
@@ -81,6 +88,24 @@ public final class Sys {
     synchronized (t) {
       t.notifyAll();
     }
+  }
+
+  public static void isolate0Entry(String name, String args[]) throws com.sun.cldc.isolate.IsolateStartupException {
+    Isolate isolate = new com.sun.cldc.isolate.Isolate(name, args);
+    isolate.start();
+  }
+
+  private native static void constructCurrentThread();
+  private native static String getIsolateMain();
+  private native static void executeMain(Class main);
+
+  public static void isolateEntryPoint(Isolate isolate) throws ClassNotFoundException {
+    // Run thread initializer.
+    constructCurrentThread();
+    // Get the main class.
+    Class main = Class.forName(getIsolateMain());
+    // Execute main.
+    executeMain(main);
   }
 
   public native static void startProfile();

@@ -29,7 +29,7 @@ public class StringBufferTest implements Testlet
 {
   public int getExpectedPass() { return 51; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 1; }
+  public int getExpectedKnownFail() { return 0; }
 
   protected static TestHarness harness;
 	public void test_Basics()
@@ -283,7 +283,7 @@ public class StringBufferTest implements Testlet
 		catch ( IndexOutOfBoundsException e ){}
 		try {
 			str3 = str3.append ( carr1 , 0 , -3);
-			harness.todo(false, "test_append - 6.2");
+			harness.fail("test_append - 6.2");
 		}
 		catch ( IndexOutOfBoundsException e ){}
 

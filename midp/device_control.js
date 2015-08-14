@@ -3,7 +3,7 @@
 
 'use strict';
 
-Native["com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V"] = function(freq, longDuration) {
+Native["com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V"] = function(addr, freq, longDurationLow, longDurationHigh) {
   // If method is called during a previously called vibration that has been
   // activated from this method, the previous vibration is stopped and the new
   // one is activated using the new set of parameters.
@@ -14,7 +14,7 @@ Native["com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V"] = function(freq, longD
     return;
   }
 
-  var duration = longDuration.toNumber();
+  var duration = J2ME.longToNumber(longDurationLow, longDurationHigh);
 
   if (freq < 0 || freq > 100 || duration < 0) {
     throw new $.newIllegalArgumentException();
@@ -23,6 +23,6 @@ Native["com/nokia/mid/ui/DeviceControl.startVibra.(IJ)V"] = function(freq, longD
   navigator.vibrate(duration);
 };
 
-Native["com/nokia/mid/ui/DeviceControl.stopVibra.()V"] = function() {
+Native["com/nokia/mid/ui/DeviceControl.stopVibra.()V"] = function(addr) {
   navigator.vibrate(0);
 };

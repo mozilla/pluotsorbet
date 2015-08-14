@@ -1,0 +1,194 @@
+/**
+ * Asm.js native module declaration, this is defined by lib/native.js
+ */
+declare var ASM;
+
+var Native = Object.create(null);
+
+/**
+ * Asm.js heap buffer and views.
+ */
+var buffer = ASM.buffer;
+var i8: Int8Array = ASM.HEAP8;
+var u8: Uint8Array = ASM.HEAPU8;
+var i16: Int16Array = ASM.HEAP16;
+var u16: Uint16Array = ASM.HEAPU16;
+var i32: Int32Array = ASM.HEAP32;
+var u32: Uint32Array = ASM.HEAPU32;
+var f32: Float32Array = ASM.HEAPF32;
+var f64: Float64Array = ASM.HEAPF64;
+var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
+
+var aliasedI32 = J2ME.IntegerUtilities.i32;
+var aliasedF32 = J2ME.IntegerUtilities.f32;
+var aliasedF64 = J2ME.IntegerUtilities.f64;
+
+module J2ME {
+  import assert = Debug.assert;
+  import Bytecodes = Bytecode.Bytecodes;
+  import toHEX = IntegerUtilities.toHEX;
+
+  export function asyncImplOld(returnKind: string, promise: Promise<any>, cleanup?: Function) {
+    return asyncImpl(kindCharacterToKind(returnKind), promise, cleanup);
+  }
+
+  /**
+   * Suspends the execution of the current thread and resumes it later once the specified
+   * |promise| is fulfilled.
+   *
+   * |onFulfilled| is called with one or two arguments |l| and |h|. |l| can be any
+   * value, while |h| can only ever be the high bits of a long value.
+   *
+   * |onRejected| is called with a java.lang.Exception object.
+   */
+  export function asyncImpl(returnKind: Kind, promise: Promise<any>, cleanup?: Function) {
+    var ctx = $.ctx;
+
+    promise.then(function onFulfilled(l: any, h?: number) {
+      release || J2ME.Debug.assert(!(l instanceof Long.constructor), "Long objects are no longer supported, use low / high pairs.");
+      var thread = ctx.nativeThread;
+
+      // The caller's |pc| is currently at the invoke bytecode, we need to skip over the invoke when resuming.
+      thread.advancePastInvokeBytecode();
+
+      // Push return value.
+      var sp = thread.sp;
+      switch (returnKind) {
+        case Kind.Double: // Doubles are passed in as a number value.
+          aliasedF64[0] = l;
+          i32[sp++] = aliasedI32[0];
+          i32[sp++] = aliasedI32[1];
+          break;
+        case Kind.Float:
+          f32[sp++] = l;
+          break;
+        case Kind.Long:
+          i32[sp++] = l;
+          i32[sp++] = h;
+          break;
+        case Kind.Int:
+        case Kind.Byte:
+        case Kind.Char:
+        case Kind.Short:
+        case Kind.Boolean:
+          i32[sp++] = l;
+          break;
+        case Kind.Reference:
+          release || assert(l !== "number", "async native return value is a number");
+          i32[sp++] = l;
+          break;
+        case Kind.Void:
+          break;
+        default:
+          release || J2ME.Debug.assert(false, "Invalid Kind: " + Kind[returnKind]);
+      }
+      thread.sp = sp;
+
+      cleanup && cleanup();
+
+      Scheduler.enqueue(ctx);
+    }, function onRejected(exception: java.lang.Exception) {
+      var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
+      var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
+      ctx.nativeThread.pushFrame(methodInfo);
+      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
+
+      cleanup && cleanup();
+
+      Scheduler.enqueue(ctx);
+    });
+
+    $.pause("Async");
+  }
+
+  Native["java/lang/Thread.sleep.(J)V"] = function(addr: number, delayL: number, delayH: number) {
+    asyncImpl(Kind.Void, new Promise(function(resolve, reject) {
+      window.setTimeout(resolve, longToNumber(delayL, delayH));
+    }));
+  };
+
+  Native["java/lang/Thread.isAlive.()Z"] = function(addr: number) {
+    var self = <java.lang.Thread>getHandle(addr);
+    return self.nativeAlive ? 1 : 0;
+  };
+
+  Native["java/lang/Thread.yield.()V"] = function(addr: number) {
+    $.yield("Thread.yield");
+    $.ctx.nativeThread.advancePastInvokeBytecode();
+  };
+
+  Native["java/lang/Object.wait.(J)V"] = function(addr: number, timeoutL: number, timeoutH: number) {
+    $.ctx.wait(addr, longToNumber(timeoutL, timeoutH));
+    $.ctx.nativeThread.advancePastInvokeBytecode();
+  };
+
+  Native["java/lang/Object.notify.()V"] = function(addr: number) {
+    $.ctx.notify(addr, false);
+  };
+
+  Native["java/lang/Object.notifyAll.()V"] = function(addr: number) {
+    $.ctx.notify(addr, true);
+  };
+
+  Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr: number, targetAddr: number): void {
+      if (targetAddr === J2ME.Constants.NULL) {
+        return;
+      }
+
+      var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+      weakRef.holder = ASM._gcMallocAtomic(4);
+      i32[weakRef.holder >> 2] = targetAddr;
+      ASM._gcRegisterDisappearingLink(weakRef.holder, targetAddr);
+  };
+
+  Native["java/lang/ref/WeakReference.get.()Ljava/lang/Object;"] = function(addr: number): number {
+    var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+    if (weakRef.holder === J2ME.Constants.NULL) {
+      return J2ME.Constants.NULL;
+    }
+    return i32[weakRef.holder >> 2];
+  };
+
+  Native["java/lang/ref/WeakReference.clear.()V"] = function(addr: number): void {
+    var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
+    ASM._gcUnregisterDisappearingLink(weakRef.holder);
+    weakRef.holder = J2ME.Constants.NULL;
+  };
+
+  Native["org/mozilla/internal/Sys.getUnwindCount.()I"] = function(addr: number) {
+    return unwindCount;
+  };
+
+  Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
+    var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
+    getLinkedMethod(methodInfo)($.mainThread, J2ME.newString("main"));
+
+    // We've already set this in JVM.createIsolateCtx, but calling the instance
+    // initializer above resets it, so we set it again here.
+    //
+    // We used to store this state on the persistent native object, which was
+    // unaffected by the instance initializer; but now we store it on the Java
+    // object, which is susceptible to it, since there is no persistent native
+    // object anymore).
+    //
+    // XXX Figure out a less hacky approach.
+    //
+    var thread = <java.lang.Thread>getHandle($.mainThread);
+    thread.nativeAlive = true;
+  };
+
+  Native["org/mozilla/internal/Sys.getIsolateMain.()Ljava/lang/String;"] = function(addr: number): number {
+    var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+    return isolate._mainClass;
+  };
+
+  Native["org/mozilla/internal/Sys.executeMain.(Ljava/lang/Class;)V"] = function(addr: number, mainAddr: number) {
+    var main = <java.lang.Class>getHandle(mainAddr);
+    var entryPoint = CLASSES.getEntryPoint(J2ME.classIdToClassInfoMap[main.vmClass]);
+    if (!entryPoint)
+      throw new Error("Could not find isolate main.");
+
+    var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+    getLinkedMethod(entryPoint)(Constants.NULL, isolate._mainArgs);
+  };
+}

@@ -30,6 +30,7 @@ public class TextEditor extends CanvasItem {
     private boolean multiline = false;
     private static TextEditorThread textEditorThread;
     private Font font = Font.getDefaultFont();
+    private int caretPosition = 0;
 
     protected TextEditor(String text, int maxSize, int constraints, int width, int height) {
         init(text, maxSize, constraints, width, height);

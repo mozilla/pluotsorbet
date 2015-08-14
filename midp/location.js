@@ -63,14 +63,16 @@ LocationProvider.prototype.requestData = function() {
     }.bind(this));
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.getListOfLocationProviders.()Ljava/lang/String;"] = function() {
+Native["com/sun/j2me/location/PlatformLocationProvider.getListOfLocationProviders.()Ljava/lang/String;"] = function(addr) {
     // If there are more than one providers, separate them by comma.
     return J2ME.newString(Location.PROVIDER_NAME);
 };
 
 addUnimplementedNative("com/sun/j2me/location/CriteriaImpl.initNativeClass.()V");
 
-Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteriaImpl.(Lcom/sun/j2me/location/CriteriaImpl;)Z"] = function(criteria) {
+Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteriaImpl.(Lcom/sun/j2me/location/CriteriaImpl;)Z"] =
+function(addr, criteriaAddr) {
+    var criteria = getHandle(criteriaAddr);
     criteria.providerName = J2ME.newString(Location.PROVIDER_NAME);
     return 1;
 };
@@ -78,7 +80,7 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getBestProviderByCriteria
 addUnimplementedNative("com/sun/j2me/location/LocationProviderInfo.initNativeClass.()V");
 addUnimplementedNative("com/sun/j2me/location/LocationInfo.initNativeClass.()V");
 
-Native["com/sun/j2me/location/PlatformLocationProvider.open.(Ljava/lang/String;)I"] = function(name) {
+Native["com/sun/j2me/location/PlatformLocationProvider.open.(Ljava/lang/String;)I"] = function(addr, nameAddr) {
     var provider = new LocationProvider();
     provider.start();
     var id = Location.Providers.nextId;
@@ -87,28 +89,32 @@ Native["com/sun/j2me/location/PlatformLocationProvider.open.(Ljava/lang/String;)
     return id;
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.resetImpl.(I)V"] = function(providerId) {
+Native["com/sun/j2me/location/PlatformLocationProvider.resetImpl.(I)V"] = function(addr, providerId) {
     var provider = Location.Providers[providerId];
     provider.stop();
     Location.Providers[providerId] = null;
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.getCriteria.(Ljava/lang/String;Lcom/sun/j2me/location/LocationProviderInfo;)Z"] = function(name, criteria) {
+Native["com/sun/j2me/location/PlatformLocationProvider.getCriteria.(Ljava/lang/String;Lcom/sun/j2me/location/LocationProviderInfo;)Z"] =
+function(addr, nameAddr, criteriaAddr) {
+    var criteria = getHandle(criteriaAddr);
     criteria.canReportAltitude = 1;
     criteria.canReportSpeedCource = 1;
     criteria.averageResponseTime = 10000;
     return 1;
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.setUpdateIntervalImpl.(II)V"] = function(providerId, interval) {
+Native["com/sun/j2me/location/PlatformLocationProvider.setUpdateIntervalImpl.(II)V"] = function(addr, providerId, interval) {
     console.warn("com/sun/j2me/location/PlatformLocationProvider.setUpdateIntervalImpl.(II)V not implemented");
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILcom/sun/j2me/location/LocationInfo;)Z"] = function(providerId, locationInfo) {
+Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILcom/sun/j2me/location/LocationInfo;)Z"] =
+function(addr, providerId, locationInfoAddr) {
+    var locationInfo = getHandle(locationInfoAddr);
     var provider = Location.Providers[providerId];
     var pos = provider.position;
     locationInfo.isValid = 1;
-    locationInfo.timestamp = Long.fromNumber(pos.timestamp);
+    locationInfo.timestamp = pos.timestamp;
     locationInfo.latitude = pos.latitude;
     locationInfo.longitude = pos.longitude;
     locationInfo.altitude = Math.fround(pos.altitude);
@@ -120,21 +126,21 @@ Native["com/sun/j2me/location/PlatformLocationProvider.getLastLocationImpl.(ILco
     return 1;
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.getStateImpl.(I)I"] = function(providerId) {
+Native["com/sun/j2me/location/PlatformLocationProvider.getStateImpl.(I)I"] = function(addr, providerId) {
     var provider = Location.Providers[providerId];
     return provider.state;
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z"] = function(providerId, timeout) {
+Native["com/sun/j2me/location/PlatformLocationProvider.waitForNewLocation.(IJ)Z"] = function(addr, providerId, timeoutLow, timeoutHigh) {
     asyncImpl("Z", new Promise(function(resolve, reject) {
         var provider = Location.Providers[providerId];
         provider.requestData().then(resolve.bind(null, 1));
-        setTimeout(resolve.bind(null, 0), timeout);
+        setTimeout(resolve.bind(null, 0), J2ME.longToNumber(timeoutLow, timeoutHigh));
     }));
 };
 
-Native["com/sun/j2me/location/PlatformLocationProvider.receiveNewLocationImpl.(IJ)Z"] = function(providerId, timestamp) {
+Native["com/sun/j2me/location/PlatformLocationProvider.receiveNewLocationImpl.(IJ)Z"] = function(addr, providerId, timestampLow, timestampHigh) {
     var provider = Location.Providers[providerId];
-    var result = Math.abs(timestamp.toNumber() - provider.position.timestamp) < 10000;
+    var result = Math.abs(J2ME.longToNumber(timestampLow, timestampHigh) - provider.position.timestamp) < 10000;
     return result ? 1 : 0;
 };

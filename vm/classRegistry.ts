@@ -47,10 +47,10 @@ module J2ME {
     initializeBuiltinClasses() {
       // These classes are guaranteed to not have a static initializer.
       enterTimeline("initializeBuiltinClasses");
-      this.java_lang_Object = this.loadAndLinkClass("java/lang/Object");
-      this.java_lang_Class = this.loadAndLinkClass("java/lang/Class");
-      this.java_lang_String = this.loadAndLinkClass("java/lang/String");
-      this.java_lang_Thread = this.loadAndLinkClass("java/lang/Thread");
+      this.java_lang_Object = this.loadClass("java/lang/Object");
+      this.java_lang_Class = this.loadClass("java/lang/Class");
+      this.java_lang_String = this.loadClass("java/lang/String");
+      this.java_lang_Thread = this.loadClass("java/lang/Thread");
 
       this.preInitializedClasses.push(this.java_lang_Object);
       this.preInitializedClasses.push(this.java_lang_Class);
@@ -71,7 +71,7 @@ module J2ME {
         "java/util/Vector",
         "java/io/IOException",
         "java/lang/IllegalArgumentException",
-        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        // Preload the Isolate class, that is needed to start the VM (see context.ts)
         "com/sun/cldc/isolate/Isolate",
         "org/mozilla/internal/Sys",
         "java/lang/System",
@@ -82,18 +82,16 @@ module J2ME {
         "java/lang/Boolean",
         "java/util/Hashtable",
         "java/lang/IndexOutOfBoundsException",
+        "java/lang/StringIndexOutOfBoundsException",
+        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        "com/sun/cldc/isolate/Isolate",
       ];
 
       for (var i = 0; i < classNames.length; i++) {
-        this.preInitializedClasses.push(this.loadAndLinkClass(classNames[i]));
+        this.preInitializedClasses.push(this.loadClass(classNames[i]));
       }
 
-      // Link primitive values.
       var primitiveTypes = "ZCFDBSIJ";
-      for (var i = 0; i < primitiveTypes.length; i++) {
-        var typeName = primitiveTypes[i];
-        linkKlass(PrimitiveClassInfo[typeName]);
-      }
       // Link primitive arrays.
       PrimitiveArrayClassInfo.initialize();
       for (var i = 0; i < primitiveTypes.length; i++) {
@@ -142,6 +140,7 @@ module J2ME {
       var classInfo = new ClassInfo(bytes);
       leaveTimeline("loadClassBytes");
       loadWriter && loadWriter.writeLn(classInfo.getClassNameSlow() + " -> " + classInfo.superClassName + ";");
+      classIdToClassInfoMap[classInfo.id] = classInfo;
       this.classes[classInfo.getClassNameSlow()] = classInfo;
       return classInfo;
     }
@@ -157,6 +156,7 @@ module J2ME {
       var classInfo = this.loadClassBytes(bytes);
       if (classInfo.superClassName) {
         classInfo.superClass = this.loadClass(classInfo.superClassName);
+        classInfo.depth = classInfo.superClass.depth + 1;
         var superClass = classInfo.superClass;
         superClass.subClasses.push(classInfo);
         while (superClass) {
@@ -175,12 +175,6 @@ module J2ME {
         return classInfo;
       }
       return this.loadClassFile(className + ".class");
-    }
-
-    loadAndLinkClass(className: string): ClassInfo {
-      var classInfo = this.loadClass(className);
-      linkKlass(classInfo);
-      return classInfo;
     }
 
     getEntryPoint(classInfo: ClassInfo): MethodInfo {
@@ -211,9 +205,8 @@ module J2ME {
 
     createArrayClass(typeName: string): ArrayClassInfo {
       var elementType = typeName.substr(1);
-      var constructor = getArrayConstructor(elementType);
       var classInfo;
-      if (constructor) {
+      if (PrimitiveArrayClassInfo[elementType]) {
         classInfo = PrimitiveArrayClassInfo[elementType];
       } else {
         if (elementType[0] === "L") {
@@ -221,9 +214,7 @@ module J2ME {
         }
         classInfo = new ObjectArrayClassInfo(this.getClass(elementType));
       }
-      if (J2ME.phase === J2ME.ExecutionPhase.Runtime) {
-        J2ME.linkKlass(classInfo);
-      }
+      classIdToClassInfoMap[classInfo.id] = classInfo;
       return this.classes[typeName] = classInfo;
     }
 
