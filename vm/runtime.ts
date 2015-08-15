@@ -71,6 +71,11 @@ module J2ME {
   export var traceWriter = null;
 
   /**
+   * Traces method OSR events.
+   */
+  export var osrWriter = null;
+
+  /**
    * Traces bytecode execution.
    */
   export var traceStackWriter = null;

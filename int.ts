@@ -1586,7 +1586,7 @@ module J2ME {
                 var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
                 if ((previousFrameType === FrameType.Interpreter || previousFrameType === FrameType.ExitInterpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
-                  traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
+                  osrWriter && osrWriter.writeLn("OSR: " + mi.implKey);
                   onStackReplacementCount++;
 
                   // Set the global OSR to the current method info.

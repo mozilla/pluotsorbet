@@ -270,6 +270,9 @@ try {
   if (options.writers.value.indexOf("c") >= 0) {
     writers |= J2ME.WriterFlags.Code;
   }
+  if (options.writers.value.indexOf("o") >= 0) {
+    writers |= J2ME.WriterFlags.OSR;
+  }
   J2ME.writers = writers;
   J2ME.enableRuntimeCompilation = true;
   J2ME.maxCompiledMethodCount = options.maxCompiledMethodCount.value;
