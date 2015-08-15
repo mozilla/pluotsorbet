@@ -176,7 +176,7 @@ module J2ME {
         assert(fp < (thread.tp + Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
         var callee = methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
         assert(
-          callee === undefined ||
+          !callee ||
           callee instanceof MethodInfo,
           "Callee @" + ((this.fp + FrameLayout.CalleeMethodInfoOffset) & FrameLayout.CalleeMethodInfoMask) + " is not a MethodInfo, " + toName(callee)
         );
@@ -404,7 +404,7 @@ module J2ME {
       if (frameType === FrameType.Native) {
         this.nativeFrameCount--;
       }
-      return this.popFrame(undefined, frameType);
+      return this.popFrame(null, frameType);
     }
 
     popFrame(methodInfo: MethodInfo, frameType: FrameType = FrameType.Interpreter): MethodInfo {
@@ -651,12 +651,13 @@ module J2ME {
 
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
     var method = function fastInterpreterFrameAdapter() {
+      runtimeCounter && runtimeCounter.count("fastInterpreterFrameAdapter");
       var calleeStats = methodInfo.stats;
       calleeStats.interpreterCallCount++;
       if (config.forceRuntimeCompilation ||
           calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigThresholds.InvokeThreshold) {
         compileAndLinkMethod(methodInfo);
-        if(methodInfo.state === MethodState.Compiled) {
+        if (methodInfo.state === MethodState.Compiled) {
           return methodInfo.fn.apply(null, arguments);
         }
       }
@@ -2028,7 +2029,7 @@ module J2ME {
             release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
             mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
             type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
-            release || assert(type === FrameType.Interpreter && mi !== undefined || type !== FrameType.Interpreter && mi === undefined, "Is valid frame type and method info after return.");
+            release || assert(type === FrameType.Interpreter && mi || type !== FrameType.Interpreter && !mi, "Is valid frame type and method info after return.");
             var interrupt = false;
             while (type !== FrameType.Interpreter) {
               if (type === FrameType.ExitInterpreter) {

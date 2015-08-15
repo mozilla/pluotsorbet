@@ -386,8 +386,8 @@ module J2ME {
       this.waiting = [];
       this.threadCount = 0;
       this.I = this.initialized = new Int8Array(Constants.MAX_CLASS_ID);
-      this.SA = this.staticObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
-      this.CO = this.classObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
+      this.SA = this.staticObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID + 1);
+      this.CO = this.classObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID + 1);
       this.ctx = null;
       this.allCtxs = new Set();
       this._runtimeId = RuntimeTemplate._nextRuntimeId++;
@@ -623,6 +623,7 @@ module J2ME {
 
       if (!classInfo.isInterface) {
         // Pre-allocate linkedVTableMap.
+        ensureDenseObjectMapLength(classIdToLinkedVTableMap, classInfo.id + 1);
         classIdToLinkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
       }
     }
@@ -677,8 +678,11 @@ module J2ME {
     ARRAY_LENGTH_OFFSET = 4,
     NULL = 0,
 
-    MAX_CLASS_ID = 4096,
-    INITIAL_MAX_CLASS_ID = 512
+    MAX_METHOD_ID = 16383,
+    INITIAL_MAX_METHOD_ID = 511,
+
+    MAX_CLASS_ID = 4095,
+    INITIAL_MAX_CLASS_ID = 511
   }
 
   export class Runtime extends RuntimeTemplate {
@@ -739,14 +743,37 @@ module J2ME {
     }
   }
 
-  export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
-  export var methodIdToMethodInfoMap: Map<number, MethodInfo> = Object.create(null);
-  export var linkedMethods: Map<number, Function> = Object.create(null);
+  export var classIdToClassInfoMap = [];
+  export var methodIdToMethodInfoMap = [];
+  export var linkedMethods = [];
+
+  function ensureDenseObjectMapLength(array: Array<Object>, length: number) {
+    while (array.length < length) {
+      array.push(null);
+    }
+  }
+
+  export function registerClassId(classId: number, classInfo: ClassInfo) {
+    release || assert(phase === ExecutionPhase.Compiler || classId <= Constants.MAX_CLASS_ID, "Maximum class id was exceeded, " + classId);
+    ensureDenseObjectMapLength(classIdToClassInfoMap, classId + 1);
+    classIdToClassInfoMap[classId] = classInfo;
+  }
+
+  export function registerMethodId(methodId: number, methodInfo: MethodInfo) {
+    release || assert(phase === ExecutionPhase.Compiler || methodId <= Constants.MAX_METHOD_ID, "Maximum method id was exceeded, " + methodId);
+    ensureDenseObjectMapLength(methodIdToMethodInfoMap, methodId + 1);
+    ensureDenseObjectMapLength(linkedMethods, methodId + 1);
+    methodIdToMethodInfoMap[methodId] = methodInfo;
+  }
+
+  //export var classIdToClassInfoMap = ArrayUtilities.makeDenseArray(Constants.MAX_CLASS_ID + 1, null);
+  //export var methodIdToMethodInfoMap = ArrayUtilities.makeDenseArray(Constants.MAX_METHOD_ID + 1, null);
+  //export var linkedMethods = ArrayUtilities.makeDenseArray(Constants.MAX_METHOD_ID + 1, null);
 
   /**
    * Maps classIds to vTables containing JS functions.
    */
-  export var classIdToLinkedVTableMap = ArrayUtilities.makeDenseArray(Constants.MAX_CLASS_ID + 1, null);
+  export var classIdToLinkedVTableMap = [];
 
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
@@ -1285,7 +1312,7 @@ module J2ME {
 
   export function createBailoutFrame(methodId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
     var address = gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
-    release || assert(typeof methodId === "number" && methodId in methodIdToMethodInfoMap, "Must be valid method info.");
+    release || assert(typeof methodId === "number" && methodIdToMethodInfoMap[methodId], "Must be valid method info.");
     i32[address + BailoutFrameLayout.MethodIdOffset >> 2] = methodId;
     i32[address + BailoutFrameLayout.PCOffset >> 2] = pc;
     i32[address + BailoutFrameLayout.LocalCountOffset >> 2] = localCount;

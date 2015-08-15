@@ -298,6 +298,9 @@ try {
   var writer = new J2ME.IndentingWriter(false, function (x) {
     print(x);
   });
+  if (J2ME.runtimeCounter) {
+    J2ME.runtimeCounter.traceSorted(writer);
+  }
   if (J2ME.gcCounter) {
     J2ME.gcCounter.traceSorted(writer);
   }
