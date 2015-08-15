@@ -23,7 +23,7 @@ CONFIG ?= config/runtests.js
 export CONFIG
 
 # Amount of memory for Emscripten-compiled code.
-ASMJS_TOTAL_MEMORY ?= 16*1024*1024
+ASMJS_TOTAL_MEMORY ?= 32*1024*1024
 export ASMJS_TOTAL_MEMORY
 
 # Initial size of the GC heap
