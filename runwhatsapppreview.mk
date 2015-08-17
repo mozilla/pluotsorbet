@@ -17,7 +17,7 @@ ORIGIN = app://runwhatsapppreview.mozilla.org
 ICON_128 = img/runwhatsapppreview-icon-128.png
 ICON_512 = img/runwhatsapppreview-icon-512.png
 
-ASMJS_TOTAL_MEMORY = 4*1024*1024
+ASMJS_TOTAL_MEMORY = 8*1024*1024
 GC_INITIAL_HEAP_SIZE = 2285568
 
 include Makefile
