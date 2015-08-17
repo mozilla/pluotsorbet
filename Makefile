@@ -194,7 +194,7 @@ SOOT_VERSION=25Mar2015
 OLD_SOOT_VERSION := $(shell [ -f build_tools/.soot_version ] && cat build_tools/.soot_version)
 $(shell [ "$(SOOT_VERSION)" != "$(OLD_SOOT_VERSION)" ] && echo $(SOOT_VERSION) > build_tools/.soot_version)
 
-CLOSURE_COMPILER_VERSION=j2me.js-v20150428
+CLOSURE_COMPILER_VERSION=pluotsorbet-v20150814
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
@@ -231,8 +231,18 @@ ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	BOOTCLASSPATH_SEPARATOR=;
 endif
 
+# The path to the XULRunner executable that is actually used by the test runner.
+# Set this on the command line to run tests against a different version
+# of XULRunner than the default (which is specified by XULRUNNER_PATH),
+# so you can test changes for compatibility with older and newer versions
+# of Gecko than the default.  For example:
+#
+#   make test XULRUNNER=/Applications/Firefox28.app/Contents/MacOS/firefox
+#
+XULRUNNER ?= build_tools/$(XULRUNNER_PATH)
+
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
-	SLIMERJSLAUNCHER=build_tools/$(XULRUNNER_PATH) tests/runtests.py
+	SLIMERJSLAUNCHER=$(XULRUNNER) tests/runtests.py
 
 build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 	rm -rf build_tools/slimerjs*
@@ -294,11 +304,10 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	tsc --sourcemap --target ES5 jsc.ts --out bld/jsc.js
 
 # Some scripts use ES6 features, so we have to specify ES6 as the in-language
-# (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
-# out-language) in order for Closure to compile them, even though for now
-# we're optimizing "WHITESPACE_ONLY".
+# in order for Closure to compile them, even though for now we're optimizing
+# "WHITESPACE_ONLY".
 bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
-	java -jar build_tools/closure.jar $(CLOSURE_FLAGS) --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --language_out ES5 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+	java -jar build_tools/closure.jar $(CLOSURE_FLAGS) --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
 j2me: bld/j2me.js bld/jsc.js
