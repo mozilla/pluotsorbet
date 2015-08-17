@@ -448,53 +448,6 @@ Native["java/lang/Double.longBitsToDouble.(J)D"] = function(addr, l, h) {
     return J2ME.returnDoubleValue(aliasedF64[0]);
 }
 
-Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr) {
-    J2ME.traceWriter && J2ME.traceWriter.writeLn("REDUX");
-    //var stackTrace = [];
-    //setNative(addr, stackTrace);
-    //$.ctx.frames.forEach(function(frame) {
-    //    if (!frame.methodInfo)
-    //        return;
-    //    var methodInfo = frame.methodInfo;
-    //    var methodName = methodInfo.name;
-    //    if (!methodName)
-    //        return;
-    //    var classInfo = methodInfo.classInfo;
-    //    var className = classInfo.getClassNameSlow();
-    //    stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
-    //});
-};
-
-Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(addr) {
-    var resultAddr = J2ME.Constants.NULL;
-    // XXX: Untested.
-    var stackTrace = NativeMap.get(addr);
-    if (stackTrace) {
-        var depth = stackTrace.length;
-        var classNamesAddr = J2ME.newStringArray(depth);
-        var classNames = J2ME.getArrayFromAddr(classNamesAddr);
-        var methodNamesAddr = J2ME.newStringArray(depth);
-        var methodNames = J2ME.getArrayFromAddr(methodNamesAddr);
-        var methodSignaturesAddr = J2ME.newStringArray(depth);
-        var methodSignatures = J2ME.getArrayFromAddr(methodSignaturesAddr);
-        var offsetsAddr = J2ME.newIntArray(depth);
-        var offsets = J2ME.getArrayFromAddr(offsetsAddr);
-        stackTrace.forEach(function(e, n) {
-            classNames[n] = J2ME.newString(e.className);
-            methodNames[n] = J2ME.newString(e.methodName);
-            methodSignatures[n] = J2ME.newString(e.methodSignature);
-            offsets[n] = e.offset;
-        });
-        resultAddr = J2ME.newObjectArray(3);
-        var result = J2ME.getArrayFromAddr(resultAddr);
-        result[0] = classNamesAddr;
-        result[1] = methodNamesAddr;
-        result[2] = methodSignaturesAddr;
-        result[3] = offsetsAddr;
-    }
-    return resultAddr;
-};
-
 Native["java/lang/Runtime.freeMemory.()J"] = function(addr) {
     return J2ME.returnLongValue(@ASMJS_TOTAL_MEMORY@ - ASM._getUsedHeapSize());
 };
