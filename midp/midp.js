@@ -811,7 +811,7 @@ var MIDP = (function() {
       waiting[id] = { resolve: resolve, e: e };
     }
 
-    function put(e, id) {
+    function send(e, id) {
       var waiter = waiting[id];
       if (waiter) {
         copyEvent(e, waiter.e);
@@ -853,7 +853,7 @@ var MIDP = (function() {
     }
 
     return {
-      send: put,
+      send: send,
       get: get,
       reset: reset,
       numEvents: numEvents,
