@@ -1869,7 +1869,7 @@ module J2ME {
     return ASM._gcMallocUncollectable(size);
   }
 
-  var tmpAddress = gcMalloc(32);
+  var tmpAddress = gcMallocUncollectable(32);
 
   export function lcmp(al: number, ah: number, bl: number, bh: number) {
     i32[tmpAddress +  0 >> 2] = al;
