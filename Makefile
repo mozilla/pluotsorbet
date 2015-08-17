@@ -182,7 +182,17 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D VERSION=$(VERSION) \
              -D ASMJS_TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) \
              $(NULL)
-PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
+PREPROCESS_SRCS = \
+	./bindings.ts.in \
+	./config.ts.in \
+	./index.html.in \
+	./index.js.in \
+	./main.html.in \
+	./manifest.webapp.in \
+	./native.js.in \
+	./style/main.css.in \
+	./tests/index.js.in \
+	$(NULL)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
 all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
