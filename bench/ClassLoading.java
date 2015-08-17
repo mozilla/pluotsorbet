@@ -1,3 +1,4 @@
+package benchmark;
 import com.sun.cldchi.jvm.JVM;
 
 class ClassLoading {

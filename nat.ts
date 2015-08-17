@@ -17,7 +17,6 @@ var i32: Int32Array = ASM.HEAP32;
 var u32: Uint32Array = ASM.HEAPU32;
 var f32: Float32Array = ASM.HEAPF32;
 var f64: Float64Array = ASM.HEAPF64;
-var ref = J2ME.ArrayUtilities.makeDenseArray(buffer.byteLength >> 2, null);
 
 var aliasedI32 = J2ME.IntegerUtilities.i32;
 var aliasedF32 = J2ME.IntegerUtilities.f32;
@@ -45,11 +44,8 @@ module J2ME {
     var ctx = $.ctx;
 
     promise.then(function onFulfilled(l: any, h?: number) {
-      release || J2ME.Debug.assert(!(l instanceof Long.constructor), "Long objects are no longer supported, use low / high pairs.");
       var thread = ctx.nativeThread;
-
-      // The caller's |pc| is currently at the invoke bytecode, we need to skip over the invoke when resuming.
-      thread.advancePastInvokeBytecode();
+      thread.pushPendingNativeFrames();
 
       // Push return value.
       var sp = thread.sp;
@@ -88,10 +84,14 @@ module J2ME {
 
       Scheduler.enqueue(ctx);
     }, function onRejected(exception: java.lang.Exception) {
+      var thread = ctx.nativeThread;
+      thread.pushPendingNativeFrames();
       var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
       var methodInfo = classInfo.getMethodByNameString("throwException", "(Ljava/lang/Exception;)V");
-      ctx.nativeThread.pushFrame(methodInfo);
-      ctx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
+
+      thread.pushMarkerFrame(FrameType.Interrupt);
+      thread.pushFrame(methodInfo);
+      thread.frame.setParameter(J2ME.Kind.Reference, 0, exception._address);
 
       cleanup && cleanup();
 
@@ -99,6 +99,7 @@ module J2ME {
     });
 
     $.pause("Async");
+    $.nativeBailout(returnKind);
   }
 
   Native["java/lang/Thread.sleep.(J)V"] = function(addr: number, delayL: number, delayH: number) {
@@ -114,20 +115,26 @@ module J2ME {
 
   Native["java/lang/Thread.yield.()V"] = function(addr: number) {
     $.yield("Thread.yield");
-    $.ctx.nativeThread.advancePastInvokeBytecode();
+    $.nativeBailout(Kind.Void);
   };
 
   Native["java/lang/Object.wait.(J)V"] = function(addr: number, timeoutL: number, timeoutH: number) {
     $.ctx.wait(addr, longToNumber(timeoutL, timeoutH));
-    $.ctx.nativeThread.advancePastInvokeBytecode();
+    if (U) {
+      $.nativeBailout(Kind.Void);
+    }
   };
 
   Native["java/lang/Object.notify.()V"] = function(addr: number) {
     $.ctx.notify(addr, false);
+    // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify..
+    release || assert(!U, "Unexpected unwind in java/lang/Object.notify.()V.");
   };
 
   Native["java/lang/Object.notifyAll.()V"] = function(addr: number) {
     $.ctx.notify(addr, true);
+    // TODO Remove this assertion after investigating why wakeup on another ctx can unwind see comment in Context.notify.
+    release || assert(!U, "Unexpected unwind in java/lang/Object.notifyAll.()V.");
   };
 
   Native["java/lang/ref/WeakReference.initializeWeakReference.(Ljava/lang/Object;)V"] = function(addr: number, targetAddr: number): void {
@@ -136,7 +143,7 @@ module J2ME {
       }
 
       var weakRef = (<java.lang.ref.WeakReference>getHandle(addr));
-      weakRef.holder = ASM._gcMallocAtomic(4);
+      weakRef.holder = gcMallocAtomic(4);
       i32[weakRef.holder >> 2] = targetAddr;
       ASM._gcRegisterDisappearingLink(weakRef.holder, targetAddr);
   };
@@ -162,6 +169,9 @@ module J2ME {
   Native["org/mozilla/internal/Sys.constructCurrentThread.()V"] = function(addr: number) {
     var methodInfo = CLASSES.java_lang_Thread.getMethodByNameString("<init>", "(Ljava/lang/String;)V");
     getLinkedMethod(methodInfo)($.mainThread, J2ME.newString("main"));
+    if (U) {
+      $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESPECIAL);
+    }
 
     // We've already set this in JVM.createIsolateCtx, but calling the instance
     // initializer above resets it, so we set it again here.
@@ -189,6 +199,75 @@ module J2ME {
       throw new Error("Could not find isolate main.");
 
     var isolate = <com.sun.cldc.isolate.Isolate>getHandle($.isolateAddress);
+
     getLinkedMethod(entryPoint)(Constants.NULL, isolate._mainArgs);
+    if (U) {
+      $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
+    }
+  };
+
+  Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr: number) {
+    var frame = $.ctx.nativeThread.frame;
+    var tp = $.ctx.nativeThread.tp;
+    var fp = frame.fp;
+    var sp = frame.sp;
+    var pc = frame.pc;
+    var stackTrace = [];
+    setNative(addr, stackTrace);
+    while (true) {
+      release || assert(fp >= (tp >> 2), "Invalid frame pointer.");
+      if (frame.fp === (tp >> 2)) {
+        break;
+      }
+      stackTrace.push({
+        frameType: frame.type,
+        methodInfo: frame.methodInfo,
+        pc: frame.pc
+      });
+
+      frame.set(frame.thread, i32[frame.fp + FrameLayout.CallerFPOffset],
+        frame.fp + frame.parameterOffset,
+        i32[frame.fp + FrameLayout.CallerRAOffset]);
+    }
+    frame.fp = fp;
+    frame.sp = sp;
+    frame.pc = pc;
+  };
+
+  Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(addr: number): number {
+    var resultAddr = J2ME.Constants.NULL;
+    var stackTrace = <[any]>NativeMap.get(addr);
+    if (stackTrace) {
+      var depth = stackTrace.length;
+      var classNamesAddr = J2ME.newStringArray(depth);
+      var classNames = J2ME.getArrayFromAddr(classNamesAddr);
+      var methodNamesAddr = J2ME.newStringArray(depth);
+      var methodNames = J2ME.getArrayFromAddr(methodNamesAddr);
+      var methodSignaturesAddr = J2ME.newStringArray(depth);
+      var methodSignatures = J2ME.getArrayFromAddr(methodSignaturesAddr);
+      var offsetsAddr = J2ME.newIntArray(depth);
+      var offsets = J2ME.getArrayFromAddr(offsetsAddr);
+      stackTrace.forEach(function(e, n) {
+        if (e.frameType === FrameType.Interpreter) {
+          var methodInfo = <MethodInfo>e.methodInfo;
+          classNames[n] = J2ME.newString(methodInfo.classInfo.getClassNameSlow());
+          methodNames[n] = J2ME.newString(methodInfo.name);
+          methodSignatures[n] = J2ME.newString(methodInfo.signature);
+          offsets[n] = e.pc;
+        } else {
+          classNames[n] = J2ME.newString("MARKER FRAME " + FrameType[e.frameType]);
+          methodNames[n] = J2ME.newString("");
+          methodSignatures[n] = J2ME.newString("");
+          offsets[n] = e.pc;
+        }
+      });
+      resultAddr = J2ME.newObjectArray(4);
+      var result = J2ME.getArrayFromAddr(resultAddr);
+      result[0] = classNamesAddr;
+      result[1] = methodNamesAddr;
+      result[2] = methodSignaturesAddr;
+      result[3] = offsetsAddr;
+    }
+    return resultAddr;
   };
 }

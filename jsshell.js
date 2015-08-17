@@ -55,6 +55,9 @@ function parseArguments(options, tokens) {
           case "string":
             options[name].value = value;
             break;
+          case "boolean":
+            options[name].value = value == "true" || value == "yes";
+            break;
         }
       } else {
         print("Illegal option: " + name);
@@ -67,11 +70,43 @@ function parseArguments(options, tokens) {
   return leftover;
 }
 
+load("config/default.js");
+
 var options = {
   "writers": {
     short: "w",
     value: "",
     type: "string"
+  },
+  "maxCompiledMethodCount": {
+    short: "m",
+    value: -1,
+    type: "number"
+  },
+  "backwardBranchThreshold": {
+    short: "bbt",
+    value: config.backwardBranchThreshold,
+    type: "number"
+  },
+  "invokeThreshold": {
+    short: "it",
+    value: config.invokeThreshold,
+    type: "number"
+  },
+  "enableOnStackReplacement": {
+    short: "osr",
+    value: true,
+    type: "boolean"
+  },
+  "emitCheckArrayBounds": {
+    short: "cab",
+    value: true,
+    type: "boolean"
+  },
+  "emitCheckArrayStore": {
+    short: "cas",
+    value: true,
+    type: "boolean"
   }
 };
 
@@ -85,7 +120,12 @@ if (files.length !== 1) {
 
 var navigator = {
   language: "en-US",
+  userAgent: "jsshell",
 };
+
+function Image() {}
+
+function alert() {}
 
 var document = {
   documentElement: {
@@ -119,9 +159,14 @@ var document = {
       dispatchEvent: function(event) {
       },
       style: "",
+      removeChild: function(elem) {
+      }
     };
   },
   addEventListener: function() {
+  },
+  createElementNS: function() {
+    return {}
   },
 };
 
@@ -134,7 +179,10 @@ var window = {
     getRandomValues: function() {
     },
   },
+  document: document,
+  console: console,
 };
+window.parent = window;
 
 this.nextTickBeforeEvents = window.nextTickBeforeEvents =
 this.nextTickDuringEvents = window.nextTickDuringEvents =
@@ -172,29 +220,12 @@ try {
   if (profileTimeline) {
     load("bld/shumway.js");
   }
-  load("polyfill/promise.js", "libs/encoding.js", "bld/native.js", "bld/j2me.js",
-    "libs/zipfile.js",
-    "blackBox.js",
-    "util.js",
-    "libs/jarstore.js",
-    "libs/long.js",
-    "native.js",
-    "midp/content.js",
-    "midp/midp.js",
-    "midp/frameanimator.js",
-    "midp/fs.js",
-    "midp/crypto.js",
-    "midp/text_editor.js",
-    "midp/device_control.js",
-    "midp/crypto.js",
-    "libs/forge/util.js",
-    "libs/forge/md5.js",
-    "libs/jsbn/jsbn.js",
-    "libs/jsbn/jsbn2.js"
-    // "bld/classes.jar.js"
-  );
+
+  load("polyfill/promise.js", "libs/encoding.js", "bld/native.js", "bld/j2me.js");
 
   microTaskQueue = new J2ME.Shell.MicroTasksQueue();
+  load("bld/main-all.js");
+
 
   // load("bld/classes.jar.js");
   // load("bld/program.jar.js");
@@ -219,7 +250,6 @@ try {
   CLASSES.initializeBuiltinClasses();
 
   var start = dateNow();
-  var jvm = new JVM();
 
   var writers = J2ME.WriterFlags.None;
   if (options.writers.value.indexOf("t") >= 0) {
@@ -231,9 +261,24 @@ try {
   if (options.writers.value.indexOf("h") >= 0) {
     writers |= J2ME.WriterFlags.Thread;
   }
+  if (options.writers.value.indexOf("l") >= 0) {
+    writers |= J2ME.WriterFlags.Link;
+  }
+  if (options.writers.value.indexOf("j") >= 0) {
+    writers |= J2ME.WriterFlags.JIT;
+  }
+  if (options.writers.value.indexOf("c") >= 0) {
+    writers |= J2ME.WriterFlags.Code;
+  }
   J2ME.writers = writers;
-
   J2ME.enableRuntimeCompilation = false;
+  J2ME.maxCompiledMethodCount = options.maxCompiledMethodCount.value;
+
+  J2ME.ConfigThresholds.InvokeThreshold = options.invokeThreshold.value;
+  J2ME.ConfigThresholds.BackwardBranchThreshold = options.backwardBranchThreshold.value;
+  J2ME.enableOnStackReplacement = options.enableOnStackReplacement.value;
+  J2ME.emitCheckArrayBounds = options.emitCheckArrayBounds.value;
+  J2ME.emitCheckArrayStore = options.emitCheckArrayStore.value;
 
   start = dateNow();
   var runtime = jvm.startIsolate0(files[0], config.args);
@@ -243,11 +288,20 @@ try {
     return true;
   });
 
-  print("Time: " + (dateNow() - start).toFixed(4) + " ms");
-  J2ME.bytecodeCount && print("Bytecodes: " + J2ME.bytecodeCount);
-  J2ME.interpreterCounter.traceSorted(new J2ME.IndentingWriter(false, function (x) {
+  print("-------------------------------------------------------");
+  print("Total Time: " + (dateNow() - start).toFixed(4) + " ms");
+  print("bytecodeCount: " + J2ME.bytecodeCount);
+  print("interpreterCount: " + J2ME.interpreterCount);
+  print("compiledMethodCount: " + J2ME.compiledMethodCount);
+  print("onStackReplacementCount: " + J2ME.onStackReplacementCount);
+  print("-------------------------------------------------------");
+  var writer = new J2ME.IndentingWriter(false, function (x) {
     print(x);
-  }));
+  });
+  if (J2ME.gcCounter) {
+    J2ME.gcCounter.traceSorted(writer);
+  }
+  J2ME.interpreterCounter.traceSorted(writer);
   if (profileTimeline) {
     J2ME.timeline.createSnapshot().trace(new J2ME.IndentingWriter());
   }

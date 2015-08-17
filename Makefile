@@ -23,7 +23,7 @@ CONFIG ?= config/runtests.js
 export CONFIG
 
 # Amount of memory for Emscripten-compiled code.
-ASMJS_TOTAL_MEMORY ?= 16*1024*1024
+ASMJS_TOTAL_MEMORY ?= 32*1024*1024
 export ASMJS_TOTAL_MEMORY
 
 # Initial size of the GC heap
@@ -107,7 +107,6 @@ MAIN_JS_SRCS = \
   libs/load.js \
   libs/zipfile.js \
   libs/jarstore.js \
-  libs/long.js \
   libs/encoding.js \
   libs/fs.js \
   libs/fs-init.js \
@@ -183,7 +182,17 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D VERSION=$(VERSION) \
              -D ASMJS_TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) \
              $(NULL)
-PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
+PREPROCESS_SRCS = \
+	./bindings.ts.in \
+	./config.ts.in \
+	./index.html.in \
+	./index.js.in \
+	./main.html.in \
+	./manifest.webapp.in \
+	./native.js.in \
+	./style/main.css.in \
+	./tests/index.js.in \
+	$(NULL)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
 all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
@@ -335,7 +344,7 @@ bld/native.js: Makefile vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LI
 	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMallocUncollectable", "_gcFree", "_gcMalloc", "_gcMallocAtomic", "_gcRegisterDisappearingLink", "_gcUnregisterDisappearingLink", "_registerFinalizer", "_forceCollection", "_getUsedHeapSize", "_rl_set_output_buffer","_rl_make_output_buffer","_rl_new_block","_rl_set_block_code","_rl_delete_block","_rl_block_add_branch_to","_rl_new_relooper","_rl_delete_relooper","_rl_relooper_add_block","_rl_relooper_calculate","_rl_relooper_render", "_rl_set_asm_js_mode"]' \
 	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts"]' \
 	-s NO_EXIT_RUNTIME=1 -s NO_BROWSER=1 -s NO_FILESYSTEM=1 --post-js jit/relooper/glue.js
-	echo "var RELOOPER_BUFFER_SIZE = 1024 * 64;" > bld/native.js
+	echo "var RELOOPER_BUFFER_SIZE = 1024 * 512;" > bld/native.js
 	echo "// Relooper, (C) 2012 Alon Zakai, MIT license, https://github.com/kripken/Relooper" >> bld/native.js
 	echo "var ASM = (function(Module) {" >> bld/native.js
 	cat native.raw.js >> bld/native.js

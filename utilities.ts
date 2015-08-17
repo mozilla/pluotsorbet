@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-declare var trackedOpts;
+declare var pc2line;
 
 var jsGlobal = (function() { return this || (1, eval)('this'); })();
-var inBrowser = typeof trackedOpts === "undefined";
+var inBrowser = typeof pc2line === "undefined";
 
 
 declare var putstr;
@@ -174,12 +174,25 @@ module J2ME {
      * to dictionary mode. I've experienced ION bailouts from non-dense new Arrays(), hence this helper
      * method.
      */
-    export function makeDenseArray(length, value) {
+    export function makeDenseArray(length: number, value) {
       var array = new Array(length);
       for (var i = 0; i < length; i++) {
         array[i] = value;
       }
       return array;
+    }
+
+    /**
+     * Resizes a Int32Array to have the given length.
+     */
+    export function ensureInt32ArrayLength(array: Int32Array, length: number): Int32Array {
+      if (array.length >= length) {
+        return array;
+      }
+      var newLength = Math.max(array.length + length, ((array.length * 3) >> 1) + 1);
+      var newArray = new Int32Array(newLength);
+      newArray.set(array);
+      return newArray;
     }
   }
 
@@ -343,14 +356,14 @@ module J2ME {
     }
   }
 
-  export enum Numbers {
+  export const enum Numbers {
     MaxU16 = 0xFFFF,
     MaxI16 = 0x7FFF,
     MinI16 = -0x8000
   }
 
   export module IntegerUtilities {
-    var sharedBuffer = new ArrayBuffer(8);
+    var sharedBuffer = new ArrayBuffer(24);
     export var i32 = new Int32Array(sharedBuffer);
     export var f32 = new Float32Array(sharedBuffer);
     export var f64 = new Float64Array(sharedBuffer);
@@ -413,7 +426,7 @@ module J2ME {
     }
   }
 
-  export enum LogLevel {
+  export const enum LogLevel {
     Error = 0x1,
     Warn = 0x2,
     Debug = 0x4,
