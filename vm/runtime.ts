@@ -1230,7 +1230,8 @@ module J2ME {
 
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
-    var fn = new Function(args.join(','), body);
+    // var fn = new Function(args.join(','), body);
+    var fn = new Function("return function fn_" + methodInfo.implKey.replace(/\W+/g, "_") + "(" + args.join(",") + "){ " + body + "}")();
     leaveTimeline("Eval Compiled Code");
 
     methodInfo.state = MethodState.Compiled;
