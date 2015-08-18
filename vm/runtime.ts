@@ -1076,9 +1076,12 @@ module J2ME {
   }
 
   export function getLinkedVirtualMethodById(classId: number, vTableIndex: number) {
-    var fn = getLinkedMethod(classIdToClassInfoMap[classId].vTable[vTableIndex]);
-    // Cache linked method in the |linkedVTableMap|.
-    classIdToLinkedVTableMap[classId][vTableIndex] = fn;
+    var methodInfo = classIdToClassInfoMap[classId].vTable[vTableIndex];
+    var fn = getLinkedMethod(methodInfo);
+    // Only cache compiled methods in the |linkedVTableMap|.
+    if (methodInfo.state === MethodState.Compiled) {
+      classIdToLinkedVTableMap[classId][vTableIndex] = fn;
+    }
     return fn;
   }
 
