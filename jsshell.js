@@ -270,8 +270,11 @@ try {
   if (options.writers.value.indexOf("c") >= 0) {
     writers |= J2ME.WriterFlags.Code;
   }
+  if (options.writers.value.indexOf("o") >= 0) {
+    writers |= J2ME.WriterFlags.OSR;
+  }
   J2ME.writers = writers;
-  J2ME.enableRuntimeCompilation = false;
+  J2ME.enableRuntimeCompilation = true;
   J2ME.maxCompiledMethodCount = options.maxCompiledMethodCount.value;
 
   J2ME.ConfigThresholds.InvokeThreshold = options.invokeThreshold.value;
@@ -298,6 +301,9 @@ try {
   var writer = new J2ME.IndentingWriter(false, function (x) {
     print(x);
   });
+  if (J2ME.runtimeCounter) {
+    J2ME.runtimeCounter.traceSorted(writer);
+  }
   if (J2ME.gcCounter) {
     J2ME.gcCounter.traceSorted(writer);
   }

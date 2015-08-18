@@ -30,8 +30,9 @@ module J2ME {
     Code          = 0x40,
     Thread        = 0x80,
     TraceStack    = 0x100,
+    OSR           = 0x200,
 
-    All           = Trace | TraceStack | Link | Init | Perf | Load | JIT | Code | Thread
+    All           = Trace | TraceStack | Link | Init | Perf | Load | JIT | Code | Thread | OSR
   }
 
   /**
@@ -227,6 +228,7 @@ module J2ME {
      * Sets global writers. Uncomment these if you want to see trace output.
      */
     static setWriters(writer: IndentingWriter) {
+      osrWriter = writers & WriterFlags.OSR ? writer : null;
       traceStackWriter = writers & WriterFlags.TraceStack ? writer : null;
       traceWriter = writers & WriterFlags.Trace ? writer : null;
       perfWriter = writers & WriterFlags.Perf ? writer : null;
