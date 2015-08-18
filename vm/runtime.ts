@@ -1417,24 +1417,19 @@ module J2ME {
 
     var arrayClassInfo;
 
-    if (elementClassInfo === PrimitiveClassInfo.Z) {
-      arrayClassInfo = PrimitiveArrayClassInfo.Z;
-    } else if (elementClassInfo === PrimitiveClassInfo.C) {
-      arrayClassInfo = PrimitiveArrayClassInfo.C;
-    } else if (elementClassInfo === PrimitiveClassInfo.F) {
-      arrayClassInfo = PrimitiveArrayClassInfo.F;
-    } else if (elementClassInfo === PrimitiveClassInfo.D) {
-      arrayClassInfo = PrimitiveArrayClassInfo.D;
-    } else if (elementClassInfo === PrimitiveClassInfo.B) {
-      arrayClassInfo = PrimitiveArrayClassInfo.B;
-    } else if (elementClassInfo === PrimitiveClassInfo.S) {
-      arrayClassInfo = PrimitiveArrayClassInfo.S;
-    } else if (elementClassInfo === PrimitiveClassInfo.I) {
-      arrayClassInfo = PrimitiveArrayClassInfo.I;
-    } else if (elementClassInfo === PrimitiveClassInfo.J) {
-      arrayClassInfo = PrimitiveArrayClassInfo.J;
-    } else {
-      arrayClassInfo = CLASSES.getClass("[" + elementClassInfo.getClassNameSlow());
+    // Fast-path for the most used primitive array types.
+    switch (elementClassInfo) {
+      case PrimitiveClassInfo.C:
+        arrayClassInfo = PrimitiveArrayClassInfo.C;
+        break;
+      case PrimitiveClassInfo.B:
+        arrayClassInfo = PrimitiveArrayClassInfo.B;
+        break;
+      case PrimitiveClassInfo.I:
+        arrayClassInfo = PrimitiveArrayClassInfo.I;
+        break;
+      default:
+        arrayClassInfo = CLASSES.getClass("[" + elementClassInfo.getClassNameSlow());
     }
 
     var addr;
