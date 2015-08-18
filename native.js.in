@@ -80,7 +80,7 @@ function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
                 dst += length;
                 src += length;
                 for (var n = 0; n < length; ++n) {
-                    i32[--dst] = src[--src];
+                    i32[--dst] = i32[--src];
                 }
             }
         }
@@ -323,7 +323,7 @@ function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
         dst += length;
         src += length;
         for (var n = 0; n < length; ++n)
-            i32[--dst] = src[--src];
+            i32[--dst] = i32[--src];
     }
 };
 
