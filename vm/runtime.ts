@@ -751,6 +751,7 @@ module J2ME {
     while (array.length < length) {
       array.push(null);
     }
+    release || Debug.assertNonDictionaryModeObject(array);
   }
 
   export function registerClassId(classId: number, classInfo: ClassInfo) {
@@ -765,10 +766,6 @@ module J2ME {
     ensureDenseObjectMapLength(linkedMethods, methodId + 1);
     methodIdToMethodInfoMap[methodId] = methodInfo;
   }
-
-  //export var classIdToClassInfoMap = ArrayUtilities.makeDenseArray(Constants.MAX_CLASS_ID + 1, null);
-  //export var methodIdToMethodInfoMap = ArrayUtilities.makeDenseArray(Constants.MAX_METHOD_ID + 1, null);
-  //export var linkedMethods = ArrayUtilities.makeDenseArray(Constants.MAX_METHOD_ID + 1, null);
 
   /**
    * Maps classIds to vTables containing JS functions.
@@ -1075,7 +1072,9 @@ module J2ME {
     var fn = getLinkedMethod(methodInfo);
     // Only cache compiled methods in the |linkedVTableMap|.
     if (methodInfo.state === MethodState.Compiled) {
-      classIdToLinkedVTableMap[classId][vTableIndex] = fn;
+      var vTable = classIdToLinkedVTableMap[classId];
+      release || Debug.assertNonDictionaryModeObject(vTable);
+      vTable[vTableIndex] = fn;
     }
     return fn;
   }
