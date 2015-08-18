@@ -274,6 +274,7 @@ var Benchmark = (function() {
         return;
       }
       var took = now - this.startTime[which];
+      logBenchmark(which + " took: " + took + "ms");
       storage.current[which].push(took);
 
       var endWhich = storage.warmBench ? "fgRestartTime" : "startupTime";

@@ -1,3 +1,4 @@
+package benchmark;
 import java.lang.Object;
 import java.lang.System;
 import java.util.Hashtable;
@@ -137,7 +138,7 @@ class JITBenchmark {
     // Sys.eval("J2ME.emitCheckArrayStore = false;");
     // Sys.eval("J2ME.emitCheckArrayBounds = false;");
 
-    size = 1024;
+    size = 32;
 
     begin();
     start = JVM.monotonicTimeMillis();
@@ -151,7 +152,7 @@ class JITBenchmark {
     arrayTypeCheck();
     finish("startup");
 
-    size = 1024 * 256;
+    size = 32 * 64;
 
     long start = JVM.monotonicTimeMillis();
     begin();

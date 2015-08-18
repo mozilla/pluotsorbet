@@ -31,22 +31,6 @@ var util = (function () {
   var INT_MAX = Math.pow(2, 31) - 1;
   var INT_MIN = -INT_MAX - 1;
 
-  function double2int(d) {
-    if (d > INT_MAX)
-      return INT_MAX;
-    if (d < INT_MIN)
-      return INT_MIN;
-    return d|0;
-  }
-
-  function double2long(d) {
-    if (d === Number.POSITIVE_INFINITY)
-      return Long.MAX_VALUE;
-    if (d === Number.NEGATIVE_INFINITY)
-      return Long.MIN_VALUE;
-    return Long.fromNumber(d);
-  }
-
   var id = (function() {
     var gen = 0;
     return function() {
@@ -107,8 +91,6 @@ var util = (function () {
     INT_MIN: INT_MIN,
     decodeUtf8: decodeUtf8,
     decodeUtf8Array: decodeUtf8Array,
-    double2int: double2int,
-    double2long: double2long,
     id: id,
     pad: pad,
     toCodePointArray: toCodePointArray,

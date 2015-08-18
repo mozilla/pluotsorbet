@@ -13,7 +13,7 @@ class IFaceImpl implements IFace {
 class InvokeInterface {
     public static void main(String[] args) {
         IFace foo = new IFaceImpl();
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000000; i++) {
             foo.method();
         }
     }

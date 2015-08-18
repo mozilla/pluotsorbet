@@ -40,7 +40,8 @@ public class TestBouncyCastleSHA256 implements Testlet {
             th.check(Util.hexEncode(retValue).toLowerCase(), digests[i]);
         }
 
-        /* TODO: Re-enable once we're fast enough
+        /* TODO: Re-enable when compilation is enabled.
+
         for (int i = 0; i < 1000000; i++) {
             md.update((byte)'a');
         }

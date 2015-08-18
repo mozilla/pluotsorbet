@@ -426,6 +426,15 @@ var fs = (function() {
 
   function init(cb) {
     store.init(function() {
+      // Due to bug #227, we don't support Object::finalize(). But the Java
+      // filesystem implementation requires the `finalize` method to save cached
+      // file data if user doesn't flush or close the file explicitly. To avoid
+      // losing data, we flush files periodically.
+      // We start to flush periodically after startup has been completed (25 seconds
+      // is a good estimate).
+      setTimeout(function() {
+        setInterval(flushAll, 5000);
+      }, 20000);
       initRootDir();
       cb();
     });
@@ -599,16 +608,6 @@ var fs = (function() {
     // we should continue to do both immediately on pagehide.
     syncStore();
   }
-
-  // Due to bug #227, we don't support Object::finalize(). But the Java
-  // filesystem implementation requires the `finalize` method to save cached
-  // file data if user doesn't flush or close the file explicitly. To avoid
-  // losing data, we flush files periodically.
-  // We start to flush periodically after startup has been completed (25 seconds
-  // is a good estimate).
-  setTimeout(function() {
-    setInterval(flushAll, 5000);
-  }, 20000);
 
   // Flush files when app goes into background.
   window.addEventListener("pagehide", flushAll);

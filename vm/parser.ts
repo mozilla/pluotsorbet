@@ -10,7 +10,7 @@ module J2ME {
   import pushMany = ArrayUtilities.pushMany;
   import unique = ArrayUtilities.unique;
   import hashBytesTo32BitsMurmur = HashUtilities.hashBytesTo32BitsMurmur;
-  export enum UTF8Chars {
+  export const enum UTF8Chars {
     a = 97,
     Z = 90,
     C = 67,
@@ -431,7 +431,7 @@ module J2ME {
     }
   }
 
-  export enum ACCESS_FLAGS {
+  export const enum ACCESS_FLAGS {
     ACC_PUBLIC        = 0x0001,
     ACC_PRIVATE       = 0x0002,
     ACC_PROTECTED     = 0x0004,
@@ -607,7 +607,9 @@ module J2ME {
             case TAGS.CONSTANT_Long:
               var high = s.readS4();
               var low = s.readS4();
-              r = this.resolved[i] = Long.fromBits(low, high);
+              // REDUX
+              //r = this.resolved[i] = Long.fromBits(low, high);
+              Debug.error("TODO constant pool longs");
               break;
             case TAGS.CONSTANT_Double:
               r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readS4(), s.readS4());
@@ -820,11 +822,14 @@ module J2ME {
   }
 
   export class MethodInfo extends ByteStream {
+    private static nextId: number = 1;
+
     public classInfo: ClassInfo;
     public accessFlags: ACCESS_FLAGS;
 
     public fn: any = null;
     public index: number;
+    public id: number;
     public state: MethodState;
     public stats: MethodInfoStats;
     public codeAttribute: CodeAttribute;
@@ -857,6 +862,8 @@ module J2ME {
 
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
+      this.id = MethodInfo.nextId++;
+      methodIdToMethodInfoMap[this.id] = this;
       this.index = index;
       this.accessFlags = this.u2(0);
       this.classInfo = classInfo;
@@ -981,7 +988,7 @@ module J2ME {
     }
   }
 
-  enum ResolvedFlags {
+  const enum ResolvedFlags {
     None          = 0,
     Fields        = 1,
     Methods       = 2,
@@ -1089,6 +1096,7 @@ module J2ME {
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
       this.id = ClassInfo.nextId++;
+      release || assert(phase === ExecutionPhase.Compiler || this.id <= Constants.MAX_CLASS_ID, "Maximum class id was exceeded, " + this.id);
       if (!buffer) {
         sealObjects && Object.seal(this);
         return;
@@ -1205,6 +1213,10 @@ module J2ME {
         this.buildVTable();
         this.buildITable();
         this.buildFTable();
+      }
+      // Notify the runtime so it can perform and necessary setup.
+      if (RuntimeTemplate) {
+        RuntimeTemplate.classInfoComplete(this);
       }
       loadWriter && this.trace(loadWriter);
     }

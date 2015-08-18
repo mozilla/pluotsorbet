@@ -296,7 +296,8 @@ Native["java/lang/Object.getClass.()Ljava/lang/Class;"] = function(addr) {
 };
 
 Native["java/lang/Class.getSuperclass.()Ljava/lang/Class;"] = function(addr) {
-    var superClassInfo = J2ME.getClassInfo(addr).superClass;
+    var self = getHandle(addr);
+    var superClassInfo = J2ME.classIdToClassInfoMap[self.vmClass].superClass;
     if (!superClassInfo) {
       return J2ME.Constants.NULL;
     }
@@ -311,6 +312,9 @@ Native["java/lang/Class.invoke_clinit.()V"] = function(addr) {
     J2ME.preemptionLockLevel++;
     if (clinit && clinit.classInfo.getClassNameSlow() === className) {
         $.ctx.executeMethod(clinit);
+        if (U) {
+            $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
+        }
     }
 };
 
@@ -347,6 +351,9 @@ Native["java/lang/Class.forName0.(Ljava/lang/String;)V"] = function(addr, nameAd
   }
   // The following can trigger an unwind.
   J2ME.classInitCheck(classInfo);
+  if (U) {
+    $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
+  }
 };
 
 Native["java/lang/Class.forName1.(Ljava/lang/String;)Ljava/lang/Class;"] = function(addr, nameAddr) {
@@ -372,12 +379,15 @@ Native["java/lang/Class.newInstance0.()Ljava/lang/Object;"] = function(addr) {
 
 Native["java/lang/Class.newInstance1.(Ljava/lang/Object;)V"] = function(addr, oAddr) {
   var classInfo = J2ME.getClassInfo(oAddr);
-  // The following can trigger an unwind.
   var methodInfo = classInfo.getLocalMethodByNameString("<init>", "()V", false);
   if (!methodInfo) {
     throw $.newInstantiationException("Can't instantiate classes without a nullary constructor");
   }
+  // The following can trigger an unwind.
   J2ME.getLinkedMethod(methodInfo)(oAddr);
+  if (U) {
+      $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESPECIAL);
+  }
 };
 
 Native["java/lang/Class.isInterface.()Z"] = function(addr) {
@@ -415,70 +425,28 @@ Native["java/lang/Class.isInstance.(Ljava/lang/Object;)Z"] = function(addr, objA
 };
 
 Native["java/lang/Float.floatToIntBits.(F)I"] = function(addr, f) {
-    return aliasedF32[0] = f, aliasedI32[0];
+    aliasedI32[0] = f;
+    aliasedF32[0] = aliasedF32[0];
+    return aliasedI32[0];
 }
 
-Native["java/lang/Float.intBitsToFloat.(I)F"] = function(addr, i) {
-    return aliasedI32[0] = i, aliasedF32[0];
+Native["java/lang/Float.intBitsToFloat.(I)F"] = function (addr, i) {
+    return i;
 }
 
-Native["java/lang/Double.doubleToLongBits.(D)J"] = function(addr, d) {
-    aliasedF64[0] = d;
+Native["java/lang/Double.doubleToLongBits.(D)J"] = function (addr, l, h) {
+    aliasedI32[0] = l;
+    aliasedI32[1] = h;
+    // Canonicalize the value.
+    aliasedF64[0] = aliasedF64[0];
     return J2ME.returnLong(aliasedI32[0], aliasedI32[1]);
 }
 
 Native["java/lang/Double.longBitsToDouble.(J)D"] = function(addr, l, h) {
     aliasedI32[0] = l;
     aliasedI32[1] = h;
-    return aliasedF64[0];
+    return J2ME.returnDoubleValue(aliasedF64[0]);
 }
-
-Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr) {
-    J2ME.traceWriter && J2ME.traceWriter.writeLn("REDUX");
-    //var stackTrace = [];
-    //setNative(addr, stackTrace);
-    //$.ctx.frames.forEach(function(frame) {
-    //    if (!frame.methodInfo)
-    //        return;
-    //    var methodInfo = frame.methodInfo;
-    //    var methodName = methodInfo.name;
-    //    if (!methodName)
-    //        return;
-    //    var classInfo = methodInfo.classInfo;
-    //    var className = classInfo.getClassNameSlow();
-    //    stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
-    //});
-};
-
-Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(addr) {
-    var resultAddr = J2ME.Constants.NULL;
-    // XXX: Untested.
-    var stackTrace = NativeMap.get(addr);
-    if (stackTrace) {
-        var depth = stackTrace.length;
-        var classNamesAddr = J2ME.newStringArray(depth);
-        var classNames = J2ME.getArrayFromAddr(classNamesAddr);
-        var methodNamesAddr = J2ME.newStringArray(depth);
-        var methodNames = J2ME.getArrayFromAddr(methodNamesAddr);
-        var methodSignaturesAddr = J2ME.newStringArray(depth);
-        var methodSignatures = J2ME.getArrayFromAddr(methodSignaturesAddr);
-        var offsetsAddr = J2ME.newIntArray(depth);
-        var offsets = J2ME.getArrayFromAddr(offsetsAddr);
-        stackTrace.forEach(function(e, n) {
-            classNames[n] = J2ME.newString(e.className);
-            methodNames[n] = J2ME.newString(e.methodName);
-            methodSignatures[n] = J2ME.newString(e.methodSignature);
-            offsets[n] = e.offset;
-        });
-        resultAddr = J2ME.newObjectArray(3);
-        var result = J2ME.getArrayFromAddr(resultAddr);
-        result[0] = classNamesAddr;
-        result[1] = methodNamesAddr;
-        result[2] = methodSignaturesAddr;
-        result[3] = offsetsAddr;
-    }
-    return resultAddr;
-};
 
 Native["java/lang/Runtime.freeMemory.()J"] = function(addr) {
     return J2ME.returnLongValue(@ASMJS_TOTAL_MEMORY@ - ASM._getUsedHeapSize());
@@ -489,51 +457,84 @@ Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
 };
 
 Native["java/lang/Runtime.gc.()V"] = function(addr) {
-    ASM._forceCollection();
+    // Force a bailout so that there are no native frames on the stack
+    // so GC can be safely run.
+    asyncImpl("V", new Promise(function(resolve, reject) {
+        setTimeout(function() {
+            ASM._forceCollection();
+            resolve();
+        });
+    }));
 };
 
-Native["java/lang/Math.floor.(D)D"] = function(addr, val) {
-    return Math.floor(val);
+Native["java/lang/Math.floor.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.floor(aliasedF64[0]));
 };
 
-Native["java/lang/Math.asin.(D)D"] = function(addr, val) {
-    return Math.asin(val);
+Native["java/lang/Math.asin.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.asin(aliasedF64[0]));
 };
 
-Native["java/lang/Math.acos.(D)D"] = function(addr, val) {
-    return Math.acos(val);
+Native["java/lang/Math.acos.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.acos(aliasedF64[0]));
 };
 
-Native["java/lang/Math.atan.(D)D"] = function(addr, val) {
-    return Math.atan(val);
+Native["java/lang/Math.atan.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.atan(aliasedF64[0]));
 };
 
-Native["java/lang/Math.atan2.(DD)D"] = function(addr, x, y) {
-    return Math.atan2(x, y);
+Native["java/lang/Math.atan2.(DD)D"] = function(addr, xLow, xHigh, yLow, yHigh) {
+    aliasedI32[0] = xLow;
+    aliasedI32[1] = xHigh;
+    var x = aliasedF64[0];
+    aliasedI32[0] = yLow;
+    aliasedI32[1] = yHigh;
+    var y = aliasedF64[0];
+    return J2ME.returnDoubleValue(Math.atan2(x, y));
 };
 
-Native["java/lang/Math.sin.(D)D"] = function(addr, val) {
-    return Math.sin(val);
+Native["java/lang/Math.sin.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.sin(aliasedF64[0]));
 };
 
-Native["java/lang/Math.cos.(D)D"] = function(addr, val) {
-    return Math.cos(val);
+Native["java/lang/Math.cos.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.cos(aliasedF64[0]));
 };
 
-Native["java/lang/Math.tan.(D)D"] = function(addr, val) {
-    return Math.tan(val);
+Native["java/lang/Math.tan.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.tan(aliasedF64[0]));
 };
 
-Native["java/lang/Math.sqrt.(D)D"] = function(addr, val) {
-    return Math.sqrt(val);
+Native["java/lang/Math.sqrt.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.sqrt(aliasedF64[0]));
 };
 
-Native["java/lang/Math.ceil.(D)D"] = function(addr, val) {
-    return Math.ceil(val);
+Native["java/lang/Math.ceil.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.ceil(aliasedF64[0]));
 };
 
-Native["java/lang/Math.floor.(D)D"] = function(addr, val) {
-    return Math.floor(val);
+Native["java/lang/Math.floor.(D)D"] = function(addr, valLow, valHigh) {
+    aliasedI32[0] = valLow;
+    aliasedI32[1] = valHigh;
+    return J2ME.returnDoubleValue(Math.floor(aliasedF64[0]));
 };
 
 Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function(addr) {
@@ -559,7 +560,7 @@ Native["java/lang/Thread.start0.()V"] = function(addr) {
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);
-    newCtx.nativeThread.pushFrame(null);
+    newCtx.nativeThread.pushMarkerFrame(J2ME.FrameType.ExitInterpreter);
     newCtx.nativeThread.pushFrame(run);
     newCtx.nativeThread.frame.setParameter(J2ME.Kind.Reference, 0, addr);
     newCtx.start();

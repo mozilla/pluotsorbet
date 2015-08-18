@@ -15,7 +15,7 @@
  */
 module Shumway.Tools.Profiler {
 
-  export enum TraceFormat {
+  export const enum TraceFormat {
     PLAIN,
     CSV
   }
