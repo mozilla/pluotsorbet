@@ -26,7 +26,7 @@ import gnu.testlet.TestHarness;
 
 public class arraycopy implements Testlet
 {
-  public int getExpectedPass() { return 62; }
+  public int getExpectedPass() { return 72; }
   public int getExpectedFail() { return 0; }
   public int getExpectedKnownFail() { return 0; }
 
@@ -285,5 +285,26 @@ public class arraycopy implements Testlet
 		     "caught ArrayStoreException");
       harness.check (copy (new int[1], 0, new int[1][1], 0,  1),
 		     "caught ArrayStoreException");
+
+      String[] strings = {
+        "str0",
+        "str1",
+        "str2",
+        "str3",
+        "str4"
+      };
+      System.arraycopy(strings, 1, strings, 3, 2);
+      harness.check(strings[0], "str0");
+      harness.check(strings[1], "str1");
+      harness.check(strings[2], "str2");
+      harness.check(strings[3], "str1");
+      harness.check(strings[4], "str2");
+
+      System.arraycopy(strings, 0, strings, 2, 3);
+      harness.check(strings[0], "str0");
+      harness.check(strings[1], "str1");
+      harness.check(strings[2], "str0");
+      harness.check(strings[3], "str1");
+      harness.check(strings[4], "str2");
     }
 }
