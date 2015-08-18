@@ -205,4 +205,69 @@ module J2ME {
       $.nativeBailout(J2ME.Kind.Void, J2ME.Bytecode.Bytecodes.INVOKESTATIC);
     }
   };
+
+  Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr: number) {
+    var frame = $.ctx.nativeThread.frame;
+    var tp = $.ctx.nativeThread.tp;
+    var fp = frame.fp;
+    var sp = frame.sp;
+    var pc = frame.pc;
+    var stackTrace = [];
+    setNative(addr, stackTrace);
+    while (true) {
+      release || assert(fp >= (tp >> 2), "Invalid frame pointer.");
+      if (frame.fp === (tp >> 2)) {
+        break;
+      }
+      stackTrace.push({
+        frameType: frame.type,
+        methodInfo: frame.methodInfo,
+        pc: frame.pc
+      });
+
+      frame.set(frame.thread, i32[frame.fp + FrameLayout.CallerFPOffset],
+        frame.fp + frame.parameterOffset,
+        i32[frame.fp + FrameLayout.CallerRAOffset]);
+    }
+    frame.fp = fp;
+    frame.sp = sp;
+    frame.pc = pc;
+  };
+
+  Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(addr: number): number {
+    var resultAddr = J2ME.Constants.NULL;
+    var stackTrace = <[any]>NativeMap.get(addr);
+    if (stackTrace) {
+      var depth = stackTrace.length;
+      var classNamesAddr = J2ME.newStringArray(depth);
+      var classNames = J2ME.getArrayFromAddr(classNamesAddr);
+      var methodNamesAddr = J2ME.newStringArray(depth);
+      var methodNames = J2ME.getArrayFromAddr(methodNamesAddr);
+      var methodSignaturesAddr = J2ME.newStringArray(depth);
+      var methodSignatures = J2ME.getArrayFromAddr(methodSignaturesAddr);
+      var offsetsAddr = J2ME.newIntArray(depth);
+      var offsets = J2ME.getArrayFromAddr(offsetsAddr);
+      stackTrace.forEach(function(e, n) {
+        if (e.frameType === FrameType.Interpreter) {
+          var methodInfo = <MethodInfo>e.methodInfo;
+          classNames[n] = J2ME.newString(methodInfo.classInfo.getClassNameSlow());
+          methodNames[n] = J2ME.newString(methodInfo.name);
+          methodSignatures[n] = J2ME.newString(methodInfo.signature);
+          offsets[n] = e.pc;
+        } else {
+          classNames[n] = J2ME.newString("MARKER FRAME " + FrameType[e.frameType]);
+          methodNames[n] = J2ME.newString("");
+          methodSignatures[n] = J2ME.newString("");
+          offsets[n] = e.pc;
+        }
+      });
+      resultAddr = J2ME.newObjectArray(4);
+      var result = J2ME.getArrayFromAddr(resultAddr);
+      result[0] = classNamesAddr;
+      result[1] = methodNamesAddr;
+      result[2] = methodSignaturesAddr;
+      result[3] = offsetsAddr;
+    }
+    return resultAddr;
+  };
 }

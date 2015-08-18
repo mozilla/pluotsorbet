@@ -21,22 +21,18 @@ function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
         throw $.newNullPointerException("Cannot copy to/from a null array.");
     }
 
-    var srcClassInfo = J2ME.getClassInfo(srcAddr);
-    var dstClassInfo = J2ME.getClassInfo(dstAddr);
+    var src = getHandle(srcAddr);
+    var dst = getHandle(dstAddr);
+
+    var srcClassInfo = src.classInfo;
+    var dstClassInfo = dst.classInfo;
 
     if (!(srcClassInfo instanceof J2ME.ArrayClassInfo) || !(dstClassInfo instanceof J2ME.ArrayClassInfo)) {
         throw $.newArrayStoreException("Can only copy to/from array types.");
     }
-
-    var srcLength = i32[srcAddr + J2ME.Constants.ARRAY_LENGTH_OFFSET >> 2];
-    var dstLength = i32[dstAddr + J2ME.Constants.ARRAY_LENGTH_OFFSET >> 2];
-
-    if (srcOffset < 0 || (srcOffset+length) > srcLength ||
-        dstOffset < 0 || (dstOffset+length) > dstLength ||
-        length < 0) {
+    if (srcOffset < 0 || (srcOffset+length) > src.length || dstOffset < 0 || (dstOffset+length) > dst.length || length < 0) {
         throw $.newArrayIndexOutOfBoundsException("Invalid index.");
     }
-
     var srcIsPrimitive = srcClassInfo instanceof J2ME.PrimitiveArrayClassInfo;
     var dstIsPrimitive = dstClassInfo instanceof J2ME.PrimitiveArrayClassInfo;
     if ((srcIsPrimitive && dstIsPrimitive && srcClassInfo !== dstClassInfo) ||
@@ -46,72 +42,36 @@ function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {
     }
 
     if (!dstIsPrimitive) {
-        var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + srcOffset;
-        var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + dstOffset;
-
         if (srcClassInfo !== dstClassInfo && !J2ME.isAssignableTo(srcClassInfo.elementClass, dstClassInfo.elementClass)) {
             var copy = function(to, from) {
-                var addr = i32[from];
-                if (addr !== J2ME.Constants.NULL) {
-                    var objClassInfo = J2ME.getClassInfo(addr);
-                    if (!J2ME.isAssignableTo(objClassInfo, dstClassInfo.elementClass)) {
-                        throw $.newArrayStoreException("Incompatible component types.");
-                    }
+                var addr = src[from];
+                var obj = getHandle(addr);
+                if (obj && !J2ME.isAssignableTo(obj.classInfo, dstClassInfo.elementClass)) {
+                    throw $.newArrayStoreException("Incompatible component types.");
                 }
-                i32[to] = addr;
+                dst[to] = addr;
             };
-            if (dstAddr !== srcAddr || dstOffset < srcOffset) {
-                for (var n = 0; n < length; ++n) {
-                    copy(dst++, src++);
-                }
+            if (dst !== src || dstOffset < srcOffset) {
+                for (var n = 0; n < length; ++n)
+                    copy(dstOffset++, srcOffset++);
             } else {
-                dst += length;
-                src += length;
-                for (var n = 0; n < length; ++n) {
-                    copy(--dst, --src);
-                }
+                dstOffset += length;
+                srcOffset += length;
+                for (var n = 0; n < length; ++n)
+                    copy(--dstOffset, --srcOffset);
             }
-        } else {
-            if (srcAddr !== dstAddr || dstOffset < srcOffset) {
-                for (var n = 0; n < length; ++n) {
-                    i32[dst++] = i32[src++];
-                }
-            } else {
-                dst += length;
-                src += length;
-                for (var n = 0; n < length; ++n) {
-                    i32[--dst] = src[--src];
-                }
-            }
+            return;
         }
-
-        return;
     }
 
-    switch (srcClassInfo.bytesPerElement) {
-        case 1:
-            var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE) + srcOffset;
-            var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE) + dstOffset;
-            i8.set(i8.subarray(src, src + length), dst);
-            break;
-
-        case 2:
-            var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 1) + srcOffset;
-            var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 1) + dstOffset;
-            i16.set(i16.subarray(src, src + length), dst);
-            break;
-
-        case 4:
-            var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + srcOffset;
-            var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 2) + dstOffset;
-            i32.set(i32.subarray(src, src + length), dst);
-            break;
-
-        case 8:
-            var src = (srcAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 3) + srcOffset;
-            var dst = (dstAddr + J2ME.Constants.ARRAY_HDR_SIZE >> 3) + dstOffset;
-            f64.set(f64.subarray(src, src + length), dst);
-            break;
+    if (srcAddr !== dstAddr || dstOffset < srcOffset) {
+        for (var n = 0; n < length; ++n)
+            dst[dstOffset++] = src[srcOffset++];
+    } else {
+        dstOffset += length;
+        srcOffset += length;
+        for (var n = 0; n < length; ++n)
+            dst[--dstOffset] = src[--srcOffset];
     }
 };
 
@@ -487,53 +447,6 @@ Native["java/lang/Double.longBitsToDouble.(J)D"] = function(addr, l, h) {
     aliasedI32[1] = h;
     return J2ME.returnDoubleValue(aliasedF64[0]);
 }
-
-Native["java/lang/Throwable.fillInStackTrace.()V"] = function(addr) {
-    J2ME.traceWriter && J2ME.traceWriter.writeLn("REDUX");
-    //var stackTrace = [];
-    //setNative(addr, stackTrace);
-    //$.ctx.frames.forEach(function(frame) {
-    //    if (!frame.methodInfo)
-    //        return;
-    //    var methodInfo = frame.methodInfo;
-    //    var methodName = methodInfo.name;
-    //    if (!methodName)
-    //        return;
-    //    var classInfo = methodInfo.classInfo;
-    //    var className = classInfo.getClassNameSlow();
-    //    stackTrace.unshift({ className: className, methodName: methodName, methodSignature: methodInfo.signature, offset: frame.bci });
-    //});
-};
-
-Native["java/lang/Throwable.obtainBackTrace.()Ljava/lang/Object;"] = function(addr) {
-    var resultAddr = J2ME.Constants.NULL;
-    // XXX: Untested.
-    var stackTrace = NativeMap.get(addr);
-    if (stackTrace) {
-        var depth = stackTrace.length;
-        var classNamesAddr = J2ME.newStringArray(depth);
-        var classNames = J2ME.getArrayFromAddr(classNamesAddr);
-        var methodNamesAddr = J2ME.newStringArray(depth);
-        var methodNames = J2ME.getArrayFromAddr(methodNamesAddr);
-        var methodSignaturesAddr = J2ME.newStringArray(depth);
-        var methodSignatures = J2ME.getArrayFromAddr(methodSignaturesAddr);
-        var offsetsAddr = J2ME.newIntArray(depth);
-        var offsets = J2ME.getArrayFromAddr(offsetsAddr);
-        stackTrace.forEach(function(e, n) {
-            classNames[n] = J2ME.newString(e.className);
-            methodNames[n] = J2ME.newString(e.methodName);
-            methodSignatures[n] = J2ME.newString(e.methodSignature);
-            offsets[n] = e.offset;
-        });
-        resultAddr = J2ME.newObjectArray(3);
-        var result = J2ME.getArrayFromAddr(resultAddr);
-        result[0] = classNamesAddr;
-        result[1] = methodNamesAddr;
-        result[2] = methodSignaturesAddr;
-        result[3] = offsetsAddr;
-    }
-    return resultAddr;
-};
 
 Native["java/lang/Runtime.freeMemory.()J"] = function(addr) {
     return J2ME.returnLongValue(@ASMJS_TOTAL_MEMORY@ - ASM._getUsedHeapSize());

@@ -21,9 +21,6 @@ class All {
         BubbleSort.main(args);
         System.out.println(">> BubbleSort: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
 
-        ArrayCopyBench.main(args);
-        System.out.println(">> ArrayCopyBench: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
-
         // ByteArrayInputOutputStreamBench.main(args); // Memory problem, too slow.
         // CallNativeBench.main(args);
         ClassLoading.main(args);
@@ -77,8 +74,8 @@ class All {
         // SocketBench.main(args);
         // SocketStressBench.main(args);
         // SSLSocketBench.main(args);
-        Stress.main(args);
-        System.out.println(">> Stress: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
+        DoubleBench.main(args);
+        System.out.println(">> DoubleBench: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
 
         // SystemOutBench.main(args);
         // TestFileSystemPerf.main(args);

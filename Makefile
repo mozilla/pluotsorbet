@@ -23,8 +23,12 @@ CONFIG ?= config/runtests.js
 export CONFIG
 
 # Amount of memory for Emscripten-compiled code.
-ASMJS_TOTAL_MEMORY ?= 128*1024*1024
+ASMJS_TOTAL_MEMORY ?= 32*1024*1024
 export ASMJS_TOTAL_MEMORY
+
+# Initial size of the GC heap
+GC_INITIAL_HEAP_SIZE ?= 0
+export GC_INITIAL_HEAP_SIZE
 
 # Whether or not to package test files like tests.jar and support scripts.
 # Set this to 1 if running tests on a device or building an app for a midlet
@@ -178,7 +182,17 @@ PREPROCESS = python tools/preprocess-1.1.0/lib/preprocess.py -s \
              -D VERSION=$(VERSION) \
              -D ASMJS_TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) \
              $(NULL)
-PREPROCESS_SRCS = $(shell find . -name "*.in" -not -path config/build.js.in)
+PREPROCESS_SRCS = \
+	./bindings.ts.in \
+	./config.ts.in \
+	./index.html.in \
+	./index.js.in \
+	./main.html.in \
+	./manifest.webapp.in \
+	./native.js.in \
+	./style/main.css.in \
+	./tests/index.js.in \
+	$(NULL)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
 all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
@@ -197,7 +211,7 @@ SOOT_VERSION=25Mar2015
 OLD_SOOT_VERSION := $(shell [ -f build_tools/.soot_version ] && cat build_tools/.soot_version)
 $(shell [ "$(SOOT_VERSION)" != "$(OLD_SOOT_VERSION)" ] && echo $(SOOT_VERSION) > build_tools/.soot_version)
 
-CLOSURE_COMPILER_VERSION=j2me.js-v20150428
+CLOSURE_COMPILER_VERSION=pluotsorbet-v20150814
 OLD_CLOSURE_COMPILER_VERSION := $(shell [ -f build_tools/.closure_compiler_version ] && cat build_tools/.closure_compiler_version)
 $(shell [ "$(CLOSURE_COMPILER_VERSION)" != "$(OLD_CLOSURE_COMPILER_VERSION)" ] && echo $(CLOSURE_COMPILER_VERSION) > build_tools/.closure_compiler_version)
 
@@ -234,8 +248,18 @@ ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	BOOTCLASSPATH_SEPARATOR=;
 endif
 
+# The path to the XULRunner executable that is actually used by the test runner.
+# Set this on the command line to run tests against a different version
+# of XULRunner than the default (which is specified by XULRUNNER_PATH),
+# so you can test changes for compatibility with older and newer versions
+# of Gecko than the default.  For example:
+#
+#   make test XULRUNNER=/Applications/Firefox28.app/Contents/MacOS/firefox
+#
+XULRUNNER ?= build_tools/$(XULRUNNER_PATH)
+
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
-	SLIMERJSLAUNCHER=build_tools/$(XULRUNNER_PATH) tests/runtests.py
+	SLIMERJSLAUNCHER=$(XULRUNNER) tests/runtests.py
 
 build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 	rm -rf build_tools/slimerjs*
@@ -314,7 +338,9 @@ endif
 bld/native.js: Makefile vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LIB) jit/relooper/Relooper.cpp jit/relooper/Relooper.h
 	mkdir -p bld
 	rm -f bld/native.js
-	emcc -DNDEBUG -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz -O3 vm/native/native.cpp jit/relooper/Relooper.cpp -o native.raw.js --memory-init-file 0 -s TOTAL_STACK=16*1024 -s TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) \
+	emcc -DNDEBUG -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz -O3 \
+	vm/native/native.cpp jit/relooper/Relooper.cpp -o native.raw.js --memory-init-file 0 \
+	-s TOTAL_STACK=16*1024 -s TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) -DGC_INITIAL_HEAP_SIZE=$(GC_INITIAL_HEAP_SIZE) \
 	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMallocUncollectable", "_gcFree", "_gcMalloc", "_gcMallocAtomic", "_gcRegisterDisappearingLink", "_gcUnregisterDisappearingLink", "_registerFinalizer", "_forceCollection", "_getUsedHeapSize", "_rl_set_output_buffer","_rl_make_output_buffer","_rl_new_block","_rl_set_block_code","_rl_delete_block","_rl_block_add_branch_to","_rl_new_relooper","_rl_delete_relooper","_rl_relooper_add_block","_rl_relooper_calculate","_rl_relooper_render", "_rl_set_asm_js_mode"]' \
 	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts"]' \
 	-s NO_EXIT_RUNTIME=1 -s NO_BROWSER=1 -s NO_FILESYSTEM=1 --post-js jit/relooper/glue.js
@@ -348,20 +374,18 @@ bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	tsc --sourcemap --target ES5 jsc.ts --out bld/jsc.js
 
 # Some scripts use ES6 features, so we have to specify ES6 as the in-language
-# (and ES5 as the out-language, since Closure doesn't recognize ES6 as a valid
-# out-language) in order for Closure to compile them, even though for now
-# we're optimizing "WHITESPACE_ONLY".
+# in order for Closure to compile them, even though for now we're optimizing
+# "WHITESPACE_ONLY".
 bld/main-all.js: $(MAIN_JS_SRCS) build_tools/closure.jar .checksum
-	java -jar build_tools/closure.jar $(CLOSURE_FLAGS) --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --language_out ES6 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
+	java -jar build_tools/closure.jar $(CLOSURE_FLAGS) --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ES6 --create_source_map bld/main-all.js.map --source_map_location_mapping "|../" -O WHITESPACE_ONLY $(MAIN_JS_SRCS) > bld/main-all.js
 	echo '//# sourceMappingURL=main-all.js.map' >> bld/main-all.js
 
 j2me: bld/j2me.js bld/jsc.js
 
-aot: bld/classes.jar.js bld/tests.jar.js
+aot: bld/classes.jar.js
 bld/classes.jar.js: java/classes.jar bld/jsc.js aot-methods.txt build_tools/closure.jar $(JS) .checksum
 	@echo "Compiling ..."
 	js bld/jsc.js -cp java/classes.jar -d -jf java/classes.jar -mff aot-methods.txt > bld/classes.jar.js
-	js bld/jsc.js -cp java/classes.jar -d -jf tests/tests.jar -mff aot-methods.txt > bld/tests.jar.js
 ifeq ($(RELEASE),1)
 	java -jar build_tools/closure.jar --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O SIMPLE bld/classes.jar.js > bld/classes.jar.cc.js \
 		&& mv bld/classes.jar.cc.js bld/classes.jar.js
