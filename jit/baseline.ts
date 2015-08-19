@@ -291,8 +291,11 @@ module J2ME {
     }
 
     compile(): CompiledMethodInfo {
+      var s;
+      s = performance.now();
       this.blockMap = new BlockMap(this.methodInfo);
       this.blockMap.build();
+      baselineCounter && baselineCounter.count("Create BlockMap", 1, performance.now() - s);
       Relooper.cleanup();
       Relooper.init();
 
@@ -368,6 +371,7 @@ module J2ME {
         this.bodyEmitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
       }
 
+      var s = performance.now();
       var blocks = blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
@@ -381,7 +385,7 @@ module J2ME {
         this.blockEmitter.reset();
         this.emitBlockBody(stream, block);
       }
-
+      baselineCounter && baselineCounter.count("Emit Blocks", 1, performance.now() - s);
       if (this.hasUnwindThrow) {
         needsTry = true;
       }
@@ -391,7 +395,9 @@ module J2ME {
       this.bodyEmitter.writeLn("var label=0;");
 
       // Fill scaffolding with block bodies.
+      s = performance.now();
       var scaffolding = Relooper.render(this.entryBlock).split("\n");
+      baselineCounter && baselineCounter.count("Relooper", 1, performance.now() - s);
       for (var i = 0; i < scaffolding.length; i++) {
         var line = scaffolding[i];
         if (line.length > 0 && line[0] === "@") {
