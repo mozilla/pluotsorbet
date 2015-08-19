@@ -619,6 +619,7 @@ module J2ME {
       while (unwound.length) {
         pending.push(unwound.pop());
       }
+      ASM._forceCollection();
     }
 
     /**

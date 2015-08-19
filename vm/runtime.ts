@@ -402,8 +402,8 @@ module J2ME {
       this.CO = this.classObjectAddresses = Object.create(null);
       this.ctx = null;
       this.allCtxs = new Set();
-      this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
-      this._nextHashCode = this._runtimeId << 24;
+      this._runtimeId = RuntimeTemplate._nextRuntimeId++;
+      this._nextHashCode = (this._runtimeId << 24) | 1; // Increase by one so the first hashcode isn't zero.
     }
     
     preInitializeClasses(ctx: Context) {
@@ -773,7 +773,12 @@ module J2ME {
   export function getMonitor(ref: number): any {
     release || assert(typeof ref === "number", "monitor reference is a number");
 
-    return monitorMap[ref] || (monitorMap[ref] = Object.create(null));
+    var hash = i32[ref + Constants.HASH_CODE_OFFSET >> 2];
+    if (hash === Constants.NULL) {
+      hash = i32[ref + Constants.HASH_CODE_OFFSET >> 2] = $.nextHashCode()
+    }
+
+    return monitorMap[hash] || (monitorMap[hash] = Object.create(null));
   }
 
   /**
@@ -1412,17 +1417,27 @@ module J2ME {
     return arrayObject;
   }
 
-  var uncollectableAddress = gcMallocUncollectable(16);
-  var uncollectableMaxNumber = 4;
-  var uncollectableNumber = -1;
+  var uncollectableMaxNumber = 16;
+  var uncollectableAddress = gcMallocUncollectable(uncollectableMaxNumber << 2);
   export function setUncollectable(addr: number) {
-    uncollectableNumber++;
-    release || assert(uncollectableNumber < uncollectableMaxNumber, "Max " + uncollectableMaxNumber + " calls to setUncollectable at a time");
-    i32[(uncollectableAddress >> 2) + uncollectableNumber] = addr;
+    for (var i = 0; i < uncollectableMaxNumber; i++) {
+      var address = (uncollectableAddress >> 2) + i;
+      if (i32[address] === Constants.NULL) {
+        i32[address] = addr;
+        return;
+      }
+    }
+    release || Debug.assertUnreachable("There must be a free slot.");
   }
   export function unsetUncollectable(addr: number) {
-    i32[(uncollectableAddress >> 2) + uncollectableNumber] = 0;
-    uncollectableNumber--;
+    for (var i = 0; i < uncollectableMaxNumber; i++) {
+      var address = (uncollectableAddress >> 2) + i;
+      if (i32[address] === addr) {
+        i32[address] = Constants.NULL;
+        return;
+      }
+    }
+    release || Debug.assertUnreachable("The adddress was not found in the uncollectables.");
   }
 
   export function newArray(elementClassInfo: ClassInfo, size: number): number {
