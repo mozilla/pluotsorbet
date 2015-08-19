@@ -16,7 +16,7 @@ class InvokeVirtual {
     public static void main(String[] args) {
         NextClass foo = new NextClass();
         int x = 0;
-        for (int i = 0; i < 100000000; i++) {
+        for (int i = 0; i < 20000000; i++) {
             x += foo.method(x);
             x += foo.method(x);
             x += foo.method(x);
