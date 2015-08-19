@@ -1394,178 +1394,130 @@ module J2ME {
           case Bytecodes.IFEQ:
             if (i32[--sp] === 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFNE:
             if (i32[--sp] !== 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFLT:
             if (i32[--sp] < 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFGE:
             if (i32[--sp] >= 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFGT:
             if (i32[--sp] > 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFLE:
             if (i32[--sp] <= 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPEQ:
             if (i32[--sp] === i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPNE:
             if (i32[--sp] !== i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPLT:
             if (i32[--sp] > i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPGE:
             if (i32[--sp] <= i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPGT:
             if (i32[--sp] < i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPLE:
             if (i32[--sp] >= i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ACMPEQ:
             if (i32[--sp] === i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ACMPNE:
             if (i32[--sp] !== i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFNULL:
             if (i32[--sp] === Constants.NULL) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFNONNULL:
             if (i32[--sp] !== Constants.NULL) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.GOTO:
             jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
@@ -1675,7 +1627,7 @@ module J2ME {
                 }
               }
             }
-            pc = opPC + jumpOffset;
+            pc = opPC + jumpOffset | 0;
             continue;
           //        case Bytecodes.GOTO_W:
           //          frame.pc = frame.read32Signed() - 1;
@@ -2147,7 +2099,7 @@ module J2ME {
 
             index = code[pc++] << 8 | code[pc++];
             if (op === Bytecodes.INVOKEINTERFACE) {
-              pc += 2; // Args Number & Zero
+              pc = pc + 2 | 0; // Args Number & Zero
             }
             isStatic = (op === Bytecodes.INVOKESTATIC);
 
