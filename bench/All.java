@@ -15,6 +15,9 @@ class All {
         Arithmetic.main(args);
         System.out.println(">> Arithmetic: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
 
+        Compiler.main(args);
+        System.out.println(">> Compiler: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
+
         BouncyCastleSHA256.main(args);
         System.out.println(">> BouncyCastleSHA256: " + (JVM.monotonicTimeMillis() - start)); start = JVM.monotonicTimeMillis();
 
