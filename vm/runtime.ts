@@ -628,11 +628,11 @@ module J2ME {
 
       if (!classInfo.isInterface) {
         // Pre-allocate linkedVTableMap.
-        ensureDenseObjectMapLength(classIdToLinkedVTableMap, classInfo.id + 1);
-        classIdToLinkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
+        ensureDenseObjectMapLength(linkedVTableMap, classInfo.id + 1);
+        ensureDenseObjectMapLength(flatLinkedVTableMap, (classInfo.id + 1) << Constants.LOG_MAX_FLAT_VTABLE_SIZE);
+        linkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
       }
     }
-
   }
 
   export enum VMState {
@@ -682,7 +682,9 @@ module J2ME {
     INITIAL_MAX_METHOD_ID = 511,
 
     MAX_CLASS_ID = 4095,
-    INITIAL_MAX_CLASS_ID = 511
+    INITIAL_MAX_CLASS_ID = 511,
+
+    LOG_MAX_FLAT_VTABLE_SIZE = 8
   }
 
   export class Runtime extends RuntimeTemplate {
@@ -770,7 +772,16 @@ module J2ME {
   /**
    * Maps classIds to vTables containing JS functions.
    */
-  export var classIdToLinkedVTableMap = [];
+  export var linkedVTableMap = [];
+
+  /**
+   * Flat map of classId and vTableIndex to JS functions. This allows the compiler to
+   * emit a single memory load to lookup a vTable entry 
+   *  flatLinkedVTableMap[classId << LOG_MAX_FLAT_VTABLE_SIZE + vTableIndex]
+   * instead of the slower more general
+   *  linkedVTableMap[classId][vTableIndex]
+   */
+  export var flatLinkedVTableMap = [];
 
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
@@ -1070,11 +1081,16 @@ module J2ME {
   export function getLinkedVirtualMethodById(classId: number, vTableIndex: number) {
     var methodInfo = classIdToClassInfoMap[classId].vTable[vTableIndex];
     var fn = getLinkedMethod(methodInfo);
-    // Only cache compiled methods in the |linkedVTableMap|.
+    // Only cache compiled methods in the |linkedVTableMap| and |flatLinkedVTableMap|.
     if (methodInfo.state === MethodState.Compiled) {
-      var vTable = classIdToLinkedVTableMap[classId];
+      var vTable = linkedVTableMap[classId];
       release || Debug.assertNonDictionaryModeObject(vTable);
       vTable[vTableIndex] = fn;
+      // Only cache methods in the |flatLinkedVTableMap| if there is room.
+      if (vTableIndex < (1 << Constants.LOG_MAX_FLAT_VTABLE_SIZE)) {
+        release || Debug.assertNonDictionaryModeObject(flatLinkedVTableMap);
+        flatLinkedVTableMap[(classId << Constants.LOG_MAX_FLAT_VTABLE_SIZE) + vTableIndex] = fn;
+      }
     }
     return fn;
   }
@@ -2049,7 +2065,8 @@ var MI = J2ME.methodIdToMethodInfoMap;
 var LM = J2ME.linkedMethods;
 var GLM = J2ME.getLinkedMethodById;
 var GLVM = J2ME.getLinkedVirtualMethodById;
-var VT = J2ME.classIdToLinkedVTableMap;
+var VT = J2ME.linkedVTableMap;
+var FT = J2ME.flatLinkedVTableMap;
 
 var CIC = J2ME.classInitCheck;
 var GH = J2ME.getHandle;

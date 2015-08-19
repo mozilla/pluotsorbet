@@ -913,7 +913,11 @@ module J2ME {
           call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
           var classId = "i32[(" + object + "|0)>>2]";
-          call = "(VT[" + classId + "][" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          if (methodInfo.vTableIndex < (1 << Constants.LOG_MAX_FLAT_VTABLE_SIZE)) {
+            call = "(FT[(" + classId + "<<" + Constants.LOG_MAX_FLAT_VTABLE_SIZE + ")+" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          } else {
+            call = "(VT[" + classId + "][" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          }
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
           var objClass = "CI[i32[(" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ")>>2]]";
           methodId = objClass + ".iTable['" + methodInfo.mangledName + "'].id";
