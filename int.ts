@@ -777,10 +777,10 @@ module J2ME {
 
     var code = mi ? mi.codeAttribute.code : null;
 
-    var fp = thread.fp;
-    var lp = fp - maxLocals;
-    var sp = thread.sp;
-    var opPC = 0, pc = thread.pc;
+    var fp = thread.fp | 0;
+    var lp = fp - maxLocals | 0;
+    var sp = thread.sp | 0;
+    var opPC = 0, pc = thread.pc | 0;
 
     var tag: TAGS;
     var type, size;
@@ -1620,7 +1620,7 @@ module J2ME {
                     return;
                   }
                   thread.popMarkerFrame(FrameType.Native);
-                  sp = thread.sp;
+                  sp = thread.sp | 0;
 
                   release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
 
@@ -1651,7 +1651,7 @@ module J2ME {
                   type = i32[fp + FrameLayout.FrameTypeOffset];
 
                   maxLocals = mi.codeAttribute.max_locals;
-                  lp = fp - maxLocals;
+                  lp = fp - maxLocals | 0;
                   ci = mi.classInfo;
                   cp = ci.constantPool;
                   code = mi.codeAttribute.code;
@@ -2072,7 +2072,7 @@ module J2ME {
               $.ctx.monitorExit(getMonitor(i32[fp + FrameLayout.MonitorOffset]));
             }
             opPC = i32[fp + FrameLayout.CallerRAOffset];
-            sp = fp - maxLocals;
+            sp = fp - maxLocals | 0;
             fp = i32[fp + FrameLayout.CallerFPOffset];
             release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
             mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
@@ -2097,8 +2097,8 @@ module J2ME {
               } else if (type === FrameType.PushPendingFrames) {
                 thread.set(fp, sp, opPC);
                 thread.pushPendingNativeFrames();
-                fp = thread.fp;
-                sp = thread.sp;
+                fp = thread.fp | 0;
+                sp = thread.sp | 0;
                 opPC = pc = thread.pc;
                 type = i32[fp + FrameLayout.FrameTypeOffset];
                 mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
@@ -2106,8 +2106,8 @@ module J2ME {
               } else if (type === FrameType.Interrupt) {
                 thread.set(fp, sp, opPC);
                 thread.popMarkerFrame(FrameType.Interrupt);
-                fp = thread.fp;
-                sp = thread.sp;
+                fp = thread.fp | 0;
+                sp = thread.sp | 0;
                 opPC = pc = thread.pc;
                 type = i32[fp + FrameLayout.FrameTypeOffset];
                 mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
@@ -2119,7 +2119,7 @@ module J2ME {
             }
             release || assert(type === FrameType.Interpreter, "Cannot resume in frame type: " + FrameType[type]);
             maxLocals = mi.codeAttribute.max_locals;
-            lp = fp - maxLocals;
+            lp = fp - maxLocals | 0;
             release || traceWriter && traceWriter.outdent();
             release || traceWriter && traceWriter.writeLn("<< I " + lastMI.implKey);
             ci = mi.classInfo;
@@ -2318,9 +2318,9 @@ module J2ME {
 
             var callerFPOffset = fp;
             // Reserve space for non-parameter locals.
-            lp = sp - mi.argumentSlots;
-            fp = lp + maxLocals;
-            sp = fp + FrameLayout.CallerSaveSize;
+            lp = sp - mi.argumentSlots | 0;
+            fp = lp + maxLocals | 0;
+            sp = fp + FrameLayout.CallerSaveSize | 0;
 
             // Caller saved values.
             i32[fp + FrameLayout.CallerRAOffset] = opPC;
@@ -2376,13 +2376,13 @@ module J2ME {
         thread.exceptionUnwind(e);
 
         // Load thread state after exception unwind.
-        fp = thread.fp;
-        sp = thread.sp;
-        pc = thread.pc;
+        fp = thread.fp | 0;
+        sp = thread.sp | 0;
+        pc = thread.pc | 0;
 
         mi = thread.frame.methodInfo;
         maxLocals = mi.codeAttribute.max_locals;
-        lp = fp - maxLocals;
+        lp = fp - maxLocals | 0;
         ci = mi.classInfo;
         cp = ci.constantPool;
         code = mi.codeAttribute.code;
