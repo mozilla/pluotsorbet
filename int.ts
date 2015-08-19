@@ -831,13 +831,13 @@ module J2ME {
           case Bytecodes.ICONST_3:
           case Bytecodes.ICONST_4:
           case Bytecodes.ICONST_5:
-            i32[sp] = op - Bytecodes.ICONST_0;
+            i32[sp] = op - Bytecodes.ICONST_0 | 0;
             sp = sp + 1 | 0;
             continue;
           case Bytecodes.FCONST_0:
           case Bytecodes.FCONST_1:
           case Bytecodes.FCONST_2:
-            f32[sp] = op - Bytecodes.FCONST_0;
+            f32[sp] = op - Bytecodes.FCONST_0 | 0;
             sp = sp + 1 | 0;
             continue;
           case Bytecodes.DCONST_0:
@@ -854,7 +854,7 @@ module J2ME {
             continue;
           case Bytecodes.LCONST_0:
           case Bytecodes.LCONST_1:
-            i32[sp] = op - Bytecodes.LCONST_0;
+            i32[sp] = op - Bytecodes.LCONST_0 | 0;
             sp = sp + 1 | 0;
             i32[sp] = 0;
             sp = sp + 1 | 0;
