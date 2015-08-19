@@ -142,18 +142,12 @@ module J2ME {
   }
 
   export const enum FrameLayout {
-    /**
-     * Stored in the lower 28 bits.
-     */
-    CalleeMethodInfoOffset      = 4,
-    /**
-     * Stored in the upper 4 bits.
-     */
-    FrameTypeOffset             = 2,
-    CallerFPOffset              = 1,
-    CallerRAOffset              = 0,
-    MonitorOffset               = 3,
-    CallerSaveSize              = 5
+    CallerRAOffset         = 0,
+    CallerFPOffset         = 1,
+    FrameTypeOffset        = 2,
+    MonitorOffset          = 3,
+    CalleeMethodInfoOffset = 4,
+    CallerSaveSize         = 5
   }
 
   export class FrameView {
