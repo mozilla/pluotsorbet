@@ -994,22 +994,22 @@ module J2ME {
           this.blockEmitter.writeLn("i8[" + base + "+" + index + "]=" + l + ";");
           return;
         case Kind.Char:
-          this.blockEmitter.writeLn("u16[(" + base + ">>1)+" + index + "]=" + l + ";");
+          this.blockEmitter.writeLn("u16[(" + base + ">>1)+" + index + "|0]=" + l + ";");
           return;
         case Kind.Short:
-          this.blockEmitter.writeLn("i16[(" + base + ">>1)+" + index + "]=" + l + ";");
+          this.blockEmitter.writeLn("i16[(" + base + ">>1)+" + index + "|0]=" + l + ";");
           return;
         case Kind.Int:
         case Kind.Float:
         case Kind.Reference:
-          this.blockEmitter.writeLn("i32[(" + base + ">>2)+" + index + "]=" + l + ";");
+          this.blockEmitter.writeLn("i32[(" + base + ">>2)+" + index + "|0]=" + l + ";");
           return;
         case Kind.Long:
         case Kind.Double:
           this.needsVariable("ea");
-          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1);");
+          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1)|0;");
           this.blockEmitter.writeLn("i32[ea]=" + l + ";");
-          this.blockEmitter.writeLn("i32[ea+1]=" + h + ";");
+          this.blockEmitter.writeLn("i32[ea+1|0]=" + h + ";");
           return;
         default:
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
@@ -1026,25 +1026,25 @@ module J2ME {
       var base = array + "+" + Constants.ARRAY_HDR_SIZE;
       switch (kind) {
         case Kind.Byte:
-          this.emitPush(kind, "i8[" + base + "+" + index + "]");
+          this.emitPush(kind, "i8[" + base + "+" + index + "|0]");
           break;
         case Kind.Char:
-          this.emitPush(kind, "u16[(" + base + ">>1)+" + index + "]");
+          this.emitPush(kind, "u16[(" + base + ">>1)+" + index + "|0]");
           break;
         case Kind.Short:
-          this.emitPush(kind, "i16[(" + base + ">>1)+" + index + "]");
+          this.emitPush(kind, "i16[(" + base + ">>1)+" + index + "|0]");
           break;
         case Kind.Int:
         case Kind.Float:
         case Kind.Reference:
-          this.emitPush(kind, "i32[(" + base + ">>2)+" + index + "]");
+          this.emitPush(kind, "i32[(" + base + ">>2)+" + index + "|0]");
           break;
         case Kind.Long:
         case Kind.Double:
           this.needsVariable("ea");
-          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1);");
+          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1)|0;");
           this.emitPush(kind, "i32[ea]");
-          this.emitPush(kind, "i32[ea+1]");
+          this.emitPush(kind, "i32[ea+1|0]");
           break;
         default:
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
