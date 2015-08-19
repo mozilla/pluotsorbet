@@ -847,13 +847,13 @@ module J2ME {
     }
 
     runtimeClass(classInfo: ClassInfo) {
-      this.needsVariable("SA", "$.SA");
-      return "SA[" + classInfo.id + "]";
+      this.needsVariable("sa", "$.SA");
+      return "sa[" + classInfo.id + "]";
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
-      this.needsVariable("CO", "$.CO");
-      return "CO[" + classInfo.id + "]";
+      this.needsVariable("co", "$.CO");
+      return "co[" + classInfo.id + "]";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
@@ -870,7 +870,8 @@ module J2ME {
           (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.");
         } else {
           (emitDebugInfoComments || baselineCounter) && (message = "ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("$.I[" + classInfo.id + "] || CIC(" + classConstant(classInfo) + ");");
+          this.needsVariable("ci", "$.I");
+          this.blockEmitter.writeLn("ci[" + classInfo.id + "] || CIC(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
