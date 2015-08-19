@@ -20,10 +20,17 @@ var jsGlobal = (function() { return this || (1, eval)('this'); })();
 var inBrowser = typeof pc2line === "undefined";
 
 
+declare var flagsOf;
 declare var putstr;
 declare var printErr;
 
 declare var dateNow: () => number;
+
+if (!jsGlobal.flagsOf) {
+  jsGlobal.flagsOf = function () {
+    return 0;
+  };
+}
 
 if (!jsGlobal.performance) {
   jsGlobal.performance = {};
@@ -106,6 +113,14 @@ module J2ME {
 
     export function abstractMethod(message: string) {
       Debug.assert(false, "Abstract Method " + message);
+    }
+
+    /**
+     * Ensures that the object is not in dictionary mode. To use this, you'll need a
+     * special build of SpiderMonkey, ask mbx.
+     */
+    export function assertNonDictionaryModeObject(object: Object) {
+      Debug.assert((flagsOf(object) & 1) === 0, "Object is in dictionary mode.");
     }
 
     export function unexpected(message?: any) {

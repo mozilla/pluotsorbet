@@ -71,6 +71,11 @@ module J2ME {
   export var traceWriter = null;
 
   /**
+   * Traces method OSR events.
+   */
+  export var osrWriter = null;
+
+  /**
    * Traces bytecode execution.
    */
   export var traceStackWriter = null;
@@ -386,8 +391,8 @@ module J2ME {
       this.waiting = [];
       this.threadCount = 0;
       this.I = this.initialized = new Int8Array(Constants.MAX_CLASS_ID);
-      this.SA = this.staticObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
-      this.CO = this.classObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
+      this.SA = this.staticObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID + 1);
+      this.CO = this.classObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID + 1);
       this.ctx = null;
       this.allCtxs = new Set();
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
@@ -623,10 +628,11 @@ module J2ME {
 
       if (!classInfo.isInterface) {
         // Pre-allocate linkedVTableMap.
-        classIdToLinkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
+        ensureDenseObjectMapLength(linkedVTableMap, classInfo.id + 1);
+        ensureDenseObjectMapLength(flatLinkedVTableMap, (classInfo.id + 1) << Constants.LOG_MAX_FLAT_VTABLE_SIZE);
+        linkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
       }
     }
-
   }
 
   export enum VMState {
@@ -672,8 +678,13 @@ module J2ME {
     ARRAY_LENGTH_OFFSET = 4,
     NULL = 0,
 
-    MAX_CLASS_ID = 4096,
-    INITIAL_MAX_CLASS_ID = 512
+    MAX_METHOD_ID = 16383,
+    INITIAL_MAX_METHOD_ID = 511,
+
+    MAX_CLASS_ID = 4095,
+    INITIAL_MAX_CLASS_ID = 511,
+
+    LOG_MAX_FLAT_VTABLE_SIZE = 8
   }
 
   export class Runtime extends RuntimeTemplate {
@@ -734,14 +745,43 @@ module J2ME {
     }
   }
 
-  export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
-  export var methodIdToMethodInfoMap: Map<number, MethodInfo> = Object.create(null);
-  export var linkedMethods: Map<number, Function> = Object.create(null);
+  export var classIdToClassInfoMap = [];
+  export var methodIdToMethodInfoMap = [];
+  export var linkedMethods = [];
+
+  function ensureDenseObjectMapLength(array: Array<Object>, length: number) {
+    while (array.length < length) {
+      array.push(null);
+    }
+    release || Debug.assertNonDictionaryModeObject(array);
+  }
+
+  export function registerClassId(classId: number, classInfo: ClassInfo) {
+    release || assert(phase === ExecutionPhase.Compiler || classId <= Constants.MAX_CLASS_ID, "Maximum class id was exceeded, " + classId);
+    ensureDenseObjectMapLength(classIdToClassInfoMap, classId + 1);
+    classIdToClassInfoMap[classId] = classInfo;
+  }
+
+  export function registerMethodId(methodId: number, methodInfo: MethodInfo) {
+    release || assert(phase === ExecutionPhase.Compiler || methodId <= Constants.MAX_METHOD_ID, "Maximum method id was exceeded, " + methodId);
+    ensureDenseObjectMapLength(methodIdToMethodInfoMap, methodId + 1);
+    ensureDenseObjectMapLength(linkedMethods, methodId + 1);
+    methodIdToMethodInfoMap[methodId] = methodInfo;
+  }
 
   /**
    * Maps classIds to vTables containing JS functions.
    */
-  export var classIdToLinkedVTableMap = ArrayUtilities.makeDenseArray(Constants.MAX_CLASS_ID + 1, null);
+  export var linkedVTableMap = [];
+
+  /**
+   * Flat map of classId and vTableIndex to JS functions. This allows the compiler to
+   * emit a single memory load to lookup a vTable entry 
+   *  flatLinkedVTableMap[classId << LOG_MAX_FLAT_VTABLE_SIZE + vTableIndex]
+   * instead of the slower more general
+   *  linkedVTableMap[classId][vTableIndex]
+   */
+  export var flatLinkedVTableMap = [];
 
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
@@ -1039,9 +1079,19 @@ module J2ME {
   }
 
   export function getLinkedVirtualMethodById(classId: number, vTableIndex: number) {
-    var fn = getLinkedMethod(classIdToClassInfoMap[classId].vTable[vTableIndex]);
-    // Cache linked method in the |linkedVTableMap|.
-    classIdToLinkedVTableMap[classId][vTableIndex] = fn;
+    var methodInfo = classIdToClassInfoMap[classId].vTable[vTableIndex];
+    var fn = getLinkedMethod(methodInfo);
+    // Only cache compiled methods in the |linkedVTableMap| and |flatLinkedVTableMap|.
+    if (methodInfo.state === MethodState.Compiled) {
+      var vTable = linkedVTableMap[classId];
+      release || Debug.assertNonDictionaryModeObject(vTable);
+      vTable[vTableIndex] = fn;
+      // Only cache methods in the |flatLinkedVTableMap| if there is room.
+      if (vTableIndex < (1 << Constants.LOG_MAX_FLAT_VTABLE_SIZE)) {
+        release || Debug.assertNonDictionaryModeObject(flatLinkedVTableMap);
+        flatLinkedVTableMap[(classId << Constants.LOG_MAX_FLAT_VTABLE_SIZE) + vTableIndex] = fn;
+      }
+    }
     return fn;
   }
 
@@ -1204,7 +1254,8 @@ module J2ME {
 
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
-    var fn = new Function(args.join(','), body);
+    // var fn = new Function(args.join(','), body);
+    var fn = new Function("return function fn_" + methodInfo.implKey.replace(/\W+/g, "_") + "(" + args.join(",") + "){ " + body + "}")();
     leaveTimeline("Eval Compiled Code");
 
     methodInfo.state = MethodState.Compiled;
@@ -1270,7 +1321,7 @@ module J2ME {
 
   export function createBailoutFrame(methodId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
     var address = gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
-    release || assert(typeof methodId === "number" && methodId in methodIdToMethodInfoMap, "Must be valid method info.");
+    release || assert(typeof methodId === "number" && methodIdToMethodInfoMap[methodId], "Must be valid method info.");
     i32[address + BailoutFrameLayout.MethodIdOffset >> 2] = methodId;
     i32[address + BailoutFrameLayout.PCOffset >> 2] = pc;
     i32[address + BailoutFrameLayout.LocalCountOffset >> 2] = localCount;
@@ -2014,7 +2065,8 @@ var MI = J2ME.methodIdToMethodInfoMap;
 var LM = J2ME.linkedMethods;
 var GLM = J2ME.getLinkedMethodById;
 var GLVM = J2ME.getLinkedVirtualMethodById;
-var VT = J2ME.classIdToLinkedVTableMap;
+var VT = J2ME.linkedVTableMap;
+var FT = J2ME.flatLinkedVTableMap;
 
 var CIC = J2ME.classInitCheck;
 var GH = J2ME.getHandle;

@@ -126,7 +126,7 @@ module J2ME {
     private _buffer: string [];
     private _indent = 0;
     private _emitIndent;
-    constructor(emitIndent: boolean = true) {
+    constructor(emitIndent: boolean) {
       this._buffer = [];
       this._emitIndent = emitIndent;
     }
@@ -157,8 +157,7 @@ module J2ME {
       }
       this._buffer.push(s);
     }
-    writeLns(s: string) {
-      var lines = s.split("\n");
+    writeLns(lines: string []) {
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
         if (line.length > 0) {
@@ -180,6 +179,9 @@ module J2ME {
     }
     toString(): string {
       return this._buffer.join("\n");
+    }
+    copyLines(): string [] {
+      return this._buffer.slice();
     }
   }
 
@@ -242,6 +244,7 @@ module J2ME {
     private target: CompilationTarget;
     private bodyEmitter: Emitter;
     private blockEmitter: Emitter;
+    private blockBodies: string [][];
     private blockMap: BlockMap;
     private methodInfo: MethodInfo;
     private parameters: string [];
@@ -269,6 +272,7 @@ module J2ME {
     private hasUnwindThrow: boolean;
 
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
+      this.blockBodies = [];
       this.methodInfo = methodInfo;
       this.variables = {};
       this.pc = 0;
@@ -287,8 +291,11 @@ module J2ME {
     }
 
     compile(): CompiledMethodInfo {
+      var s;
+      s = performance.now();
       this.blockMap = new BlockMap(this.methodInfo);
       this.blockMap.build();
+      baselineCounter && baselineCounter.count("Create BlockMap", 1, performance.now() - s);
       Relooper.cleanup();
       Relooper.init();
 
@@ -364,6 +371,7 @@ module J2ME {
         this.bodyEmitter.writeLn("J2ME.baselineMethodCounter.count(\"" + this.methodInfo.implKey + "\");");
       }
 
+      var s = performance.now();
       var blocks = blockMap.blocks;
       for (var i = 0; i < blocks.length; i++) {
         var block = blocks[i];
@@ -377,7 +385,7 @@ module J2ME {
         this.blockEmitter.reset();
         this.emitBlockBody(stream, block);
       }
-
+      baselineCounter && baselineCounter.count("Emit Blocks", 1, performance.now() - s);
       if (this.hasUnwindThrow) {
         needsTry = true;
       }
@@ -385,7 +393,19 @@ module J2ME {
       needsWhile && this.bodyEmitter.enter("while(1){");
       needsTry && this.bodyEmitter.enter("try{");
       this.bodyEmitter.writeLn("var label=0;");
-      this.bodyEmitter.writeLns(Relooper.render(this.entryBlock));
+
+      // Fill scaffolding with block bodies.
+      s = performance.now();
+      var scaffolding = Relooper.render(this.entryBlock).split("\n");
+      baselineCounter && baselineCounter.count("Relooper", 1, performance.now() - s);
+      for (var i = 0; i < scaffolding.length; i++) {
+        var line = scaffolding[i];
+        if (line.length > 0 && line[0] === "@") {
+          this.bodyEmitter.writeLns(this.blockBodies[line.substring(1) | 0]);
+        } else {
+          this.bodyEmitter.writeLn(scaffolding[i]);
+        }
+      }
 
       emitCompilerAssertions && this.bodyEmitter.writeLn("J2ME.Debug.assert(false, 'Invalid PC: ' + pc)");
 
@@ -457,7 +477,13 @@ module J2ME {
       } else {
         // TODO: ...
       }
-      Relooper.setBlockCode(block.relooperBlockID, this.blockEmitter.toString());
+      // Instead of setting the relooper block code to the generated source,
+      // we set it to the block ID which we later replace with the source.
+      // This is done to avoid joining and serializing strings to the asm.js
+      // heap for use in the relooper, and then converting them back to JS
+      // strings later.
+      Relooper.setBlockCode(block.relooperBlockID, "@" + block.blockID);
+      this.blockBodies[block.blockID] = this.blockEmitter.copyLines();
     }
 
     private emitPrologue() {
@@ -821,11 +847,13 @@ module J2ME {
     }
 
     runtimeClass(classInfo: ClassInfo) {
-      return "$.SA[" + classInfo.id + "]";
+      this.needsVariable("sa", "$.SA");
+      return "sa[" + classInfo.id + "]";
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
-      return "$.CO[" + classInfo.id + "]";
+      this.needsVariable("co", "$.CO");
+      return "co[" + classInfo.id + "]";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
@@ -842,7 +870,8 @@ module J2ME {
           (emitDebugInfoComments || baselineCounter) && (message = "Optimized ClassInitializationCheck: " + classInfo.getClassNameSlow() + ", base access.");
         } else {
           (emitDebugInfoComments || baselineCounter) && (message = "ClassInitializationCheck: " + classInfo.getClassNameSlow());
-          this.blockEmitter.writeLn("$.I[" + classInfo.id + "] || CIC(" + classConstant(classInfo) + ");");
+          this.needsVariable("ci", "$.I");
+          this.blockEmitter.writeLn("ci[" + classInfo.id + "] || CIC(" + classConstant(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
@@ -885,7 +914,11 @@ module J2ME {
           call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
           var classId = "i32[(" + object + "|0)>>2]";
-          call = "(VT[" + classId + "][" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          if (methodInfo.vTableIndex < (1 << Constants.LOG_MAX_FLAT_VTABLE_SIZE)) {
+            call = "(FT[(" + classId + "<<" + Constants.LOG_MAX_FLAT_VTABLE_SIZE + ")+" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          } else {
+            call = "(VT[" + classId + "][" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          }
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
           var objClass = "CI[i32[(" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ")>>2]]";
           methodId = objClass + ".iTable['" + methodInfo.mangledName + "'].id";
@@ -966,22 +999,22 @@ module J2ME {
           this.blockEmitter.writeLn("i8[" + base + "+" + index + "]=" + l + ";");
           return;
         case Kind.Char:
-          this.blockEmitter.writeLn("u16[(" + base + ">>1)+" + index + "]=" + l + ";");
+          this.blockEmitter.writeLn("u16[(" + base + ">>1)+" + index + "|0]=" + l + ";");
           return;
         case Kind.Short:
-          this.blockEmitter.writeLn("i16[(" + base + ">>1)+" + index + "]=" + l + ";");
+          this.blockEmitter.writeLn("i16[(" + base + ">>1)+" + index + "|0]=" + l + ";");
           return;
         case Kind.Int:
         case Kind.Float:
         case Kind.Reference:
-          this.blockEmitter.writeLn("i32[(" + base + ">>2)+" + index + "]=" + l + ";");
+          this.blockEmitter.writeLn("i32[(" + base + ">>2)+" + index + "|0]=" + l + ";");
           return;
         case Kind.Long:
         case Kind.Double:
           this.needsVariable("ea");
-          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1);");
+          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1)|0;");
           this.blockEmitter.writeLn("i32[ea]=" + l + ";");
-          this.blockEmitter.writeLn("i32[ea+1]=" + h + ";");
+          this.blockEmitter.writeLn("i32[ea+1|0]=" + h + ";");
           return;
         default:
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
@@ -998,25 +1031,25 @@ module J2ME {
       var base = array + "+" + Constants.ARRAY_HDR_SIZE;
       switch (kind) {
         case Kind.Byte:
-          this.emitPush(kind, "i8[" + base + "+" + index + "]");
+          this.emitPush(kind, "i8[" + base + "+" + index + "|0]");
           break;
         case Kind.Char:
-          this.emitPush(kind, "u16[(" + base + ">>1)+" + index + "]");
+          this.emitPush(kind, "u16[(" + base + ">>1)+" + index + "|0]");
           break;
         case Kind.Short:
-          this.emitPush(kind, "i16[(" + base + ">>1)+" + index + "]");
+          this.emitPush(kind, "i16[(" + base + ">>1)+" + index + "|0]");
           break;
         case Kind.Int:
         case Kind.Float:
         case Kind.Reference:
-          this.emitPush(kind, "i32[(" + base + ">>2)+" + index + "]");
+          this.emitPush(kind, "i32[(" + base + ">>2)+" + index + "|0]");
           break;
         case Kind.Long:
         case Kind.Double:
           this.needsVariable("ea");
-          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1);");
+          this.blockEmitter.writeLn("ea=(" + base + ">>2)+(" + index + "<<1)|0;");
           this.emitPush(kind, "i32[ea]");
-          this.emitPush(kind, "i32[ea+1]");
+          this.emitPush(kind, "i32[ea+1|0]");
           break;
         default:
           Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);

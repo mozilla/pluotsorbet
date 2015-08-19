@@ -863,7 +863,7 @@ module J2ME {
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
       this.id = MethodInfo.nextId++;
-      methodIdToMethodInfoMap[this.id] = this;
+      registerMethodId(this.id, this);
       this.index = index;
       this.accessFlags = this.u2(0);
       this.classInfo = classInfo;
@@ -1096,7 +1096,7 @@ module J2ME {
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
       this.id = ClassInfo.nextId++;
-      release || assert(phase === ExecutionPhase.Compiler || this.id <= Constants.MAX_CLASS_ID, "Maximum class id was exceeded, " + this.id);
+      registerClassId(this.id, this);
       if (!buffer) {
         sealObjects && Object.seal(this);
         return;
