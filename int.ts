@@ -117,28 +117,28 @@ module J2ME {
     /**
      * Normal interpreter frame.
      */
-    Interpreter = 0x00000000,
+    Interpreter = 0x0,
 
     /**
      * Marks the beginning of a sequence of interpreter frames. If we see this
      * frame when returning we need to exit the interpreter loop.
      */
-    ExitInterpreter = 0x10000000,
+    ExitInterpreter = 0x1,
 
     /**
      * Native frames are pending and need to be pushed on the stack.
      */
-    PushPendingFrames = 0x20000000,
+    PushPendingFrames = 0x2,
 
     /**
      * Marks the beginning of frames that were not invoked by the previous frame.
      */
-    Interrupt = 0x30000000,
+    Interrupt = 0x3,
 
     /**
      * Marks the beginning of native/compiled code called from the interpreter.
      */
-    Native = 0x40000000
+    Native = 0x4
   }
 
   export const enum FrameLayout {
