@@ -12,8 +12,20 @@ interface Math {
 }
 
 interface CompiledMethodCache {
-  get(key: string): { key: string; source: string; referencedClasses: string[]; };
-  put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise<any>;
+  get(key: string): {
+    key: string;
+    args: string[];
+    body: string;
+    referencedClasses: string[];
+    onStackReplacementEntryPoints: any;
+  };
+  put(obj: {
+    key: string;
+    args: string[];
+    body: string;
+    referencedClasses: string[];
+    onStackReplacementEntryPoints: any;
+  }): Promise<any>;
 }
 
 interface AOTMetaData {
@@ -63,7 +75,7 @@ module J2ME {
   /**
    * Turns on caching of JIT-compiled methods.
    */
-  export var enableCompiledMethodCache = false && typeof CompiledMethodCache !== "undefined";
+  export var enableCompiledMethodCache = true && typeof CompiledMethodCache !== "undefined";
 
   /**
    * Traces method execution.
@@ -359,13 +371,13 @@ module J2ME {
     status: RuntimeStatus;
     waiting: any [];
     threadCount: number;
-    initialized: Int8Array;
-    staticObjectAddresses: Int32Array;
-    classObjectAddresses: Int32Array;
+    initialized: Map<number, boolean>;
+    staticObjectAddresses: Map<number, number>;
+    classObjectAddresses: Map<number, number>;
 
-    I: Int8Array; // Compiler alias for initialized
-    SA: Int32Array; // Compiler alias for staticObjectAddresses
-    CO: Int32Array; // Compiler alias for classObjectAddresses
+    I: Map<number, boolean>; // Compiler alias for initialized
+    SA: Map<number, number>; // Compiler alias for staticObjectAddresses
+    CO: Map<number, number>; // Compiler alias for classObjectAddresses
 
     ctx: Context;
     allCtxs: Set<Context>;
@@ -385,9 +397,9 @@ module J2ME {
       this.status = RuntimeStatus.New;
       this.waiting = [];
       this.threadCount = 0;
-      this.I = this.initialized = new Int8Array(Constants.MAX_CLASS_ID);
-      this.SA = this.staticObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
-      this.CO = this.classObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID);
+      this.I = this.initialized = Object.create(null);
+      this.SA = this.staticObjectAddresses = Object.create(null);
+      this.CO = this.classObjectAddresses = Object.create(null);
       this.ctx = null;
       this.allCtxs = new Set();
       this._runtimeId = RuntimeTemplate._nextRuntimeId ++;
@@ -418,7 +430,7 @@ module J2ME {
      * different threads that need trigger the Class.initialize() code so they block.
      */
     setClassInitialized(classId: number) {
-      this.initialized[classId] = 1;
+      this.initialized[classId] = true;
     }
 
     getClassObjectAddress(classInfo: ClassInfo): number {
@@ -427,9 +439,6 @@ module J2ME {
         var addr = allocUncollectableObject(CLASSES.java_lang_Class);
         var handle = <java.lang.Class>getHandle(addr);
         handle.vmClass = id;
-        // Ensure that maps are large enough.
-        this.SA = this.staticObjectAddresses = ArrayUtilities.ensureInt32ArrayLength(this.staticObjectAddresses, id + 1);
-        this.CO = this.classObjectAddresses = ArrayUtilities.ensureInt32ArrayLength(this.classObjectAddresses, id + 1);
         this.classObjectAddresses[id] = addr;
         this.staticObjectAddresses[id] = gcMallocUncollectable(J2ME.Constants.OBJ_HDR_SIZE + classInfo.sizeOfStaticFields);
         linkWriter && linkWriter.writeLn("Initializing Class Object For: " + classInfo.getClassNameSlow());
@@ -670,10 +679,7 @@ module J2ME {
     ARRAY_HDR_SIZE = 8,
 
     ARRAY_LENGTH_OFFSET = 4,
-    NULL = 0,
-
-    MAX_CLASS_ID = 4096,
-    INITIAL_MAX_CLASS_ID = 512
+    NULL = 0
   }
 
   export class Runtime extends RuntimeTemplate {
@@ -741,7 +747,7 @@ module J2ME {
   /**
    * Maps classIds to vTables containing JS functions.
    */
-  export var classIdToLinkedVTableMap = ArrayUtilities.makeDenseArray(Constants.MAX_CLASS_ID + 1, null);
+  export var classIdToLinkedVTableMap: Map<number, Function[]> = Object.create(null);
 
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
@@ -1125,14 +1131,23 @@ module J2ME {
       return;
     }
 
-    //if (enableCompiledMethodCache) {
-    //  var cachedMethod;
-    //  if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
-    //    cachedMethodCount ++;
-    //    jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-    //    return linkMethodSource(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-    //  }
-    //}
+    if (enableCompiledMethodCache) {
+      var cachedMethod;
+      if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+        cachedMethodCount ++;
+        jitWriter && jitWriter.writeLn("Retrieved " + methodInfo.implKey + " from compiled method cache");
+        linkMethodSource(methodInfo, cachedMethod.args, cachedMethod.body, cachedMethod.onStackReplacementEntryPoints);
+
+        // Ensure referenced classes are loaded.
+        // We only need to do this for cached methods, since referenced classes
+        // get loaded automatically during JIT compilation.
+        for (var i = 0; i < cachedMethod.referencedClasses.length; i++) {
+          CLASSES.getClass(cachedMethod.referencedClasses[i]);
+        }
+
+        return;
+      }
+    }
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
@@ -1154,17 +1169,18 @@ module J2ME {
     codeWriter && codeWriter.writeLn("// Method: " + methodInfo.implKey);
     codeWriter && codeWriter.writeLn("// Arguments: " + compiledMethod.args.join(", "));
     codeWriter && codeWriter.writeLns(compiledMethod.body);
-    var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.getClassNameSlow() });
 
-    //if (enableCompiledMethodCache) {
-    //  CompiledMethodCache.put({
-    //    key: methodInfo.implKey,
-    //    source: source,
-    //    referencedClasses: referencedClasses,
-    //    onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
-    //  });
-    //}
-    linkMethodSource(methodInfo, compiledMethod.args, compiledMethod.body, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
+    if (enableCompiledMethodCache) {
+      CompiledMethodCache.put({
+        key: methodInfo.implKey,
+        args: compiledMethod.args,
+        body: compiledMethod.body,
+        referencedClasses: compiledMethod.referencedClasses.map(function(v) { return v.getClassNameSlow() }),
+        onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
+      });
+    }
+
+    linkMethodSource(methodInfo, compiledMethod.args, compiledMethod.body, compiledMethod.onStackReplacementEntryPoints);
     var methodJITTime = (performance.now() - s);
     totalJITTime += methodJITTime;
     if (jitWriter) {
@@ -1199,7 +1215,7 @@ module J2ME {
   /**
    * Links up compiled method at runtime.
    */
-  export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
+  export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
 
     enterTimeline("Eval Compiled Code");
