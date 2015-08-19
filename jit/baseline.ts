@@ -126,7 +126,7 @@ module J2ME {
     private _buffer: string [];
     private _indent = 0;
     private _emitIndent;
-    constructor(emitIndent: boolean = true) {
+    constructor(emitIndent: boolean) {
       this._buffer = [];
       this._emitIndent = emitIndent;
     }
@@ -157,8 +157,7 @@ module J2ME {
       }
       this._buffer.push(s);
     }
-    writeLns(s: string) {
-      var lines = s.split("\n");
+    writeLns(lines: string []) {
       for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
         if (line.length > 0) {
@@ -180,6 +179,9 @@ module J2ME {
     }
     toString(): string {
       return this._buffer.join("\n");
+    }
+    copyLines(): string [] {
+      return this._buffer.slice();
     }
   }
 
@@ -242,6 +244,7 @@ module J2ME {
     private target: CompilationTarget;
     private bodyEmitter: Emitter;
     private blockEmitter: Emitter;
+    private blockBodies: string [][];
     private blockMap: BlockMap;
     private methodInfo: MethodInfo;
     private parameters: string [];
@@ -269,6 +272,7 @@ module J2ME {
     private hasUnwindThrow: boolean;
 
     constructor(methodInfo: MethodInfo, target: CompilationTarget) {
+      this.blockBodies = [];
       this.methodInfo = methodInfo;
       this.variables = {};
       this.pc = 0;
@@ -385,7 +389,17 @@ module J2ME {
       needsWhile && this.bodyEmitter.enter("while(1){");
       needsTry && this.bodyEmitter.enter("try{");
       this.bodyEmitter.writeLn("var label=0;");
-      this.bodyEmitter.writeLns(Relooper.render(this.entryBlock));
+
+      // Fill scaffolding with block bodies.
+      var scaffolding = Relooper.render(this.entryBlock).split("\n");
+      for (var i = 0; i < scaffolding.length; i++) {
+        var line = scaffolding[i];
+        if (line.length > 0 && line[0] === "@") {
+          this.bodyEmitter.writeLns(this.blockBodies[line.substring(1) | 0]);
+        } else {
+          this.bodyEmitter.writeLn(scaffolding[i]);
+        }
+      }
 
       emitCompilerAssertions && this.bodyEmitter.writeLn("J2ME.Debug.assert(false, 'Invalid PC: ' + pc)");
 
@@ -457,7 +471,13 @@ module J2ME {
       } else {
         // TODO: ...
       }
-      Relooper.setBlockCode(block.relooperBlockID, this.blockEmitter.toString());
+      // Instead of setting the relooper block code to the generated source,
+      // we set it to the block ID which we later replace with the source.
+      // This is done to avoid joining and serializing strings to the asm.js
+      // heap for use in the relooper, and then converting them back to JS
+      // strings later.
+      Relooper.setBlockCode(block.relooperBlockID, "@" + block.blockID);
+      this.blockBodies[block.blockID] = this.blockEmitter.copyLines();
     }
 
     private emitPrologue() {
