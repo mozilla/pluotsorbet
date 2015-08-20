@@ -669,7 +669,7 @@ module J2ME {
     // The target amount of free memory(in bytes) before garbage collection is forced on unwind.
     // Note: This number was chosen somewhat randomly to allow some space for allocation
     // during forceCollection, though it has not been verified it needs any space.
-    FREE_MEMORY_TARGET = 4086,
+    FREE_MEMORY_TARGET = 4 * 1024 * 1024, // 4MiB
 
     // The size in bytes of the header in the memory allocated to the object.
     OBJ_HDR_SIZE = 8,
