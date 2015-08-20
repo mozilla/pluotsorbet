@@ -671,7 +671,8 @@ module J2ME {
     // that the midlet OOMed once less than ~3MB of memory was available, presumably
     // because compiled codeis allocating more than that before unwinding.  It would be
     // useful to have more insight into which code allocates memory, and in what chunks,
-    // but this value seems to work ok in the meantime.
+    // so we can set this to the maximum amount of memory needed by compiled code.
+    // But this value seems to work ok in the meantime.
     FREE_MEMORY_TARGET = 4 * 1024 * 1024, // 4MiB
 
     // The size in bytes of the header in the memory allocated to the object.
