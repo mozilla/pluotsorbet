@@ -189,7 +189,6 @@ PREPROCESS_SRCS = \
 	./index.js.in \
 	./main.html.in \
 	./manifest.webapp.in \
-	./native.js.in \
 	./style/main.css.in \
 	./tests/index.js.in \
 	$(NULL)

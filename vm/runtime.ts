@@ -666,6 +666,9 @@ module J2ME {
     TWO_PWR_32_DBL = 4294967296,
     TWO_PWR_63_DBL = 9223372036854776000,
 
+    // The target amount of free memory before garbage collection is forced on unwind.
+    FREE_MEMORY_TARGET = 4086,
+
     // The size in bytes of the header in the memory allocated to the object.
     OBJ_HDR_SIZE = 8,
 
@@ -1274,6 +1277,10 @@ module J2ME {
     var address = gcMalloc(Constants.OBJ_HDR_SIZE + classInfo.sizeOfFields);
     i32[address >> 2] = classInfo.id | 0;
     return address;
+  }
+
+  export function freeMemory(): number {
+    return asmJsTotalMemory - ASM._getUsedHeapSize();
   }
 
   export function onFinalize(addr: number): void {
