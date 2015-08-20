@@ -666,7 +666,9 @@ module J2ME {
     TWO_PWR_32_DBL = 4294967296,
     TWO_PWR_63_DBL = 9223372036854776000,
 
-    // The target amount of free memory before garbage collection is forced on unwind.
+    // The target amount of free memory(in bytes) before garbage collection is forced on unwind.
+    // Note: This number was chosen somewhat randomly to allow some space for allocation
+    // during forceCollection, though it has not been verified it needs any space.
     FREE_MEMORY_TARGET = 4086,
 
     // The size in bytes of the header in the memory allocated to the object.
@@ -1279,7 +1281,7 @@ module J2ME {
     return address;
   }
 
-  export function freeMemory(): number {
+  export function getFreeMemory(): number {
     return asmJsTotalMemory - ASM._getUsedHeapSize();
   }
 

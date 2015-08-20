@@ -489,7 +489,7 @@ Native["java/lang/Double.longBitsToDouble.(J)D"] = function(addr, l, h) {
 }
 
 Native["java/lang/Runtime.freeMemory.()J"] = function(addr) {
-    return J2ME.returnLongValue(J2ME.freeMemory());
+    return J2ME.returnLongValue(J2ME.getFreeMemory());
 };
 
 Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {

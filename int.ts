@@ -623,7 +623,7 @@ module J2ME {
       // we consistently stay in compiled code. Most code unwinds often enough that we can
       // force collection here since at the end of an unwind all frames are
       // stored back on the heap.
-      if (freeMemory() < Constants.FREE_MEMORY_TARGET) {
+      if (getFreeMemory() < Constants.FREE_MEMORY_TARGET) {
         ASM._forceCollection();
       }
     }
