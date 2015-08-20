@@ -330,6 +330,8 @@ module J2ME.Bytecode {
     PUTSTATIC            = 179, // 0xB3
     GETFIELD             = 180, // 0xB4
     PUTFIELD             = 181, // 0xB5
+    FIRST_INVOKE         = 182,
+    LAST_INVOKE          = 185,
     INVOKEVIRTUAL        = 182, // 0xB6
     INVOKESPECIAL        = 183, // 0xB7
     INVOKESTATIC         = 184, // 0xB8
@@ -369,7 +371,7 @@ module J2ME.Bytecode {
     LAST_JVM_OPCODE     = Bytecodes.JSR_W
   }
 
-  enum Flags {
+  const enum Flags {
     /**
      * Denotes an instruction that ends a basic block and does not let control flow fall through to its lexical successor.
      */

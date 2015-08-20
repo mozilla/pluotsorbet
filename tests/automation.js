@@ -12,11 +12,13 @@ var uri = Services.io.newURI("http://localhost:8000", null, null);
 var principal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(uri);
 Services.perms.addFromPrincipal(principal, "tcp-socket", Services.perms.ALLOW_ACTION);
 
+Services.prefs.setIntPref("dom.max_script_run_time", 70000);
+
 casper.on('remote.message', function(message) {
     this.echo(message);
 });
 
-casper.options.waitTimeout = 90000;
+casper.options.waitTimeout = 600000;
 casper.options.verbose = true;
 casper.options.viewportSize = { width: 240, height: 320 };
 casper.options.clientScripts = [
@@ -178,7 +180,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 37 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -224,45 +226,49 @@ casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
     .withFrame(0, basicUnitTests);
 
+    // TODO: Re-enable rerunning tests once we re-enable the JIT.
+
     // Run the same unit tests again to test the compiled method cache.
-    casper
+    /*casper
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log")
     .withFrame(0, basicUnitTests);
 
     // Run the same unit tests again with baseline JIT enabled for all methods.
     casper
     .thenOpen("http://localhost:8000/index.html?logConsole=web,page&logLevel=log&forceRuntimeCompilation=1")
-    .withFrame(0, basicUnitTests);
+    .withFrame(0, basicUnitTests);*/
 
     casper
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
           var output = this.fetchText('#raw-console');
-          var expectedOutput = ["I 0: m",
-            "I 3 0 a ma",
+          var expectedOutput = [
+            "I 0: m",
+            "I 2 0 a ma",
             "I 1: ma",
-            "I 2: 3",
+            "I 2: 2",
             "I 3: 1 isolate",
             "I 4: Isolate ID correct",
-            "I 5: 5",
-            "I 6: 6",
+            "I 5: 4",
+            "I 6: 5",
             "I 7: 1 isolate",
             "I 8: ma",
             "I 9: ma",
             "I 10: 3 isolates",
-            "I 6 0 2 m2",
-            "I 5 0 1 m1",
+            "I 5 0 2 m2",
+            "I 4 0 1 m1",
             "I 11: ma",
             "I 12: 1 isolate",
             "I 13: Isolates terminated",
-            "I 3 1 r mar",
+            "I 2 1 r mar",
             "I 14: mar",
-            "I 3 2 c marc",
+            "I 2 2 c marc",
             "I 15: marc",
             "I 16: Main isolate still running",
             "I DONE",
-            ""];
+            "",
+          ];
           output = output.split("\n").sort();
           expectedOutput.sort();
           test.assert(expectedOutput.length === output.length, "Same number of lines output.");

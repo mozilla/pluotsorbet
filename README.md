@@ -277,7 +277,9 @@ We use `Native` object in JS to handle creation and registration of `native` fun
 
 e.g.:
 
-    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(src, srcOffset, dst, dstOffset, length) {...};
+    Native["java/lang/System.arraycopy.(Ljava/lang/Object;ILjava/lang/Object;II)V" = function(addr, srcAddr, srcOffset, dstAddr, dstOffset, length) {...};
+
+The first parameter of every native, *addr*, is the address in memory of the object on which the native is being called. If the native is static, then the value of *addr* is `Constants.NULL`. Call `getHandle(addr)` to get a handle to a JavaScript object that wraps the Java object with getters/setters for its fields.
 
 If raising a Java `Exception`, throw new instance of Java `Exception` class as defined in vm/runtime.ts, e.g.:
 
@@ -290,9 +292,9 @@ If you need implement a native method with async JS calls, the following steps a
 
 e.g:
 
-    Native["java/lang/Thread.sleep.(J)V"] = function(delay) {
+    Native["java/lang/Thread.sleep.(J)V"] = function(addr, delayL, delayH) {
         asyncImpl("V", new Promise(function(resolve, reject) {
-            window.setTimeout(resolve, delay.toNumber());
+            window.setTimeout(resolve, J2ME.longToNumber(delayL, delayH));
         }));
     };
 
@@ -300,7 +302,8 @@ The `asyncImpl` call is optional if part of the code doesn't make async calls. T
 
 e.g:
 
-    Native["java/lang/Thread.newSleep.(J)Z"] = function(delay) {
+    Native["java/lang/Thread.newSleep.(J)Z"] = function(addr, delayL, delayH) {
+        var delay = J2ME.longToNumber(delayL, delayH);
         if (delay < 0) {
           // Return false synchronously. Note: we use 1 and 0 in JavaScript to
           // represent true and false in Java.
@@ -308,14 +311,13 @@ e.g:
         }
         // Return true asynchronously with `asyncImpl`.
         asyncImpl("Z", new Promise(function(resolve, reject) {
-            window.setTimeout(resolve.bind(null, 1), delay.toNumber());
+            window.setTimeout(resolve.bind(null, 1), delay);
         }));
     };
 
 Remember:
 
   * Return types are automatically converted to Java types, but parameters are not automatically converted from Java types to JS types
-  * `this` will be available in any context that `this` would be available to the Java method. i.e. `this` will be `null` for `static` methods.
   * `$` is current runtime and `$.ctx` current Context
   * Parameter types are specified in [JNI](http://www.iastate.edu/~java/docs/guide/nativemethod/types.doc.html)
 

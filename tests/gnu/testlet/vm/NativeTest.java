@@ -7,7 +7,7 @@ public class NativeTest implements Testlet {
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
     native static int getInt();
-    native static int fromJavaString(String string);
+    native static int fromStringAddr(String string);
     native static int decodeUtf8(byte[] string);
     native static long getLongReturnLong(long val);
     native static int getLongReturnInt(long val);
@@ -24,12 +24,12 @@ public class NativeTest implements Testlet {
 
         String s = "marco";
         th.check(s.substring(0, 0), "");
-        th.check(fromJavaString(s.substring(0, 0)), fromJavaString(""));
-        th.check(fromJavaString(s.substring(0, 1)), fromJavaString("m"));
+        th.check(fromStringAddr(s.substring(0, 0)), fromStringAddr(""));
+        th.check(fromStringAddr(s.substring(0, 1)), fromStringAddr("m"));
 
-        th.check(fromJavaString("\0"), 1);
+        th.check(fromStringAddr("\0"), 1);
         th.check(decodeUtf8("\0".getBytes()), 1);
-        th.check(fromJavaString(""), 0);
+        th.check(fromStringAddr(""), 0);
         th.check(decodeUtf8("".getBytes()), 0);
 
         th.check(getLongReturnLong(2L), 42L);

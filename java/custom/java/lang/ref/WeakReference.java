@@ -51,7 +51,7 @@ package java.lang.ref;
 
 public class WeakReference extends Reference {
 
-    private int referent_index;
+    private Object holder;
 
     /**
      * Returns this reference object's referent.  If this reference object has

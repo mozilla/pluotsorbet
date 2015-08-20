@@ -26,13 +26,18 @@ AccelerometerSensor.model = {
     ]
 };
 
-var doubleToLongBits = (function() {
+var createLongArrayFromDoubles = (function() {
     var da = new Float64Array(1);
     var ia = new Int32Array(da.buffer);
-    return function(val) {
-        da[0] = val;
-        return Long.fromBits(ia[0], ia[1]);
-    }
+    return function(doubles) {
+        var ret = [];
+        for (var i = 0; i < doubles.length; i++) {
+            var val = doubles[i];
+            da[0] = val;
+            ret.push(ia[0], ia[1]);
+        }
+        return ret;
+    };
 })();
 
 AccelerometerSensor.channels = [ {
@@ -41,33 +46,33 @@ AccelerometerSensor.channels = [ {
         unit: "m/s^2",
         dataType: 1, // 1 == Double type
         accuracy: 1,
-        mrangeArray: [
-            doubleToLongBits(-19.6), // smallest value
-            doubleToLongBits(19.6),  // largest value
-            doubleToLongBits(0.153)  // resolution
-        ]
+        mrangeArray: createLongArrayFromDoubles([
+            -19.6, // smallest value
+            19.6,  // largest value
+            0.153  // resolution
+        ])
     }, {
         scale: 0,
         name: "axis_y",
         unit: "m/s^2",
         dataType: 1, // 1 == Double type
         accuracy: 1,
-        mrangeArray: [
-            doubleToLongBits(-19.6), // smallest value
-            doubleToLongBits(19.6),  // largest value
-            doubleToLongBits(0.153)  // resolution
-        ]
+        mrangeArray: createLongArrayFromDoubles([
+            -19.6, // smallest value
+            19.6,  // largest value
+            0.153  // resolution
+        ])
     }, {
         scale: 0,
         name: "axis_z",
         unit: "m/s^2",
         dataType: 1, // 1 == Double type
         accuracy: 1,
-        mrangeArray: [
-            doubleToLongBits(-19.6), // smallest value
-            doubleToLongBits(19.6),  // largest value
-            doubleToLongBits(0.153)  // resolution
-        ]
+        mrangeArray: createLongArrayFromDoubles([
+            -19.6, // smallest value
+            19.6,  // largest value
+            0.153  // resolution
+        ])
     }
 ];
 
@@ -164,9 +169,11 @@ AccelerometerSensor.readBuffer = (function() {
     };
 
     var DATA_LENGTH = 1;
-    var result = new Int8Array(5 + DATA_LENGTH * 13);
 
     return function(channelNumber) {
+        var resultAddr = J2ME.newByteArray(5 + DATA_LENGTH * 13);
+        var result = J2ME.getArrayFromAddr(resultAddr);
+
         offset = 0;
         result[offset++] = this.channels[channelNumber].dataType;
         // Set data length
@@ -177,7 +184,8 @@ AccelerometerSensor.readBuffer = (function() {
         write_float32(result, 0);
         // Set sensor data.
         write_double64(result, this.acceleration[channelNumber]);
-        return result;
+
+        return resultAddr;
     };
 })();
 
@@ -191,16 +199,18 @@ AccelerometerSensor.handleEvent = function(evt) {
     this.acceleration[2] = a.z;
 };
 
-Native["com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I"] = function() {
+Native["com/sun/javame/sensor/SensorRegistry.doGetNumberOfSensors.()I"] = function(addr) {
     // Only support the acceleration sensor.
     return 1;
 };
 
-Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V"] = function(number, model) {
+Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/SensorModel;)V"] =
+function(addr, number, modelAddr) {
     if (number !== 0) {
         console.error("Invalid sensor number: " + number);
         return;
     }
+    var model = getHandle(modelAddr);
     var m = AccelerometerSensor.model;
     model.description = J2ME.newString(m.description);
     model.model = J2ME.newString(m.model);
@@ -211,18 +221,20 @@ Native["com/sun/javame/sensor/Sensor.doGetSensorModel.(ILcom/sun/javame/sensor/S
     model.availabilityPush = m.availabilityPush;
     model.conditionPush = m.conditionPush;
     model.channelCount = m.channelCount;
-    model.errorCodes = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.I.klass, 0);
+    model.errorCodes = J2ME.newIntArray(0);
     model.errorMsgs = J2ME.newStringArray(0);
 
     var n = m.properties.length;
-    var p = J2ME.newStringArray(n);
+    var pAddr = J2ME.newStringArray(n);
+    model.properties = pAddr;
+    var p = J2ME.getArrayFromAddr(pAddr);
     for (var i = 0; i < n; i++) {
         p[i] = J2ME.newString(m.properties[i]);
     }
-    model.properties = p;
 };
 
-Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] = function(sensorsNumber, number, model) {
+Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/sensor/ChannelModel;)V"] =
+function(addr, sensorsNumber, number, modelAddr) {
     if (sensorsNumber !== 0) {
         console.error("Invalid sensor number: " + sensorsNumber);
         return;
@@ -231,28 +243,33 @@ Native["com/sun/javame/sensor/ChannelImpl.doGetChannelModel.(IILcom/sun/javame/s
         console.error("Invalid channel number: " + number);
         return;
     }
+    var model = getHandle(modelAddr);
     var c = AccelerometerSensor.channels[number];
     model.scale = c.scale;
     model.name = J2ME.newString(c.name);
     model.unit = J2ME.newString(c.unit);
     model.dataType = c.dataType;
     model.accuracy = c.accuracy;
-    model.mrangeCount = c.mrangeArray.length;
+    var n = c.mrangeArray.length / 2;
+    model.mrangeCount = n;
 
     var n = c.mrangeArray.length;
-    var array = J2ME.newArray(J2ME.PrimitiveArrayClassInfo.J.klass, n);
+    var arrayAddr = J2ME.newArray(J2ME.PrimitiveClassInfo.J, n);
+    var array = J2ME.getArrayFromAddr(arrayAddr);
+    var i32array = new Int32Array(array.buffer, array.byteOffset, array.length * 2);
     for (var i = 0; i < n; i++) {
-        array[i] = c.mrangeArray[i];
+        i32array[i * 2] = c.mrangeArray[i].low_;
+        i32array[i * 2 + 1] = c.mrangeArray[i].high_;
     }
-    model.mrageArray = array;
+    model.mrageArray = arrayAddr;
 };
 
-Native["com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z"] = function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doIsAvailable.(I)Z"] = function(addr, number) {
     // Only support the acceleration sensor with number = 0.
     return number === 0 ? 1 : 0;
 };
 
-Native["com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z"] = function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z"] = function(addr, number) {
     if (number !== 0) {
         return 0;
     }
@@ -260,7 +277,7 @@ Native["com/sun/javame/sensor/NativeSensor.doInitSensor.(I)Z"] = function(number
     return 1;
 };
 
-Native["com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z"] = function(number) {
+Native["com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z"] = function(addr, number) {
     if (number !== 0) {
         return 0;
     }
@@ -268,18 +285,23 @@ Native["com/sun/javame/sensor/NativeSensor.doFinishSensor.(I)Z"] = function(numb
     return 1;
 };
 
-Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(sensorNumber, channelNumber) {
+Native["com/sun/javame/sensor/NativeChannel.doMeasureData.(II)[B"] = function(addr, sensorNumber, channelNumber) {
     if (sensorNumber !== 0 || channelNumber < 0 || channelNumber >= 3) {
         if (sensorNumber !== 0) {
             console.error("Invalid sensor number: " + sensorsNumber);
         } else {
             console.error("Invalid channel number: " + channelNumber);
         }
-        return J2ME.newArray(J2ME.PrimitiveArrayClassInfo.B.klass, 0);
+        return J2ME.newByteArray(0);
     }
 
+    var resultHolder = J2ME.gcMallocUncollectable(4);
+
     asyncImpl("[B", new Promise(function(resolve, reject) {
-        var result = AccelerometerSensor.readBuffer(channelNumber);
-        setTimeout(resolve.bind(null, result), 50);
-    }));
+        var resultAddr = AccelerometerSensor.readBuffer(channelNumber);
+        i32[resultHolder >> 2] = resultAddr;
+        setTimeout(resolve.bind(null, resultAddr), 50);
+    }), function() {
+        ASM._gcFree(resultHolder);
+    });
 };

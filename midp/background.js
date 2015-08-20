@@ -68,18 +68,19 @@ function startBackgroundAlarm() {
   }
 }
 
-Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function() {
+Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletClass.()Ljava/lang/String;"] = function(addr) {
   return J2ME.newString(fgMidletClass);
 };
 
-Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function() {
+Native["com/nokia/mid/s40/bg/BGUtils.getFGMIDletNumber.()I"] = function(addr) {
   return fgMidletNumber;
 };
 
 MIDP.additionalProperties = {};
 
-Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] = function(midletSuiteVendor, midletName, midletNumber, startupNoteText, args) {
-  J2ME.fromJavaString(args).split(";").splice(1).forEach(function(arg) {
+Native["com/nokia/mid/s40/bg/BGUtils.launchIEMIDlet.(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)Z"] =
+function(addr, midletSuiteVendorAddr, midletNameAddr, midletNumber, startupNoteTextAddr, argsAddr) {
+  J2ME.fromStringAddr(argsAddr).split(";").splice(1).forEach(function(arg) {
     var elems = arg.split("=");
     MIDP.additionalProperties[elems[0]] = elems[1];
   });
