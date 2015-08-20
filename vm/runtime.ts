@@ -666,9 +666,12 @@ module J2ME {
     TWO_PWR_32_DBL = 4294967296,
     TWO_PWR_63_DBL = 9223372036854776000,
 
-    // The target amount of free memory(in bytes) before garbage collection is forced on unwind.
-    // Note: This number was chosen somewhat randomly to allow some space for allocation
-    // during forceCollection, though it has not been verified it needs any space.
+    // The target amount of free memory (in bytes) before garbage collection is forced on unwind.
+    // Note: This number was chosen through ad-hoc testing of a midlet, which showed
+    // that the midlet OOMed once less than ~3MB of memory was available, presumably
+    // because compiled codeis allocating more than that before unwinding.  It would be
+    // useful to have more insight into which code allocates memory, and in what chunks,
+    // but this value seems to work ok in the meantime.
     FREE_MEMORY_TARGET = 4 * 1024 * 1024, // 4MiB
 
     // The size in bytes of the header in the memory allocated to the object.
