@@ -49,56 +49,57 @@ LocalMsgConnection.prototype.waitConnection = function() {
     }).bind(this));
 }
 
-LocalMsgConnection.prototype.copyMessage = function(messageQueue, data) {
+LocalMsgConnection.prototype.copyMessage = function(messageQueue, dataAddr) {
     var msg = messageQueue.shift();
-
+    var data = J2ME.getArrayFromAddr(dataAddr);
     for (var i = 0; i < msg.length; i++) {
         data[i] = msg.data[i + msg.offset];
     }
-
+    J2ME.unsetUncollectable(dataAddr);
     return msg.length;
 }
 
-LocalMsgConnection.prototype.sendMessageToClient = function(data, offset, length) {
-    this.clientMessages.push(new LocalMsgConnectionMessage(data, offset, length));
+LocalMsgConnection.prototype.sendMessageToClient = function(dataAddr, offset, length) {
+    this.clientMessages.push(new LocalMsgConnectionMessage(dataAddr, offset, length));
 
     if (this.clientWaiting.length > 0) {
         this.clientWaiting.shift()();
     }
 }
 
-LocalMsgConnection.prototype.getClientMessage = function(data) {
-  return this.copyMessage(this.clientMessages, data);
+LocalMsgConnection.prototype.getClientMessage = function(dataAddr) {
+  return this.copyMessage(this.clientMessages, dataAddr);
 }
 
-LocalMsgConnection.prototype.waitClientMessage = function(data) {
+LocalMsgConnection.prototype.waitClientMessage = function(dataAddr) {
     asyncImpl("I", new Promise((function(resolve, reject) {
         this.clientWaiting.push(function() {
-            resolve(this.getClientMessage(data));
+            resolve(this.getClientMessage(dataAddr));
         }.bind(this));
     }).bind(this)));
 }
 
-LocalMsgConnection.prototype.sendMessageToServer = function(data, offset, length) {
-    this.serverMessages.push(new LocalMsgConnectionMessage(data, offset, length));
+LocalMsgConnection.prototype.sendMessageToServer = function(dataAddr, offset, length) {
+    this.serverMessages.push(new LocalMsgConnectionMessage(dataAddr, offset, length));
 
     if (this.serverWaiting.length > 0) {
         this.serverWaiting.shift()(true);
     }
 }
 
-LocalMsgConnection.prototype.getServerMessage = function(data) {
-  return this.copyMessage(this.serverMessages, data);
+LocalMsgConnection.prototype.getServerMessage = function(dataAddr) {
+  return this.copyMessage(this.serverMessages, dataAddr);
 }
 
-LocalMsgConnection.prototype.waitServerMessage = function(data) {
+LocalMsgConnection.prototype.waitServerMessage = function(dataAddr) {
     var ctx = $.ctx;
 
     asyncImpl("I", new Promise((function(resolve, reject) {
         this.serverWaiting.push(function(successful) {
             if (successful) {
-                resolve(this.getServerMessage(data));
+                resolve(this.getServerMessage(dataAddr));
             } else {
+                J2ME.unsetUncollectable(dataAddr);
                 ctx.setAsCurrentContext();
                 reject($.newIOException("Client disconnected"));
             }
@@ -1101,33 +1102,40 @@ Native["org/mozilla/io/LocalMsgConnection.waitConnection.()V"] = function(addr) 
 };
 
 Native["org/mozilla/io/LocalMsgConnection.sendData.([BII)V"] = function(addr, dataAddr, offset, length) {
+    // Clone the data since it may be GC'ed.
+    var dataClone = new Int8Array(length);
     var data = J2ME.getArrayFromAddr(dataAddr);
+    for (var i = 0; i < length; i++) {
+      dataClone[i] = data[offset + i];
+    }
+
     var connection = NativeConnectionMap[addr];
     var info = NativeMap.get(addr);
 
     if (info.server) {
-        connection.sendMessageToClient(data, offset, length);
+        connection.sendMessageToClient(dataClone, 0, dataClone.length);
     } else {
         if (MIDP.FakeLocalMsgServers.indexOf(info.protocolName) != -1) {
-            console.warn("sendData (" + util.decodeUtf8(data.subarray(offset, offset + length)) +
+            console.warn("sendData (" + util.decodeUtf8(dataClone) +
                          ") to an unimplemented localmsg server (" + info.protocolName + ")");
         }
 
-        connection.sendMessageToServer(data, offset, length);
+        connection.sendMessageToServer(dataClone, 0, dataClone.length);
     }
 };
 
 Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(addr, dataAddr) {
-    var data = J2ME.getArrayFromAddr(dataAddr);
+    J2ME.setUncollectable(dataAddr);
+
     var connection = NativeConnectionMap[addr];
     var info = NativeMap.get(addr);
 
     if (info.server) {
         if (connection.serverMessages.length > 0) {
-          return connection.getServerMessage(data);
+          return connection.getServerMessage(dataAddr);
         }
 
-        connection.waitServerMessage(data);
+        connection.waitServerMessage(dataAddr);
         return;
     }
 
@@ -1136,8 +1144,8 @@ Native["org/mozilla/io/LocalMsgConnection.receiveData.([B)I"] = function(addr, d
     }
 
     if (connection.clientMessages.length > 0) {
-      return connection.getClientMessage(data);
+      return connection.getClientMessage(dataAddr);
     }
 
-    connection.waitClientMessage(data);
+    connection.waitClientMessage(dataAddr);
 };

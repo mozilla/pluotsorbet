@@ -489,11 +489,11 @@ Native["java/lang/Double.longBitsToDouble.(J)D"] = function(addr, l, h) {
 }
 
 Native["java/lang/Runtime.freeMemory.()J"] = function(addr) {
-    return J2ME.returnLongValue(@ASMJS_TOTAL_MEMORY@ - ASM._getUsedHeapSize());
+    return J2ME.returnLongValue(J2ME.getFreeMemory());
 };
 
 Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
-    return J2ME.returnLongValue(@ASMJS_TOTAL_MEMORY@);
+    return J2ME.returnLongValue(asmJsTotalMemory);
 };
 
 Native["java/lang/Runtime.gc.()V"] = function(addr) {
