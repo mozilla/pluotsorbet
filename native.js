@@ -492,10 +492,6 @@ Native["java/lang/Runtime.freeMemory.()J"] = function(addr) {
     return J2ME.returnLongValue(J2ME.getFreeMemory());
 };
 
-Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
-    return J2ME.returnLongValue(asmJsTotalMemory);
-};
-
 Native["java/lang/Runtime.gc.()V"] = function(addr) {
     // Force a bailout so that there are no native frames on the stack
     // so GC can be safely run.
