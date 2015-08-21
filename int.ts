@@ -1251,6 +1251,10 @@ module J2ME {
             ll = i32[--sp];
             index = i32[--sp];
             address = i32[--sp];
+            if (address === Constants.NULL) {
+              thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+              continue;
+            }
             if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
@@ -1261,6 +1265,10 @@ module J2ME {
           case Bytecodes.DALOAD:
             index = i32[--sp];
             address = i32[--sp];
+            if (address === Constants.NULL) {
+              thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
+              continue;
+            }
             if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
