@@ -896,7 +896,7 @@ module J2ME {
     var type, size;
     var value, index, arrayAddr: number, offset, buffer, tag: TAGS, targetPC, jumpOffset;
     var address = 0, isStatic = false;
-    var ia = 0, ib = 0; // Integer Operands
+    var ia = 0, ib = 0, c = false; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
 
     var classInfo: ClassInfo;
@@ -1438,47 +1438,27 @@ module J2ME {
             sp = Bytecode_DCMPX(sp, op);
             continue;
           case Bytecodes.IFEQ:
-            if (i32[--sp] === 0) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
           case Bytecodes.IFNE:
-            if (i32[--sp] !== 0) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
           case Bytecodes.IFLT:
-            if (i32[--sp] < 0) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
           case Bytecodes.IFGE:
-            if (i32[--sp] >= 0) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
           case Bytecodes.IFGT:
-            if (i32[--sp] > 0) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
           case Bytecodes.IFLE:
-            if (i32[--sp] <= 0) {
+          case Bytecodes.IFNULL:
+          case Bytecodes.IFNONNULL:
+            ia = i32[--sp];
+            switch (op) {
+              case Bytecodes.IFEQ:      c = ia === 0; break;
+              case Bytecodes.IFNE:      c = ia !== 0; break;
+              case Bytecodes.IFLT:      c = ia <   0; break;
+              case Bytecodes.IFGE:      c = ia >=  0; break;
+              case Bytecodes.IFGT:      c = ia >   0; break;
+              case Bytecodes.IFLE:      c = ia <=  0; break;
+              case Bytecodes.IFNULL:    c = ia === Constants.NULL; break;
+              case Bytecodes.IFNONNULL: c = ia !== Constants.NULL; break;
+              default:
+                release || assert(false, "Invalid Bytecode: " + Bytecodes[op]);
+            }
+            if (c) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               pc = opPC + jumpOffset | 0;
               continue;
@@ -1486,79 +1466,28 @@ module J2ME {
             pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPEQ:
-            if (i32[--sp] === i32[--sp]) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
-          case Bytecodes.IF_ICMPNE:
-            if (i32[--sp] !== i32[--sp]) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
-          case Bytecodes.IF_ICMPLT:
-            if (i32[--sp] > i32[--sp]) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
-          case Bytecodes.IF_ICMPGE:
-            if (i32[--sp] <= i32[--sp]) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
-          case Bytecodes.IF_ICMPGT:
-            if (i32[--sp] < i32[--sp]) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
-          case Bytecodes.IF_ICMPLE:
-            if (i32[--sp] >= i32[--sp]) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
           case Bytecodes.IF_ACMPEQ:
-            if (i32[--sp] === i32[--sp]) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
+          case Bytecodes.IF_ICMPNE:
           case Bytecodes.IF_ACMPNE:
-            if (i32[--sp] !== i32[--sp]) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
+          case Bytecodes.IF_ICMPLT:
+          case Bytecodes.IF_ICMPGE:
+          case Bytecodes.IF_ICMPGT:
+          case Bytecodes.IF_ICMPLE:
+            ib = i32[--sp];
+            ia = i32[--sp];
+            switch (op) {
+              case Bytecodes.IF_ICMPEQ:
+              case Bytecodes.IF_ACMPEQ: c = ia === ib; break;
+              case Bytecodes.IF_ICMPNE:
+              case Bytecodes.IF_ACMPNE: c = ia !== ib; break;
+              case Bytecodes.IF_ICMPLT: c = ia <   ib; break;
+              case Bytecodes.IF_ICMPGE: c = ia >=  ib; break;
+              case Bytecodes.IF_ICMPGT: c = ia >   ib; break;
+              case Bytecodes.IF_ICMPLE: c = ia <=  ib; break;
+              default:
+                release || assert(false, "Invalid Bytecode: " + Bytecodes[op]);
             }
-            pc = pc + 2 | 0;
-            continue;
-          case Bytecodes.IFNULL:
-            if (i32[--sp] === Constants.NULL) {
-              jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              pc = opPC + jumpOffset | 0;
-              continue;
-            }
-            pc = pc + 2 | 0;
-            continue;
-          case Bytecodes.IFNONNULL:
-            if (i32[--sp] !== Constants.NULL) {
+            if (c) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
               pc = opPC + jumpOffset | 0;
               continue;
