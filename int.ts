@@ -437,7 +437,7 @@ module J2ME {
                   pc = exceptionEntryView.handler_pc;
                   break;
                 } else {
-                  classInfo = resolveClass(exceptionEntryView.catch_type, mi.classInfo);
+                  classInfo = mi.classInfo.constantPool.resolveClass(exceptionEntryView.catch_type);
                   release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo);
                   if (isAssignableTo(e.classInfo, classInfo)) {
                     pc = exceptionEntryView.handler_pc;
@@ -708,10 +708,6 @@ module J2ME {
     return method;
   }
 
-  function resolveClass(index: number, classInfo: ClassInfo): ClassInfo {
-    return classInfo.constantPool.resolveClass(index);
-  }
-
   var args = new Array(16);
 
   export const enum ExceptionType {
@@ -735,7 +731,7 @@ module J2ME {
       assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got low: " + l + " high: " + h + " in " + methodInfo.implKey);
     }
   }
-  
+
   /**
    * Main interpreter loop. This method is carefully written to avoid memory allocation and
    * function calls on fast paths. Therefore, everything is inlined, even if it makes the code
@@ -866,7 +862,7 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Integer || tag === TAGS.CONSTANT_Float) {
               i32[sp++] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
             } else if (tag === TAGS.CONSTANT_String) {
-              i32[sp++] = ci.constantPool.resolve(index, tag, false);
+              i32[sp++] = cp.resolve(index, tag, false);
             } else {
               release || assert(false, TAGS[tag]);
             }
@@ -1820,7 +1816,7 @@ module J2ME {
             continue;
           case Bytecodes.ANEWARRAY:
             index = code[pc++] << 8 | code[pc++];
-            classInfo = resolveClass(index, ci);
+            classInfo = cp.resolveClass(index);
             size = i32[--sp];
             if (size < 0) {
               thread.throwException(fp, sp, opPC, ExceptionType.NegativeArraySizeException);
@@ -1829,7 +1825,7 @@ module J2ME {
             continue;
           case Bytecodes.MULTIANEWARRAY:
             index = code[pc++] << 8 | code[pc++];
-            classInfo = resolveClass(index, ci);
+            classInfo = cp.resolveClass(index);
             var dimensions = code[pc++];
             var lengths = new Array(dimensions);
             for (var i = 0; i < dimensions; i++) {
@@ -1943,7 +1939,7 @@ module J2ME {
           case Bytecodes.NEW:
             index = code[pc++] << 8 | code[pc++];
             release || traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
-            classInfo = resolveClass(index, ci);
+            classInfo = cp.resolveClass(index);
             thread.classInitAndUnwindCheck(fp, sp, opPC, classInfo);
             if (U) {
               return;
@@ -1952,7 +1948,7 @@ module J2ME {
             continue;
           case Bytecodes.CHECKCAST:
             index = code[pc++] << 8 | code[pc++];
-            classInfo = resolveClass(index, mi.classInfo);
+            classInfo = cp.resolveClass(index);
             address = i32[sp - 1];
 
             if (address === Constants.NULL) {
@@ -1970,7 +1966,7 @@ module J2ME {
             continue;
           case Bytecodes.INSTANCEOF:
             index = code[pc++] << 8 | code[pc++];
-            classInfo = resolveClass(index, ci);
+            classInfo = cp.resolveClass(index);
             address = i32[--sp];
 
             if (address === Constants.NULL) {
