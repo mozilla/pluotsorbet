@@ -742,6 +742,110 @@ module J2ME {
     }
   }
   
+  function Bytecode_FCMPX(sp: number, op: Bytecodes) {
+    var b = f32[--sp];
+    var a = f32[--sp];
+    if (a !== a || b !== b) {
+      i32[sp++] = op === Bytecodes.FCMPL ? -1 : 1;
+    } else if (a > b) {
+      i32[sp++] = 1;
+    } else if (a < b) {
+      i32[sp++] = -1;
+    } else {
+      i32[sp++] = 0;
+    }
+    return sp;
+  }
+
+  function Bytecode_DCMPX(sp: number, op: Bytecodes) {
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1];
+    var b = aliasedF64[0];
+    aliasedI32[0] = i32[sp - 4];
+    aliasedI32[1] = i32[sp - 3];
+    var a = aliasedF64[0];
+    sp -= 4;
+    if (a !== a || b !== b) {
+      i32[sp++] = op === Bytecodes.DCMPL ? -1 : 1;
+    } else if (a > b) {
+      i32[sp++] = 1;
+    } else if (a < b) {
+      i32[sp++] = -1;
+    } else {
+      i32[sp++] = 0;
+    }
+    return sp;
+  }
+
+  function Bytecode_DADD(sp: number) {
+    aliasedI32[0] = i32[sp - 4];
+    aliasedI32[1] = i32[sp - 3]; var ia = aliasedF64[0];
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1]; var ib = aliasedF64[0];
+    aliasedF64[0] = ia + ib;
+    i32[sp - 4] = aliasedI32[0];
+    i32[sp - 3] = aliasedI32[1];
+    sp -= 2;
+    return sp;
+  }
+
+  function Bytecode_DSUB(sp: number) {
+    aliasedI32[0] = i32[sp - 4];
+    aliasedI32[1] = i32[sp - 3]; var ia = aliasedF64[0];
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1]; var ib = aliasedF64[0];
+    aliasedF64[0] = ia - ib;
+    i32[sp - 4] = aliasedI32[0];
+    i32[sp - 3] = aliasedI32[1];
+    sp -= 2;
+    return sp;
+  }
+
+  function Bytecode_DMUL(sp: number) {
+    aliasedI32[0] = i32[sp - 4];
+    aliasedI32[1] = i32[sp - 3]; var ia = aliasedF64[0];
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1]; var ib = aliasedF64[0];
+    aliasedF64[0] = ia * ib;
+    i32[sp - 4] = aliasedI32[0];
+    i32[sp - 3] = aliasedI32[1];
+    sp -= 2;
+    return sp;
+  }
+
+  function Bytecode_DDIV(sp: number) {
+    aliasedI32[0] = i32[sp - 4];
+    aliasedI32[1] = i32[sp - 3]; var ia = aliasedF64[0];
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1]; var ib = aliasedF64[0];
+    aliasedF64[0] = ia / ib;
+    i32[sp - 4] = aliasedI32[0];
+    i32[sp - 3] = aliasedI32[1];
+    sp -= 2;
+    return sp;
+  }
+
+  function Bytecode_DREM(sp: number) {
+    aliasedI32[0] = i32[sp - 4];
+    aliasedI32[1] = i32[sp - 3]; var ia = aliasedF64[0];
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1]; var ib = aliasedF64[0];
+    aliasedF64[0] = ia % ib;
+    i32[sp - 4] = aliasedI32[0];
+    i32[sp - 3] = aliasedI32[1];
+    sp -= 2;
+    return sp;
+  }
+
+  function Bytecode_DNEG(sp: number) {
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1];
+    aliasedF64[0] = -aliasedF64[0];
+    i32[sp - 2] = aliasedI32[0];
+    i32[sp - 1] = aliasedI32[1];
+    return sp;
+  }
+
   /**
    * Main interpreter loop. This method is carefully written to avoid memory allocation and
    * function calls on fast paths. Therefore, everything is inlined, even if it makes the code
@@ -1199,14 +1303,7 @@ module J2ME {
             f32[sp - 2] = f32[sp - 2] + f32[sp - 1]; sp--;
             continue;
           case Bytecodes.DADD:
-            aliasedI32[0] = i32[sp - 4];
-            aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1]; ib = aliasedF64[0];
-            aliasedF64[0] = ia + ib;
-            i32[sp - 4] = aliasedI32[0];
-            i32[sp - 3] = aliasedI32[1];
-            sp -= 2;
+            sp = Bytecode_DADD(sp);
             continue;
           case Bytecodes.ISUB:
             i32[sp - 2 | 0] = (i32[sp - 2 | 0] - i32[sp - 1 | 0]) | 0;
@@ -1219,14 +1316,7 @@ module J2ME {
             f32[sp - 2] = f32[sp - 2] - f32[sp - 1]; sp--;
             continue;
           case Bytecodes.DSUB:
-            aliasedI32[0] = i32[sp - 4];
-            aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1]; ib = aliasedF64[0];
-            aliasedF64[0] = ia - ib;
-            i32[sp - 4] = aliasedI32[0];
-            i32[sp - 3] = aliasedI32[1];
-            sp -= 2;
+            sp = Bytecode_DSUB(sp);
             continue;
           case Bytecodes.IMUL:
             i32[sp - 2 | 0] = Math.imul(i32[sp - 2 | 0], i32[sp - 1 | 0]) | 0;
@@ -1239,14 +1329,7 @@ module J2ME {
             f32[sp - 2] = f32[sp - 2] * f32[sp - 1]; sp--;
             continue;
           case Bytecodes.DMUL:
-            aliasedI32[0] = i32[sp - 4];
-            aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1]; ib = aliasedF64[0];
-            aliasedF64[0] = ia * ib;
-            i32[sp - 4] = aliasedI32[0];
-            i32[sp - 3] = aliasedI32[1];
-            sp -= 2;
+            sp = Bytecode_DMUL(sp);
             continue;
           case Bytecodes.IDIV:
             if (i32[sp - 1] === 0) {
@@ -1266,14 +1349,7 @@ module J2ME {
             f32[sp - 2] = Math.fround(f32[sp - 2] / f32[sp - 1]); sp--;
             continue;
           case Bytecodes.DDIV:
-            aliasedI32[0] = i32[sp - 4];
-            aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1]; ib = aliasedF64[0];
-            aliasedF64[0] = ia / ib;
-            i32[sp - 4] = aliasedI32[0];
-            i32[sp - 3] = aliasedI32[1];
-            sp -= 2;
+            sp = Bytecode_DDIV(sp);
             continue;
           case Bytecodes.IREM:
             if (i32[sp - 1] === 0) {
@@ -1291,14 +1367,7 @@ module J2ME {
             f32[sp - 2] = Math.fround(f32[sp - 2] % f32[sp - 1]); sp--;
             continue;
           case Bytecodes.DREM:
-            aliasedI32[0] = i32[sp - 4];
-            aliasedI32[1] = i32[sp - 3]; ia = aliasedF64[0];
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1]; ib = aliasedF64[0];
-            aliasedF64[0] = ia % ib;
-            i32[sp - 4] = aliasedI32[0];
-            i32[sp - 3] = aliasedI32[1];
-            sp -= 2;
+            sp = Bytecode_DREM(sp);
             continue;
           case Bytecodes.INEG:
             i32[sp - 1] = -i32[sp - 1] | 0;
@@ -1310,11 +1379,7 @@ module J2ME {
             f32[sp - 1] = -f32[sp - 1];
             continue;
           case Bytecodes.DNEG:
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1];
-            aliasedF64[0] = -aliasedF64[0];
-            i32[sp - 2] = aliasedI32[0];
-            i32[sp - 1] = aliasedI32[1];
+            sp = Bytecode_DNEG(sp);
             continue;
           case Bytecodes.ISHL:
             i32[sp - 2 | 0] = i32[sp - 2 | 0] << i32[sp - 1 | 0];
@@ -1366,36 +1431,11 @@ module J2ME {
             continue;
           case Bytecodes.FCMPL:
           case Bytecodes.FCMPG:
-            var FCMP_fb = f32[--sp];
-            var FCMP_fa = f32[--sp];
-            if (FCMP_fa !== FCMP_fa || FCMP_fb !== FCMP_fb) {
-              i32[sp++] = op === Bytecodes.FCMPL ? -1 : 1;
-            } else if (FCMP_fa > FCMP_fb) {
-              i32[sp++] = 1;
-            } else if (FCMP_fa < FCMP_fb) {
-              i32[sp++] = -1;
-            } else {
-              i32[sp++] = 0;
-            }
+            sp = Bytecode_FCMPX(sp, op);
             continue;
           case Bytecodes.DCMPL:
           case Bytecodes.DCMPG:
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1];
-            var DCMP_fb = aliasedF64[0];
-            aliasedI32[0] = i32[sp - 4];
-            aliasedI32[1] = i32[sp - 3];
-            var DCMP_fa = aliasedF64[0];
-            sp -= 4;
-            if (DCMP_fa !== DCMP_fa || DCMP_fb !== DCMP_fb) {
-              i32[sp++] = op === Bytecodes.DCMPL ? -1 : 1;
-            } else if (DCMP_fa > DCMP_fb) {
-              i32[sp++] = 1;
-            } else if (DCMP_fa < DCMP_fb) {
-              i32[sp++] = -1;
-            } else {
-              i32[sp++] = 0;
-            }
+            sp = Bytecode_DCMPX(sp, op);
             continue;
           case Bytecodes.IFEQ:
             if (i32[--sp] === 0) {
@@ -1635,22 +1675,6 @@ module J2ME {
             }
             pc = opPC + jumpOffset | 0;
             continue;
-          //        case Bytecodes.GOTO_W:
-          //          frame.pc = frame.read32Signed() - 1;
-          //          break;
-          //        case Bytecodes.JSR:
-          //          pc = frame.read16();
-          //          stack.push(frame.pc);
-          //          frame.pc = pc;
-          //          break;
-          //        case Bytecodes.JSR_W:
-          //          pc = frame.read32();
-          //          stack.push(frame.pc);
-          //          frame.pc = pc;
-          //          break;
-          //        case Bytecodes.RET:
-          //          frame.pc = frame.local[frame.read8()];
-          //          break;
           case Bytecodes.I2L:
             i32[sp] = i32[sp - 1] < 0 ? -1 : 0; sp++;
             continue;
@@ -1984,9 +2008,6 @@ module J2ME {
                 value = (code[pc++] << 8 | code[pc++]) << 16 >> 16;
                 i32[lp + index] = i32[lp + index] + value | 0;
                 continue;
-              //case Bytecodes.RET:
-              //  this.pc = this.local[this.read16()];
-              //  break;
               default:
                 var opName = Bytecodes[op];
                 throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
@@ -2210,16 +2231,8 @@ module J2ME {
                 thread.pushMarkerFrame(FrameType.Native);
                 frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
 
-                if (!release) {
-                  // assert(callee.length === args.length, "Function " + callee + " (" + calleeTargetMethodInfo.implKey + "), should have " + args.length + " arguments.");
-                }
-
                 args.unshift(address);
                 returnValue = callee.apply(null, args);
-              }
-
-              if (!release) {
-                // checkReturnValue(calleeMethodInfo, returnValue, tempReturn0);
               }
 
               if (U) {
