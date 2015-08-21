@@ -951,25 +951,20 @@ module J2ME {
     var maxLocals = mi.codeAttribute.max_locals;
     var ci = mi.classInfo;
     var cp = ci.constantPool;
-
     var code = mi ? mi.codeAttribute.code : null;
-
     var fp = thread.fp | 0;
     var lp = fp - maxLocals | 0;
     var sp = thread.sp | 0;
     var opPC = 0, pc = thread.pc | 0;
-
     var tag: TAGS;
     var type, size;
     var value, index, offset, buffer, tag: TAGS, targetPC, jumpOffset;
     var address = 0, isStatic = false;
     var ia = 0, ib = 0, c = false; // Integer Operands
     var ll = 0, lh = 0; // Long Low / High
-
     var classInfo: ClassInfo;
     var otherClassInfo: ClassInfo;
     var fieldInfo: FieldInfo;
-
     var monitorAddr: number;
 
     // HEAD
@@ -986,7 +981,6 @@ module J2ME {
         assert(fp >= (thread.tp >> 2), "Frame pointer is not less than than the top of the stack.");
         assert(fp < (thread.tp + Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
         bytecodeCount++;
-
         if (traceStackWriter) {
           frame.set(thread, fp, sp, opPC); frame.trace(traceStackWriter);
           traceStackWriter.writeLn();
@@ -1156,7 +1150,6 @@ module J2ME {
               default:
                 i32[sp++] = i32[(address + Constants.ARRAY_HDR_SIZE >> 2) + index];
             }
-
             continue;
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
@@ -1737,47 +1730,33 @@ module J2ME {
                 return;
               }
               address = $.staticObjectAddresses[fieldInfo.classInfo.id] + fieldInfo.byteOffset;
-
               if (address === Constants.NULL) {
                 thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
                 continue;
               }
             } else {
               address = i32[--sp];
-
               if (address === Constants.NULL) {
                 thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
                 continue;
               }
-
               address += fieldInfo.byteOffset;
             }
-
-            switch (fieldInfo.kind) {
-              case Kind.Reference:
-                i32[sp++] = i32[address >> 2];
-                continue;
-              case Kind.Int:
-              case Kind.Byte:
-              case Kind.Char:
-              case Kind.Short:
-              case Kind.Boolean:
-              case Kind.Float:
-                i32[sp++] = i32[address >> 2];
-                continue;
-              case Kind.Long:
-              case Kind.Double:
-                i32[sp++] = i32[address     >> 2];
-                i32[sp++] = i32[address + 4 >> 2];
-                continue;
-              default:
-                release || assert(false, "fieldInfo.kind");
+            kind = fieldInfo.kind;
+            if (kind === Kind.Long || kind === Kind.Double) {
+              i32[sp++] = i32[address     >> 2];
+              i32[sp++] = i32[address + 4 >> 2];
+              continue;
+            } else {
+              i32[sp++] = i32[address >> 2];
+              continue;
             }
             continue;
           case Bytecodes.PUTFIELD:
           case Bytecodes.PUTSTATIC:
             index = code[pc++] << 8 | code[pc++];
             fieldInfo = cp.resolved[index] || cp.resolveField(index, op === Bytecodes.PUTSTATIC);
+            kind = fieldInfo.kind;
             isStatic = op === Bytecodes.PUTSTATIC;
             if (isStatic) {
               thread.classInitAndUnwindCheck(fp, sp, opPC, fieldInfo.classInfo);
@@ -1786,34 +1765,18 @@ module J2ME {
               }
               address = $.staticObjectAddresses[fieldInfo.classInfo.id] + fieldInfo.byteOffset;
             } else {
-              address = i32[sp - (isTwoSlot(fieldInfo.kind) ? 3 : 2)];
-
+              address = i32[sp - ((kind === Kind.Long || kind === Kind.Double) ? 3 : 2)];
               if (address === Constants.NULL) {
                 thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
                 continue;
               }
-
               address += fieldInfo.byteOffset;
             }
-            switch (fieldInfo.kind) {
-              case Kind.Reference:
-                i32[address >> 2] = i32[--sp];
-                break;
-              case Kind.Int:
-              case Kind.Byte:
-              case Kind.Char:
-              case Kind.Short:
-              case Kind.Boolean:
-              case Kind.Float:
-                i32[address >> 2] = i32[--sp];
-                break;
-              case Kind.Long:
-              case Kind.Double:
-                i32[address + 4 >> 2] = i32[--sp];
-                i32[address     >> 2] = i32[--sp];
-                break;
-              default:
-                release || assert(false, "fieldInfo.kind");
+            if (kind === Kind.Long || kind === Kind.Double) {
+              i32[address + 4 >> 2] = i32[--sp];
+              i32[address     >> 2] = i32[--sp];
+            } else {
+              i32[address >> 2] = i32[--sp];
             }
             if (!isStatic) {
               sp--; // Pop Reference
@@ -1833,13 +1796,10 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, mi.classInfo);
             address = i32[sp - 1];
-
             if (address === Constants.NULL) {
               continue;
             }
-
             otherClassInfo = classIdToClassInfoMap[i32[address >> 2]];
-
             if (!isAssignableTo(otherClassInfo, classInfo)) {
               thread.set(fp, sp, opPC);
               throw $.newClassCastException (
@@ -1851,7 +1811,6 @@ module J2ME {
             index = code[pc++] << 8 | code[pc++];
             classInfo = resolveClass(index, ci);
             address = i32[--sp];
-
             if (address === Constants.NULL) {
               i32[sp++] = 0;
             } else {
@@ -2001,7 +1960,6 @@ module J2ME {
             ci = mi.classInfo;
             cp = ci.constantPool;
             code = mi.codeAttribute.code;
-
             if (interrupt) {
               continue;
             }
@@ -2020,13 +1978,11 @@ module J2ME {
                 i32[sp++] = returnOne;
                 continue;
             }
-
             continue;
           case Bytecodes.INVOKEVIRTUAL:
           case Bytecodes.INVOKESPECIAL:
           case Bytecodes.INVOKESTATIC:
           case Bytecodes.INVOKEINTERFACE:
-
             index = code[pc++] << 8 | code[pc++];
             if (op === Bytecodes.INVOKEINTERFACE) {
               pc = pc + 2 | 0; // Args Number & Zero
@@ -2036,23 +1992,19 @@ module J2ME {
             // Resolve method and do the class init check if necessary.
             var calleeMethodInfo: MethodInfo = cp.resolved[index] || cp.resolveMethod(index, isStatic);
             var calleeTargetMethodInfo: MethodInfo = null;
-
             var callee = null;
-
             if (isStatic) {
               address = Constants.NULL;
             } else {
               address = i32[sp - calleeMethodInfo.argumentSlots];
               classInfo = (address !== Constants.NULL) ? classIdToClassInfoMap[i32[address >> 2]] : null;
             }
-
             if (isStatic) {
               thread.classInitAndUnwindCheck(fp, sp, opPC, calleeMethodInfo.classInfo);
               if (U) {
                 return;
               }
             }
-
             switch (op) {
               case Bytecodes.INVOKESPECIAL:
                 if (address === Constants.NULL) {
@@ -2089,18 +2041,15 @@ module J2ME {
               callee = calleeTargetMethodInfo.fn || getLinkedMethod(calleeTargetMethodInfo);
               var returnValue;
 
-
               var frameTypeOffset = -1;
               // Fast path for the no-argument case.
               if (signatureKinds.length === 1) {
                 if (!isStatic) {
                   --sp; // Pop Reference
                 }
-
                 thread.set(fp, sp, opPC);
                 thread.pushMarkerFrame(FrameType.Native);
                 frameTypeOffset = thread.fp + FrameLayout.FrameTypeOffset;
-
                 returnValue = callee(address);
               } else {
                 args.length = 0;
