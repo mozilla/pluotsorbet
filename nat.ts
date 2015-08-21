@@ -76,7 +76,7 @@ module J2ME {
         case Kind.Void:
           break;
         default:
-          release || J2ME.Debug.assert(false, "Invalid Kind: " + Kind[returnKind]);
+          release || J2ME.Debug.assert(false, "Invalid Kind: " + getKindName(returnKind));
       }
       thread.sp = sp;
 

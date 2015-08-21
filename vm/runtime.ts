@@ -230,17 +230,21 @@ module J2ME {
 
   import assert = J2ME.Debug.assert;
 
-  export enum RuntimeStatus {
+  export const enum RuntimeStatus {
     New       = 1,
     Started   = 2,
     Stopping  = 3, // Unused
     Stopped   = 4
   }
 
-  export enum MethodType {
+  export const enum MethodType {
     Interpreted,
     Native,
     Compiled
+  }
+
+  export function getMethodTypeName(methodType: MethodType) {
+    return (<any>J2ME).MethodType[methodType];
   }
 
   var hashMap = Object.create(null);
@@ -638,14 +642,18 @@ module J2ME {
 
   }
 
-  export enum VMState {
+  export const enum VMState {
     Running = 0,
     Yielding = 1,
     Pausing = 2,
     Stopping = 3
   }
 
-  export enum Constants {
+  export function getVMStateName(vmState: VMState): string {
+    return (<any>J2ME).VMState[vmState];
+  }
+
+  export const enum Constants {
     BYTE_MIN = -128,
     BYTE_MAX = 127,
     SHORT_MIN = -32768,
@@ -947,7 +955,7 @@ module J2ME {
                   "return aliasedF64[0];");
                 break;
               default:
-                Debug.assert(false, Kind[field.kind]);
+                Debug.assert(false, getKindName(field.kind));
                 break;
             }
           } else {
@@ -1030,15 +1038,15 @@ module J2ME {
     var wrapper = function() {
       // jsGlobal.getBacktrace && traceWriter.writeLn(jsGlobal.getBacktrace());
       var args = Array.prototype.slice.apply(arguments);
-      traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey);
+      traceWriter.enter("> " + getMethodTypeName(methodType)[0] + " " + methodInfo.implKey);
       var s = performance.now();
       try {
         var value = fn.apply(this, args);
       } catch (e) {
-        traceWriter.leave("< " + MethodType[methodType][0] + " Throwing");
+        traceWriter.leave("< " + getMethodTypeName(methodType)[0] + " Throwing");
         throw e;
       }
-      traceWriter.leave("< " + MethodType[methodType][0] + " " + methodInfo.implKey);
+      traceWriter.leave("< " + getMethodTypeName(methodType)[0] + " " + methodInfo.implKey);
       return value;
     };
     (<any>wrapper).methodInfo = methodInfo;
@@ -1171,7 +1179,7 @@ module J2ME {
     var compiledMethod;
     enterTimeline("Compiling");
     try {
-      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget[enableCompiledMethodCache ? "Static" : "Runtime"]);
+      compiledMethod = baselineCompileMethod(methodInfo, enableCompiledMethodCache ? CompilationTarget.Static : CompilationTarget.Runtime);
       compiledMethodCount ++;
     } catch (e) {
       methodInfo.state = MethodState.CannotCompile;

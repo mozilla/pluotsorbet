@@ -5,7 +5,7 @@ module J2ME {
   var writer = new IndentingWriter();
 
 
-  export enum Kind {
+  export const enum Kind {
     Boolean,
     Byte,
     Short,
@@ -19,6 +19,10 @@ module J2ME {
     Illegal,
     High,
     Store
+  }
+
+  export function getKindName(kind: Kind): string {
+    return (<any>J2ME).Kind[kind];
   }
 
   export function isTwoSlot(kind: Kind) {

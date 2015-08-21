@@ -194,7 +194,7 @@ PREPROCESS_SRCS = \
 	$(NULL)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
+all: config-build java jasmin tests j2me shumway bench/benchmark.jar bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -358,7 +358,7 @@ vm/native/Boehm.js/.libs/$(BOEHM_LIB):
 
 bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) bld/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
-	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
+	tsc --preserveConstEnums --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 ifeq ($(RELEASE),1)
 	java -jar build_tools/closure.jar --formatting PRETTY_PRINT --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
@@ -366,11 +366,11 @@ endif
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME AOT Compiler"
-	tsc --sourcemap --target ES5 references-jsc.ts -d --out bld/j2me-jsc.js
+	tsc --preserveConstEnums --sourcemap --target ES5 references-jsc.ts -d --out bld/j2me-jsc.js
 
 bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
-	tsc --sourcemap --target ES5 jsc.ts --out bld/jsc.js
+	tsc --preserveConstEnums --sourcemap --target ES5 jsc.ts --out bld/jsc.js
 
 # Some scripts use ES6 features, so we have to specify ES6 as the in-language
 # in order for Closure to compile them, even though for now we're optimizing

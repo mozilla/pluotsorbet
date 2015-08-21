@@ -202,7 +202,7 @@ module J2ME {
       case Kind.Double:
         return"Float64Array";
       default:
-        throw Debug.unexpected(Kind[kind]);
+        throw Debug.unexpected(getKindName(kind));
     }
   }
 
@@ -215,7 +215,7 @@ module J2ME {
       case Condition.GT: return ">";
       case Condition.GE: return ">=";
       default:
-        Debug.unexpected(Condition[condition]);
+        Debug.unexpected((<any>Bytecode).Condition[condition]);
     }
   }
 
@@ -674,7 +674,7 @@ module J2ME {
     }
 
     pop(kind: J2ME.Kind): string {
-      release || assert (this.sp, "SP should not be less than zero, popping: " + Kind[kind]);
+      release || assert (this.sp, "SP should not be less than zero, popping: " + getKindName(kind));
       this.sp --;
       return this.getStack(this.sp);
     }
@@ -891,7 +891,7 @@ module J2ME {
           methodId = objClass + ".iTable['" + methodInfo.mangledName + "'].id";
           call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
         } else {
-          Debug.unexpected(Bytecodes[opcode]);
+          Debug.unexpected(Bytecode.getBytecodesName(opcode));
         }
       } else {
         args.unshift(String(Constants.NULL));
@@ -904,7 +904,7 @@ module J2ME {
         call = inlineMethods[methodInfo.implKey];
       }
       this.needsVariable("re");
-      emitDebugInfoComments && this.blockEmitter.writeLn("// " + Bytecodes[opcode] + ": " + methodInfo.implKey);
+      emitDebugInfoComments && this.blockEmitter.writeLn("// " + Bytecode.getBytecodesName(opcode) + ": " + methodInfo.implKey);
       this.blockEmitter.writeLn("re=" + call + ";");
       if (calleeCanYield) {
         this.emitUnwind(this.blockEmitter, String(this.pc));
@@ -984,7 +984,7 @@ module J2ME {
           this.blockEmitter.writeLn("i32[ea+1]=" + h + ";");
           return;
         default:
-          Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
+          Debug.assertUnreachable("Unimplemented type: " + getKindName(kind));
           break;
       }
     }
@@ -1019,7 +1019,7 @@ module J2ME {
           this.emitPush(kind, "i32[ea+1]");
           break;
         default:
-          Debug.assertUnreachable("Unimplemented type: " + Kind[kind]);
+          Debug.assertUnreachable("Unimplemented type: " + getKindName(kind));
           break;
       }
     }
@@ -1056,7 +1056,7 @@ module J2ME {
           this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".constantPool.resolve(" + index + ", " + TAGS.CONSTANT_String + ")");
           return;
         default:
-          throw "Not done for: " + TAGS[tag];
+          throw "Not done for: " + getTAGSName(tag);
       }
     }
 
@@ -1244,7 +1244,7 @@ module J2ME {
           break;
         }
         default:
-          Debug.unexpected(Bytecodes[opcode]);
+          Debug.unexpected(Bytecode.getBytecodesName(opcode));
       }
     }
 
@@ -1257,7 +1257,7 @@ module J2ME {
       } else if (kind === Kind.Long) {
         this.blockEmitter.writeLn("!" + l + "&&!" + h + "&&TA();");
       } else {
-        Debug.unexpected(Kind[kind]);
+        Debug.unexpected(getKindName(kind));
       }
     }
 
@@ -1294,7 +1294,7 @@ module J2ME {
         case Bytecodes.FMUL:
         case Bytecodes.FDIV:
         case Bytecodes.FREM:
-          this.emitPush(Kind.Float, Bytecodes[opcode].toLowerCase() + "(" + al + "," + bl + ")");
+          this.emitPush(Kind.Float, Bytecode.getBytecodesName(opcode).toLowerCase() + "(" + al + "," + bl + ")");
           break;
         case Bytecodes.LADD:
         case Bytecodes.LSUB:
@@ -1306,11 +1306,11 @@ module J2ME {
         case Bytecodes.DMUL:
         case Bytecodes.DDIV:
         case Bytecodes.DREM:
-          this.emitPush(Kind.Double, Bytecodes[opcode].toLowerCase() + "(" + al + "," + ah + "," + bl + "," + bh + ")");
+          this.emitPush(Kind.Double, Bytecode.getBytecodesName(opcode).toLowerCase() + "(" + al + "," + ah + "," + bl + "," + bh + ")");
           this.emitPush(Kind.High, "tempReturn0");
           break;
         default:
-          release || assert(false, "emitArithmeticOp: " + Bytecodes[opcode]);
+          release || assert(false, "emitArithmeticOp: " + Bytecode.getBytecodesName(opcode));
       }
     }
 
@@ -1329,11 +1329,11 @@ module J2ME {
           break;
         case Kind.Long:
         case Kind.Double:
-          this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + ")");
+          this.emitPush(kind, Bytecode.getBytecodesName(opcode).toLowerCase() + "(" + l + "," + h + ")");
           this.emitPush(Kind.High, "tempReturn0");
           break;
         default:
-          Debug.unexpected(Kind[kind]);
+          Debug.unexpected(getKindName(kind));
       }
     }
 
@@ -1352,11 +1352,11 @@ module J2ME {
         case Bytecodes.LSHL:
         case Bytecodes.LSHR:
         case Bytecodes.LUSHR:
-          this.emitPush(kind, Bytecodes[opcode].toLowerCase() + "(" + l + "," + h + "," + s + ")");
+          this.emitPush(kind, Bytecode.getBytecodesName(opcode).toLowerCase() + "(" + l + "," + h + "," + s + ")");
           this.emitPush(Kind.High, "tempReturn0");
           return;
         default:
-          Debug.unexpected(Bytecodes[opcode]);
+          Debug.unexpected(Bytecode.getBytecodesName(opcode));
       }
     }
 
@@ -1380,7 +1380,7 @@ module J2ME {
         case Bytecodes.LXOR: this.emitPush(kind, al + "^" + bl);
                              this.emitPush(kind, ah + "^" + bh); return;
         default:
-          Debug.unexpected(Bytecodes[opcode]);
+          Debug.unexpected(Bytecode.getBytecodesName(opcode));
       }
     }
 
@@ -1444,7 +1444,7 @@ module J2ME {
           this.emitPush(Kind.Float, "d2f(" + l + "," + h + ")");
           break;
         default:
-          throwCompilerError(Bytecodes[opcode]);
+          throwCompilerError(Bytecode.getBytecodesName(opcode));
       }
     }
 
@@ -1519,7 +1519,7 @@ module J2ME {
     emitBytecode(stream: BytecodeStream, block: Block) {
       var cpi: number;
       var opcode: Bytecodes = stream.currentBC();
-      writer && writer.writeLn("emit: pc: " + stream.currentBCI + ", sp: " + this.sp + " " + Bytecodes[opcode]);
+      writer && writer.writeLn("emit: pc: " + stream.currentBCI + ", sp: " + this.sp + " " + Bytecode.getBytecodesName(opcode));
 
       if ((block.isExceptionEntry || block.hasHandlers) && Bytecode.canTrap(opcode)) {
         this.blockEmitter.writeLn("pc=" + this.pc + ";");
@@ -1734,7 +1734,7 @@ module J2ME {
         // case Bytecodes.JSR            : ... break;
         // case Bytecodes.RET            : ... break;
         default:
-          throw new Error("Not Implemented " + Bytecodes[opcode]);
+          throw new Error("Not Implemented " + Bytecode.getBytecodesName(opcode));
       }
       writer && writer.writeLn("");
     }
