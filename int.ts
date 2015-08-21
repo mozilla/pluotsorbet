@@ -913,6 +913,77 @@ module J2ME {
     return sp;
   }
 
+  function Bytecodes_DUP_X2(sp: number) {
+    // ... c, b, a -> ... a, c, b, a
+    i32[sp    ] = i32[sp - 1]; // a
+    i32[sp - 1] = i32[sp - 2]; // b
+    i32[sp - 2] = i32[sp - 3]; // c
+    i32[sp - 3] = i32[sp];     // a
+    sp++;
+    return sp;
+  }
+
+  function Bytecodes_DUP2_X1(sp: number) {
+    // ... c, b, a -> ... b, a, c, b, a
+    i32[sp + 1] = i32[sp - 1]; // a
+    i32[sp    ] = i32[sp - 2]; // b
+    i32[sp - 1] = i32[sp - 3]; // c
+    i32[sp - 2] = i32[sp + 1]; // a
+    i32[sp - 3] = i32[sp    ]; // b
+    sp += 2;
+    return sp;
+  }
+
+  function Bytecodes_DUP2_X2(sp: number) {
+    // ... d, c, b, a -> ... b, a, d, c, b, a
+    i32[sp + 1] = i32[sp - 1]; // a
+    i32[sp    ] = i32[sp - 2]; // b
+    i32[sp - 1] = i32[sp - 3]; // c
+    i32[sp - 2] = i32[sp - 4]; // d
+    i32[sp - 3] = i32[sp + 1]; // a
+    i32[sp - 4] = i32[sp    ]; // b
+    sp += 2;
+    return sp;
+  }
+
+  function Bytecode_WIDE(sp: number, pc: number, lp: number, code: Uint8Array) {
+    var op = code[pc++];
+    var offset = 0, index = 0, value = 0;
+    switch (op) {
+      case Bytecodes.ILOAD:
+      case Bytecodes.FLOAD:
+      case Bytecodes.ALOAD:
+        i32[sp++] = i32[lp + (code[pc++] << 8 | code[pc++])];
+        break;
+      case Bytecodes.LLOAD:
+      case Bytecodes.DLOAD:
+        offset = lp + (code[pc++] << 8 | code[pc++]);
+        i32[sp++] = i32[offset];
+        i32[sp++] = i32[offset + 1];
+        break;
+      case Bytecodes.ISTORE:
+      case Bytecodes.FSTORE:
+      case Bytecodes.ASTORE:
+        i32[lp + (code[pc++] << 8 | code[pc++])] = i32[--sp];
+        break;
+      case Bytecodes.LSTORE:
+      case Bytecodes.DSTORE:
+        offset = lp + (code[pc++] << 8 | code[pc++]);
+        i32[offset + 1] = i32[--sp];
+        i32[offset]     = i32[--sp];
+        break;
+      case Bytecodes.IINC:
+        index = code[pc++] << 8 | code[pc++];
+        value = (code[pc++] << 8 | code[pc++]) << 16 >> 16;
+        i32[lp + index] = i32[lp + index] + value | 0;
+        break;
+      default:
+        throw new Error("Wide opcode " + Bytecodes[op] + " [" + op + "] not supported.");
+    }
+    tempReturn0 = pc;
+    return sp;
+  }
+
   /**
    * Main interpreter loop. This method is carefully written to avoid memory allocation and
    * function calls on fast paths. Therefore, everything is inlined, even if it makes the code
@@ -949,6 +1020,7 @@ module J2ME {
       // TODO call the compiled method.
     }
     var maxLocals = mi.codeAttribute.max_locals;
+    var op = 0;
     var ci = mi.classInfo;
     var cp = ci.constantPool;
     var code = mi ? mi.codeAttribute.code : null;
@@ -1289,29 +1361,14 @@ module J2ME {
             i32[sp - 2] = i32[sp];     // a
             sp++;
             continue;
-          case Bytecodes.DUP_X2: // ... c, b, a -> ... a, c, b, a
-            i32[sp    ] = i32[sp - 1]; // a
-            i32[sp - 1] = i32[sp - 2]; // b
-            i32[sp - 2] = i32[sp - 3]; // c
-            i32[sp - 3] = i32[sp];     // a
-            sp++;
+          case Bytecodes.DUP_X2:
+            sp = Bytecodes_DUP_X2(sp);
             continue;
-          case Bytecodes.DUP2_X1: // ... c, b, a -> ... b, a, c, b, a
-            i32[sp + 1] = i32[sp - 1]; // a
-            i32[sp    ] = i32[sp - 2]; // b
-            i32[sp - 1] = i32[sp - 3]; // c
-            i32[sp - 2] = i32[sp + 1]; // a
-            i32[sp - 3] = i32[sp    ]; // b
-            sp += 2;
+          case Bytecodes.DUP2_X1:
+            sp = Bytecodes_DUP2_X1(sp);
             continue;
-          case Bytecodes.DUP2_X2: // ... d, c, b, a -> ... b, a, d, c, b, a
-            i32[sp + 1] = i32[sp - 1]; // a
-            i32[sp    ] = i32[sp - 2]; // b
-            i32[sp - 1] = i32[sp - 3]; // c
-            i32[sp - 2] = i32[sp - 4]; // d
-            i32[sp - 3] = i32[sp + 1]; // a
-            i32[sp - 4] = i32[sp    ]; // b
-            sp += 2;
+          case Bytecodes.DUP2_X2:
+            sp = Bytecodes_DUP2_X2(sp);
             continue;
           case Bytecodes.SWAP:
             ia = i32[sp - 1];
@@ -1837,43 +1894,8 @@ module J2ME {
             thread.ctx.monitorExit(getMonitor(i32[--sp]));
             continue;
           case Bytecodes.WIDE:
-            var op = code[pc++];
-            switch (op) {
-              case Bytecodes.ILOAD:
-              case Bytecodes.FLOAD:
-                i32[sp++] = i32[lp + (code[pc++] << 8 | code[pc++])];
-                continue;
-              case Bytecodes.ALOAD:
-                i32[sp++] = i32[lp + (code[pc++] << 8 | code[pc++])];
-                continue;
-              case Bytecodes.LLOAD:
-              case Bytecodes.DLOAD:
-                offset = lp + (code[pc++] << 8 | code[pc++]);
-                i32[sp++] = i32[offset];
-                i32[sp++] = i32[offset + 1];
-                continue;
-              case Bytecodes.ISTORE:
-              case Bytecodes.FSTORE:
-                i32[lp + (code[pc++] << 8 | code[pc++])] = i32[--sp];
-                continue;
-              case Bytecodes.ASTORE:
-                i32[lp + (code[pc++] << 8 | code[pc++])] = i32[--sp];
-                continue;
-              case Bytecodes.LSTORE:
-              case Bytecodes.DSTORE:
-                offset = lp + (code[pc++] << 8 | code[pc++]);
-                i32[offset + 1] = i32[--sp];
-                i32[offset]     = i32[--sp];
-                continue;
-              case Bytecodes.IINC:
-                index = code[pc++] << 8 | code[pc++];
-                value = (code[pc++] << 8 | code[pc++]) << 16 >> 16;
-                i32[lp + index] = i32[lp + index] + value | 0;
-                continue;
-              default:
-                var opName = Bytecodes[op];
-                throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
-            }
+            sp = Bytecode_WIDE(sp, pc, lp, code);
+            pc = tempReturn0;
             continue;
           case Bytecodes.NEWARRAY:
             type = code[pc++];
