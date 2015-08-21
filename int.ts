@@ -846,6 +846,38 @@ module J2ME {
     return sp;
   }
 
+  function Bytecode_D2I(sp: number) {
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1];
+    var a = aliasedF64[0];
+    if (a > Constants.INT_MAX) {
+      i32[sp - 2] = Constants.INT_MAX;
+    } else if (a < Constants.INT_MIN) {
+      i32[sp - 2] = Constants.INT_MIN;
+    } else {
+      i32[sp - 2] = a | 0;
+    }
+    sp--;
+    return sp;
+  }
+
+  function Bytecode_D2L(sp: number) {
+    aliasedI32[0] = i32[sp - 2];
+    aliasedI32[1] = i32[sp - 1];
+    var a = aliasedF64[0];
+    if (a === Number.POSITIVE_INFINITY) {
+      i32[sp - 2] = Constants.LONG_MAX_LOW;
+      i32[sp - 1] = Constants.LONG_MAX_HIGH;
+    } else if (a === Number.NEGATIVE_INFINITY) {
+      i32[sp - 2] = Constants.LONG_MIN_LOW;
+      i32[sp - 1] = Constants.LONG_MIN_HIGH;
+    } else {
+      i32[sp - 2] = returnLongValue(a);
+      i32[sp - 1] = tempReturn0;
+    }
+    return sp;
+  }
+
   /**
    * Main interpreter loop. This method is carefully written to avoid memory allocation and
    * function calls on fast paths. Therefore, everything is inlined, even if it makes the code
@@ -1650,32 +1682,10 @@ module J2ME {
             i32[sp++] = aliasedI32[1];
             continue;
           case Bytecodes.D2I:
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1];
-            var D2I_fa = aliasedF64[0];
-            if (D2I_fa > Constants.INT_MAX) {
-              i32[sp - 2] = Constants.INT_MAX;
-            } else if (D2I_fa < Constants.INT_MIN) {
-              i32[sp - 2] = Constants.INT_MIN;
-            } else {
-              i32[sp - 2] = D2I_fa | 0;
-            }
-            sp --;
+            sp = Bytecode_D2I(sp);
             continue;
           case Bytecodes.D2L:
-            aliasedI32[0] = i32[sp - 2];
-            aliasedI32[1] = i32[sp - 1];
-            var D2L_fa = aliasedF64[0];
-            if (D2L_fa === Number.POSITIVE_INFINITY) {
-              i32[sp - 2] = Constants.LONG_MAX_LOW;
-              i32[sp - 1] = Constants.LONG_MAX_HIGH;
-            } else if (D2L_fa === Number.NEGATIVE_INFINITY) {
-              i32[sp - 2] = Constants.LONG_MIN_LOW;
-              i32[sp - 1] = Constants.LONG_MIN_HIGH;
-            } else {
-              i32[sp - 2] = returnLongValue(D2L_fa);
-              i32[sp - 1] = tempReturn0;
-            }
+            sp = Bytecode_D2L(sp);
             continue;
           case Bytecodes.D2F:
             aliasedI32[0] = i32[sp - 2];
