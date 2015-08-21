@@ -12,8 +12,20 @@ interface Math {
 }
 
 interface CompiledMethodCache {
-  get(key: string): { key: string; source: string; referencedClasses: string[]; };
-  put(obj: { key: string; source: string; referencedClasses: string[]; }): Promise<any>;
+  get(key: string): {
+    key: string;
+    args: string[];
+    body: string;
+    referencedClasses: string[];
+    onStackReplacementEntryPoints: any;
+  };
+  put(obj: {
+    key: string;
+    args: string[];
+    body: string;
+    referencedClasses: string[];
+    onStackReplacementEntryPoints: any;
+  }): Promise<any>;
 }
 
 interface AOTMetaData {
@@ -53,7 +65,7 @@ module J2ME {
   /**
    * Turns on just-in-time compilation of methods.
    */
-  export var enableRuntimeCompilation = false;
+  export var enableRuntimeCompilation = true;
 
   /**
    * Turns on onStackReplacement
@@ -63,7 +75,7 @@ module J2ME {
   /**
    * Turns on caching of JIT-compiled methods.
    */
-  export var enableCompiledMethodCache = false && typeof CompiledMethodCache !== "undefined";
+  export var enableCompiledMethodCache = true && typeof CompiledMethodCache !== "undefined";
 
   /**
    * Traces method execution.
@@ -1180,14 +1192,23 @@ module J2ME {
       return;
     }
 
-    //if (enableCompiledMethodCache) {
-    //  var cachedMethod;
-    //  if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
-    //    cachedMethodCount ++;
-    //    jitWriter && jitWriter.writeLn("Getting " + methodInfo.implKey + " from compiled method cache");
-    //    return linkMethodSource(methodInfo, cachedMethod.source, cachedMethod.referencedClasses, cachedMethod.onStackReplacementEntryPoints);
-    //  }
-    //}
+    if (enableCompiledMethodCache) {
+      var cachedMethod;
+      if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
+        cachedMethodCount ++;
+        jitWriter && jitWriter.writeLn("Retrieved " + methodInfo.implKey + " from compiled method cache");
+
+        var referencedClasses = [];
+        // Ensure referenced classes are loaded.
+        // We only need to do this for cached methods, since referenced classes
+        // get loaded automatically during JIT compilation.
+        for (var i = 0; i < cachedMethod.referencedClasses.length; i++) {
+          referencedClasses.push(CLASSES.getClass(cachedMethod.referencedClasses[i]));
+        }
+        linkMethodSource(methodInfo, cachedMethod.args, cachedMethod.body, referencedClasses, cachedMethod.onStackReplacementEntryPoints);
+        return;
+      }
+    }
 
     var mangledClassAndMethodName = methodInfo.mangledClassAndMethodName;
 
@@ -1206,20 +1227,27 @@ module J2ME {
       return;
     }
     leaveTimeline("Compiling");
-    codeWriter && codeWriter.writeLn("// Method: " + methodInfo.implKey);
-    codeWriter && codeWriter.writeLn("// Arguments: " + compiledMethod.args.join(", "));
-    codeWriter && codeWriter.writeLns(compiledMethod.body);
-    var referencedClasses = compiledMethod.referencedClasses.map(function(v) { return v.getClassNameSlow() });
+    if (codeWriter) {
+      codeWriter.writeLn("// Method: " + methodInfo.implKey);
+      codeWriter.writeLn("// Arguments: " + compiledMethod.args.join(", "));
+      codeWriter.writeLn("// Referenced Classes: ");
+      for (var i = 0; i < compiledMethod.referencedClasses.length; i++) {
+        codeWriter.writeLn("// " + i + ": " + compiledMethod.referencedClasses[i].getClassNameSlow());
+      }
+      codeWriter.writeLns(compiledMethod.body)
+    }
 
-    //if (enableCompiledMethodCache) {
-    //  CompiledMethodCache.put({
-    //    key: methodInfo.implKey,
-    //    source: source,
-    //    referencedClasses: referencedClasses,
-    //    onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
-    //  });
-    //}
-    linkMethodSource(methodInfo, compiledMethod.args, compiledMethod.body, referencedClasses, compiledMethod.onStackReplacementEntryPoints);
+    if (enableCompiledMethodCache) {
+      CompiledMethodCache.put({
+        key: methodInfo.implKey,
+        args: compiledMethod.args,
+        body: compiledMethod.body,
+        referencedClasses: compiledMethod.referencedClasses.map(function(v) { return v.getClassNameSlow() }),
+        onStackReplacementEntryPoints: compiledMethod.onStackReplacementEntryPoints
+      });
+    }
+
+    linkMethodSource(methodInfo, compiledMethod.args, compiledMethod.body, compiledMethod.referencedClasses, compiledMethod.onStackReplacementEntryPoints);
     var methodJITTime = (performance.now() - s);
     totalJITTime += methodJITTime;
     if (jitWriter) {
@@ -1254,9 +1282,16 @@ module J2ME {
   /**
    * Links up compiled method at runtime.
    */
-  export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, referencedClasses: string[], onStackReplacementEntryPoints: any) {
+  export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, referencedClasses: ClassInfo [], onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
-
+    // TODO: Don't use RegExp ever ever.
+    body = body.replace(/@@(\d+)/g, <any>function (match, symbol) {
+      // jitWriter && jitWriter.writeLn("Linking Class Symbol: " + symbol + " to " + referencedClasses[symbol]);
+      return referencedClasses[symbol].id;
+    }).replace(/@!(\d+):(\d+)/g, <any>function (match, symbol, index) {
+      // jitWriter && jitWriter.writeLn("Linking Method Symbol: " + symbol + ":" + index + " to " + referencedClasses[symbol].getMethodByIndex(index));
+      return referencedClasses[symbol].getMethodByIndex(index).id;
+    });
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
     // var fn = new Function(args.join(','), body);
