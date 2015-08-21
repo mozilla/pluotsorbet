@@ -1588,22 +1588,12 @@ module J2ME {
 
                   if (previousFrameType === FrameType.ExitInterpreter) {
                     thread.set(fp, sp, opPC);
-                    switch (kind) {
-                      case Kind.Long:
-                      case Kind.Double:
-                        return returnLong(returnValue, tempReturn0);
-                      case Kind.Int:
-                      case Kind.Byte:
-                      case Kind.Char:
-                      case Kind.Float:
-                      case Kind.Short:
-                      case Kind.Boolean:
-                      case Kind.Reference:
-                        return returnValue;
-                      case Kind.Void:
-                        return;
-                      default:
-                        release || assert(false, "Invalid Kind: " + Kind[kind]);
+                    if (kind === Kind.Void) {
+                      return;
+                    } else if (kind === Kind.Long || kind === Kind.Double) {
+                      return returnLong(returnValue, tempReturn0);
+                    } else {
+                      return returnValue;
                     }
                   }
 
@@ -1618,25 +1608,15 @@ module J2ME {
 
                   pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
                   // Push return value.
-                  switch (kind) {
-                    case Kind.Long:
-                    case Kind.Double:
-                      i32[sp++] = returnValue;
-                      i32[sp++] = tempReturn0;
-                      continue;
-                    case Kind.Int:
-                    case Kind.Byte:
-                    case Kind.Char:
-                    case Kind.Float:
-                    case Kind.Short:
-                    case Kind.Boolean:
-                    case Kind.Reference:
-                      i32[sp++] = returnValue;
-                      continue;
-                    case Kind.Void:
-                      continue;
-                    default:
-                      release || assert(false, "Invalid Kind: " + Kind[kind]);
+                  if (kind === Kind.Void) {
+                    continue;
+                  } else if (kind === Kind.Long || kind === Kind.Double) {
+                    i32[sp++] = returnValue;
+                    i32[sp++] = tempReturn0;
+                    continue;
+                  } else {
+                    i32[sp++] = returnValue;
+                    continue;
                   }
                 }
               }
