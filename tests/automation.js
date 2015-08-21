@@ -390,6 +390,7 @@ casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
                     test.assertTextDoesntExist("FAIL");
                     test.assertTextExists("START - Background alarm started: 0");
                     test.assertTextExists("DONE - Background alarm started: 1");
+                    syncFS();
                 });
             });
         });
