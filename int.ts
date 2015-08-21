@@ -878,6 +878,41 @@ module J2ME {
     return sp;
   }
 
+  function Bytecode_TABLESWITCH(sp: number, pc: number, opPC: number, code: Uint8Array) {
+    pc = (pc + 3) & ~0x03; // Consume Padding
+    var offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+    var ia = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+    var ib = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+    var value = i32[--sp];
+    if (value >= ia && value <= ib) {
+      pc += (value - ia) << 2;
+      offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+    }
+    tempReturn0 = opPC + offset;
+    return sp;
+  }
+
+  function Bytecode_LOOKUPSWITCH(sp: number, pc: number, opPC: number, code: Uint8Array) {
+    pc = (pc + 3) & ~0x03; // Consume Padding
+    var offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+    var npairs = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+    var value = i32[--sp];
+    lookup:
+    for (var i = 0; i < npairs; i++) {
+      var key  = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+      if (key === value) {
+        offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
+      } else {
+        pc += 4;
+      }
+      if (key >= value) {
+        break lookup;
+      }
+    }
+    tempReturn0 = opPC + offset;
+    return sp;
+  }
+
   /**
    * Main interpreter loop. This method is carefully written to avoid memory allocation and
    * function calls on fast paths. Therefore, everything is inlined, even if it makes the code
@@ -1703,35 +1738,12 @@ module J2ME {
             i32[sp - 1] = (i32[sp - 1] << 16) >> 16;
             continue;
           case Bytecodes.TABLESWITCH:
-            pc = (pc + 3) & ~0x03; // Consume Padding
-            offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
-            ia = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
-            ib = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
-            value = i32[--sp];
-            if (value >= ia && value <= ib) {
-              pc += (value - ia) << 2;
-              offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
-            }
-            pc = opPC + offset;
+            sp = Bytecode_TABLESWITCH(sp, pc, opPC, code);
+            pc = tempReturn0;
             continue;
           case Bytecodes.LOOKUPSWITCH:
-            pc = (pc + 3) & ~0x03; // Consume Padding
-                offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
-            var npairs = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
-            value = i32[--sp];
-            lookup:
-            for (var i = 0; i < npairs; i++) {
-              var key  = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
-              if (key === value) {
-                offset = code[pc++] << 24 | code[pc++] << 16 | code[pc++] << 8 | code[pc++];
-              } else {
-                pc += 4;
-              }
-              if (key >= value) {
-                break lookup;
-              }
-            }
-            pc = opPC + offset;
+            sp = Bytecode_LOOKUPSWITCH(sp, pc, opPC, code);
+            pc = tempReturn0;
             continue;
           case Bytecodes.ANEWARRAY:
             index = code[pc++] << 8 | code[pc++];
