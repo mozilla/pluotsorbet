@@ -1130,50 +1130,33 @@ module J2ME {
             continue;
           case Bytecodes.IALOAD:
           case Bytecodes.FALOAD:
-            index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
-              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
-            }
-            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
-            continue;
+          case Bytecodes.AALOAD:
           case Bytecodes.BALOAD:
-            index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
-              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
-            }
-            i32[sp++] = i8[arrayAddr + Constants.ARRAY_HDR_SIZE + index];
-            continue;
           case Bytecodes.CALOAD:
-            index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
-              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
-            }
-            i32[sp++] = u16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index];
-            continue;
           case Bytecodes.SALOAD:
             index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
-              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
-            }
-            i32[sp++] = i16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index];
-            continue;
-          case Bytecodes.AALOAD:
-            index = i32[--sp];
-            arrayAddr = i32[--sp];
-
-            if (arrayAddr === Constants.NULL) {
+            address = i32[--sp];
+            if (address === Constants.NULL) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
               continue;
             }
-
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
+            if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
+            switch (op) {
+              case Bytecodes.BALOAD:
+                i32[sp++] = i8[address + Constants.ARRAY_HDR_SIZE + index];
+                continue;
+              case Bytecodes.CALOAD:
+                i32[sp++] = u16[(address + Constants.ARRAY_HDR_SIZE >> 1) + index];
+                continue;
+              case Bytecodes.SALOAD:
+                i32[sp++] = i16[(address + Constants.ARRAY_HDR_SIZE >> 1) + index];
+                continue;
+              default:
+                i32[sp++] = i32[(address + Constants.ARRAY_HDR_SIZE >> 2) + index];
+            }
+
             continue;
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
@@ -1232,76 +1215,76 @@ module J2ME {
           case Bytecodes.FASTORE:
             value = i32[--sp];
             index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
+            address = i32[--sp];
+            if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index] = value;
+            i32[(address + Constants.ARRAY_HDR_SIZE >> 2) + index] = value;
             continue;
           case Bytecodes.BASTORE:
             value = i32[--sp];
             index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
+            address = i32[--sp];
+            if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i8[arrayAddr + Constants.ARRAY_HDR_SIZE + index] = value;
+            i8[address + Constants.ARRAY_HDR_SIZE + index] = value;
             continue;
           case Bytecodes.CASTORE:
             value = i32[--sp];
             index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
+            address = i32[--sp];
+            if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            u16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index] = value;
+            u16[(address + Constants.ARRAY_HDR_SIZE >> 1) + index] = value;
             continue;
           case Bytecodes.SASTORE:
             value = i32[--sp];
             index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
+            address = i32[--sp];
+            if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index] = value;
+            i16[(address + Constants.ARRAY_HDR_SIZE >> 1) + index] = value;
             continue;
           case Bytecodes.LASTORE:
           case Bytecodes.DASTORE:
             lh = i32[--sp];
             ll = i32[--sp];
             index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
+            address = i32[--sp];
+            if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2    ] = ll;
-            i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2 + 1] = lh;
+            i32[(address + Constants.ARRAY_HDR_SIZE >> 2) + index * 2    ] = ll;
+            i32[(address + Constants.ARRAY_HDR_SIZE >> 2) + index * 2 + 1] = lh;
             continue;
           case Bytecodes.LALOAD:
           case Bytecodes.DALOAD:
             index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
+            address = i32[--sp];
+            if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2    ];
-            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2 + 1];
+            i32[sp++] = i32[(address + Constants.ARRAY_HDR_SIZE >> 2) + index * 2    ];
+            i32[sp++] = i32[(address + Constants.ARRAY_HDR_SIZE >> 2) + index * 2 + 1];
             continue;
           case Bytecodes.AASTORE:
-            address = i32[--sp];
+            value = i32[--sp];
             index = i32[--sp];
-            arrayAddr = i32[--sp];
+            address = i32[--sp];
 
-            if (arrayAddr === Constants.NULL) {
+            if (address === Constants.NULL) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
               continue;
             }
 
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
+            if ((index >>> 0) >= (i32[address + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            checkArrayStore(arrayAddr, address);
-            i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index] = address;
+            checkArrayStore(address, value);
+            i32[(address + Constants.ARRAY_HDR_SIZE >> 2) + index] = value;
             continue;
           case Bytecodes.POP:
             sp = sp - 1 | 0;
@@ -1768,12 +1751,12 @@ module J2ME {
             i32[sp++] = J2ME.newMultiArray(classInfo, lengths.reverse());
             continue;
           case Bytecodes.ARRAYLENGTH:
-            arrayAddr = i32[--sp];
-            if (arrayAddr === Constants.NULL) {
+            address = i32[--sp];
+            if (address === Constants.NULL) {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
               continue;
             }
-            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2)];
+            i32[sp++] = i32[(address + Constants.ARRAY_LENGTH_OFFSET >> 2)];
             continue;
           case Bytecodes.GETFIELD:
           case Bytecodes.GETSTATIC:
