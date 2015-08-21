@@ -2056,23 +2056,10 @@ module J2ME {
 
                 for (var i = signatureKinds.length - 1; i > 0; i--) {
                   kind = signatureKinds[i];
-                  switch (kind) {
-                    case Kind.Long:
-                    case Kind.Double:
-                      args.unshift(i32[--sp]); // High Bits
-                      // Fallthrough
-                    case Kind.Int:
-                    case Kind.Byte:
-                    case Kind.Char:
-                    case Kind.Float:
-                    case Kind.Short:
-                    case Kind.Boolean:
-                    case Kind.Reference:
-                      args.unshift(i32[--sp]);
-                      break;
-                    default:
-                      release || assert(false, "Invalid Kind: " + Kind[kind]);
+                  if (kind === Kind.Long || kind === Kind.Double) {
+                    args.unshift(i32[--sp]); // High Bits
                   }
+                  args.unshift(i32[--sp]);
                 }
 
                 if (!isStatic) {
@@ -2100,28 +2087,17 @@ module J2ME {
               kind = signatureKinds[0];
 
               // Push return value.
-              switch (kind) {
-                case Kind.Long:
-                case Kind.Double:
-                  i32[sp++] = returnValue;
-                  i32[sp++] = tempReturn0;
-                  continue;
-                case Kind.Int:
-                case Kind.Byte:
-                case Kind.Char:
-                case Kind.Float:
-                case Kind.Short:
-                case Kind.Boolean:
-                  i32[sp++] = returnValue;
-                  continue;
-                case Kind.Reference:
-                  release || assert(returnValue !== "number", "native return value is a number");
-                  i32[sp++] = returnValue;
-                  continue;
-                case Kind.Void:
-                  continue;
-                default:
-                  release || assert(false, "Invalid Kind: " + Kind[kind]);
+              if (kind === Kind.Void) {
+                continue;
+              } else if (kind === Kind.Long || kind === Kind.Double) {
+                i32[sp++] = returnValue;
+                i32[sp++] = tempReturn0;
+                continue;
+              } else {
+                i32[sp++] = returnValue;
+              }
+              if (release && kind === Kind.Reference) {
+                release || assert(returnValue !== "number", "native return value is a number");
               }
               continue;
             }
