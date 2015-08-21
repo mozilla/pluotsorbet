@@ -623,9 +623,7 @@ module J2ME {
       // we consistently stay in compiled code. Most code unwinds often enough that we can
       // force collection here since at the end of an unwind all frames are
       // stored back on the heap.
-      if (getFreeMemory() < Constants.FREE_MEMORY_TARGET) {
-        ASM._forceCollection();
-      }
+      ASM._collectALittle();
     }
 
     /**
@@ -735,7 +733,7 @@ module J2ME {
       assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got low: " + l + " high: " + h + " in " + methodInfo.implKey);
     }
   }
-  
+
   /**
    * Main interpreter loop. This method is carefully written to avoid memory allocation and
    * function calls on fast paths. Therefore, everything is inlined, even if it makes the code
