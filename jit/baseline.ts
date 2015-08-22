@@ -567,7 +567,7 @@ module J2ME {
       // and state will be stored. We can only do this if the
       // method has the necessary unwinding code.
       if (canYield(this.methodInfo)) {
-        this.emitPreemptionCheck(this.bodyEmitter, "pc");
+        this.emitPreemptionCheck(this.bodyEmitter);
       }
 
       if (needsEntryDispatch) {
@@ -1182,8 +1182,7 @@ module J2ME {
       this.emitUnwind(emitter, String(nextPC), true);
     }
 
-    private emitPreemptionCheck(emitter: Emitter, nextPC: string) {
-      // TODO REMOVE UNUSED ARG
+    private emitPreemptionCheck(emitter: Emitter) {
       if (!emitCheckPreemption || this.methodInfo.implKey in noPreemptMap) {
         return;
       }
