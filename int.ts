@@ -192,7 +192,7 @@ module J2ME {
           i32[this.fp + FrameLayout.CallerSaveSize + i] = v;
           break;
         default:
-          release || assert(false, "Cannot set stack slot of kind: " + Kind[kind]);
+          release || assert(false, "Cannot set stack slot of kind: " + getKindName(kind));
       }
     }
 
@@ -261,7 +261,7 @@ module J2ME {
         op = this.methodInfo.codeAttribute.code[this.pc];
       }
       var type  = i32[this.fp + FrameLayout.FrameTypeOffset];
-      writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + "(" + (this.fp - (this.thread.tp >> 2)) + "), SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecodes[op] : ""));
+      writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + "(" + (this.fp - (this.thread.tp >> 2)) + "), SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecode.getBytecodesName(op) : ""));
       if (details) {
         for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
           var prefix = "    ";
@@ -726,7 +726,7 @@ module J2ME {
       return;
     }
     if (!(getKindCheck(methodInfo.returnKind)(l, h))) {
-      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got low: " + l + " high: " + h + " in " + methodInfo.implKey);
+      assert(false, "Expected " + getKindName(methodInfo.returnKind) + " return value, got low: " + l + " high: " + h + " in " + methodInfo.implKey);
     }
   }
 
@@ -807,7 +807,7 @@ module J2ME {
         if (traceStackWriter) {
           frame.set(thread, fp, sp, opPC); frame.trace(traceStackWriter);
           traceStackWriter.writeLn();
-          traceStackWriter.greenLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
+          traceStackWriter.greenLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecode.getBytecodesName(op));
         }
       }
 
@@ -862,7 +862,7 @@ module J2ME {
             } else if (tag === TAGS.CONSTANT_String) {
               i32[sp++] = cp.resolve(index, tag, false);
             } else {
-              release || assert(false, TAGS[tag]);
+              release || assert(false, getTAGSName(tag));
             }
             continue;
           case Bytecodes.LDC2_W:
@@ -875,7 +875,7 @@ module J2ME {
               i32[sp    ] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
               sp += 2;
             } else {
-              release || assert(false, TAGS[tag]);
+              release || assert(false, getTAGSName(tag));
             }
             continue;
           case Bytecodes.ILOAD:
@@ -1606,7 +1606,7 @@ module J2ME {
                   }
 
                   if (U) {
-                    traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
+                    traceWriter && traceWriter.writeLn("<< I Unwind: " + getVMStateName(U));
                     release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
                     thread.nativeFrameCount--;
                     i32[frameTypeOffset] = FrameType.PushPendingFrames;
@@ -1637,7 +1637,7 @@ module J2ME {
                       case Kind.Void:
                         return;
                       default:
-                        release || assert(false, "Invalid Kind: " + Kind[kind]);
+                        release || assert(false, "Invalid Kind: " + getKindName(kind));
                     }
                   }
 
@@ -1670,7 +1670,7 @@ module J2ME {
                     case Kind.Void:
                       continue;
                     default:
-                      release || assert(false, "Invalid Kind: " + Kind[kind]);
+                      release || assert(false, "Invalid Kind: " + getKindName(kind));
                   }
                 }
               }
@@ -2030,7 +2030,7 @@ module J2ME {
               //  this.pc = this.local[this.read16()];
               //  break;
               default:
-                var opName = Bytecodes[op];
+                var opName = Bytecode.getBytecodesName(op);
                 throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
             }
             continue;
@@ -2123,7 +2123,7 @@ module J2ME {
             if (interrupt) {
               continue;
             }
-            release || assert(isInvoke(code[opPC]), "Return must come from invoke op: " + mi.implKey + " PC: " + pc + Bytecodes[op]);
+            release || assert(isInvoke(code[opPC]), "Return must come from invoke op: " + mi.implKey + " PC: " + pc + Bytecode.getBytecodesName(op));
             // Calculate the PC based on the size of the caller's invoke bytecode.
             pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
             // Push return value.
@@ -2186,8 +2186,8 @@ module J2ME {
                 calleeTargetMethodInfo = classInfo.iTable[calleeMethodInfo.mangledName];
                 break;
               default:
-                release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
-                assert(false, "Not Implemented: " + Bytecodes[op]);
+                release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecode.getBytecodesName(op));
+                assert(false, "Not Implemented: " + Bytecode.getBytecodesName(op));
             }
 
             // Call Native or Compiled Method.
@@ -2240,7 +2240,7 @@ module J2ME {
                       args.unshift(i32[--sp]);
                       break;
                     default:
-                      release || assert(false, "Invalid Kind: " + Kind[kind]);
+                      release || assert(false, "Invalid Kind: " + getKindName(kind));
                   }
                 }
 
@@ -2265,7 +2265,7 @@ module J2ME {
               }
 
               if (U) {
-                traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
+                traceWriter && traceWriter.writeLn("<< I Unwind: " + getVMStateName(U));
                 release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
                 thread.nativeFrameCount--;
                 i32[frameTypeOffset] = FrameType.PushPendingFrames;
@@ -2298,7 +2298,7 @@ module J2ME {
                 case Kind.Void:
                   continue;
                 default:
-                  release || assert(false, "Invalid Kind: " + Kind[kind]);
+                  release || assert(false, "Invalid Kind: " + getKindName(kind));
               }
               continue;
             }
@@ -2345,8 +2345,8 @@ module J2ME {
             release || traceWriter && traceWriter.indent();
             continue;
           default:
-            release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op] + ", PC: " + opPC + ", CODE: " + code.length);
-            release || assert(false, "Not Implemented: " + Bytecodes[op]);
+            release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecode.getBytecodesName(op) + ", PC: " + opPC + ", CODE: " + code.length);
+            release || assert(false, "Not Implemented: " + Bytecode.getBytecodesName(op));
             continue;
         }
       } catch (e) {

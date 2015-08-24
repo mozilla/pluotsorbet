@@ -448,7 +448,7 @@ module J2ME {
 
   }
 
-  export enum TAGS {
+  export const enum TAGS {
     CONSTANT_Class = 7,
     CONSTANT_Fieldref = 9,
     CONSTANT_Methodref = 10,
@@ -462,6 +462,10 @@ module J2ME {
     CONSTANT_Utf8 = 1,
     CONSTANT_Unicode = 2,
     CONSTANT_Any = 13 // NON-STANDARD
+  }
+
+  export function getTAGSName(tag: TAGS): string {
+    return (<any>J2ME).TAGS[tag];
   }
 
   export class ConstantPool extends ByteStream {

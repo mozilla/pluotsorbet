@@ -257,7 +257,7 @@ module J2ME {
           methodInfo = classInfo.getMethodByNameString(unwindMethodName, "()V");
           break;
         default:
-          release || Debug.assert(false, "Invalid Kind: " + Kind[returnKind]);
+          release || Debug.assert(false, "Invalid Kind: " + getKindName(returnKind));
       }
       release || Debug.assert(methodInfo, "Must find unwind method");
       this.unwindMethodInfos[key] = methodInfo;
