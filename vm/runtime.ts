@@ -1223,6 +1223,13 @@ module J2ME {
   }
 
   /**
+   * Enable this if you want your profiles to have nice function names. Naming eval'ed functions
+   * using: |new Function("return function displayName {}");| can cause performance problems and
+   * we keep it disabled by default.
+   */
+  var nameJITFunctions = false;
+
+  /**
    * Links up compiled method at runtime.
    */
   export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, onStackReplacementEntryPoints: any) {
@@ -1230,8 +1237,14 @@ module J2ME {
 
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
-    // var fn = new Function(args.join(','), body);
-    var fn = new Function("return function fn_" + methodInfo.implKey.replace(/\W+/g, "_") + "(" + args.join(",") + "){ " + body + "}")();
+
+    var fn = null;
+    if (!release || nameJITFunctions) {
+      fn = new Function("return function fn_" + methodInfo.implKey.replace(/\W+/g, "_") + "(" + args.join(",") + "){ " + body + "}")();
+    } else {
+      fn = new Function(args.join(','), body);
+    }
+
     leaveTimeline("Eval Compiled Code");
 
     methodInfo.state = MethodState.Compiled;
