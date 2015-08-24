@@ -771,10 +771,10 @@ module J2ME {
 
     var code = mi ? mi.codeAttribute.code : null;
 
-    var fp = thread.fp;
-    var lp = fp - maxLocals;
-    var sp = thread.sp;
-    var opPC = 0, pc = thread.pc;
+    var fp = thread.fp | 0;
+    var lp = fp - maxLocals | 0;
+    var sp = thread.sp | 0;
+    var opPC = 0, pc = thread.pc | 0;
 
     var tag: TAGS;
     var type, size;
@@ -816,7 +816,8 @@ module J2ME {
           case Bytecodes.NOP:
             continue;
           case Bytecodes.ACONST_NULL:
-            i32[sp++] = Constants.NULL;
+            i32[sp] = Constants.NULL;
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.ICONST_M1:
           case Bytecodes.ICONST_0:
@@ -825,31 +826,43 @@ module J2ME {
           case Bytecodes.ICONST_3:
           case Bytecodes.ICONST_4:
           case Bytecodes.ICONST_5:
-            i32[sp++] = op - Bytecodes.ICONST_0;
+            i32[sp] = op - Bytecodes.ICONST_0 | 0;
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.FCONST_0:
           case Bytecodes.FCONST_1:
           case Bytecodes.FCONST_2:
-            f32[sp++] = op - Bytecodes.FCONST_0;
+            f32[sp] = op - Bytecodes.FCONST_0 | 0;
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.DCONST_0:
-            i32[sp++] = 0;
-            i32[sp++] = 0;
+            i32[sp] = 0;
+            sp = sp + 1 | 0;
+            i32[sp] = 0;
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.DCONST_1:
-            i32[sp++] = 0;
-            i32[sp++] = 1072693248;
+            i32[sp] = 0;
+            sp = sp + 1 | 0;
+            i32[sp] = 1072693248;
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.LCONST_0:
           case Bytecodes.LCONST_1:
-            i32[sp++] = op - Bytecodes.LCONST_0;
-            i32[sp++] = 0;
+            i32[sp] = op - Bytecodes.LCONST_0 | 0;
+            sp = sp + 1 | 0;
+            i32[sp] = 0;
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.BIPUSH:
-            i32[sp++] = code[pc++] << 24 >> 24;
+            i32[sp] = code[pc] << 24 >> 24;
+            sp = sp + 1 | 0;
+            pc = pc + 1 | 0;
             continue;
           case Bytecodes.SIPUSH:
-            i32[sp++] = (code[pc++] << 8 | code[pc++]) << 16 >> 16;
+            i32[sp] = (code[pc] << 8 | code[pc + 1 | 0]) << 16 >> 16;
+            sp = sp + 1 | 0;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.LDC:
           case Bytecodes.LDC_W:
@@ -880,54 +893,60 @@ module J2ME {
             continue;
           case Bytecodes.ILOAD:
           case Bytecodes.FLOAD:
-            i32[sp++] = i32[lp + code[pc++]];
-            continue;
           case Bytecodes.ALOAD:
-            i32[sp++] = i32[lp + code[pc++]];
+            i32[sp] = i32[lp + code[pc] | 0];
+            sp = sp + 1 | 0;
+            pc = pc + 1 | 0;
             continue;
           case Bytecodes.LLOAD:
           case Bytecodes.DLOAD:
-            offset = lp + code[pc++];
-            i32[sp++] = i32[offset];
-            i32[sp++] = i32[offset + 1];
+            offset = lp + code[pc] | 0;
+            i32[sp]         = i32[offset];
+            i32[sp + 1 | 0] = i32[offset + 1 | 0];
+            sp = sp + 2 | 0;
+            pc = pc + 1 | 0;
             continue;
           case Bytecodes.ILOAD_0:
           case Bytecodes.ILOAD_1:
           case Bytecodes.ILOAD_2:
           case Bytecodes.ILOAD_3:
-            i32[sp++] = i32[lp + op - Bytecodes.ILOAD_0];
+            i32[sp] = i32[(lp + op | 0) - Bytecodes.ILOAD_0 | 0];
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.FLOAD_0:
           case Bytecodes.FLOAD_1:
           case Bytecodes.FLOAD_2:
           case Bytecodes.FLOAD_3:
-            i32[sp++] = i32[lp + op - Bytecodes.FLOAD_0];
+            i32[sp] = i32[(lp + op | 0) - Bytecodes.FLOAD_0 | 0];
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.ALOAD_0:
-            i32[sp++] = i32[lp];
-            continue;
           case Bytecodes.ALOAD_1:
           case Bytecodes.ALOAD_2:
           case Bytecodes.ALOAD_3:
-            i32[sp++] = i32[lp + op - Bytecodes.ALOAD_0];
+            i32[sp] = i32[(lp + op | 0) - Bytecodes.ALOAD_0 | 0];
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.LLOAD_0:
           case Bytecodes.LLOAD_1:
           case Bytecodes.LLOAD_2:
           case Bytecodes.LLOAD_3:
-            offset = lp + op - Bytecodes.LLOAD_0;
-            i32[sp++] = i32[offset];
-            i32[sp++] = i32[offset + 1];
+            offset = (lp + op | 0) - Bytecodes.LLOAD_0 | 0;
+            i32[sp]         = i32[offset];
+            i32[sp + 1 | 0] = i32[offset + 1 | 0];
+            sp = sp + 2 | 0;
             continue;
           case Bytecodes.DLOAD_0:
           case Bytecodes.DLOAD_1:
           case Bytecodes.DLOAD_2:
           case Bytecodes.DLOAD_3:
-            offset = lp + op - Bytecodes.DLOAD_0;
-            i32[sp++] = i32[offset];
-            i32[sp++] = i32[offset + 1];
+            offset = (lp + op | 0) - Bytecodes.DLOAD_0 | 0;
+            i32[sp]         = i32[offset];
+            i32[sp + 1 | 0] = i32[offset + 1 | 0];
+            sp = sp + 2 | 0;
             continue;
           case Bytecodes.IALOAD:
+          case Bytecodes.FALOAD:
             index = i32[--sp];
             arrayAddr = i32[--sp];
             if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
@@ -959,14 +978,6 @@ module J2ME {
             }
             i32[sp++] = i16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index];
             continue;
-          case Bytecodes.FALOAD:
-            index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
-              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
-            }
-            f32[sp++] = f32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
-            continue;
           case Bytecodes.AALOAD:
             index = i32[--sp];
             arrayAddr = i32[--sp];
@@ -981,46 +992,42 @@ module J2ME {
             }
             i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index];
             continue;
-          case Bytecodes.DALOAD:
-            index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
-              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
-            }
-            aliasedF64[0] = f64[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 3) + index];
-            i32[sp++] = aliasedI32[0];
-            i32[sp++] = aliasedI32[1];
-            continue;
           case Bytecodes.ISTORE:
           case Bytecodes.FSTORE:
-            i32[lp + code[pc++]] = i32[--sp];
-            continue;
           case Bytecodes.ASTORE:
-            i32[lp + code[pc++]] = i32[--sp];
+            sp = sp - 1 | 0;
+            i32[lp + code[pc] | 0] = i32[sp];
+            pc = pc + 1 | 0;
             continue;
           case Bytecodes.LSTORE:
           case Bytecodes.DSTORE:
-            offset = lp + code[pc++];
-            i32[offset + 1] = i32[--sp];
-            i32[offset]     = i32[--sp];
+            offset = lp + code[pc] | 0;
+            sp = sp - 1 | 0;
+            i32[offset + 1 | 0] = i32[sp];
+            sp = sp - 1 | 0;
+            i32[offset]     = i32[sp];
+            pc = pc + 1 | 0;
             continue;
           case Bytecodes.ISTORE_0:
           case Bytecodes.ISTORE_1:
           case Bytecodes.ISTORE_2:
           case Bytecodes.ISTORE_3:
-            i32[lp + op - Bytecodes.ISTORE_0] = i32[--sp];
+            sp = sp - 1 | 0;
+            i32[(lp + op | 0) - Bytecodes.ISTORE_0 | 0] = i32[sp];
             continue;
           case Bytecodes.FSTORE_0:
           case Bytecodes.FSTORE_1:
           case Bytecodes.FSTORE_2:
           case Bytecodes.FSTORE_3:
-            i32[lp + op - Bytecodes.FSTORE_0] = i32[--sp];
+            sp = sp - 1 | 0;
+            i32[(lp + op | 0) - Bytecodes.FSTORE_0 | 0] = i32[sp];
             continue;
           case Bytecodes.ASTORE_0:
           case Bytecodes.ASTORE_1:
           case Bytecodes.ASTORE_2:
           case Bytecodes.ASTORE_3:
-            i32[lp + op - Bytecodes.ASTORE_0] = i32[--sp];
+            sp = sp - 1 | 0;
+            i32[(lp + op | 0) - Bytecodes.ASTORE_0 | 0] = i32[sp];
             continue;
           case Bytecodes.LSTORE_0:
           case Bytecodes.LSTORE_1:
@@ -1039,6 +1046,7 @@ module J2ME {
             i32[offset]     = i32[--sp];
             continue;
           case Bytecodes.IASTORE:
+          case Bytecodes.FASTORE:
             value = i32[--sp];
             index = i32[--sp];
             arrayAddr = i32[--sp];
@@ -1046,15 +1054,6 @@ module J2ME {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
             i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index] = value;
-            continue;
-          case Bytecodes.FASTORE:
-            value = f32[--sp];
-            index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
-              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
-            }
-            f32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index] = value;
             continue;
           case Bytecodes.BASTORE:
             value = i32[--sp];
@@ -1084,6 +1083,7 @@ module J2ME {
             i16[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 1) + index] = value;
             continue;
           case Bytecodes.LASTORE:
+          case Bytecodes.DASTORE:
             lh = i32[--sp];
             ll = i32[--sp];
             index = i32[--sp];
@@ -1095,24 +1095,14 @@ module J2ME {
             i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2 + 1] = lh;
             continue;
           case Bytecodes.LALOAD:
+          case Bytecodes.DALOAD:
             index = i32[--sp];
             arrayAddr = i32[--sp];
             if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
               thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
             }
-            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE  >> 2) + index * 2    ];
-            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE  >> 2) + index * 2 + 1];
-            continue;
-          case Bytecodes.DASTORE:
-            aliasedI32[1] = i32[--sp];
-            aliasedI32[0] = i32[--sp];
-            value = aliasedF64[0];
-            index = i32[--sp];
-            arrayAddr = i32[--sp];
-            if ((index >>> 0) >= (i32[arrayAddr + Constants.ARRAY_LENGTH_OFFSET >> 2] >>> 0)) {
-              thread.throwException(fp, sp, opPC, ExceptionType.ArrayIndexOutOfBoundsException, index);
-            }
-            f64[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 3) + index] = value;
+            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2    ];
+            i32[sp++] = i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index * 2 + 1];
             continue;
           case Bytecodes.AASTORE:
             address = i32[--sp];
@@ -1131,14 +1121,14 @@ module J2ME {
             i32[(arrayAddr + Constants.ARRAY_HDR_SIZE >> 2) + index] = address;
             continue;
           case Bytecodes.POP:
-            --sp;
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.POP2:
-            sp -= 2;
+            sp = sp - 2 | 0;
             continue;
           case Bytecodes.DUP: // ... a -> ... a, a
-            i32[sp] = i32[sp - 1];
-            sp++;
+            i32[sp] = i32[sp - 1 | 0];
+            sp = sp + 1 | 0;
             continue;
           case Bytecodes.DUP2: // ... b, a -> ... b, a, b, a
             i32[sp    ] = i32[sp - 2]; // b
@@ -1181,12 +1171,14 @@ module J2ME {
             i32[sp - 2] = ia;
             continue;
           case Bytecodes.IINC:
-            index = code[pc++];
-            value = code[pc++] << 24 >> 24;
-            i32[lp + index] = i32[lp + index] + value | 0;
+            index = code[pc];
+            value = code[pc + 1 | 0] << 24 >> 24;
+            i32[lp + index | 0] = i32[lp + index | 0] + value | 0;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IADD:
-            i32[sp - 2] = (i32[sp - 2] + i32[sp - 1]) | 0; sp--;
+            i32[sp - 2 | 0] = (i32[sp - 2 | 0] + i32[sp - 1 | 0]) | 0;
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LADD:
             ASM._lAdd(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
@@ -1205,7 +1197,8 @@ module J2ME {
             sp -= 2;
             continue;
           case Bytecodes.ISUB:
-            i32[sp - 2] = (i32[sp - 2] - i32[sp - 1]) | 0; sp--;
+            i32[sp - 2 | 0] = (i32[sp - 2 | 0] - i32[sp - 1 | 0]) | 0;
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LSUB:
             ASM._lSub(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
@@ -1224,7 +1217,8 @@ module J2ME {
             sp -= 2;
             continue;
           case Bytecodes.IMUL:
-            i32[sp - 2] = Math.imul(i32[sp - 2], i32[sp - 1]) | 0; sp--;
+            i32[sp - 2 | 0] = Math.imul(i32[sp - 2 | 0], i32[sp - 1 | 0]) | 0;
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LMUL:
             ASM._lMul(sp - 4 << 2, sp - 4 << 2, sp - 2 << 2); sp -= 2;
@@ -1311,45 +1305,45 @@ module J2ME {
             i32[sp - 1] = aliasedI32[1];
             continue;
           case Bytecodes.ISHL:
-            ib = i32[--sp];
-            ia = i32[--sp];
-            i32[sp++] = ia << ib;
+            i32[sp - 2 | 0] = i32[sp - 2 | 0] << i32[sp - 1 | 0];
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LSHL:
             ASM._lShl(sp - 3 << 2, sp - 3 << 2, i32[sp - 1]); sp -= 1;
             continue;
           case Bytecodes.ISHR:
-            ib = i32[--sp];
-            ia = i32[--sp];
-            i32[sp++] = ia >> ib;
+            i32[sp - 2 | 0] = i32[sp - 2 | 0] >> i32[sp - 1 | 0];
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LSHR:
             ASM._lShr(sp - 3 << 2, sp - 3 << 2, i32[sp - 1]); sp -= 1;
             continue;
           case Bytecodes.IUSHR:
-            ib = i32[--sp];
-            ia = i32[--sp];
-            i32[sp++] = ia >>> ib;
+            i32[sp - 2 | 0] = i32[sp - 2 | 0] >>> i32[sp - 1 | 0];
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LUSHR:
             ASM._lUshr(sp - 3 << 2, sp - 3 << 2, i32[sp - 1]); sp -= 1;
             continue;
           case Bytecodes.IAND:
-            i32[sp - 2] &= i32[--sp];
+            i32[sp - 2] &= i32[sp - 1 | 0];
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LAND:
             i32[sp - 4] &= i32[sp - 2];
             i32[sp - 3] &= i32[sp - 1]; sp -= 2;
             break;
           case Bytecodes.IOR:
-            i32[sp - 2] |= i32[--sp];
+            i32[sp - 2] |= i32[sp - 1 | 0];
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LOR:
             i32[sp - 4] |= i32[sp - 2];
             i32[sp - 3] |= i32[sp - 1]; sp -= 2;
             continue;
           case Bytecodes.IXOR:
-            i32[sp - 2] ^= i32[--sp];
+            i32[sp - 2] ^= i32[sp - 1 | 0];
+            sp = sp - 1 | 0;
             continue;
           case Bytecodes.LXOR:
             i32[sp - 4] ^= i32[sp - 2];
@@ -1394,178 +1388,130 @@ module J2ME {
           case Bytecodes.IFEQ:
             if (i32[--sp] === 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFNE:
             if (i32[--sp] !== 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFLT:
             if (i32[--sp] < 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFGE:
             if (i32[--sp] >= 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFGT:
             if (i32[--sp] > 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFLE:
             if (i32[--sp] <= 0) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPEQ:
             if (i32[--sp] === i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPNE:
             if (i32[--sp] !== i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPLT:
             if (i32[--sp] > i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPGE:
             if (i32[--sp] <= i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPGT:
             if (i32[--sp] < i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ICMPLE:
             if (i32[--sp] >= i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ACMPEQ:
             if (i32[--sp] === i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IF_ACMPNE:
             if (i32[--sp] !== i32[--sp]) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFNULL:
             if (i32[--sp] === Constants.NULL) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.IFNONNULL:
             if (i32[--sp] !== Constants.NULL) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
-              if (jumpOffset < 0) {
-                mi.stats.backwardsBranchCount++;
-              }
-              pc = opPC + jumpOffset;
+              pc = opPC + jumpOffset | 0;
               continue;
             }
-            pc += 2;
+            pc = pc + 2 | 0;
             continue;
           case Bytecodes.GOTO:
             jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
@@ -1614,7 +1560,7 @@ module J2ME {
                     return;
                   }
                   thread.popMarkerFrame(FrameType.Native);
-                  sp = thread.sp;
+                  sp = thread.sp | 0;
 
                   release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
 
@@ -1645,7 +1591,7 @@ module J2ME {
                   type = i32[fp + FrameLayout.FrameTypeOffset];
 
                   maxLocals = mi.codeAttribute.max_locals;
-                  lp = fp - maxLocals;
+                  lp = fp - maxLocals | 0;
                   ci = mi.classInfo;
                   cp = ci.constantPool;
                   code = mi.codeAttribute.code;
@@ -1675,7 +1621,7 @@ module J2ME {
                 }
               }
             }
-            pc = opPC + jumpOffset;
+            pc = opPC + jumpOffset | 0;
             continue;
           //        case Bytecodes.GOTO_W:
           //          frame.pc = frame.read32Signed() - 1;
@@ -2066,7 +2012,7 @@ module J2ME {
               $.ctx.monitorExit(getMonitor(i32[fp + FrameLayout.MonitorOffset]));
             }
             opPC = i32[fp + FrameLayout.CallerRAOffset];
-            sp = fp - maxLocals;
+            sp = fp - maxLocals | 0;
             fp = i32[fp + FrameLayout.CallerFPOffset];
             release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
             mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
@@ -2091,8 +2037,8 @@ module J2ME {
               } else if (type === FrameType.PushPendingFrames) {
                 thread.set(fp, sp, opPC);
                 thread.pushPendingNativeFrames();
-                fp = thread.fp;
-                sp = thread.sp;
+                fp = thread.fp | 0;
+                sp = thread.sp | 0;
                 opPC = pc = thread.pc;
                 type = i32[fp + FrameLayout.FrameTypeOffset];
                 mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
@@ -2100,8 +2046,8 @@ module J2ME {
               } else if (type === FrameType.Interrupt) {
                 thread.set(fp, sp, opPC);
                 thread.popMarkerFrame(FrameType.Interrupt);
-                fp = thread.fp;
-                sp = thread.sp;
+                fp = thread.fp | 0;
+                sp = thread.sp | 0;
                 opPC = pc = thread.pc;
                 type = i32[fp + FrameLayout.FrameTypeOffset];
                 mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
@@ -2113,7 +2059,7 @@ module J2ME {
             }
             release || assert(type === FrameType.Interpreter, "Cannot resume in frame type: " + FrameType[type]);
             maxLocals = mi.codeAttribute.max_locals;
-            lp = fp - maxLocals;
+            lp = fp - maxLocals | 0;
             release || traceWriter && traceWriter.outdent();
             release || traceWriter && traceWriter.writeLn("<< I " + lastMI.implKey);
             ci = mi.classInfo;
@@ -2147,7 +2093,7 @@ module J2ME {
 
             index = code[pc++] << 8 | code[pc++];
             if (op === Bytecodes.INVOKEINTERFACE) {
-              pc += 2; // Args Number & Zero
+              pc = pc + 2 | 0; // Args Number & Zero
             }
             isStatic = (op === Bytecodes.INVOKESTATIC);
 
@@ -2312,9 +2258,9 @@ module J2ME {
 
             var callerFPOffset = fp;
             // Reserve space for non-parameter locals.
-            lp = sp - mi.argumentSlots;
-            fp = lp + maxLocals;
-            sp = fp + FrameLayout.CallerSaveSize;
+            lp = sp - mi.argumentSlots | 0;
+            fp = lp + maxLocals | 0;
+            sp = fp + FrameLayout.CallerSaveSize | 0;
 
             // Caller saved values.
             i32[fp + FrameLayout.CallerRAOffset] = opPC;
@@ -2370,13 +2316,13 @@ module J2ME {
         thread.exceptionUnwind(e);
 
         // Load thread state after exception unwind.
-        fp = thread.fp;
-        sp = thread.sp;
-        pc = thread.pc;
+        fp = thread.fp | 0;
+        sp = thread.sp | 0;
+        pc = thread.pc | 0;
 
         mi = thread.frame.methodInfo;
         maxLocals = mi.codeAttribute.max_locals;
-        lp = fp - maxLocals;
+        lp = fp - maxLocals | 0;
         ci = mi.classInfo;
         cp = ci.constantPool;
         code = mi.codeAttribute.code;
