@@ -271,7 +271,7 @@ module J2ME {
     return resultAddr;
   };
 
-  Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
+  Native["java/lang/Runtime.totalMemory.()J"] = function(addr: number): number {
     return J2ME.returnLongValue(asmJsTotalMemory);
   };
 }
