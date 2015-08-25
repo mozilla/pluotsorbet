@@ -106,7 +106,7 @@ module J2ME {
   /**
    * Emits preemption checks for methods that already yield.
    */
-  export var emitCheckPreemption = false;
+  export var emitCheckPreemption = true;
 
   export function baselineCompileMethod(methodInfo: MethodInfo, target: CompilationTarget): CompiledMethodInfo {
     var compileExceptions = true;

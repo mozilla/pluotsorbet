@@ -185,7 +185,7 @@ module J2ME {
       var totalElapsed = now - windowStartTime;
       if (totalElapsed > MAX_WINDOW_EXECUTION_TIME) {
         preemptionCount++;
-        threadWriter && threadWriter.writeLn("Execution window timeout: " + totalElapsed.toFixed(2) + " ms, samples: " + PS + ", count: " + preemptionCount);
+        threadWriter && threadWriter.writeLn("Execution window timeout: " + totalElapsed.toFixed(2) + " ms, samples: " + jsGlobal.PS + ", count: " + preemptionCount);
         return true;
       }
 
@@ -204,7 +204,7 @@ module J2ME {
 
       if ($.ctx.virtualRuntime > runningQueue[0].virtualRuntime) {
         preemptionCount++;
-        threadWriter && threadWriter.writeLn("Preemption: " + elapsed.toFixed(2) + " ms, samples: " + PS + ", count: " + preemptionCount);
+        threadWriter && threadWriter.writeLn("Preemption: " + elapsed.toFixed(2) + " ms, samples: " + jsGlobal.PS + ", count: " + preemptionCount);
         return true;
       }
 

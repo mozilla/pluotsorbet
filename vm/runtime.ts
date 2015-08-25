@@ -2174,7 +2174,7 @@ var TS = J2ME.throwNegativeArraySizeException;
 var TN = J2ME.throwNullPointerException;
 
 var PE = J2ME.preempt;
-var PS = 0; // Preemption samples.
+jsGlobal.PS = 0; // Preemption samples.
 
 var fadd = J2ME.fadd;
 var fsub = J2ME.fsub;
