@@ -134,7 +134,7 @@ module J2ME {
 
   export module ArrayUtilities {
     import assert = Debug.assert;
-    
+
     export var EMPTY_ARRAY = [];
 
     export function makeArrays(length: number): any [][] {
@@ -382,17 +382,6 @@ module J2ME {
     export var i32 = new Int32Array(sharedBuffer);
     export var f32 = new Float32Array(sharedBuffer);
     export var f64 = new Float64Array(sharedBuffer);
-
-    /**
-     * Convert 32 bits into a float.
-     */
-    export function int32ToFloat(i: number) {
-      i32[0] = i; return f32[0];
-    }
-
-    export function int64ToDouble(high: number, low: number) {
-      i32[0] = low; i32[1] = high; return f64[0];
-    }
 
     export function bitCount(i: number): number {
       i = i - ((i >> 1) & 0x55555555);

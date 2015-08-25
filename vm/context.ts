@@ -500,13 +500,13 @@ module J2ME {
 
     enterMethodTimeline(key: string, methodType: MethodType) {
       if (profiling) {
-        this.methodTimeline.enter(key, MethodType[methodType]);
+        this.methodTimeline.enter(key, getMethodTypeName(methodType));
       }
     }
 
     leaveMethodTimeline(key: string, methodType: MethodType) {
       if (profiling) {
-        this.methodTimeline.leave(key, MethodType[methodType]);
+        this.methodTimeline.leave(key, getMethodTypeName(methodType));
       }
     }
   }

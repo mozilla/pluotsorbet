@@ -72,7 +72,7 @@ module J2ME.Bytecode {
     }
   }
 
-  export enum Condition {
+  export const enum Condition {
     /**
      * Equal.
      */
@@ -147,7 +147,7 @@ module J2ME.Bytecode {
    * bytecodes share a common first byte and carry additional instruction-specific
    * information in the second and third bytes.
    */
-  export enum Bytecodes {
+  export const enum Bytecodes {
     NOP                  =   0, // 0x00
     ACONST_NULL          =   1, // 0x01
     ICONST_M1            =   2, // 0x02
@@ -369,6 +369,10 @@ module J2ME.Bytecode {
      * The last opcode defined by the JVM specification. To iterate over all JVM bytecodes:
      */
     LAST_JVM_OPCODE     = Bytecodes.JSR_W
+  }
+
+  export function getBytecodesName(bytecode: Bytecodes): string {
+    return (<any>Bytecode).Bytecodes[bytecode];
   }
 
   const enum Flags {

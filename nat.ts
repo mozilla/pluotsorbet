@@ -76,7 +76,7 @@ module J2ME {
         case Kind.Void:
           break;
         default:
-          release || J2ME.Debug.assert(false, "Invalid Kind: " + Kind[returnKind]);
+          release || J2ME.Debug.assert(false, "Invalid Kind: " + getKindName(returnKind));
       }
       thread.sp = sp;
 
@@ -271,7 +271,7 @@ module J2ME {
     return resultAddr;
   };
 
-  Native["java/lang/Runtime.totalMemory.()J"] = function(addr) {
+  Native["java/lang/Runtime.totalMemory.()J"] = function(addr: number): number {
     return J2ME.returnLongValue(asmJsTotalMemory);
   };
 }

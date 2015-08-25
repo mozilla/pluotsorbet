@@ -529,7 +529,7 @@ module J2ME.Bytecode {
           var bci = block.startBci;
           stream.setBCI(bci);
           while (stream.currentBCI <= block.endBci) {
-            writer.writeLn(Bytecodes[stream.currentBC()]);
+            writer.writeLn(Bytecode.getBytecodesName(stream.currentBC()));
             stream.next();
             bci = stream.currentBCI;
           }
