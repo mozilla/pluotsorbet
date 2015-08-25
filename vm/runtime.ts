@@ -1279,16 +1279,24 @@ module J2ME {
     linkedMethods[methodInfo.id] = fn;
   }
 
+  // Make sure class and method symbol references can be parsed as identifiers. This allows closure and other tools
+  // to process this code as JS files.
+  export var classInfoSymbolPrefix =  "$C"; // "$C123
+  export var methodInfoSymbolPrefix = "$M"; // "$M123_456
+  var classInfoSymbolPrefixPattern =  /\$C(\d+)/g;
+  var methodInfoSymbolPrefixPattern = /\$M(\d+)_(\d+)/g;
+
   /**
    * Links up compiled method at runtime.
    */
   export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, referencedClasses: ClassInfo [], onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
     // TODO: Don't use RegExp ever ever.
-    body = body.replace(/@@(\d+)/g, <any>function (match, symbol) {
+    // Patch class and method symbols in relocatable code.
+    body = body.replace(classInfoSymbolPrefixPattern, <any>function (match, symbol) {
       // jitWriter && jitWriter.writeLn("Linking Class Symbol: " + symbol + " to " + referencedClasses[symbol]);
       return referencedClasses[symbol].id;
-    }).replace(/@!(\d+):(\d+)/g, <any>function (match, symbol, index) {
+    }).replace(methodInfoSymbolPrefixPattern, <any>function (match, symbol, index) {
       // jitWriter && jitWriter.writeLn("Linking Method Symbol: " + symbol + ":" + index + " to " + referencedClasses[symbol].getMethodByIndex(index));
       return referencedClasses[symbol].getMethodByIndex(index).id;
     });

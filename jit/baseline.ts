@@ -614,7 +614,7 @@ module J2ME {
     classInfoSymbol(classInfo: ClassInfo): string {
       var id = this.referencedClasses.indexOf(classInfo);
       assert(id >= 0, "Class info not found in the referencedClasses list.");
-      return "@@" + id;
+      return classInfoSymbolPrefix + id;
     }
 
     classInfoObject(classInfo: ClassInfo): string {
@@ -630,7 +630,7 @@ module J2ME {
     methodInfoSymbol(methodInfo: MethodInfo): string {
       var id = this.referencedClasses.indexOf(methodInfo.classInfo);
       assert(id >= 0, "Class info not found in the referencedClasses list.");
-      return "@!" + id + ":" + methodInfo.index;
+      return methodInfoSymbolPrefix + id + "_" + methodInfo.index;
     }
 
     lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
