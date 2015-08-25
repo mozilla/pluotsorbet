@@ -307,11 +307,15 @@ public class TestLocalMsgProtocol implements Testlet {
             // Test three scenarios that might exhibit race conditions.
 
             // Scenario 1
+            // 1) Server creates a localmsg server
+            // 2) Server calls acceptAndOpen
+            // 3) Client opens a localmsg server
             Thread serverCreateThread = new ThreadServerCreate();
             serverCreateThread.start();
             serverCreateThread.join();
             Thread serverAcceptAndOpenThread = new ThreadServerAcceptAndOpen();
             serverAcceptAndOpenThread.start();
+            Thread.sleep(1000);
             Thread clientThread = new ThreadClientCreate();
             clientThread.start();
             serverAcceptAndOpenThread.join();
@@ -322,9 +326,13 @@ public class TestLocalMsgProtocol implements Testlet {
             serverNum++;
 
             // Scenario 2
+            // 1) Server creates a localmsg server
+            // 2) Client opens a localmsg server
+            // 3) Server calls acceptAndOpen
             serverCreateThread.start();
             serverCreateThread.join();
             clientThread.start();
+            Thread.sleep(1000);
             serverAcceptAndOpenThread.start();
             serverAcceptAndOpenThread.join();
             clientThread.join();
@@ -334,7 +342,11 @@ public class TestLocalMsgProtocol implements Testlet {
             serverNum++;
 
             // Scenario 3
+            // 1) Client opens a localmsg server
+            // 2) Server creates a localmsg server
+            // 3) Server calls acceptAndOpen
             clientThread.start();
+            Thread.sleep(1000);
             serverCreateThread.start();
             serverCreateThread.join();
             serverAcceptAndOpenThread.start();
