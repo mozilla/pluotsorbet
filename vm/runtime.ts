@@ -230,17 +230,21 @@ module J2ME {
 
   import assert = J2ME.Debug.assert;
 
-  export enum RuntimeStatus {
+  export const enum RuntimeStatus {
     New       = 1,
     Started   = 2,
     Stopping  = 3, // Unused
     Stopped   = 4
   }
 
-  export enum MethodType {
+  export const enum MethodType {
     Interpreted,
     Native,
     Compiled
+  }
+
+  export function getMethodTypeName(methodType: MethodType) {
+    return (<any>J2ME).MethodType[methodType];
   }
 
   var hashMap = Object.create(null);
@@ -405,7 +409,7 @@ module J2ME {
       this._runtimeId = RuntimeTemplate._nextRuntimeId++;
       this._nextHashCode = (this._runtimeId << 24) | 1; // Increase by one so the first hashcode isn't zero.
     }
-    
+
     preInitializeClasses(ctx: Context) {
       var prevCtx = $ ? $.ctx : null;
       var preInit = CLASSES.preInitializedClasses;
@@ -642,14 +646,18 @@ module J2ME {
     }
   }
 
-  export enum VMState {
+  export const enum VMState {
     Running = 0,
     Yielding = 1,
     Pausing = 2,
     Stopping = 3
   }
 
-  export enum Constants {
+  export function getVMStateName(vmState: VMState): string {
+    return (<any>J2ME).VMState[vmState];
+  }
+
+  export const enum Constants {
     BYTE_MIN = -128,
     BYTE_MAX = 127,
     SHORT_MIN = -32768,
@@ -669,11 +677,6 @@ module J2ME {
 
     TWO_PWR_32_DBL = 4294967296,
     TWO_PWR_63_DBL = 9223372036854776000,
-
-    // The target amount of free memory(in bytes) before garbage collection is forced on unwind.
-    // Note: This number was chosen somewhat randomly to allow some space for allocation
-    // during forceCollection, though it has not been verified it needs any space.
-    FREE_MEMORY_TARGET = 4086,
 
     // The size in bytes of the header in the memory allocated to the object.
     OBJ_HDR_SIZE = 8,
@@ -696,7 +699,7 @@ module J2ME {
     MAX_CLASS_ID = 4095,
     INITIAL_MAX_CLASS_ID = 511,
 
-    LOG_MAX_FLAT_VTABLE_SIZE = 8
+    LOG_MAX_FLAT_VTABLE_SIZE = 6 // 64
   }
 
   export class Runtime extends RuntimeTemplate {
@@ -984,7 +987,7 @@ module J2ME {
                   "return aliasedF64[0];");
                 break;
               default:
-                Debug.assert(false, Kind[field.kind]);
+                Debug.assert(false, getKindName(field.kind));
                 break;
             }
           } else {
@@ -1067,15 +1070,15 @@ module J2ME {
     var wrapper = function() {
       // jsGlobal.getBacktrace && traceWriter.writeLn(jsGlobal.getBacktrace());
       var args = Array.prototype.slice.apply(arguments);
-      traceWriter.enter("> " + MethodType[methodType][0] + " " + methodInfo.implKey);
+      traceWriter.enter("> " + getMethodTypeName(methodType)[0] + " " + methodInfo.implKey);
       var s = performance.now();
       try {
         var value = fn.apply(this, args);
       } catch (e) {
-        traceWriter.leave("< " + MethodType[methodType][0] + " Throwing");
+        traceWriter.leave("< " + getMethodTypeName(methodType)[0] + " Throwing");
         throw e;
       }
-      traceWriter.leave("< " + MethodType[methodType][0] + " " + methodInfo.implKey);
+      traceWriter.leave("< " + getMethodTypeName(methodType)[0] + " " + methodInfo.implKey);
       return value;
     };
     (<any>wrapper).methodInfo = methodInfo;
@@ -1218,7 +1221,7 @@ module J2ME {
     var compiledMethod;
     enterTimeline("Compiling");
     try {
-      compiledMethod = baselineCompileMethod(methodInfo, CompilationTarget[enableCompiledMethodCache ? "Static" : "Runtime"]);
+      compiledMethod = baselineCompileMethod(methodInfo, enableCompiledMethodCache ? CompilationTarget.Static : CompilationTarget.Runtime);
       compiledMethodCount ++;
     } catch (e) {
       methodInfo.state = MethodState.CannotCompile;
@@ -1279,23 +1282,44 @@ module J2ME {
     linkedMethods[methodInfo.id] = fn;
   }
 
+  // Make sure class and method symbol references can be parsed as identifiers. This allows closure and other tools
+  // to process this code as JS files.
+  export var classInfoSymbolPrefix =  "$C"; // "$C123
+  export var methodInfoSymbolPrefix = "$M"; // "$M123_456
+  var classInfoSymbolPrefixPattern =  /\$C(\d+)/g;
+  var methodInfoSymbolPrefixPattern = /\$M(\d+)_(\d+)/g;
+
+  /**
+   * Enable this if you want your profiles to have nice function names. Naming eval'ed functions
+   * using: |new Function("return function displayName {}");| can cause performance problems and
+   * we keep it disabled by default.
+   */
+  var nameJITFunctions = false;
+
   /**
    * Links up compiled method at runtime.
    */
   export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, referencedClasses: ClassInfo [], onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
     // TODO: Don't use RegExp ever ever.
-    body = body.replace(/@@(\d+)/g, <any>function (match, symbol) {
+    // Patch class and method symbols in relocatable code.
+    body = body.replace(classInfoSymbolPrefixPattern, <any>function (match, symbol) {
       // jitWriter && jitWriter.writeLn("Linking Class Symbol: " + symbol + " to " + referencedClasses[symbol]);
       return referencedClasses[symbol].id;
-    }).replace(/@!(\d+):(\d+)/g, <any>function (match, symbol, index) {
+    }).replace(methodInfoSymbolPrefixPattern, <any>function (match, symbol, index) {
       // jitWriter && jitWriter.writeLn("Linking Method Symbol: " + symbol + ":" + index + " to " + referencedClasses[symbol].getMethodByIndex(index));
       return referencedClasses[symbol].getMethodByIndex(index).id;
     });
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
-    // var fn = new Function(args.join(','), body);
-    var fn = new Function("return function fn_" + methodInfo.implKey.replace(/\W+/g, "_") + "(" + args.join(",") + "){ " + body + "}")();
+
+    var fn = null;
+    if (!release || nameJITFunctions) {
+      fn = new Function("return function fn_" + methodInfo.implKey.replace(/\W+/g, "_") + "(" + args.join(",") + "){ " + body + "}")();
+    } else {
+      fn = new Function(args.join(','), body);
+    }
+
     leaveTimeline("Eval Compiled Code");
 
     methodInfo.state = MethodState.Compiled;

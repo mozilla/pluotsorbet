@@ -15,7 +15,7 @@ module J2ME {
     }
   }
 
-  export enum CompilationTarget {
+  export const enum CompilationTarget {
     Runtime,
     Static
   }

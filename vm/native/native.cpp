@@ -131,6 +131,10 @@ extern "C" {
     GC_gcollect();
   }
 
+  void collectALittle(void) {
+    GC_collect_a_little();
+  }
+
   int getUsedHeapSize(void) {
     GC_word heapSize;
     GC_word freeBytes;

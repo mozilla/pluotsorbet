@@ -16,6 +16,12 @@ console.info = function (c) {
 console.error = function (c) {
   putstr(String.fromCharCode(c));
 };
+;
+
+var evalScript;
+if (typeof evalScript === "undefined") {
+  evalScript = load;
+}
 
 var START_TIME = dateNow();
 var performance = {
@@ -70,7 +76,7 @@ function parseArguments(options, tokens) {
   return leftover;
 }
 
-load("config/default.js");
+evalScript("config/default.js");
 
 var options = {
   "writers": {
@@ -218,13 +224,13 @@ var profileTimeline = false;
 
 try {
   if (profileTimeline) {
-    load("bld/shumway.js");
+    evalScript("bld/shumway.js");
   }
 
-  load("polyfill/promise.js", "libs/encoding.js", "bld/native.js", "bld/j2me.js");
+  evalScript("polyfill/promise.js", "libs/encoding.js", "bld/native.js", "bld/j2me.js");
 
   microTaskQueue = new J2ME.Shell.MicroTasksQueue();
-  load("bld/main-all.js");
+  evalScript("bld/main-all.js");
 
 
   // load("bld/classes.jar.js");

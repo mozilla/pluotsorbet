@@ -198,7 +198,7 @@ module J2ME {
           i32[this.fp + FrameLayout.CallerSaveSize + i] = v;
           break;
         default:
-          release || assert(false, "Cannot set stack slot of kind: " + Kind[kind]);
+          release || assert(false, "Cannot set stack slot of kind: " + getKindName(kind));
       }
     }
 
@@ -267,7 +267,7 @@ module J2ME {
         op = this.methodInfo.codeAttribute.code[this.pc];
       }
       var type  = i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
-      writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + "(" + (this.fp - (this.thread.tp >> 2)) + "), SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecodes[op] : ""));
+      writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + "(" + (this.fp - (this.thread.tp >> 2)) + "), SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecode.getBytecodesName(op) : ""));
       if (details) {
         for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
           var prefix = "    ";
@@ -442,7 +442,7 @@ module J2ME {
                   pc = exceptionEntryView.handler_pc;
                   break;
                 } else {
-                  classInfo = resolveClass(exceptionEntryView.catch_type, mi.classInfo);
+                  classInfo = mi.classInfo.constantPool.resolveClass(exceptionEntryView.catch_type);
                   release || traceWriter && traceWriter.writeLn("Checking catch type: " + classInfo);
                   if (isAssignableTo(e.classInfo, classInfo)) {
                     pc = exceptionEntryView.handler_pc;
@@ -628,9 +628,7 @@ module J2ME {
       // we consistently stay in compiled code. Most code unwinds often enough that we can
       // force collection here since at the end of an unwind all frames are
       // stored back on the heap.
-      if (getFreeMemory() < Constants.FREE_MEMORY_TARGET) {
-        ASM._forceCollection();
-      }
+      ASM._collectALittle();
     }
 
     /**
@@ -714,10 +712,6 @@ module J2ME {
     return method;
   }
 
-  function resolveClass(index: number, classInfo: ClassInfo): ClassInfo {
-    return classInfo.constantPool.resolveClass(index);
-  }
-
   var args = new Array(16);
 
   export const enum ExceptionType {
@@ -738,10 +732,10 @@ module J2ME {
       return;
     }
     if (!(getKindCheck(methodInfo.returnKind)(l, h))) {
-      assert(false, "Expected " + Kind[methodInfo.returnKind] + " return value, got low: " + l + " high: " + h + " in " + methodInfo.implKey);
+      assert(false, "Expected " + getKindName(methodInfo.returnKind) + " return value, got low: " + l + " high: " + h + " in " + methodInfo.implKey);
     }
   }
-  
+
   function Bytecode_FCMPX(sp: number, op: Bytecodes) {
     var b = f32[--sp];
     var a = f32[--sp];
@@ -978,7 +972,7 @@ module J2ME {
         i32[lp + index] = i32[lp + index] + value | 0;
         break;
       default:
-        throw new Error("Wide opcode " + Bytecodes[op] + " [" + op + "] not supported.");
+        throw new Error("Wide opcode " + Bytecode.getBytecodesName(op) + " [" + op + "] not supported.");
     }
     tempReturn0 = pc;
     return sp;
@@ -1056,7 +1050,7 @@ module J2ME {
         if (traceStackWriter) {
           frame.set(thread, fp, sp, opPC); frame.trace(traceStackWriter);
           traceStackWriter.writeLn();
-          traceStackWriter.greenLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecodes[op]);
+          traceStackWriter.greenLn(mi.implKey + ": PC: " + opPC + ", FP: " + fp + ", " + Bytecode.getBytecodesName(op));
         }
       }
 
@@ -1122,9 +1116,9 @@ module J2ME {
             if (tag === TAGS.CONSTANT_Integer || tag === TAGS.CONSTANT_Float) {
               i32[sp++] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
             } else if (tag === TAGS.CONSTANT_String) {
-              i32[sp++] = ci.constantPool.resolve(index, tag, false);
+              i32[sp++] = cp.resolve(index, tag, false);
             } else {
-              release || assert(false, TAGS[tag]);
+              release || assert(false, getTAGSName(tag));
             }
             continue;
           case Bytecodes.LDC2_W:
@@ -1137,7 +1131,7 @@ module J2ME {
               i32[sp    ] = buffer[offset++] << 24 | buffer[offset++] << 16 | buffer[offset++] << 8 | buffer[offset++];
               sp += 2;
             } else {
-              release || assert(false, TAGS[tag]);
+              release || assert(false, getTAGSName(tag));
             }
             continue;
           case Bytecodes.ILOAD:
@@ -1545,7 +1539,7 @@ module J2ME {
               case Bytecodes.IFNULL:    c = ia === Constants.NULL; break;
               case Bytecodes.IFNONNULL: c = ia !== Constants.NULL; break;
               default:
-                release || assert(false, "Invalid Bytecode: " + Bytecodes[op]);
+                release || assert(false, "Invalid Bytecode: " + Bytecode.getBytecodesName(op));
             }
             if (c) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
@@ -1574,7 +1568,7 @@ module J2ME {
               case Bytecodes.IF_ICMPGT: c = ia >   ib; break;
               case Bytecodes.IF_ICMPLE: c = ia <=  ib; break;
               default:
-                release || assert(false, "Invalid Bytecode: " + Bytecodes[op]);
+                release || assert(false, "Invalid Bytecode: " + Bytecode.getBytecodesName(op));
             }
             if (c) {
               jumpOffset = ((code[pc++] << 8 | code[pc++]) << 16 >> 16);
@@ -1622,7 +1616,7 @@ module J2ME {
                   }
 
                   if (U) {
-                    traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
+                    traceWriter && traceWriter.writeLn("<< I Unwind: " + getVMStateName(U));
                     release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
                     thread.nativeFrameCount--;
                     i32[frameTypeOffset] = FrameType.PushPendingFrames;
@@ -1749,7 +1743,7 @@ module J2ME {
             continue;
           case Bytecodes.ANEWARRAY:
             index = code[pc++] << 8 | code[pc++];
-            classInfo = resolveClass(index, ci);
+            classInfo = cp.resolveClass(index);
             size = i32[--sp];
             if (size < 0) {
               thread.throwException(fp, sp, opPC, ExceptionType.NegativeArraySizeException);
@@ -1758,7 +1752,7 @@ module J2ME {
             continue;
           case Bytecodes.MULTIANEWARRAY:
             index = code[pc++] << 8 | code[pc++];
-            classInfo = resolveClass(index, ci);
+            classInfo = cp.resolveClass(index);
             var dimensions = code[pc++];
             var lengths = new Array(dimensions);
             for (var i = 0; i < dimensions; i++) {
@@ -1842,7 +1836,7 @@ module J2ME {
           case Bytecodes.NEW:
             index = code[pc++] << 8 | code[pc++];
             release || traceWriter && traceWriter.writeLn(mi.implKey + " " + index);
-            classInfo = resolveClass(index, ci);
+            classInfo = cp.resolveClass(index);
             thread.classInitAndUnwindCheck(fp, sp, opPC, classInfo);
             if (U) {
               return;
@@ -1851,7 +1845,7 @@ module J2ME {
             continue;
           case Bytecodes.CHECKCAST:
             index = code[pc++] << 8 | code[pc++];
-            classInfo = resolveClass(index, mi.classInfo);
+            classInfo = cp.resolveClass(index);
             address = i32[sp - 1];
             if (address === Constants.NULL) {
               continue;
@@ -1866,7 +1860,7 @@ module J2ME {
             continue;
           case Bytecodes.INSTANCEOF:
             index = code[pc++] << 8 | code[pc++];
-            classInfo = resolveClass(index, ci);
+            classInfo = cp.resolveClass(index);
             address = i32[--sp];
             if (address === Constants.NULL) {
               i32[sp++] = 0;
@@ -1985,7 +1979,7 @@ module J2ME {
             if (interrupt) {
               continue;
             }
-            release || assert(isInvoke(code[opPC]), "Return must come from invoke op: " + mi.implKey + " PC: " + pc + Bytecodes[op]);
+            release || assert(isInvoke(code[opPC]), "Return must come from invoke op: " + mi.implKey + " PC: " + pc + Bytecode.getBytecodesName(op));
             // Calculate the PC based on the size of the caller's invoke bytecode.
             pc = opPC + (code[opPC] === Bytecodes.INVOKEINTERFACE ? 5 : 3);
             // Push return value.
@@ -2042,8 +2036,8 @@ module J2ME {
                 calleeTargetMethodInfo = classInfo.iTable[calleeMethodInfo.mangledName];
                 break;
               default:
-                release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op]);
-                assert(false, "Not Implemented: " + Bytecodes[op]);
+                release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecode.getBytecodesName(op));
+                assert(false, "Not Implemented: " + Bytecode.getBytecodesName(op));
             }
 
             // Call Native or Compiled Method.
@@ -2097,7 +2091,7 @@ module J2ME {
               }
 
               if (U) {
-                traceWriter && traceWriter.writeLn("<< I Unwind: " + VMState[U]);
+                traceWriter && traceWriter.writeLn("<< I Unwind: " + getVMStateName(U));
                 release || assert(thread.unwoundNativeFrames.length, "Must have unwound frames.");
                 thread.nativeFrameCount--;
                 i32[frameTypeOffset] = FrameType.PushPendingFrames;
@@ -2165,8 +2159,8 @@ module J2ME {
             release || traceWriter && traceWriter.indent();
             continue;
           default:
-            release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecodes[op] + ", PC: " + opPC + ", CODE: " + code.length);
-            release || assert(false, "Not Implemented: " + Bytecodes[op]);
+            release || traceWriter && traceWriter.writeLn("Not Implemented: " + Bytecode.getBytecodesName(op) + ", PC: " + opPC + ", CODE: " + code.length);
+            release || assert(false, "Not Implemented: " + Bytecode.getBytecodesName(op));
             continue;
         }
       } catch (e) {

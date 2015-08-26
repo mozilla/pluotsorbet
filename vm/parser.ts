@@ -238,7 +238,7 @@ module J2ME {
       var o = this.offset + offset;
       return b[o] << 8 | b[o + 1];
     }
-    
+
     clone() {
       return new ByteStream(this.buffer, this.offset);
     }
@@ -448,7 +448,7 @@ module J2ME {
 
   }
 
-  export enum TAGS {
+  export const enum TAGS {
     CONSTANT_Class = 7,
     CONSTANT_Fieldref = 9,
     CONSTANT_Methodref = 10,
@@ -462,6 +462,10 @@ module J2ME {
     CONSTANT_Utf8 = 1,
     CONSTANT_Unicode = 2,
     CONSTANT_Any = 13 // NON-STANDARD
+  }
+
+  export function getTAGSName(tag: TAGS): string {
+    return (<any>J2ME).TAGS[tag];
   }
 
   export class ConstantPool extends ByteStream {
@@ -593,27 +597,12 @@ module J2ME {
       var s = this, r = this.resolved[i];
       if (r === undefined) {
         var tag = this.seekTag(i);
-        release || Debug.assert(expectedTag === TAGS.CONSTANT_Any || expectedTag === tag || (expectedTag === TAGS.CONSTANT_Methodref && tag === TAGS.CONSTANT_InterfaceMethodref), "bad expectedTag in resolve");
+        release || Debug.assert(expectedTag === TAGS.CONSTANT_Any || expectedTag === tag ||
+                                (expectedTag === TAGS.CONSTANT_Methodref && tag === TAGS.CONSTANT_InterfaceMethodref), "bad expectedTag in resolve");
         switch (s.readU1()) {
-            case TAGS.CONSTANT_Integer:
-              r = this.resolved[i] = s.readS4();
-              break;
-            case TAGS.CONSTANT_Float:
-              r = this.resolved[i] = IntegerUtilities.int32ToFloat(s.readS4());
-              break;
-            case TAGS.CONSTANT_String:
-              r = this.resolved[i] = $.newStringConstant(ByteStream.UTF8toUTF16(this.resolveUtf8(s.readU2())));
-              break;
-            case TAGS.CONSTANT_Long:
-              var high = s.readS4();
-              var low = s.readS4();
-              // REDUX
-              //r = this.resolved[i] = Long.fromBits(low, high);
-              Debug.error("TODO constant pool longs");
-              break;
-            case TAGS.CONSTANT_Double:
-              r = this.resolved[i] = IntegerUtilities.int64ToDouble(s.readS4(), s.readS4());
-              break;
+          case TAGS.CONSTANT_String:
+            r = this.resolved[i] = $.newStringConstant(ByteStream.UTF8toUTF16(this.resolveUtf8(s.readU2())));
+            break;
           case TAGS.CONSTANT_Utf8:
             r = this.resolved[i] = s.readInternedBytes(s.readU2());
             break;
@@ -643,7 +632,7 @@ module J2ME {
             this.resolved[i] = r;
             break;
           default:
-            assert(false, "bad type in resolve");
+            assert(false, "bad type (" + expectedTag + ") in resolve");
             break;
         }
       }
@@ -666,13 +655,11 @@ module J2ME {
   export class FieldInfo extends ByteStream {
     public classInfo: ClassInfo;
     public kind: Kind;
-    public name: string;
     public byteOffset: number = 0;
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
     public mangledName: string = null;
     public accessFlags: ACCESS_FLAGS;
-    private _constantvalue_index: number = -1;
     fTableIndex: number = -1;
 
     constructor(classInfo: ClassInfo, offset: number) {
@@ -681,7 +668,6 @@ module J2ME {
       this.accessFlags = this.readU2();
       this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
       this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
-      this.name = fromUTF8(this.utf8Name) + " " + fromUTF8(this.utf8Signature);
       this.kind = getSignatureKind(this.utf8Signature);
       this.scanFieldInfoAttributes();
       sealObjects && Object.seal(this);
@@ -700,19 +686,10 @@ module J2ME {
         var o = s.offset;
         var attribute_name = this.classInfo.constantPool.resolveUtf8(attribute_name_index);
         if (strcmp(attribute_name, UTF8.ConstantValue)) {
-          release || assert(attribute_length === 2, "Attribute length of ConstantValue must be 2.")
-          this._constantvalue_index = s.readU2();
+          release || assert(attribute_length === 2, "Attribute length of ConstantValue must be 2.");
         }
         s.seek(o + attribute_length);
       }
-    }
-
-    get constantValue(): any {
-      if (this._constantvalue_index >= 0) {
-        // This is not a very frequently called method, so no need to cache the resolved value.
-        return this.classInfo.constantPool.resolve(this._constantvalue_index, TAGS.CONSTANT_Any);
-      }
-      return undefined;
     }
   }
 
@@ -1466,7 +1443,7 @@ module J2ME {
         if (i >= 0) {
           return c.getFieldByIndex(i);
         }
-        
+
         if (isStatic) {
           var interfaces = c.getAllInterfaces();
           for (var n = 0; n < interfaces.length; ++n) {
@@ -1516,7 +1493,7 @@ module J2ME {
       this.resolvedFlags |= ResolvedFlags.Interfaces;
       return <ClassInfo []>this.interfaces;
     }
-    
+
     getAllInterfaces(): ClassInfo [] {
       if (this.allInterfaces) {
         return this.allInterfaces;
@@ -1649,7 +1626,7 @@ module J2ME {
       this.bytesPerElement = bytesPerElement;
       this.complete();
     }
-    
+
     static initialize() {
       // Primitive array classes require the java_lang_Object to exists before they can be created.
       PrimitiveArrayClassInfo.Z = new PrimitiveArrayClassInfo(PrimitiveClassInfo.Z, "ZArray", 1);

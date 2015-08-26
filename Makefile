@@ -86,7 +86,7 @@ else
 endif
 
 ifeq ($(RELEASE),1)
-	CLOSURE_FLAGS = 
+	CLOSURE_FLAGS =
 else
 	CLOSURE_FLAGS = --formatting PRETTY_PRINT
 endif
@@ -194,7 +194,7 @@ PREPROCESS_SRCS = \
 	$(NULL)
 PREPROCESS_DESTS = $(PREPROCESS_SRCS:.in=)
 
-all: config-build java jasmin tests j2me shumway aot bench/benchmark.jar bld/main-all.js
+all: config-build java jasmin tests j2me shumway bench/benchmark.jar bld/main-all.js
 
 $(shell mkdir -p build_tools)
 
@@ -340,7 +340,7 @@ bld/native.js: Makefile vm/native/native.cpp vm/native/Boehm.js/.libs/$(BOEHM_LI
 	emcc -DNDEBUG -Ivm/native/Boehm.js/include/ vm/native/Boehm.js/.libs/$(BOEHM_LIB) -Oz -O3 \
 	vm/native/native.cpp jit/relooper/Relooper.cpp -o native.raw.js --memory-init-file 0 \
 	-s TOTAL_STACK=16*1024 -s TOTAL_MEMORY=$(ASMJS_TOTAL_MEMORY) -DGC_INITIAL_HEAP_SIZE=$(GC_INITIAL_HEAP_SIZE) \
-	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMallocUncollectable", "_gcFree", "_gcMalloc", "_gcMallocAtomic", "_gcRegisterDisappearingLink", "_gcUnregisterDisappearingLink", "_registerFinalizer", "_forceCollection", "_getUsedHeapSize", "_rl_set_output_buffer","_rl_make_output_buffer","_rl_new_block","_rl_set_block_code","_rl_delete_block","_rl_block_add_branch_to","_rl_new_relooper","_rl_delete_relooper","_rl_relooper_add_block","_rl_relooper_calculate","_rl_relooper_render", "_rl_set_asm_js_mode"]' \
+	-s 'EXPORTED_FUNCTIONS=["_main", "_lAdd", "_lNeg", "_lSub", "_lShl", "_lShr", "_lUshr", "_lMul", "_lDiv", "_lRem", "_lCmp", "_gcMallocUncollectable", "_gcFree", "_gcMalloc", "_gcMallocAtomic", "_gcRegisterDisappearingLink", "_gcUnregisterDisappearingLink", "_registerFinalizer", "_forceCollection", "_collectALittle", "_getUsedHeapSize", "_rl_set_output_buffer","_rl_make_output_buffer","_rl_new_block","_rl_set_block_code","_rl_delete_block","_rl_block_add_branch_to","_rl_new_relooper","_rl_delete_relooper","_rl_relooper_add_block","_rl_relooper_calculate","_rl_relooper_render", "_rl_set_asm_js_mode"]' \
 	-s 'DEFAULT_LIBRARY_FUNCS_TO_INCLUDE=["memcpy", "memset", "malloc", "free", "puts"]' \
 	-s NO_EXIT_RUNTIME=1 -s NO_BROWSER=1 -s NO_FILESYSTEM=1 --post-js jit/relooper/glue.js
 	echo "var RELOOPER_BUFFER_SIZE = 1024 * 512;" > bld/native.js
@@ -358,7 +358,7 @@ vm/native/Boehm.js/.libs/$(BOEHM_LIB):
 
 bld/j2me.js: Makefile $(BASIC_SRCS) $(JIT_SRCS) bld/native.js build_tools/closure.jar .checksum
 	@echo "Building J2ME"
-	tsc --sourcemap --target ES5 references.ts -d --out bld/j2me.js
+	tsc --preserveConstEnums --sourcemap --target ES5 references.ts -d --out bld/j2me.js
 ifeq ($(RELEASE),1)
 	java -jar build_tools/closure.jar --formatting PRETTY_PRINT --warning_level $(CLOSURE_WARNING_LEVEL) --language_in ECMASCRIPT5 -O $(J2ME_JS_OPTIMIZATION_LEVEL) bld/j2me.js > bld/j2me.cc.js \
 		&& mv bld/j2me.cc.js bld/j2me.js
@@ -366,11 +366,11 @@ endif
 
 bld/j2me-jsc.js: $(BASIC_SRCS) $(JIT_SRCS)
 	@echo "Building J2ME AOT Compiler"
-	tsc --sourcemap --target ES5 references-jsc.ts -d --out bld/j2me-jsc.js
+	tsc --preserveConstEnums --sourcemap --target ES5 references-jsc.ts -d --out bld/j2me-jsc.js
 
 bld/jsc.js: jsc.ts bld/j2me-jsc.js
 	@echo "Building J2ME JSC CLI"
-	tsc --sourcemap --target ES5 jsc.ts --out bld/jsc.js
+	tsc --preserveConstEnums --sourcemap --target ES5 jsc.ts --out bld/jsc.js
 
 # Some scripts use ES6 features, so we have to specify ES6 as the in-language
 # in order for Closure to compile them, even though for now we're optimizing

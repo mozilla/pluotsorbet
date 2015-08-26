@@ -5,7 +5,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestBouncyCastleSHA256 implements Testlet {
-    public int getExpectedPass() { return 6; }
+    public int getExpectedPass() { return 7; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
 
@@ -40,12 +40,10 @@ public class TestBouncyCastleSHA256 implements Testlet {
             th.check(Util.hexEncode(retValue).toLowerCase(), digests[i]);
         }
 
-        /* TODO: Re-enable when compilation is enabled.
-
         for (int i = 0; i < 1000000; i++) {
             md.update((byte)'a');
         }
         md.doFinal(retValue, 0);
-        th.check(Util.hexEncode(retValue).toLowerCase(), MILLION_A_DIGEST);*/
+        th.check(Util.hexEncode(retValue).toLowerCase(), MILLION_A_DIGEST);
     }
 }
