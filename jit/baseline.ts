@@ -229,10 +229,6 @@ module J2ME {
     return String(v);
   }
 
-  function classConstant(classInfo: ClassInfo): string {
-    return "CI[" + classInfo.id + "]";
-  }
-
   function throwCompilerError(message: string) {
     throw new Error(message);
   }
@@ -278,7 +274,7 @@ module J2ME {
       this.pc = 0;
       this.sp = 0;
       this.parameters = [];
-      this.referencedClasses = [];
+      this.referencedClasses = [this.methodInfo.classInfo];
       this.initializedClasses = null;
       this.hasHandlers = methodInfo.exception_table_length > 0;
       this.hasMonitorEnter = false;
@@ -346,15 +342,6 @@ module J2ME {
         }
         this.setBlockStackHeight(successors[i].startBci, sp);
       }
-    }
-
-    // Cache classes known to be initialized as locals.
-    localClassConstant(classInfo: ClassInfo): string {
-      if (classInfo !== this.methodInfo.classInfo) {
-        return classConstant(classInfo);
-      }
-      this.needsVariable("k0", classConstant(classInfo));
-      return "k0";
     }
 
     emitBody() {
@@ -440,7 +427,7 @@ module J2ME {
         if (classInfo.isInterface) {
           check = "IOI";
         }
-        check += "(" + this.peek(Kind.Reference) + "," + classInfo.id + ")";
+        check += "(" + this.peek(Kind.Reference) + "," + this.classInfoSymbol(classInfo) + ")";
         check = "&&" + check;
       }
       this.bodyEmitter.writeLn("if(pc>=" + handler.start_pc + "&&pc<" + handler.end_pc + check + "){pc=" + this.getBlockIndex(handler.handler_pc) + ";continue;}");
@@ -624,10 +611,26 @@ module J2ME {
       return classInfo;
     }
 
+    classInfoSymbol(classInfo: ClassInfo): string {
+      var id = this.referencedClasses.indexOf(classInfo);
+      assert(id >= 0, "Class info not found in the referencedClasses list.");
+      return classInfoSymbolPrefix + id;
+    }
+
+    classInfoObject(classInfo: ClassInfo): string {
+      return "CI[" + this.classInfoSymbol(classInfo) + "]";
+    }
+
     lookupMethod(cpi: number, opcode: Bytecodes, isStatic: boolean): MethodInfo {
       var methodInfo = this.methodInfo.classInfo.constantPool.resolveMethod(cpi, isStatic);
       ArrayUtilities.pushUnique(this.referencedClasses, methodInfo.classInfo);
       return methodInfo;
+    }
+
+    methodInfoSymbol(methodInfo: MethodInfo): string {
+      var id = this.referencedClasses.indexOf(methodInfo.classInfo);
+      assert(id >= 0, "Class info not found in the referencedClasses list.");
+      return methodInfoSymbolPrefix + id + "_" + methodInfo.index;
     }
 
     lookupField(cpi: number, opcode: Bytecodes, isStatic: boolean): FieldInfo {
@@ -848,12 +851,12 @@ module J2ME {
 
     runtimeClass(classInfo: ClassInfo) {
       this.needsVariable("sa", "$.SA");
-      return "sa[" + classInfo.id + "]";
+      return "sa[" + this.classInfoSymbol(classInfo) + "]";
     }
 
     runtimeClassObject(classInfo: ClassInfo) {
       this.needsVariable("co", "$.CO");
-      return "co[" + classInfo.id + "]";
+      return "co[" + this.classInfoSymbol(classInfo) + "]";
     }
 
     emitClassInitializationCheck(classInfo: ClassInfo) {
@@ -871,7 +874,7 @@ module J2ME {
         } else {
           (emitDebugInfoComments || baselineCounter) && (message = "ClassInitializationCheck: " + classInfo.getClassNameSlow());
           this.needsVariable("ci", "$.I");
-          this.blockEmitter.writeLn("ci[" + classInfo.id + "] || CIC(" + classConstant(classInfo) + ");");
+          this.blockEmitter.writeLn("ci[" + this.classInfoSymbol(classInfo) + "] || CIC(" + this.classInfoObject(classInfo) + ");");
           if (canStaticInitializerYield(classInfo)) {
             this.emitUnwind(this.blockEmitter, String(this.pc));
           } else {
@@ -903,18 +906,22 @@ module J2ME {
       }
 
       var call;
-      var classConstant = this.localClassConstant(methodInfo.classInfo);
+      var classInfoObject = this.classInfoObject(methodInfo.classInfo);
       var methodId = null;
       if (opcode !== Bytecodes.INVOKESTATIC) {
         var object = this.pop(Kind.Reference);
         this.emitNullPointerCheck(object);
         args.unshift(object);
         if (opcode === Bytecodes.INVOKESPECIAL) {
-          methodId = methodInfo.id;
+          methodId = this.methodInfoSymbol(methodInfo);
           call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
         } else if (opcode === Bytecodes.INVOKEVIRTUAL) {
           var classId = "i32[(" + object + "|0)>>2]";
-          call = "(VT[" + classId + "][" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          if (methodInfo.vTableIndex < (1 << Constants.LOG_MAX_FLAT_VTABLE_SIZE)) {
+            call = "(FT[(" + classId + "<<" + Constants.LOG_MAX_FLAT_VTABLE_SIZE + ")+" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          } else {
+            call = "(VT[" + classId + "][" + methodInfo.vTableIndex + "]||" + "GLVM(" + classId + "," + methodInfo.vTableIndex + "))(" + args.join(",") + ")";
+          }
         } else if (opcode === Bytecodes.INVOKEINTERFACE) {
           var objClass = "CI[i32[(" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ")>>2]]";
           methodId = objClass + ".iTable['" + methodInfo.mangledName + "'].id";
@@ -924,7 +931,7 @@ module J2ME {
         }
       } else {
         args.unshift(String(Constants.NULL));
-        methodId = methodInfo.id;
+        methodId = this.methodInfoSymbol(methodInfo);
         call = "(LM[" + methodId + "]||" + "GLM(" + methodId + "))(" + args.join(",") + ")";
       }
 
@@ -1082,7 +1089,7 @@ module J2ME {
           this.emitPushLongBits(l, h);
           return;
         case TAGS.CONSTANT_String:
-          this.emitPush(Kind.Reference, this.localClassConstant(this.methodInfo.classInfo) + ".constantPool.resolve(" + index + ", " + TAGS.CONSTANT_String + ")");
+          this.emitPush(Kind.Reference, this.classInfoObject(this.methodInfo.classInfo) + ".constantPool.resolve(" + index + ", " + TAGS.CONSTANT_String + ")");
           return;
         default:
           throw "Not done for: " + getTAGSName(tag);
@@ -1098,7 +1105,7 @@ module J2ME {
     emitNewInstance(cpi: number) {
       var classInfo = this.lookupClass(cpi);
       this.emitClassInitializationCheck(classInfo);
-      this.emitPush(Kind.Reference, "AO(" + this.localClassConstant(classInfo) + ")");
+      this.emitPush(Kind.Reference, "AO(" + this.classInfoObject(classInfo) + ")");
     }
 
     emitNewTypeArray(typeCode: number) {
@@ -1119,9 +1126,9 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "CCI";
       }
-      call = call + "(" + object + "," + classInfo.id + ")"
+      call = call + "(" + object + "," + this.classInfoSymbol(classInfo) + ")"
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("(!" + object + ")||i32[" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]===" + classInfo.id + "||" + call + ";");
+        this.blockEmitter.writeLn("(!" + object + ")||i32[" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]===" + this.classInfoSymbol(classInfo) + "||" + call + ";");
       } else {
         this.blockEmitter.writeLn(call + ";");
       }
@@ -1134,9 +1141,9 @@ module J2ME {
       if (classInfo.isInterface) {
         call = "IOI";
       }
-      call = call + "(" + object + "," + classInfo.id + ")|0";
+      call = call + "(" + object + "," + this.classInfoSymbol(classInfo) + ")|0";
       if (inlineRuntimeCalls) {
-        call = "((" + object + "&&i32[" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]=== " + classInfo.id + ")||" + call + ")|0";
+        call = "((" + object + "&&i32[" + object + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]=== " + this.classInfoSymbol(classInfo) + ")||" + call + ")|0";
       }
       this.emitPush(Kind.Int, call);
     }
@@ -1156,7 +1163,7 @@ module J2ME {
       this.emitClassInitializationCheck(classInfo);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      this.emitPush(Kind.Reference, "NA(" + this.localClassConstant(classInfo) + ", " + length + ")");
+      this.emitPush(Kind.Reference, "NA(" + this.classInfoObject(classInfo) + ", " + length + ")");
     }
 
     emitNewMultiObjectArray(cpi: number, stream: BytecodeStream) {
@@ -1166,7 +1173,7 @@ module J2ME {
       for (var i = numDimensions - 1; i >= 0; i--) {
         dimensions[i] = this.pop(Kind.Int);
       }
-      this.emitPush(Kind.Reference, "NM(" + this.localClassConstant(classInfo) + ",[" + dimensions.join(",") + "])");
+      this.emitPush(Kind.Reference, "NM(" + this.classInfoObject(classInfo) + ",[" + dimensions.join(",") + "])");
     }
 
     private emitUnwind(emitter: Emitter, pc: string, forceInline: boolean = false) {
@@ -1183,7 +1190,7 @@ module J2ME {
 
     private emitBailout(emitter: Emitter, pc: string, sp: string, stackCount: number) {
       var localCount = this.methodInfo.codeAttribute.max_locals;
-      var args = [this.methodInfo.id, pc, this.lockObject];
+      var args = [this.methodInfoSymbol(this.methodInfo), pc, this.lockObject];
       for (var i = 0; i < localCount; i++) {
         args.push(this.getLocalName(i));
       }

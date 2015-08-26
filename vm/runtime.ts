@@ -375,13 +375,13 @@ module J2ME {
     status: RuntimeStatus;
     waiting: any [];
     threadCount: number;
-    initialized: Map<number, boolean>;
-    staticObjectAddresses: Map<number, number>;
-    classObjectAddresses: Map<number, number>;
+    initialized: Int8Array;
+    staticObjectAddresses: Int32Array;
+    classObjectAddresses: Int32Array;
 
-    I: Map<number, boolean>; // Compiler alias for initialized
-    SA: Map<number, number>; // Compiler alias for staticObjectAddresses
-    CO: Map<number, number>; // Compiler alias for classObjectAddresses
+    I: Int8Array; // Compiler alias for initialized
+    SA: Int32Array; // Compiler alias for staticObjectAddresses
+    CO: Int32Array; // Compiler alias for classObjectAddresses
 
     ctx: Context;
     allCtxs: Set<Context>;
@@ -401,9 +401,9 @@ module J2ME {
       this.status = RuntimeStatus.New;
       this.waiting = [];
       this.threadCount = 0;
-      this.I = this.initialized = Object.create(null);
-      this.SA = this.staticObjectAddresses = Object.create(null);
-      this.CO = this.classObjectAddresses = Object.create(null);
+      this.I = this.initialized = new Int8Array(Constants.MAX_CLASS_ID);
+      this.SA = this.staticObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID + 1);
+      this.CO = this.classObjectAddresses = new Int32Array(Constants.INITIAL_MAX_CLASS_ID + 1);
       this.ctx = null;
       this.allCtxs = new Set();
       this._runtimeId = RuntimeTemplate._nextRuntimeId++;
@@ -434,7 +434,7 @@ module J2ME {
      * different threads that need trigger the Class.initialize() code so they block.
      */
     setClassInitialized(classId: number) {
-      this.initialized[classId] = true;
+      this.initialized[classId] = 1;
     }
 
     getClassObjectAddress(classInfo: ClassInfo): number {
@@ -443,6 +443,9 @@ module J2ME {
         var addr = allocUncollectableObject(CLASSES.java_lang_Class);
         var handle = <java.lang.Class>getHandle(addr);
         handle.vmClass = id;
+        // Ensure that maps are large enough.
+        this.SA = this.staticObjectAddresses = ArrayUtilities.ensureInt32ArrayLength(this.staticObjectAddresses, id + 1);
+        this.CO = this.classObjectAddresses = ArrayUtilities.ensureInt32ArrayLength(this.classObjectAddresses, id + 1);
         this.classObjectAddresses[id] = addr;
         this.staticObjectAddresses[id] = gcMallocUncollectable(J2ME.Constants.OBJ_HDR_SIZE + classInfo.sizeOfStaticFields);
         linkWriter && linkWriter.writeLn("Initializing Class Object For: " + classInfo.getClassNameSlow());
@@ -636,10 +639,11 @@ module J2ME {
 
       if (!classInfo.isInterface) {
         // Pre-allocate linkedVTableMap.
-        classIdToLinkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
+        ensureDenseObjectMapLength(linkedVTableMap, classInfo.id + 1);
+        ensureDenseObjectMapLength(flatLinkedVTableMap, (classInfo.id + 1) << Constants.LOG_MAX_FLAT_VTABLE_SIZE);
+        linkedVTableMap[classInfo.id] = ArrayUtilities.makeDenseArray(classInfo.vTable.length, null);
       }
     }
-
   }
 
   export const enum VMState {
@@ -687,7 +691,15 @@ module J2ME {
     ARRAY_HDR_SIZE = 8,
 
     ARRAY_LENGTH_OFFSET = 4,
-    NULL = 0
+    NULL = 0,
+
+    MAX_METHOD_ID = 16383,
+    INITIAL_MAX_METHOD_ID = 511,
+
+    MAX_CLASS_ID = 4095,
+    INITIAL_MAX_CLASS_ID = 511,
+
+    LOG_MAX_FLAT_VTABLE_SIZE = 6 // 64
   }
 
   export class Runtime extends RuntimeTemplate {
@@ -748,14 +760,43 @@ module J2ME {
     }
   }
 
-  export var classIdToClassInfoMap: Map<number, ClassInfo> = Object.create(null);
-  export var methodIdToMethodInfoMap: Map<number, MethodInfo> = Object.create(null);
-  export var linkedMethods: Map<number, Function> = Object.create(null);
+  export var classIdToClassInfoMap = [];
+  export var methodIdToMethodInfoMap = [];
+  export var linkedMethods = [];
+
+  function ensureDenseObjectMapLength(array: Array<Object>, length: number) {
+    while (array.length < length) {
+      array.push(null);
+    }
+    release || Debug.assertNonDictionaryModeObject(array);
+  }
+
+  export function registerClassId(classId: number, classInfo: ClassInfo) {
+    release || assert(phase === ExecutionPhase.Compiler || classId <= Constants.MAX_CLASS_ID, "Maximum class id was exceeded, " + classId);
+    ensureDenseObjectMapLength(classIdToClassInfoMap, classId + 1);
+    classIdToClassInfoMap[classId] = classInfo;
+  }
+
+  export function registerMethodId(methodId: number, methodInfo: MethodInfo) {
+    release || assert(phase === ExecutionPhase.Compiler || methodId <= Constants.MAX_METHOD_ID, "Maximum method id was exceeded, " + methodId);
+    ensureDenseObjectMapLength(methodIdToMethodInfoMap, methodId + 1);
+    ensureDenseObjectMapLength(linkedMethods, methodId + 1);
+    methodIdToMethodInfoMap[methodId] = methodInfo;
+  }
 
   /**
    * Maps classIds to vTables containing JS functions.
    */
-  export var classIdToLinkedVTableMap: Map<number, Function[]> = Object.create(null);
+  export var linkedVTableMap = [];
+
+  /**
+   * Flat map of classId and vTableIndex to JS functions. This allows the compiler to
+   * emit a single memory load to lookup a vTable entry 
+   *  flatLinkedVTableMap[classId << LOG_MAX_FLAT_VTABLE_SIZE + vTableIndex]
+   * instead of the slower more general
+   *  linkedVTableMap[classId][vTableIndex]
+   */
+  export var flatLinkedVTableMap = [];
 
   export function getClassInfo(addr: number) {
     release || assert(addr !== Constants.NULL, "addr !== Constants.NULL");
@@ -1058,9 +1099,19 @@ module J2ME {
   }
 
   export function getLinkedVirtualMethodById(classId: number, vTableIndex: number) {
-    var fn = getLinkedMethod(classIdToClassInfoMap[classId].vTable[vTableIndex]);
-    // Cache linked method in the |linkedVTableMap|.
-    classIdToLinkedVTableMap[classId][vTableIndex] = fn;
+    var methodInfo = classIdToClassInfoMap[classId].vTable[vTableIndex];
+    var fn = getLinkedMethod(methodInfo);
+    // Only cache compiled methods in the |linkedVTableMap| and |flatLinkedVTableMap|.
+    if (methodInfo.state === MethodState.Compiled) {
+      var vTable = linkedVTableMap[classId];
+      release || Debug.assertNonDictionaryModeObject(vTable);
+      vTable[vTableIndex] = fn;
+      // Only cache methods in the |flatLinkedVTableMap| if there is room.
+      if (vTableIndex < (1 << Constants.LOG_MAX_FLAT_VTABLE_SIZE)) {
+        release || Debug.assertNonDictionaryModeObject(flatLinkedVTableMap);
+        flatLinkedVTableMap[(classId << Constants.LOG_MAX_FLAT_VTABLE_SIZE) + vTableIndex] = fn;
+      }
+    }
     return fn;
   }
 
@@ -1149,15 +1200,15 @@ module J2ME {
       if (cachedMethod = CompiledMethodCache.get(methodInfo.implKey)) {
         cachedMethodCount ++;
         jitWriter && jitWriter.writeLn("Retrieved " + methodInfo.implKey + " from compiled method cache");
-        linkMethodSource(methodInfo, cachedMethod.args, cachedMethod.body, cachedMethod.onStackReplacementEntryPoints);
 
+        var referencedClasses = [];
         // Ensure referenced classes are loaded.
         // We only need to do this for cached methods, since referenced classes
         // get loaded automatically during JIT compilation.
         for (var i = 0; i < cachedMethod.referencedClasses.length; i++) {
-          CLASSES.getClass(cachedMethod.referencedClasses[i]);
+          referencedClasses.push(CLASSES.getClass(cachedMethod.referencedClasses[i]));
         }
-
+        linkMethodSource(methodInfo, cachedMethod.args, cachedMethod.body, referencedClasses, cachedMethod.onStackReplacementEntryPoints);
         return;
       }
     }
@@ -1179,9 +1230,15 @@ module J2ME {
       return;
     }
     leaveTimeline("Compiling");
-    codeWriter && codeWriter.writeLn("// Method: " + methodInfo.implKey);
-    codeWriter && codeWriter.writeLn("// Arguments: " + compiledMethod.args.join(", "));
-    codeWriter && codeWriter.writeLns(compiledMethod.body);
+    if (codeWriter) {
+      codeWriter.writeLn("// Method: " + methodInfo.implKey);
+      codeWriter.writeLn("// Arguments: " + compiledMethod.args.join(", "));
+      codeWriter.writeLn("// Referenced Classes: ");
+      for (var i = 0; i < compiledMethod.referencedClasses.length; i++) {
+        codeWriter.writeLn("// " + i + ": " + compiledMethod.referencedClasses[i].getClassNameSlow());
+      }
+      codeWriter.writeLns(compiledMethod.body)
+    }
 
     if (enableCompiledMethodCache) {
       CompiledMethodCache.put({
@@ -1193,7 +1250,7 @@ module J2ME {
       });
     }
 
-    linkMethodSource(methodInfo, compiledMethod.args, compiledMethod.body, compiledMethod.onStackReplacementEntryPoints);
+    linkMethodSource(methodInfo, compiledMethod.args, compiledMethod.body, compiledMethod.referencedClasses, compiledMethod.onStackReplacementEntryPoints);
     var methodJITTime = (performance.now() - s);
     totalJITTime += methodJITTime;
     if (jitWriter) {
@@ -1225,6 +1282,13 @@ module J2ME {
     linkedMethods[methodInfo.id] = fn;
   }
 
+  // Make sure class and method symbol references can be parsed as identifiers. This allows closure and other tools
+  // to process this code as JS files.
+  export var classInfoSymbolPrefix =  "$C"; // "$C123
+  export var methodInfoSymbolPrefix = "$M"; // "$M123_456
+  var classInfoSymbolPrefixPattern =  /\$C(\d+)/g;
+  var methodInfoSymbolPrefixPattern = /\$M(\d+)_(\d+)/g;
+
   /**
    * Enable this if you want your profiles to have nice function names. Naming eval'ed functions
    * using: |new Function("return function displayName {}");| can cause performance problems and
@@ -1235,9 +1299,17 @@ module J2ME {
   /**
    * Links up compiled method at runtime.
    */
-  export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, onStackReplacementEntryPoints: any) {
+  export function linkMethodSource(methodInfo: MethodInfo, args: string[], body: string, referencedClasses: ClassInfo [], onStackReplacementEntryPoints: any) {
     jitWriter && jitWriter.writeLn("Link method: " + methodInfo.implKey);
-
+    // TODO: Don't use RegExp ever ever.
+    // Patch class and method symbols in relocatable code.
+    body = body.replace(classInfoSymbolPrefixPattern, <any>function (match, symbol) {
+      // jitWriter && jitWriter.writeLn("Linking Class Symbol: " + symbol + " to " + referencedClasses[symbol]);
+      return referencedClasses[symbol].id;
+    }).replace(methodInfoSymbolPrefixPattern, <any>function (match, symbol, index) {
+      // jitWriter && jitWriter.writeLn("Linking Method Symbol: " + symbol + ":" + index + " to " + referencedClasses[symbol].getMethodByIndex(index));
+      return referencedClasses[symbol].getMethodByIndex(index).id;
+    });
     enterTimeline("Eval Compiled Code");
     // This overwrites the method on the global object.
 
@@ -1317,7 +1389,7 @@ module J2ME {
 
   export function createBailoutFrame(methodId: number, pc: number, localCount: number, stackCount: number, lockObjectAddress: number): number {
     var address = gcMallocUncollectable(BailoutFrameLayout.HeaderSize + ((localCount + stackCount) << 2));
-    release || assert(typeof methodId === "number" && methodId in methodIdToMethodInfoMap, "Must be valid method info.");
+    release || assert(typeof methodId === "number" && methodIdToMethodInfoMap[methodId], "Must be valid method info.");
     i32[address + BailoutFrameLayout.MethodIdOffset >> 2] = methodId;
     i32[address + BailoutFrameLayout.PCOffset >> 2] = pc;
     i32[address + BailoutFrameLayout.LocalCountOffset >> 2] = localCount;
@@ -2071,7 +2143,8 @@ var MI = J2ME.methodIdToMethodInfoMap;
 var LM = J2ME.linkedMethods;
 var GLM = J2ME.getLinkedMethodById;
 var GLVM = J2ME.getLinkedVirtualMethodById;
-var VT = J2ME.classIdToLinkedVTableMap;
+var VT = J2ME.linkedVTableMap;
+var FT = J2ME.flatLinkedVTableMap;
 
 var CIC = J2ME.classInitCheck;
 var GH = J2ME.getHandle;

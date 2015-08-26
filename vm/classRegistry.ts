@@ -146,7 +146,6 @@ module J2ME {
       var classInfo = new ClassInfo(bytes);
       leaveTimeline("loadClassBytes");
       loadWriter && loadWriter.writeLn(classInfo.getClassNameSlow() + " -> " + classInfo.superClassName + ";");
-      classIdToClassInfoMap[classInfo.id] = classInfo;
       this.classes[classInfo.getClassNameSlow()] = classInfo;
       return classInfo;
     }
@@ -220,7 +219,6 @@ module J2ME {
         }
         classInfo = new ObjectArrayClassInfo(this.getClass(elementType));
       }
-      classIdToClassInfoMap[classInfo.id] = classInfo;
       return this.classes[typeName] = classInfo;
     }
 

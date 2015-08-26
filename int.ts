@@ -99,9 +99,7 @@ module J2ME {
    *             +--------------------------------+
    *             | Caller FP                      |
    *             +--------------------------------+
-   *             | Frame Type                     |
-   *             +--------------------------------+
-   *             | Callee Method Info ID          |
+   *             | Callee Method Info | Marker    |
    *             +--------------------------------+
    *             | Monitor                        |
    *             +--------------------------------+
@@ -117,37 +115,45 @@ module J2ME {
     /**
      * Normal interpreter frame.
      */
-    Interpreter = 0x0,
+    Interpreter = 0x00000000,
 
     /**
      * Marks the beginning of a sequence of interpreter frames. If we see this
      * frame when returning we need to exit the interpreter loop.
      */
-    ExitInterpreter = 0x1,
+    ExitInterpreter = 0x10000000,
 
     /**
      * Native frames are pending and need to be pushed on the stack.
      */
-    PushPendingFrames = 0x2,
+    PushPendingFrames = 0x20000000,
 
     /**
      * Marks the beginning of frames that were not invoked by the previous frame.
      */
-    Interrupt = 0x3,
+    Interrupt = 0x30000000,
 
     /**
      * Marks the beginning of native/compiled code called from the interpreter.
      */
-    Native = 0x4
+    Native = 0x40000000
   }
 
   export const enum FrameLayout {
-    CallerRAOffset         = 0,
-    CallerFPOffset         = 1,
-    FrameTypeOffset        = 2,
-    MonitorOffset          = 3,
-    CalleeMethodInfoOffset = 4,
-    CallerSaveSize         = 5
+    /**
+     * Stored in the lower 28 bits.
+     */
+    CalleeMethodInfoOffset      = 2,
+    CalleeMethodInfoMask        = 0x0FFFFFFF,
+    /**
+     * Stored in the upper 4 bits.
+     */
+    FrameTypeOffset             = 2,
+    FrameTypeMask               = 0xF0000000,
+    CallerFPOffset              = 1,
+    CallerRAOffset              = 0,
+    MonitorOffset               = 3,
+    CallerSaveSize              = 4
   }
 
   export class FrameView {
@@ -168,11 +174,11 @@ module J2ME {
       if (!release) {
         assert(fp >= (thread.tp >> 2), "Frame pointer is not less than than the top of the stack.");
         assert(fp < (thread.tp + Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
-        var callee = methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset]];
+        var callee = methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
         assert(
-          callee === undefined ||
+          !callee ||
           callee instanceof MethodInfo,
-          "Callee @" + ((this.fp + FrameLayout.CalleeMethodInfoOffset)) + " is not a MethodInfo, " + toName(callee)
+          "Callee @" + ((this.fp + FrameLayout.CalleeMethodInfoOffset) & FrameLayout.CalleeMethodInfoMask) + " is not a MethodInfo, " + toName(callee)
         );
       }
     }
@@ -197,15 +203,15 @@ module J2ME {
     }
 
     get methodInfo(): MethodInfo {
-      return methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset]];
+      return methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
     }
 
     get type(): FrameType {
-      return i32[this.fp + FrameLayout.FrameTypeOffset];
+      return i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
     }
 
     set methodInfo(methodInfo: MethodInfo) {
-      i32[this.fp + FrameLayout.CalleeMethodInfoOffset] = methodInfo.id;
+      i32[this.fp + FrameLayout.CalleeMethodInfoOffset] = (i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask) | methodInfo.id;
     }
 
     get parameterOffset() {
@@ -260,7 +266,7 @@ module J2ME {
       if (this.methodInfo) {
         op = this.methodInfo.codeAttribute.code[this.pc];
       }
-      var type  = i32[this.fp + FrameLayout.FrameTypeOffset];
+      var type  = i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
       writer.writeLn("Frame: " + FrameType[type] + " " + (this.methodInfo ? this.methodInfo.implKey : "null") + ", FP: " + this.fp + "(" + (this.fp - (this.thread.tp >> 2)) + "), SP: " + this.sp + ", PC: " + this.pc + (op >= 0 ? ", OP: " + Bytecode.getBytecodesName(op) : ""));
       if (details) {
         for (var i = Math.max(0, this.fp + this.parameterOffset); i < this.sp; i++) {
@@ -388,8 +394,7 @@ module J2ME {
       release || assert(fp < (this.tp + Constants.MAX_STACK_SIZE >> 2), "Frame pointer is not greater than the stack size.");
       i32[this.fp + FrameLayout.CallerRAOffset] = this.pc;    // Caller RA
       i32[this.fp + FrameLayout.CallerFPOffset] = fp;         // Caller FP
-      i32[this.fp + FrameLayout.FrameTypeOffset] = frameType; // Frame Type
-      i32[this.fp + FrameLayout.CalleeMethodInfoOffset] = (methodInfo === null ? Constants.NULL : methodInfo.id); // Callee
+      i32[this.fp + FrameLayout.CalleeMethodInfoOffset] = frameType | (methodInfo === null ? Constants.NULL : methodInfo.id); // Callee
       i32[this.fp + FrameLayout.MonitorOffset] = monitorAddr; // Monitor
       this.sp = this.fp + FrameLayout.CallerSaveSize + sp;
       this.pc = pc;
@@ -399,19 +404,19 @@ module J2ME {
       if (frameType === FrameType.Native) {
         this.nativeFrameCount--;
       }
-      return this.popFrame(undefined, frameType);
+      return this.popFrame(null, frameType);
     }
 
     popFrame(methodInfo: MethodInfo, frameType: FrameType = FrameType.Interpreter): MethodInfo {
-      var mi = methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset]];
-      var type = i32[this.fp + FrameLayout.FrameTypeOffset];
+      var mi = methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
+      var type = i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
       release || assert(mi === methodInfo && type === frameType, "mi === methodInfo && type === frameType");
       this.pc = i32[this.fp + FrameLayout.CallerRAOffset];
       var maxLocals = mi ? mi.codeAttribute.max_locals : 0;
       this.sp = this.fp - maxLocals;
       this.fp = i32[this.fp + FrameLayout.CallerFPOffset];
       release || assert(this.fp >= (this.tp >> 2), "Valid frame pointer after pop.");
-      return methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset]];
+      return methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
     }
 
     run() {
@@ -424,10 +429,10 @@ module J2ME {
       var pc = -1;
       var classInfo;
       while (true) {
-        var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
+        var frameType = i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
         switch (frameType) {
           case FrameType.Interpreter:
-            var mi = methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset]];
+            var mi = methodIdToMethodInfoMap[i32[this.fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
             release || traceWriter && traceWriter.writeLn("Looking for handler in: " + mi.implKey);
             for (var i = 0; i < mi.exception_table_length; i++) {
               var exceptionEntryView = mi.getExceptionEntryViewByIndex(i);
@@ -554,7 +559,7 @@ module J2ME {
           }
           ASM._gcFree(pendingNativeFrameAddress);
         }
-        var frameType = i32[this.fp + FrameLayout.FrameTypeOffset];
+        var frameType = i32[this.fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
         if (frameType === FrameType.PushPendingFrames) {
           continue;
@@ -644,12 +649,13 @@ module J2ME {
 
   export function prepareInterpretedMethod(methodInfo: MethodInfo): Function {
     var method = function fastInterpreterFrameAdapter() {
+      runtimeCounter && runtimeCounter.count("fastInterpreterFrameAdapter");
       var calleeStats = methodInfo.stats;
       calleeStats.interpreterCallCount++;
       if (config.forceRuntimeCompilation ||
           calleeStats.interpreterCallCount + calleeStats.backwardsBranchCount > ConfigThresholds.InvokeThreshold) {
         compileAndLinkMethod(methodInfo);
-        if(methodInfo.state === MethodState.Compiled) {
+        if (methodInfo.state === MethodState.Compiled) {
           return methodInfo.fn.apply(null, arguments);
         }
       }
@@ -1525,7 +1531,7 @@ module J2ME {
                 // Just because we've jumped backwards doesn't mean we are at a loop header but it does mean that we are
                 // at the beginning of a basic block. This is a really cheap test and a convenient place to perform an
                 // on stack replacement.
-                var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset];
+                var previousFrameType = i32[i32[fp + FrameLayout.CallerFPOffset] + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
                 if ((previousFrameType === FrameType.Interpreter || previousFrameType === FrameType.ExitInterpreter) && mi.onStackReplacementEntryPoints.indexOf(opPC + jumpOffset) > -1) {
                   traceWriter && traceWriter.writeLn("OSR: " + mi.implKey);
@@ -1587,8 +1593,8 @@ module J2ME {
                     }
                   }
 
-                  mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
-                  type = i32[fp + FrameLayout.FrameTypeOffset];
+                  mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
+                  type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
 
                   maxLocals = mi.codeAttribute.max_locals;
                   lp = fp - maxLocals | 0;
@@ -2015,9 +2021,9 @@ module J2ME {
             sp = fp - maxLocals | 0;
             fp = i32[fp + FrameLayout.CallerFPOffset];
             release || assert(fp >= (thread.tp >> 2), "Valid frame pointer after return.");
-            mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
-            type = i32[fp + FrameLayout.FrameTypeOffset];
-            release || assert(type === FrameType.Interpreter && mi !== undefined || type !== FrameType.Interpreter && mi === undefined, "Is valid frame type and method info after return.");
+            mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
+            type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
+            release || assert(type === FrameType.Interpreter && mi || type !== FrameType.Interpreter && !mi, "Is valid frame type and method info after return.");
             var interrupt = false;
             while (type !== FrameType.Interpreter) {
               if (type === FrameType.ExitInterpreter) {
@@ -2040,8 +2046,8 @@ module J2ME {
                 fp = thread.fp | 0;
                 sp = thread.sp | 0;
                 opPC = pc = thread.pc;
-                type = i32[fp + FrameLayout.FrameTypeOffset];
-                mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
+                type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
+                mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
                 continue;
               } else if (type === FrameType.Interrupt) {
                 thread.set(fp, sp, opPC);
@@ -2049,8 +2055,8 @@ module J2ME {
                 fp = thread.fp | 0;
                 sp = thread.sp | 0;
                 opPC = pc = thread.pc;
-                type = i32[fp + FrameLayout.FrameTypeOffset];
-                mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset]];
+                type = i32[fp + FrameLayout.FrameTypeOffset] & FrameLayout.FrameTypeMask;
+                mi = methodIdToMethodInfoMap[i32[fp + FrameLayout.CalleeMethodInfoOffset] & FrameLayout.CalleeMethodInfoMask];
                 interrupt = true;
                 continue;
               } else {
@@ -2265,8 +2271,7 @@ module J2ME {
             // Caller saved values.
             i32[fp + FrameLayout.CallerRAOffset] = opPC;
             i32[fp + FrameLayout.CallerFPOffset] = callerFPOffset;
-            i32[fp + FrameLayout.FrameTypeOffset] = FrameType.Interpreter;
-            i32[fp + FrameLayout.CalleeMethodInfoOffset] = mi.id;
+            i32[fp + FrameLayout.CalleeMethodInfoOffset] = FrameType.Interpreter | mi.id;
             i32[fp + FrameLayout.MonitorOffset] = Constants.NULL; // Monitor
 
             // Reset PC.

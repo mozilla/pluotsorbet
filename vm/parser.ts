@@ -799,6 +799,8 @@ module J2ME {
   }
 
   export class MethodInfo extends ByteStream {
+    private static nextId: number = 1;
+
     public classInfo: ClassInfo;
     public accessFlags: ACCESS_FLAGS;
 
@@ -837,20 +839,14 @@ module J2ME {
 
     constructor(classInfo: ClassInfo, offset: number, index: number) {
       super(classInfo.buffer, offset);
+      this.id = MethodInfo.nextId++;
+      registerMethodId(this.id, this);
       this.index = index;
       this.accessFlags = this.u2(0);
       this.classInfo = classInfo;
       var cp = this.classInfo.constantPool;
       this.utf8Name = cp.resolveUtf8(this.u2(2));
       this.utf8Signature = cp.resolveUtf8(this.u2(4));
-
-      var utf8ImplKey = new Uint8Array(classInfo.utf8Name.length + this.utf8Name.length + this.utf8Signature.length);
-      utf8ImplKey.set(classInfo.utf8Name);
-      utf8ImplKey.set(this.utf8Name, classInfo.utf8Name.length);
-      utf8ImplKey.set(this.utf8Signature, classInfo.utf8Name.length + this.utf8Name.length);
-      this.id = hashBytesTo32BitsMurmur(utf8ImplKey, 0, utf8ImplKey.length) >> 0;
-      methodIdToMethodInfoMap[this.id] = this;
-
       this.vTableIndex = -1;
 
       this.state = MethodState.Cold;
@@ -1022,6 +1018,14 @@ module J2ME {
   }
 
   export class ClassInfo extends ByteStream {
+    /**
+     * We use this ID to map Java objects to their ClassInfo objects,
+     * storing the ID for the Class in the first four bytes
+     * of the memory allocated for the Java object in the ASM heap.
+     *
+     */
+    private static nextId: number = 1;
+
     constantPool: ConstantPool = null;
 
     utf8Name: Uint8Array = null;
@@ -1068,6 +1072,8 @@ module J2ME {
 
     constructor(buffer: Uint8Array) {
       super(buffer, 0);
+      this.id = ClassInfo.nextId++;
+      registerClassId(this.id, this);
       if (!buffer) {
         sealObjects && Object.seal(this);
         return;
@@ -1080,7 +1086,6 @@ module J2ME {
       s.seek(this.constantPool.offset);
       this.accessFlags = s.readU2();
       this.utf8Name = this.constantPool.resolveUtf8ClassName(s.readU2());
-      this.id = hashBytesTo32BitsMurmur(this.utf8Name, 0, this.utf8Name.length) >> 0;
       this.utf8SuperName = this.constantPool.resolveUtf8ClassName(s.readU2());
       this.vTable = [];
       this.fTable = []
@@ -1573,7 +1578,6 @@ module J2ME {
     constructor(utf8Name, mangledName) {
       super(null);
       this.utf8Name = utf8Name;
-      this.id = hashBytesTo32BitsMurmur(this.utf8Name, 0, this.utf8Name.length) >> 0;
       this.mangledName = mangledName;
       this.complete();
     }
@@ -1608,7 +1612,6 @@ module J2ME {
       } else {
         this.utf8Name = strcat4Single(UTF8Chars.OpenBracket, UTF8Chars.L, elementClass.utf8Name, UTF8Chars.Semicolon);
       }
-      this.id = hashBytesTo32BitsMurmur(this.utf8Name, 0, this.utf8Name.length) >> 0;
       this.mangledName = mangleClassName(this.utf8Name);
       this.complete();
     }
@@ -1619,7 +1622,6 @@ module J2ME {
     constructor(elementClass: ClassInfo, mangledName: string, bytesPerElement: number) {
       super(elementClass);
       this.utf8Name = strcatSingle(UTF8Chars.OpenBracket, elementClass.utf8Name);
-      this.id = hashBytesTo32BitsMurmur(this.utf8Name, 0, this.utf8Name.length) >> 0;
       this.mangledName = mangledName;
       this.bytesPerElement = bytesPerElement;
       this.complete();
