@@ -699,7 +699,7 @@ module J2ME {
     MAX_CLASS_ID = 4095,
     INITIAL_MAX_CLASS_ID = 511,
 
-    LOG_MAX_FLAT_VTABLE_SIZE = 8
+    LOG_MAX_FLAT_VTABLE_SIZE = 6 // 64
   }
 
   export class Runtime extends RuntimeTemplate {
