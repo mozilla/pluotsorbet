@@ -1,6 +1,5 @@
 package benchmark;
 import com.sun.cldchi.jvm.JVM;
-import com.sun.cldchi.jvm.JVM;
 
 class All {
     public static void summary(String message) {
