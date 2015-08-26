@@ -107,6 +107,11 @@ var options = {
     short: "cas",
     value: true,
     type: "boolean"
+  },
+  "emitCheckNull": {
+    short: "cn",
+    value: true,
+    type: "boolean"
   }
 };
 
@@ -279,6 +284,7 @@ try {
   J2ME.enableOnStackReplacement = options.enableOnStackReplacement.value;
   J2ME.emitCheckArrayBounds = options.emitCheckArrayBounds.value;
   J2ME.emitCheckArrayStore = options.emitCheckArrayStore.value;
+  J2ME.emitCheckNull = options.emitCheckNull.value;
 
   start = dateNow();
   var runtime = jvm.startIsolate0(files[0], config.args);

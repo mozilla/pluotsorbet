@@ -74,6 +74,12 @@ module J2ME {
   export var emitCheckArrayBounds = true;
 
   /**
+   * Emits null checks. Although this is necessary for correctness, most
+   * applications work without them.
+   */
+  export var emitCheckNull = true;
+
+  /**
    * Inline calls to runtime methods whenever possible.
    */
   export var inlineRuntimeCalls = true;
@@ -776,7 +782,7 @@ module J2ME {
       var kind = getSignatureKind(fieldInfo.utf8Signature);
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       if (!isStatic) {
-        this.emitNullPointerCheck(object);
+        this.emitNullCheck(object);
       }
       var address = object + "+" + fieldInfo.byteOffset;
       if (isTwoSlot(kind)) {
@@ -803,7 +809,7 @@ module J2ME {
       }
       var object = isStatic ? this.runtimeClass(fieldInfo.classInfo) : this.pop(Kind.Reference);
       if (!isStatic) {
-        this.emitNullPointerCheck(object);
+        this.emitNullCheck(object);
       }
       var address = object + "+" + fieldInfo.byteOffset;
       if (isTwoSlot(kind)) {
@@ -910,7 +916,7 @@ module J2ME {
       var methodId = null;
       if (opcode !== Bytecodes.INVOKESTATIC) {
         var object = this.pop(Kind.Reference);
-        this.emitNullPointerCheck(object);
+        this.emitNullCheck(object);
         args.unshift(object);
         if (opcode === Bytecodes.INVOKESPECIAL) {
           methodId = this.methodInfoSymbol(methodInfo);
@@ -990,7 +996,7 @@ module J2ME {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
       if (kind === Kind.Reference) {
-        this.emitNullPointerCheck(array);
+        this.emitNullCheck(array);
       }
       this.emitBoundsCheck(array, index);
       if (kind === Kind.Reference) {
@@ -1028,7 +1034,7 @@ module J2ME {
     emitLoadIndexed(kind: Kind) {
       var index = this.pop(Kind.Int);
       var array = this.pop(Kind.Reference);
-      this.emitNullPointerCheck(array);
+      this.emitNullCheck(array);
       this.emitBoundsCheck(array, index);
 
       var base = array + "+" + Constants.ARRAY_HDR_SIZE;
@@ -1098,7 +1104,7 @@ module J2ME {
 
     emitThrow(pc: number) {
       var object = this.peek(Kind.Reference);
-      this.emitNullPointerCheck(object);
+      this.emitNullCheck(object);
       this.blockEmitter.writeLn("throw GH(" + object + ");");
     }
 
@@ -1148,13 +1154,16 @@ module J2ME {
       this.emitPush(Kind.Int, call);
     }
 
-    emitNullPointerCheck(address) {
+    emitNullCheck(address) {
+      if (this.isPrivileged || !emitCheckNull) {
+        return;
+      }
       this.blockEmitter.writeLn("!" + address + "&&TN();");
     }
 
     emitArrayLength() {
       var array = this.pop(Kind.Reference);
-      this.emitNullPointerCheck(array);
+      this.emitNullCheck(array);
       this.emitPush(Kind.Int, "i32[" + array + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]");
     }
 
