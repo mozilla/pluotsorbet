@@ -827,7 +827,7 @@ module J2ME {
       hash = i32[ref + Constants.HASH_CODE_OFFSET >> 2] = $.nextHashCode()
     }
 
-    return monitorMap[hash] || (monitorMap[hash] =  new Lock(Constants.NULL, 0));
+    return monitorMap[hash] || (monitorMap[hash] = new Lock(Constants.NULL, 0));
   }
 
   /**
