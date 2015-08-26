@@ -103,9 +103,7 @@ function performDownload(url, callback) {
   });
 }
 
-if (config.jad) {
-  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD).then(backgroundCheck));
-} else if (config.downloadJAD) {
+if (config.downloadJAD) {
   loadingMIDletPromises.push(new Promise(function(resolve, reject) {
     JARStore.loadJAR("midlet.jar").then(function(loaded) {
       if (loaded) {
@@ -128,7 +126,13 @@ if (config.jad) {
         });
       });
     });
-  }).then(backgroundCheck));
+  }));
+} else if (config.jad) {
+  loadingMIDletPromises.push(load(config.jad, "text").then(processJAD));
+}
+
+if (config.jad || config.downloadJAD) {
+  Promise.all(loadingMIDletPromises).then(backgroundCheck);
 }
 
 var loadingFGPromises = [ emoji.loadData() ];

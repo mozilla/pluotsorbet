@@ -96,28 +96,7 @@ var currentlyFocusedTextEditor;
         return 1;
     };
 
-    var hasNewFrame = true;
-    var ctxs = [];
-    function gotNewFrame(timestamp) {
-        if (ctxs.length > 0) {
-            var ctx = ctxs.pop();
-            window.requestAnimationFrame(gotNewFrame);
-            J2ME.Scheduler.enqueue(ctx, true);
-        } else {
-            hasNewFrame = true;
-        }
-    }
-
-    Native["com/sun/midp/lcdui/RepaintEventProducer.waitForAnimationFrame.()V"] = function() {
-        if (hasNewFrame) {
-            hasNewFrame = false;
-            window.requestAnimationFrame(gotNewFrame);
-        } else {
-            ctxs.unshift($.ctx);
-            $.pause(asyncImplStringAsync);
-        }
-    }
-
+    var refreshStr = "refresh";
     Native["com/sun/midp/lcdui/DisplayDevice.refresh0.(IIIIII)V"] = function(hardwareId, displayId, x1, y1, x2, y2) {
         x1 = Math.max(0, x1);
         y1 = Math.max(0, y1);
@@ -137,7 +116,13 @@ var currentlyFocusedTextEditor;
         if (width <= 0 || height <= 0) {
             return;
         }
-        MIDP.deviceContext.drawImage(offscreenCanvas, x1, y1, width, height, x1, y1, width, height);
+
+        var ctx = $.ctx;
+        window.requestAnimationFrame(function() {
+            MIDP.deviceContext.drawImage(offscreenCanvas, x1, y1, width, height, x1, y1, width, height);
+            J2ME.Scheduler.enqueue(ctx);
+        });
+        $.pause(refreshStr);
     };
 
     function swapRB(pixel) {
