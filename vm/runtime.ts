@@ -1430,10 +1430,7 @@ module J2ME {
 
     var classInfo = classIdToClassInfoMap[classId];
     release || assert(classInfo, "object has class info");
-
-    if (classInfo.elementClass) {
-      return getArrayFromAddr(address);
-    }
+    release || assert(!classInfo.elementClass, "object isn't an array");
 
     if (!handleConstructors[classId]) {
       var constructor = function(address) {
