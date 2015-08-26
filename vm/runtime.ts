@@ -791,7 +791,7 @@ module J2ME {
 
   /**
    * Flat map of classId and vTableIndex to JS functions. This allows the compiler to
-   * emit a single memory load to lookup a vTable entry 
+   * emit a single memory load to lookup a vTable entry
    *  flatLinkedVTableMap[classId << LOG_MAX_FLAT_VTABLE_SIZE + vTableIndex]
    * instead of the slower more general
    *  linkedVTableMap[classId][vTableIndex]
@@ -819,7 +819,7 @@ module J2ME {
   export var monitorMap = Object.create(null);
 
   // XXX Figure out correct return type(s).
-  export function getMonitor(ref: number): any {
+  export function getMonitor(ref: number): Lock {
     release || assert(typeof ref === "number", "monitor reference is a number");
 
     var hash = i32[ref + Constants.HASH_CODE_OFFSET >> 2];
@@ -827,7 +827,7 @@ module J2ME {
       hash = i32[ref + Constants.HASH_CODE_OFFSET >> 2] = $.nextHashCode()
     }
 
-    return monitorMap[hash] || (monitorMap[hash] = Object.create(null));
+    return monitorMap[hash] || (monitorMap[hash] =  new Lock(Constants.NULL, 0));
   }
 
   /**
@@ -1689,12 +1689,12 @@ module J2ME {
     static BackwardBranchThreshold = config.backwardBranchThreshold;
   }
 
-  export function monitorEnter(object: J2ME.java.lang.Object) {
-    $.ctx.monitorEnter(object);
+  export function monitorEnter(lock: Lock) {
+    $.ctx.monitorEnter(lock);
   }
 
-  export function monitorExit(object: J2ME.java.lang.Object) {
-    $.ctx.monitorExit(object);
+  export function monitorExit(lock: Lock) {
+    $.ctx.monitorExit(lock);
   }
 
   export function translateException(e) {
