@@ -826,27 +826,28 @@ var MIDP = (function() {
 
       var q = queues[id];
 
-      if (e.type === PEN_EVENT && e.intParam1 === DRAGGED) {
-        if (penDrag[id]) {
+      if (e.type === PEN_EVENT) {
+        if (e.intParam1 !== DRAGGED) {
+          delete penDrag[id];
+        } else if (penDrag[id]) {
           penDrag[id].intParam2 = e.intParam2;
           penDrag[id].intParam3 = e.intParam3;
           return;
         } else {
           penDrag[id] = e;
         }
-      } else if (e.type === GESTURE_EVENT && e.intParam1 === GESTURE_DRAG) {
-        if (gestureDrag[id]) {
+      } else if (e.type === GESTURE_EVENT) {
+        if (e.intParam1 !== GESTURE_DRAG) {
+          delete gestureDrag[id];
+        } else if (gestureDrag[id] &&
+                   gestureDrag[id].intParam5 === e.intParam5 &&
+                   gestureDrag[id].intParam6 === e.intParam6) {
           gestureDrag[id].intParam2 += e.intParam2;
           gestureDrag[id].intParam3 += e.intParam3;
-          gestureDrag[id].intParam5 = e.intParam5;
-          gestureDrag[id].intParam6 = e.intParam6;
           return;
         } else {
           gestureDrag[id] = e;
         }
-      } else {
-        delete gestureDrag[id];
-        delete penDrag[id];
       }
 
       q.push(e);

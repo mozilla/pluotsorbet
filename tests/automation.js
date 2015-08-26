@@ -178,7 +178,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 42 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 46 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -301,6 +301,10 @@ casper.test.begin("unit tests", 42 + gfxTests.length, function(test) {
             test.assertTextDoesntExist("FAIL");
             test.assertTextExists("SUCCESS - singleDragTest");
             test.assertTextExists("SUCCESS - simpleMultiDragTest");
+            test.assertTextExists("SUCCESS - nonCoalesceTest");
+            test.assertTextExists("SUCCESS - singleDragGestureTest");
+            test.assertTextExists("SUCCESS - simpleMultiDragGestureTest");
+            test.assertTextExists("SUCCESS - comprehensiveTest");
         });
     });
 
