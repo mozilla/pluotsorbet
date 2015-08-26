@@ -655,7 +655,6 @@ module J2ME {
   export class FieldInfo extends ByteStream {
     public classInfo: ClassInfo;
     public kind: Kind;
-    public name: string;
     public byteOffset: number = 0;
     public utf8Name: Uint8Array;
     public utf8Signature: Uint8Array;
@@ -669,7 +668,6 @@ module J2ME {
       this.accessFlags = this.readU2();
       this.utf8Name = classInfo.constantPool.resolveUtf8(this.readU2());
       this.utf8Signature = classInfo.constantPool.resolveUtf8(this.readU2());
-      this.name = fromUTF8(this.utf8Name) + " " + fromUTF8(this.utf8Signature);
       this.kind = getSignatureKind(this.utf8Signature);
       this.scanFieldInfoAttributes();
       sealObjects && Object.seal(this);
