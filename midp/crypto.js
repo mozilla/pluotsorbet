@@ -21,7 +21,7 @@ MIDP.emptyDataArray = new Int32Array(16);
 MIDP.getMD5Hasher = function(dataAddr) {
     if (!MIDP.hashers.has(dataAddr)) {
       var hasher = forge.md.md5.create();
-      window.crypto.getRandomValues(getHandle(dataAddr));
+      window.crypto.getRandomValues(J2ME.getArrayFromAddr(dataAddr));
       MIDP.hashers.set(dataAddr, hasher);
     }
     return MIDP.hashers.get(dataAddr);
