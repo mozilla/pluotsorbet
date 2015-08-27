@@ -1698,6 +1698,16 @@ module J2ME {
   }
 
   export function translateException(e) {
+    switch (e) {
+      case ExceptionType.NullPointerException:
+        return $.newNullPointerException();
+      case ExceptionType.ArrayIndexOutOfBoundsException:
+        return $.newArrayIndexOutOfBoundsException();
+      case ExceptionType.ArithmeticException:
+        return $.newArithmeticException();
+      case ExceptionType.NegativeArraySizeException:
+        return $.newNegativeArraySizeException();
+    }
     if (e.name === "TypeError") {
       // JavaScript's TypeError is analogous to a NullPointerException.
       return $.newNullPointerException(e.message);
@@ -2171,10 +2181,6 @@ var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
 
 var TE = J2ME.translateException;
-var TI = J2ME.throwArrayIndexOutOfBoundsException;
-var TA = J2ME.throwArithmeticException;
-var TS = J2ME.throwNegativeArraySizeException;
-var TN = J2ME.throwNullPointerException;
 
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.

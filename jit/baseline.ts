@@ -960,7 +960,7 @@ module J2ME {
       if (this.isPrivileged) {
         return;
       }
-      this.blockEmitter.writeLn(length + "<0&&TS();");
+      this.blockEmitter.writeLn("if(" + length + "<0)throw " + ExceptionType.NegativeArraySizeException + ";");
     }
 
     emitBoundsCheck(array: string, index: string) {
@@ -968,7 +968,7 @@ module J2ME {
         return;
       }
       if (inlineRuntimeCalls) {
-        this.blockEmitter.writeLn("if((" + index + ">>>0)>=(i32[" + array + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]>>>0))TI(" + index + ");");
+        this.blockEmitter.writeLn("if((" + index + ">>>0)>=(i32[" + array + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]>>>0))throw " + ExceptionType.ArrayIndexOutOfBoundsException + ";");
       } else {
         this.blockEmitter.writeLn("CAB(" + array + "," + index + ");");
       }
@@ -1149,7 +1149,7 @@ module J2ME {
     }
 
     emitNullPointerCheck(address) {
-      this.blockEmitter.writeLn("!" + address + "&&TN();");
+      this.blockEmitter.writeLn("if(!" + address + ")throw " + ExceptionType.NullPointerException + ";");
     }
 
     emitArrayLength() {
@@ -1288,9 +1288,9 @@ module J2ME {
         return;
       }
       if (kind === Kind.Int) {
-        this.blockEmitter.writeLn("!" + l + "&&TA();");
+        this.blockEmitter.writeLn("if(!" + l + ")throw " + ExceptionType.ArithmeticException + ";");
       } else if (kind === Kind.Long) {
-        this.blockEmitter.writeLn("!" + l + "&&!" + h + "&&TA();");
+        this.blockEmitter.writeLn("if(!" + l + "&&!" + h + ")throw " + ExceptionType.ArithmeticException + ";");
       } else {
         Debug.unexpected(getKindName(kind));
       }
