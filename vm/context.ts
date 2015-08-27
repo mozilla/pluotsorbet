@@ -343,35 +343,35 @@ module J2ME {
       Scheduler.enqueue(this);
     }
 
-    block(monitor: java.lang.Object, queue, lockLevel: number) {
-      monitor._lock[queue].push(this);
+    block(lock: Lock, queue, lockLevel: number) {
+      lock[queue].push(this);
       this.lockLevel = lockLevel;
       $.pause("block");
     }
 
-    unblock(monitor: java.lang.Object, queue, notifyAll: boolean) {
-      while (monitor._lock[queue].length) {
-        var ctx = monitor._lock[queue].pop();
+    unblock(lock: Lock, queue, notifyAll: boolean) {
+      while (lock[queue].length) {
+        var ctx = lock[queue].pop();
         if (!ctx) {
           continue;
         }
-        ctx.wakeup(monitor);
+        ctx.wakeup(lock);
         if (!notifyAll) {
           break;
         }
       }
     }
 
-    wakeup(monitor: java.lang.Object) {
+    wakeup(lock: Lock) {
       if (this.lockTimeout !== null) {
         window.clearTimeout(this.lockTimeout);
         this.lockTimeout = null;
       }
-      if (monitor._lock.level !== 0) {
-        monitor._lock.ready.push(this);
+      if (lock.level !== 0) {
+        lock.ready.push(this);
       } else {
         while (this.lockLevel-- > 0) {
-          this.monitorEnter(monitor);
+          this.monitorEnter(lock);
           if (U === VMState.Pausing || U === VMState.Stopping) {
             return;
           }
@@ -380,26 +380,20 @@ module J2ME {
       }
     }
 
-    monitorEnter(monitor: java.lang.Object) {
-      var lock = monitor._lock;
-      if (lock && lock.level === 0) {
+    monitorEnter(lock: Lock) {
+      if (lock.level === 0) {
         lock.threadAddress = this.threadAddress;
         lock.level = 1;
-        return;
-      }
-      if (!lock) {
-        monitor._lock = new Lock(this.threadAddress, 1);
         return;
       }
       if (lock.threadAddress === this.threadAddress) {
         ++lock.level;
         return;
       }
-      this.block(monitor, "ready", 1);
+      this.block(lock, "ready", 1);
     }
 
-    monitorExit(monitor: java.lang.Object) {
-      var lock = monitor._lock;
+    monitorExit(lock: Lock) {
       if (lock.level === 1 && lock.ready.length === 0) {
         lock.level = 0;
         return;
@@ -413,19 +407,18 @@ module J2ME {
       if (lock.level < 0) {
         throw $.newIllegalMonitorStateException("Unbalanced monitor enter/exit.");
       }
-      this.unblock(monitor, "ready", false);
+      this.unblock(lock, "ready", false);
     }
 
     wait(objectAddr: number, timeout: number) {
-      var monitor = getMonitor(objectAddr);
-      var lock = monitor._lock;
+      var lock = getMonitor(objectAddr);
       if (timeout < 0)
         throw $.newIllegalArgumentException();
       if (!lock || lock.threadAddress !== this.threadAddress)
         throw $.newIllegalMonitorStateException();
       var lockLevel = lock.level;
       for (var i = lockLevel; i > 0; i--) {
-        this.monitorExit(monitor);
+        this.monitorExit(lock);
       }
       if (timeout) {
         var self = this;
@@ -434,24 +427,24 @@ module J2ME {
             var ctx = lock.waiting[i];
             if (ctx === self) {
               lock.waiting[i] = null;
-              ctx.wakeup(monitor);
+              ctx.wakeup(lock);
             }
           }
         }, timeout);
       } else {
         this.lockTimeout = null;
       }
-      this.block(monitor, "waiting", lockLevel);
+      this.block(lock, "waiting", lockLevel);
     }
 
     notify(objectAddr: number, notifyAll: boolean) {
-      var monitor = getMonitor(objectAddr);
-      if (!monitor._lock || monitor._lock.threadAddress !== this.threadAddress)
+      var lock = getMonitor(objectAddr);
+      if (!lock || lock.threadAddress !== this.threadAddress)
         throw $.newIllegalMonitorStateException();
       // TODO Unblock can call wakeup on a different ctx which in turn calls monitorEnter and can cause unwinds
       // on another ctx, but we shouldn't unwind this ctx. After figuring out why this is, remove assertions in
       // "java/lang/Object.notify.()V" and "java/lang/Object.notifyAll.()V"
-      this.unblock(monitor, "waiting", notifyAll);
+      this.unblock(lock, "waiting", notifyAll);
     }
 
     bailout(bailoutFrameAddress: number) {
