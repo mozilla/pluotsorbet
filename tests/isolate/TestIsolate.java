@@ -31,9 +31,9 @@ public class TestIsolate {
 
             int iso1Id = iso1.id();
             th.check(iso1Id > myIsoId, "First isolate id is larger than main isolate id.");
-            th.check(iso2.id() > iso1Id, "Second isolate is larger than first isolate id.");
+            th.check(iso2.id() > iso1Id, "Second isolate id is larger than first isolate id.");
 
-            th.check(Isolate.getIsolates().length, 1, "1 isolate created.");
+            th.check(Isolate.getIsolates().length, 1, "1 isolate started.");
 
             iso1.start();
             th.check(IsolatedClass.val, "ab", "IsolatedClass static value not modified by iso1 starting.");
