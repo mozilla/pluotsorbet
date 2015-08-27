@@ -578,6 +578,10 @@ Native["java/lang/Thread.currentThread.()Ljava/lang/Thread;"] = function(addr) {
 };
 
 Native["java/lang/Thread.setPriority0.(II)V"] = function(addr, oldPriority, newPriority) {
+    var ctx = NativeMap.get(addr);
+    if (ctx) {
+        ctx.priority = newPriority;
+    }
 };
 
 Native["java/lang/Thread.start0.()V"] = function(addr) {
@@ -593,6 +597,8 @@ Native["java/lang/Thread.start0.()V"] = function(addr) {
     // Create a context for the thread and start it.
     var newCtx = new Context($.ctx.runtime);
     newCtx.threadAddress = addr;
+    J2ME.setNative(addr, newCtx);
+    newCtx.priority = self.priority;
 
     var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
     var run = classInfo.getMethodByNameString("runThread", "(Ljava/lang/Thread;)V", true);

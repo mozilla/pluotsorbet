@@ -85,6 +85,7 @@ module J2ME {
       var runtime = new Runtime(this);
       var ctx = new Context(runtime);
       ctx.threadAddress = runtime.mainThread = allocObject(CLASSES.java_lang_Thread);
+      J2ME.setNative(ctx.threadAddress, ctx);
       var thread = <java.lang.Thread>getHandle(ctx.threadAddress);
       // XXX thread.pid seems to be unused, so remove it.
       thread.pid = util.id();
@@ -168,6 +169,7 @@ module J2ME {
     });
 
     id: number;
+    priority: number = NORMAL_PRIORITY;
 
     /**
      * Whether or not the context is currently paused.  The profiler uses this
@@ -218,7 +220,7 @@ module J2ME {
     }
     public static currentContextPrefix() {
       if ($) {
-        return Context.color($.id) + "." + $.ctx.runtime.priority + ":" + Context.color($.ctx.id) + "." + $.ctx.getPriority();
+        return Context.color($.id) + "." + $.ctx.runtime.priority + ":" + Context.color($.ctx.id) + "." + $.ctx.priority;
       }
       return "";
     }
@@ -236,14 +238,6 @@ module J2ME {
       initWriter = writers & WriterFlags.Init ? writer : null;
       threadWriter = writers & WriterFlags.Thread ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
-    }
-
-    getPriority() {
-      if (this.threadAddress) {
-        var thread = <java.lang.Thread>getHandle(this.threadAddress);
-        return thread.priority;
-      }
-      return NORMAL_PRIORITY;
     }
 
     kill() {
