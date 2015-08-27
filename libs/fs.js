@@ -1,6 +1,6 @@
 'use strict';
 
-var DEBUG_FS = false;
+var DEBUG_FS = true;
 
 var fs = (function() {
   var reportRequestError = function(type, request) {
