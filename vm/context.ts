@@ -315,6 +315,7 @@ module J2ME {
     });
 
     id: number;
+    priority: number = NORMAL_PRIORITY;
 
     /**
      * Whether or not the context is currently paused.  The profiler uses this
@@ -374,7 +375,7 @@ module J2ME {
     }
     public static currentContextPrefix() {
       if ($) {
-        return Context.color($.id) + "." + $.ctx.runtime.priority + ":" + Context.color($.ctx.id) + "." + $.ctx.getPriority();
+        return Context.color($.id) + "." + $.ctx.runtime.priority + ":" + Context.color($.ctx.id) + "." + $.ctx.priority;
       }
       return "";
     }
@@ -391,13 +392,6 @@ module J2ME {
       initWriter = writers & WriterFlags.Init ? writer : null;
       threadWriter = writers & WriterFlags.Thread ? writer : null;
       loadWriter = writers & WriterFlags.Load ? writer : null;
-    }
-
-    getPriority() {
-      if (this.thread) {
-        return this.thread.priority;
-      }
-      return NORMAL_PRIORITY;
     }
 
     kill() {
