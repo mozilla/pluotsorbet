@@ -126,7 +126,7 @@ for process in server_processes:
 for stream in server_output_streams:
     sys.stdout.write(stream.read())
 
-p = subprocess.Popen(['js', 'jsshell.js', 'Basic'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+p = subprocess.Popen(['js', 'shell/pluot.js', '-cp', 'tests/tests.jar', 'Basic'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 shell_success = False
 for line in iter(p.stdout.readline, b''):
     if "The end" in line:
