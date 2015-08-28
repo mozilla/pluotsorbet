@@ -579,7 +579,7 @@ module J2ME {
       // Insert a preemption check after the OSR code so the pc
       // and state will be stored. We can only do this if the
       // method has the necessary unwinding code.
-      if (canYield(this.methodInfo)) {
+      if (needsOSREntryPoint) {
         this.emitPreemptionCheck(this.bodyEmitter);
       }
 
