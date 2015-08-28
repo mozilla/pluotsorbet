@@ -47,6 +47,13 @@ module J2ME {
         }
       }
     },
+    "java/lang/Throwable": {
+      fields: {
+        instanceSymbols: {
+          "detailMessage": "Ljava/lang/String;",
+        }
+      }
+    },
     "java/lang/ref/WeakReference": {
       fields: {
         instanceSymbols: {
