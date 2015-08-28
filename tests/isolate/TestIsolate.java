@@ -2,88 +2,65 @@ package tests.isolate;
 
 import com.sun.cldc.isolate.*;
 import tests.isolate.IsolatedClass;
+import gnu.testlet.DumpTestHarness;
 
 import java.lang.String;
 
 public class TestIsolate {
-    static int dumpNumber = 0;
-    public static void dump(String s) {
-        System.out.println((dumpNumber++) + ": " + s);
-    }
-    public static void dump(int s) {
-        dump(s + "");
-    }
-
     public static void main(String args[]) {
-        dump(IsolatedClass.val);
+        DumpTestHarness th = new DumpTestHarness();
+        th.check(IsolatedClass.val, "a", "Initial IsolatedClass static value is correct.");
 
-        new IsolatedClass().main(new String[] { "a" } );
+        new IsolatedClass().main(new String[] { "b" } );
 
-        dump(IsolatedClass.val);
+        th.check(IsolatedClass.val, "ab",  "IsolatedClass static val append works.");
 
         Isolate myIso = Isolate.currentIsolate();
-        dump(myIso.id());
+        int myIsoId = myIso.id();
+        th.check(myIsoId > -1, "Valid isolate ID.");
 
         Isolate[] isolates = Isolate.getIsolates();
 
-        if (isolates.length == 1) {
-            dump("1 isolate");
-        }
+        th.check(isolates.length == 1, "Only one isolate exists.");
 
-        if (isolates[0].id() == myIso.id()) {
-            dump("Isolate ID correct");
-        }
+        th.check(isolates[0].id() == myIso.id(), "Isolate ID is correct.");
 
         try {
-            Isolate iso1 = new Isolate("tests.isolate.IsolatedClass", new String[] { "1" });
-            Isolate iso2 = new Isolate("tests.isolate.IsolatedClass", new String[] { "2" });
+            Isolate iso1 = new Isolate("tests.isolate.IsolatedClass", new String[] { "1", "new isolate" });
+            Isolate iso2 = new Isolate("tests.isolate.IsolatedClass", new String[] { "2", "new isolate" });
 
-            dump(iso1.id());
-            dump(iso2.id());
+            int iso1Id = iso1.id();
+            th.check(iso1Id > myIsoId, "First isolate id is larger than main isolate id.");
+            th.check(iso2.id() > iso1Id, "Second isolate id is larger than first isolate id.");
 
-            if (Isolate.getIsolates().length == 1) {
-                dump("1 isolate");
-            }
+            th.check(Isolate.getIsolates().length, 1, "1 isolate started.");
 
             iso1.start();
-
-            dump(IsolatedClass.val);
+            th.check(IsolatedClass.val, "ab", "IsolatedClass static value not modified by iso1 starting.");
 
             iso2.start();
+            th.check(IsolatedClass.val, "ab", "IsolatedClass static value not modified by iso2 starting.");
 
-            dump(IsolatedClass.val);
-
-            if (Isolate.getIsolates().length == 3) {
-                dump("3 isolates");
-            }
+            th.check(Isolate.getIsolates().length, 3, "3 isolates created.");
 
             iso1.waitForExit();
             iso2.waitForExit();
+            th.check(IsolatedClass.val, "ab", "IsolatedClass static value not modified by new isolates after exit.");
 
-            dump(IsolatedClass.val);
+            th.check(Isolate.getIsolates().length, 1, "1 isolate left.");
 
-            if (Isolate.getIsolates().length == 1) {
-                dump("1 isolate");
-            }
-
-            if (iso1.isTerminated() && iso2.isTerminated()) {
-                dump("Isolates terminated");
-            }
+            th.check(iso1.isTerminated(), "iso1 is terminated.");
+            th.check(iso2.isTerminated(), "iso2 is terminated.");
         } catch(Exception e) {
             e.printStackTrace();
+            th.fail("Exception: " + e);
         }
-
-        new IsolatedClass().main(new String[] { "r" });
-
-        dump(IsolatedClass.val);
 
         new IsolatedClass().main(new String[] { "c" });
 
-        dump(IsolatedClass.val);
+        th.check(IsolatedClass.val, "abc", "IsolatedClass static val append still works.");
 
-        if (!myIso.isTerminated()) {
-            dump("Main isolate still running");
-        }
+        th.check(!myIso.isTerminated(), "Main isolate still running");
 
         System.out.println("DONE");
     }
