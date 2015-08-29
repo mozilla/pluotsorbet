@@ -708,7 +708,6 @@ module J2ME {
       // release || traceWriter && traceWriter.writeLn("<< I");
       return v;
     };
-    (<any>method).methodInfo = methodInfo;
     return method;
   }
 
