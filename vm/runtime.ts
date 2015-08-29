@@ -2164,6 +2164,7 @@ var CAB = J2ME.checkArrayBounds;
 var CAS = J2ME.checkArrayStore;
 
 // XXX Ensure these work with new monitor objects.
+var GM = J2ME.getMonitor;
 var ME = J2ME.monitorEnter;
 var MX = J2ME.monitorExit;
 

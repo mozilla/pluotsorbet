@@ -1231,7 +1231,7 @@ module J2ME {
       this.hasMonitorEnter = true;
 
       this.needsVariable("lk");
-      emitter.writeLn("lk=J2ME.getMonitor(" + object + ");");
+      emitter.writeLn("lk=GM(" + object + ");");
       emitter.enter("if(lk.level===0){lk.threadAddress=th;lk.level=1;}else{ME(lk);");
       this.emitUnwind(emitter, String(nextPC), true);
       emitter.leave("}");
@@ -1247,7 +1247,7 @@ module J2ME {
     }
 
     private emitMonitorExit(emitter: Emitter, object: string) {
-      emitter.writeLn("lk=J2ME.getMonitor(" + object + ");");
+      emitter.writeLn("lk=GM(" + object + ");");
       emitter.writeLn("if(lk.level===1&&lk.ready.length===0)lk.level=0;else MX(lk);");
     }
 
