@@ -309,7 +309,10 @@ module J2ME {
         this.kill();
         this.clearCurrentContext();
         // Rethrow so the exception is not silent.
-        throw "classInfo" in e ? e.classInfo : e;
+        if (e.classInfo) {
+          e = e.classInfo.getClassNameSlow() + ": " + fromStringAddr(e.detailMessage);
+        }
+        throw e;
       }
       release || assert(this.nativeThread.nativeFrameCount === 0, "All native frames should be gone.")
       if (U) {
