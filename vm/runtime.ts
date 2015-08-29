@@ -2176,6 +2176,8 @@ var TN = J2ME.throwNullPointerException;
 var PE = J2ME.preempt;
 var PS = 0; // Preemption samples.
 
+var MA = J2ME.gcMallocAtomic;
+
 var fadd = J2ME.fadd;
 var fsub = J2ME.fsub;
 var fmul = J2ME.fmul;

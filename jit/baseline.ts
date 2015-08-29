@@ -1129,7 +1129,7 @@ module J2ME {
         default: throw Debug.unexpected("Unknown stack kind: " + kind);
       }
 
-      this.emitPush(Kind.Reference, "J2ME.gcMallocAtomic(" + Constants.ARRAY_HDR_SIZE + "+na*" + arrayClassInfo.bytesPerElement + ")");
+      this.emitPush(Kind.Reference, "MA(" + Constants.ARRAY_HDR_SIZE + "+na*" + arrayClassInfo.bytesPerElement + ")");
       var arrAddr = this.peek(Kind.Reference);
       this.blockEmitter.writeLn("i32[" + arrAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]=" + arrayClassInfo.id);
       this.blockEmitter.writeLn("i32[" + arrAddr + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]=na");
