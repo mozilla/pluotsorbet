@@ -1112,8 +1112,27 @@ module J2ME {
       var kind = arrayTypeCodeToKind(typeCode);
       var length = this.pop(Kind.Int);
       this.emitNegativeArraySizeCheck(length);
-      // TODO: inline the logic for allocating a new array.
-      this.emitPush(Kind.Reference, "NA(J2ME.PrimitiveClassInfo." + "????ZCFDBSIJ"[typeCode] + ", " + length + ")");
+      this.needsVariable("na");
+      this.blockEmitter.writeLn("na=" + length);
+
+      var arrayClassInfo;
+
+      switch (kind) {
+        case Kind.Boolean: arrayClassInfo = PrimitiveArrayClassInfo.Z; break;
+        case Kind.Byte:    arrayClassInfo = PrimitiveArrayClassInfo.B; break;
+        case Kind.Short:   arrayClassInfo = PrimitiveArrayClassInfo.S; break;
+        case Kind.Char:    arrayClassInfo = PrimitiveArrayClassInfo.C; break;
+        case Kind.Int:     arrayClassInfo = PrimitiveArrayClassInfo.I; break;
+        case Kind.Float:   arrayClassInfo = PrimitiveArrayClassInfo.F; break;
+        case Kind.Long:    arrayClassInfo = PrimitiveArrayClassInfo.J; break;
+        case Kind.Double:  arrayClassInfo = PrimitiveArrayClassInfo.D; break;
+        default: throw Debug.unexpected("Unknown stack kind: " + kind);
+      }
+
+      this.emitPush(Kind.Reference, "J2ME.gcMallocAtomic(" + Constants.ARRAY_HDR_SIZE + "+na*" + arrayClassInfo.bytesPerElement + ")");
+      var arrAddr = this.peek(Kind.Reference);
+      this.blockEmitter.writeLn("i32[" + arrAddr + "+" + Constants.OBJ_CLASS_ID_OFFSET + ">>2]=" + arrayClassInfo.id);
+      this.blockEmitter.writeLn("i32[" + arrAddr + "+" + Constants.ARRAY_LENGTH_OFFSET + ">>2]=na");
     }
 
     emitCheckCast(cpi: number) {
