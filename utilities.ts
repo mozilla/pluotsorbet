@@ -902,6 +902,16 @@ module J2ME {
     Uint32ArrayBitSet.prototype.toString = toString;
     Uint32ArrayBitSet.prototype.toBitString = toBitString;
   }
+
+  export function parseManifest(fileContents: string): any {
+    var manifest = {};
+    var matches;
+    var reg = /([A-Za-z0-9\-_]+):\s([^\n\r$]+)/g;
+    while ((matches = reg.exec(fileContents)) !== null) {
+      manifest[matches[1]] = matches[2];
+    }
+    return manifest;
+  }
 }
 
 /**
