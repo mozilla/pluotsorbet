@@ -2254,6 +2254,12 @@ module J2ME {
               continue;
             }
 
+            if (thread.nativeFrameCount === 0 && Scheduler.shouldPreempt()) {
+              thread.set(fp, sp, opPC);
+              $.yield("preempt");
+              return;
+            }
+
             // Call Interpreted Method.
             release || traceWriter && traceWriter.writeLn(">> I " + calleeTargetMethodInfo.implKey);
             mi = calleeTargetMethodInfo;
