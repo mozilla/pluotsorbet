@@ -34,9 +34,8 @@ var getMobileInfo = new Promise(function(resolve, reject) {
   });
 });
 
-var loadingMIDletPromises = [initFS, getMobileInfo];
-
-var loadingPromises = [];
+var loadingMIDletPromises = [getMobileInfo];
+var loadingPromises = [initFS];
 
 loadingPromises.push(load("java/classes.jar", "arraybuffer").then(function(data) {
   JARStore.addBuiltIn("java/classes.jar", data);

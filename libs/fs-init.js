@@ -25,7 +25,7 @@ var initialFiles = [
 var initFS = new Promise(function(resolve, reject) {
   fs.init(resolve);
 }).then(function() {
-  if (typeof config !== "undefined" && config.midletClassName == "RunTestsMIDlet") {
+  if (typeof config !== "undefined" && config.main === "com.ibm.tck.client.TestRunner") {
     initialDirs.push("/tcktestdir");
   }
 

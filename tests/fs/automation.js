@@ -103,6 +103,10 @@ casper.test.begin("fs tests", 7, function(test) {
         test.assertTextExists("DONE: 137 pass, 0 fail", "run fs.js unit tests");
     });
 
+    casper
+    .thenOpen("http://localhost:8000/tests/fs/delete-fs.html")
+    .waitForText("DONE");
+
     // Run the FileConnection TCK unit tests.
     casper
     .thenOpen("http://localhost:8000/index.html?main=com.ibm.tck.client.TestRunner&args=-noserver&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
