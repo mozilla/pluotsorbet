@@ -125,7 +125,7 @@ module J2ME {
              * norm    norm   0.72x
              * high    high   .1x
              */
-            currentTimeScale = -0.03103448276 * (ctx.getPriority() * ctx.runtime.priority) + 1.031034483;
+            currentTimeScale = -0.03103448276 * (ctx.priority * ctx.runtime.priority) + 1.031034483;
             ctx.execute();
             Scheduler.updateCurrentRuntime();
             current = null;
