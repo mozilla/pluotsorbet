@@ -19,6 +19,10 @@ public class CreateImmutableCopyTest extends MIDlet {
 
             Image immutableCopy = Image.createImage(image);
 
+            if (immutableCopy.getWidth() != image.getWidth() || immutableCopy.getHeight() != image.getHeight()) {
+                System.out.println("FAIL: immutable copy's dimensions aren't same as original image");
+            }
+
             screenG.drawImage(immutableCopy, 0, 0, Graphics.TOP | Graphics.LEFT);
 
             System.out.println("PAINTED");

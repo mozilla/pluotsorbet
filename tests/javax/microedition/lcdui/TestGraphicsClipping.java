@@ -30,7 +30,7 @@ import gnu.testlet.TestHarness;
 import gnu.testlet.Testlet;
 
 public class TestGraphicsClipping implements Testlet {
-    public int getExpectedPass() { return 1296; }
+    public int getExpectedPass() { return 11664; }
     public int getExpectedFail() { return 0; }
     public int getExpectedKnownFail() { return 0; }
 
@@ -82,6 +82,7 @@ public class TestGraphicsClipping implements Testlet {
     public void test(TestHarness th) {
         int[] unclippedData = new int[width*height];
         int[] clippedData = new int[width*height];
+        int[] clip = new int[4];
 
         Image image = Image.createImage(width, height);
         Graphics g = image.getGraphics();
@@ -105,6 +106,22 @@ public class TestGraphicsClipping implements Testlet {
                         image.getRGB(clippedData, 0, width, 0, 0, width, height);
 
                         th.check(verifyClip(unclippedData, clippedData, cx, cy, cw, ch));
+
+                        // Ensure that the various getClip* calls return
+                        // the correct values.
+                        th.check(g.getClipX(), cx);
+                        th.check(g.getClipY(), cy);
+                        th.check(g.getClipWidth(), cw);
+                        th.check(g.getClipHeight(), ch);
+
+                        // getClip returns the coordinates of the top-left
+                        // and bottom-right corners rather than the top-left
+                        // coordinate and a width/height.
+                        g.getClip(clip);
+                        th.check(clip[0], cx);
+                        th.check(clip[1], cy);
+                        th.check(clip[2], cx + cw);
+                        th.check(clip[3], cy + ch);
                     }
                 }
             }
