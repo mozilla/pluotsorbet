@@ -105,48 +105,45 @@ Native["com/sun/midp/io/j2me/socket/Protocol.available0.()I"] = function() {
 Native["com/sun/midp/io/j2me/socket/Protocol.read0.([BII)I"] = function(data, offset, length) {
     // console.log("Protocol.read0: " + this.socket.isClosed);
 
-    asyncImpl("I", new Promise((function(resolve, reject) {
-        // There might be data left in the buffer when the socket is closed, so we
-        // should allow buffer reading even the socket has been closed.
-        if (this.socket.isClosed && this.dataLen === 0) {
-            resolve(-1);
-            return;
-        }
+    // There might be data left in the buffer when the socket is closed, so we
+    // should allow buffer reading even the socket has been closed.
+    if (this.socket.isClosed && this.dataLen === 0) {
+        return -1;
+    }
 
-        var copyData = (function() {
-            var toRead = (length < this.dataLen) ? length : this.dataLen;
-            var read = 0;
-            while (read < toRead) {
-                var remaining = toRead - read;
+    var copyData = (function() {
+        var toRead = (length < this.dataLen) ? length : this.dataLen;
+        var read = 0;
+        while (read < toRead) {
+            var remaining = toRead - read;
 
-                var array = this.data[0];
+            var array = this.data[0];
 
-                if (array.byteLength > remaining) {
-                    data.set(array.subarray(0, remaining), read + offset);
-                    this.data[0] = array.subarray(remaining);
-                    read += remaining;
-                } else {
-                    data.set(array, read + offset);
-                    this.data.shift();
-                    read += array.byteLength;
-                }
+            if (array.byteLength > remaining) {
+                data.set(array.subarray(0, remaining), read + offset);
+                this.data[0] = array.subarray(remaining);
+                read += remaining;
+            } else {
+                data.set(array, read + offset);
+                this.data.shift();
+                read += array.byteLength;
             }
-
-            this.dataLen -= read;
-
-            resolve(read);
-        }).bind(this);
-
-        if (this.dataLen === 0) {
-            this.waitingData = (function() {
-                this.waitingData = null;
-                copyData();
-            }).bind(this);
-
-            return;
         }
 
-        copyData();
+        this.dataLen -= read;
+
+        return read;
+    }).bind(this);
+
+    if (this.dataLen > 0) {
+        return copyData();
+    }
+
+    asyncImpl("I", new Promise((function(resolve, reject) {
+        this.waitingData = (function() {
+            this.waitingData = null;
+            resolve(copyData());
+        }).bind(this);
     }).bind(this)));
 };
 

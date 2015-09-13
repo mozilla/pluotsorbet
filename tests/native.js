@@ -171,13 +171,7 @@ MIDP.fsRoots.push("/");
 Native["org/mozilla/MemorySampler.sampleMemory.(Ljava/lang/String;)V"] = function(label) {
   if (typeof Benchmark !== "undefined") {
     asyncImpl("V", Benchmark.sampleMemory().then(function(memory) {
-      var keys = ["totalSize", "domSize", "styleSize", "jsObjectsSize", "jsStringsSize", "jsOtherSize", "otherSize"];
-      var rows = [];
-      rows.push(keys);
-      rows.push(keys.map(function(k) { return memory[k] }));
-      var RIGHT = Benchmark.RIGHT;
-      var alignment = [RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT, RIGHT];
-      console.log((J2ME.fromJavaString(label) || "Memory sample") + ":\n" + Benchmark.prettyTable(rows, alignment));
+      console.log((J2ME.fromJavaString(label) || "Memory sample") + ": " + memory.totalSize);
     }));
   }
 };
