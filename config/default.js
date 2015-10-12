@@ -33,6 +33,17 @@ var config = {
   // to which midlets write frequently but never read.  Specify one by adding
   // the string pathname to the set via config.ignoredFiles.add().
   ignoredFiles: new Set(),
+
+  useOffscreenCanvas: true,
+
+  // Ignore changes to RGB data via ImageData.getRGB and Graphics.drawRGB,
+  // to avoid downsampling images for spurious changes.  This only affects
+  // changes to entire images.  If set, and a midlet calls ImageData.getRGB
+  // for a subset of the image, we'll still downsample it.
+  //
+  // False by default, which means that ImageData.getRGB *will* downsample.
+  // Set to true to make ImageData.getRGB *not* downsample whole images.
+  ignoreRgbChanges: false,
 };
 
 // The base directory of the app, relative to the current page.  Normally this

@@ -231,6 +231,10 @@ ifneq (,$(findstring CYGWIN,$(UNAME_S)))
 	BOOTCLASSPATH_SEPARATOR=;
 endif
 
+# The test automation suites to run.  If not specified, all suites will be run.
+# This can contain multiple space-separated values.
+SUITE ?=
+
 # The path to the XULRunner executable that is actually used by the test runner.
 # Set this on the command line to run tests against a different version
 # of XULRunner than the default (which is specified by XULRUNNER_PATH),
@@ -242,7 +246,7 @@ endif
 XULRUNNER ?= build_tools/$(XULRUNNER_PATH)
 
 test: all build_tools/slimerjs-$(SLIMERJS_VERSION) build_tools/$(XULRUNNER_PATH)
-	SLIMERJSLAUNCHER=$(XULRUNNER) tests/runtests.py
+	SLIMERJSLAUNCHER=$(XULRUNNER) tests/runtests.py $(SUITE)
 
 build_tools/slimerjs-$(SLIMERJS_VERSION): build_tools/.slimerjs_version
 	rm -rf build_tools/slimerjs*

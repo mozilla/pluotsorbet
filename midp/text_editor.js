@@ -165,7 +165,7 @@ var TextEditorProvider = (function() {
 
         setFont: function(font) {
             this.font = font;
-            this._setStyle("font", font.context.font);
+            this._setStyle("font", font.style + " " + font.size + "px " + font.face);
         },
 
         setSize: function(width, height) {
@@ -448,7 +448,8 @@ var TextEditorProvider = (function() {
         getContentHeight: function() {
             var div = document.getElementById("hidden-textarea-editor");
             div.style.setProperty("width", this.getWidth() + "px");
-            div.style.setProperty("font", this.font.context.font);
+            div.style.setProperty("font", this.font.style + " " + this.font.size + "px " + this.font.face);
+
             div.innerHTML = this.html;
             var height = div.offsetHeight;
 
