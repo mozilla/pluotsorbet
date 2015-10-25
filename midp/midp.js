@@ -32,7 +32,7 @@ var MIDP = (function() {
         e.intParam4 = displayId;
       }
 
-      sendNativeEvent(e, isolateId);
+      NativeEvents.send(e, isolateId);
     }
 
     function isFGDisplay(d) {
@@ -205,7 +205,7 @@ var MIDP = (function() {
         return;
       }
 
-      sendNativeEvent(e, isolateId);
+      NativeEvents.send(e, isolateId);
     }
 
     return {
@@ -759,28 +759,108 @@ var MIDP = (function() {
     });
   };
 
-  var nativeEventQueues = {};
-  var waitingNativeEventQueue = {};
+  var NativeEvents = (function() {
+    var queues = {};
+    var waiting = {};
+    var penDrag = {};
+    var gestureDrag = {};
 
-  function copyEvent(e, obj) {
-    var keys = Object.keys(e);
-    for (var i = 0; i < keys.length; i++) {
-      obj[keys[i]] = e[keys[i]];
-    }
-  }
-
-  function sendNativeEvent(e, isolateId) {
-    var elem = waitingNativeEventQueue[isolateId];
-    if (!elem) {
-      nativeEventQueues[isolateId].push(e);
-      return;
+    function copyEvent(e, obj) {
+      var keys = Object.keys(e);
+      for (var i = 0; i < keys.length; i++) {
+        obj[keys[i]] = e[keys[i]];
+      }
     }
 
-    copyEvent(e, elem.nativeEvent);
-    elem.resolve(nativeEventQueues[isolateId].length);
+    function reset(id) {
+      queues[id] = [];
+      delete penDrag[id];
+      delete gestureDrag[id];
+      // Don't delete waiting[id]
+    }
 
-    delete waitingNativeEventQueue[isolateId];
-  }
+    // NB: It is the responsibility of the caller to check that
+    // there is indeed an event in the queue
+    function get(id, e) {
+      var ev = queues[id].shift();
+      copyEvent(ev, e);
+
+      if (ev === penDrag[id]) {
+        delete penDrag[id];
+      }
+
+      if (ev === gestureDrag[id]) {
+        delete gestureDrag[id];
+      }
+    }
+
+    function numEvents(id) {
+      var q = queues[id];
+
+      if (!q) {
+        return 0;
+      }
+
+      return q.length;
+    }
+
+    // NB: It is the caller's responsibility to check that the queue is
+    // actually empty first, and to get an event instead of calling this
+    // function otherwise
+    function wait(id, resolve, e) {
+      waiting[id] = { resolve: resolve, e: e };
+    }
+
+    function send(e, id) {
+      var waiter = waiting[id];
+      if (waiter) {
+        copyEvent(e, waiter.e);
+        waiter.resolve(0);
+        delete waiting[id];
+        return;
+      }
+
+      if (!queues[id]) {
+        queues[id] = [];
+      }
+
+      var q = queues[id];
+
+      if (e.type === PEN_EVENT) {
+        if (e.intParam1 !== DRAGGED) {
+          delete penDrag[id];
+        } else if (penDrag[id]) {
+          penDrag[id].intParam2 = e.intParam2;
+          penDrag[id].intParam3 = e.intParam3;
+          return;
+        } else {
+          penDrag[id] = e;
+        }
+      } else if (e.type === GESTURE_EVENT) {
+        if (e.intParam1 !== GESTURE_DRAG) {
+          delete gestureDrag[id];
+        } else if (gestureDrag[id] &&
+                   gestureDrag[id].intParam5 === e.intParam5 &&
+                   gestureDrag[id].intParam6 === e.intParam6) {
+          gestureDrag[id].intParam2 += e.intParam2;
+          gestureDrag[id].intParam3 += e.intParam3;
+          return;
+        } else {
+          gestureDrag[id] = e;
+        }
+      }
+
+      q.push(e);
+    }
+
+    return {
+      send: send,
+      get: get,
+      reset: reset,
+      numEvents: numEvents,
+      wait: wait,
+    };
+  })();
 
   function sendVirtualKeyboardEvent() {
     FG.sendNativeEventToForeground({
@@ -905,7 +985,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/events/EventQueue.resetNativeEventQueue.()V"] = function() {
-    nativeEventQueues[$.ctx.runtime.isolate.id] = [];
+    NativeEvents.reset($.ctx.runtime.isolate.id);
   };
 
   Native["com/sun/midp/events/EventQueue.sendNativeEventToIsolate.(Lcom/sun/midp/events/NativeEvent;I)V"] =
@@ -918,35 +998,30 @@ var MIDP = (function() {
         e[J2ME.fromUTF8(field.utf8Name)] = field.get(obj);
       }
 
-      sendNativeEvent(e, isolateId);
+      NativeEvents.send(e, isolateId);
     };
 
   Native["com/sun/midp/events/NativeEventMonitor.waitForNativeEvent.(Lcom/sun/midp/events/NativeEvent;)I"] =
     function(nativeEvent) {
-      var isolateId = $.ctx.runtime.isolate.id;
-      var nativeEventQueue = nativeEventQueues[isolateId];
-
-      if (nativeEventQueue.length !== 0) {
-        copyEvent(nativeEventQueue.shift(), nativeEvent);
-        return nativeEventQueue.length;
+      var id = $.ctx.runtime.isolate.id;
+      if (NativeEvents.numEvents(id) > 0) {
+        NativeEvents.get(id, nativeEvent);
+        return NativeEvents.numEvents(id);
       }
 
       asyncImpl("I", new Promise(function(resolve, reject) {
-        waitingNativeEventQueue[isolateId] = {
-          resolve: resolve,
-        nativeEvent: nativeEvent,
-        };
+        NativeEvents.wait(id, resolve, nativeEvent);
       }));
     };
 
   Native["com/sun/midp/events/NativeEventMonitor.readNativeEvent.(Lcom/sun/midp/events/NativeEvent;)Z"] =
     function(obj) {
-      var isolateId = $.ctx.runtime.isolate.id;
-      var nativeEventQueue = nativeEventQueues[isolateId];
-      if (!nativeEventQueue.length) {
+      var id = $.ctx.runtime.isolate.id;
+      if (NativeEvents.numEvents(id) === 0) {
         return 0;
       }
-      copyEvent(nativeEventQueue.shift(), obj);
+
+      NativeEvents.get(id, obj);
       return 1;
     };
 
@@ -981,7 +1056,7 @@ var MIDP = (function() {
   };
 
   Native["com/sun/midp/events/EventQueue.sendShutdownEvent.()V"] = function() {
-    sendNativeEvent({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
+    NativeEvents.send({ type: EVENT_QUEUE_SHUTDOWN }, $.ctx.runtime.isolate.id);
   };
 
   Native["com/sun/midp/main/CommandState.saveCommandState.(Lcom/sun/midp/main/CommandState;)V"] = function(commandState) {
@@ -1298,6 +1373,8 @@ var MIDP = (function() {
     sendMediaSnapshotFinishedEvent: sendMediaSnapshotFinishedEvent,
     sendKeyPress: sendKeyPress,
     sendKeyRelease: sendKeyRelease,
+    sendPenEvent: sendPenEvent, // EXPOSED FOR TESTING PURPOSES ONLY
+    sendGestureEvent: sendGestureEvent, // EXPOSED FOR TESTING PURPOSES ONLY
     sendDestroyMIDletEvent: sendDestroyMIDletEvent,
     setDestroyedForRestart: setDestroyedForRestart,
     registerDestroyedListener: registerDestroyedListener,

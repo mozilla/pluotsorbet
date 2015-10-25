@@ -178,7 +178,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 46 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -291,6 +291,20 @@ casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
     .withFrame(0, function() {
         casper.waitForText("Hello World from MIDlet2", function() {
             test.pass();
+        });
+    });
+
+    casper
+    .thenOpen("http://localhost:8000/index.html?midletClassName=tests/drag/Coalesce&jad=tests/midlets/drag/coalesce.jad&jars=tests/tests.jar&logConsole=web,page&logLevel=log")
+    .withFrame(0, function() {
+        casper.waitForText("DONE", function() {
+            test.assertTextDoesntExist("FAIL");
+            test.assertTextExists("SUCCESS - singleDragTest");
+            test.assertTextExists("SUCCESS - simpleMultiDragTest");
+            test.assertTextExists("SUCCESS - nonCoalesceTest");
+            test.assertTextExists("SUCCESS - singleDragGestureTest");
+            test.assertTextExists("SUCCESS - simpleMultiDragGestureTest");
+            test.assertTextExists("SUCCESS - comprehensiveTest");
         });
     });
 

@@ -290,3 +290,88 @@ Native["tests/midlets/background/ForegroundEnableBackgroundServiceMIDlet.started
     });
   }));
 };
+
+var PRESSED = 1;
+var RELEASED = 2;
+var DRAGGED = 3;
+var GESTURE_DRAG = 0x4;
+Native["tests/drag/CoalesceCanvas.singleDragTest0.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendPenEvent({x: 15, y: 15}, PRESSED);
+    MIDP.sendPenEvent({x: 20, y: 25}, DRAGGED);
+    MIDP.sendPenEvent({x: 20, y: 25}, RELEASED);
+  }, 50);
+}
+
+Native["tests/drag/CoalesceCanvas.simpleMultiDragTest0.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendPenEvent({x: 0, y: 0}, PRESSED);
+    MIDP.sendPenEvent({x: 1, y: 1}, DRAGGED);
+    MIDP.sendPenEvent({x: 3, y: 5}, DRAGGED);
+    MIDP.sendPenEvent({x: 7, y: 9}, DRAGGED);
+    MIDP.sendPenEvent({x: 30, y: 30}, DRAGGED);
+    MIDP.sendPenEvent({x: 13, y: 27}, DRAGGED);
+    MIDP.sendPenEvent({x: 13, y: 27}, RELEASED);
+  }, 50);
+}
+
+Native["tests/drag/CoalesceCanvas.nonCoalesceTest0.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendPenEvent({x: 1, y: 1}, PRESSED);
+    MIDP.sendPenEvent({x: 1, y: 1}, DRAGGED);
+    MIDP.sendPenEvent({x: 1, y: 1}, RELEASED);
+    MIDP.sendPenEvent({x: 1, y: 1}, PRESSED);
+    MIDP.sendPenEvent({x: 3, y: 7}, DRAGGED);
+    MIDP.sendPenEvent({x: 3, y: 7}, RELEASED);
+    MIDP.sendPenEvent({x: 1, y: 1}, PRESSED);
+    MIDP.sendPenEvent({x: 9, y: 15}, DRAGGED);
+    MIDP.sendPenEvent({x: 8, y: 24}, RELEASED);
+  }, 50);
+};
+
+Native["tests/drag/CoalesceCanvas.singleDragGestureTest0.()V"] = function() {
+  setTimeout(function() {
+    MIDP.sendGestureEvent({x: 0, y: 4}, {x: 20, y: 25}, GESTURE_DRAG);
+  }, 50);
+}
+
+Native["tests/drag/CoalesceCanvas.simpleMultiDragGestureTest0.()V"] = function() {
+  setTimeout(function() {
+    // NB: The first gesture event will be consumed immediately and will
+    // not be coalesced. This is probably timing-dependent :-/
+    MIDP.sendGestureEvent({x: 7, y: 10}, {x: 3, y: 1}, GESTURE_DRAG);
+    MIDP.sendGestureEvent({x: 7, y: 10}, {x: -4, y: -3}, GESTURE_DRAG);
+    MIDP.sendGestureEvent({x: 7, y: 10}, {x: 3, y: 1}, GESTURE_DRAG);
+    MIDP.sendGestureEvent({x: 7, y: 10}, {x: 24, y: 27}, GESTURE_DRAG);
+  }, 50);
+}
+
+Native["tests/drag/CoalesceCanvas.comprehensiveTest0.()V"] = function() {
+  setTimeout(function() {
+    // NB: The first gesture event will be consumed immediately and will
+    // not be coalesced. This is probably timing-dependent :-/
+    MIDP.sendPenEvent({x: 1, y: 6}, PRESSED);
+    MIDP.sendPenEvent({x: 1, y: 6}, DRAGGED);
+    MIDP.sendPenEvent({x: 9, y: 15}, DRAGGED);
+    MIDP.sendGestureEvent({x: 1, y: 6}, {x: 8, y: 9}, GESTURE_DRAG);
+    MIDP.sendPenEvent({x: 20, y: 27}, DRAGGED);
+    MIDP.sendGestureEvent({x: 1, y: 6}, {x: 11, y: 12}, GESTURE_DRAG);
+    MIDP.sendPenEvent({x: 3, y: 1}, DRAGGED);
+    MIDP.sendGestureEvent({x: 1, y: 6}, {x: -17, y: -21}, GESTURE_DRAG);
+    MIDP.sendPenEvent({x: 8, y: 24}, RELEASED);
+
+    MIDP.sendPenEvent({x: 9, y: 5}, PRESSED);
+    MIDP.sendPenEvent({x: 9, y: 5}, DRAGGED);
+    MIDP.sendPenEvent({x: 2, y: 15}, DRAGGED);
+    MIDP.sendGestureEvent({x: 9, y: 5}, {x: -7, y: 10}, GESTURE_DRAG);
+    MIDP.sendPenEvent({x: 20, y: 27}, DRAGGED);
+    MIDP.sendGestureEvent({x: 9, y: 5}, {x: 18, y: 12}, GESTURE_DRAG);
+    MIDP.sendPenEvent({x: 3, y: 1}, DRAGGED);
+    MIDP.sendGestureEvent({x: 9, y: 5}, {x: -17, y: -21}, GESTURE_DRAG);
+    MIDP.sendPenEvent({x: 50, y: 50}, DRAGGED);
+    MIDP.sendGestureEvent({x: 9, y: 5}, {x: 47, y: 49}, GESTURE_DRAG);
+    MIDP.sendPenEvent({x: 6, y: 7}, DRAGGED);
+    MIDP.sendGestureEvent({x: 9, y: 5}, {x: -44, y: -43}, GESTURE_DRAG);
+    MIDP.sendPenEvent({x: 8, y: 24}, RELEASED);
+  }, 50);
+}
