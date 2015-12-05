@@ -84,6 +84,7 @@ final class MD5 extends MessageDigest {
             data[i] = 0;
 
         num[0] = 0;
+        nativeReset(data);
     }
 
     /**
@@ -177,7 +178,7 @@ final class MD5 extends MessageDigest {
         System.arraycopy(this.data, 0, cpy.data, 0, 16);
         System.arraycopy(this.count, 0, cpy.count, 0, 2);
 
-        nativeClone(cpy.data);
+        nativeClone(this.data, cpy.data);
 
         return cpy;
     }
@@ -185,5 +186,6 @@ final class MD5 extends MessageDigest {
     /**
      * Does the additional work needed to clone the object natively.
      */
-    private static native void nativeClone(int[] data);
+    private static native void nativeClone(int[] selfData, int[] data);
+    private static native void nativeReset(int[] selfData);
 }

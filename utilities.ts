@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-var jsGlobal = (function() { return this || (1, eval)('this'); })();
-var inBrowser = typeof console !== "undefined" && console.info;
+declare var pc2line;
 
+var jsGlobal = (function() { return this || (1, eval)('this'); })();
+var inBrowser = typeof pc2line === "undefined";
+
+
+declare var flagsOf;
 declare var putstr;
 declare var printErr;
 
 declare var dateNow: () => number;
+
+if (!jsGlobal.flagsOf) {
+  jsGlobal.flagsOf = function () {
+    return 0;
+  };
+}
 
 if (!jsGlobal.performance) {
   jsGlobal.performance = {};
@@ -105,6 +115,14 @@ module J2ME {
       Debug.assert(false, "Abstract Method " + message);
     }
 
+    /**
+     * Ensures that the object is not in dictionary mode. To use this, you'll need a
+     * special build of SpiderMonkey, ask mbx.
+     */
+    export function assertNonDictionaryModeObject(object: Object) {
+      Debug.assert((flagsOf(object) & 1) === 0, "Object is in dictionary mode.");
+    }
+
     export function unexpected(message?: any) {
       Debug.assert(false, "Unexpected: " + message);
     }
@@ -116,7 +134,7 @@ module J2ME {
 
   export module ArrayUtilities {
     import assert = Debug.assert;
-    
+
     export var EMPTY_ARRAY = [];
 
     export function makeArrays(length: number): any [][] {
@@ -171,12 +189,25 @@ module J2ME {
      * to dictionary mode. I've experienced ION bailouts from non-dense new Arrays(), hence this helper
      * method.
      */
-    export function makeDenseArray(length, value) {
+    export function makeDenseArray(length: number, value) {
       var array = new Array(length);
       for (var i = 0; i < length; i++) {
         array[i] = value;
       }
       return array;
+    }
+
+    /**
+     * Resizes a Int32Array to have the given length.
+     */
+    export function ensureInt32ArrayLength(array: Int32Array, length: number): Int32Array {
+      if (array.length >= length) {
+        return array;
+      }
+      var newLength = Math.max(array.length + length, ((array.length * 3) >> 1) + 1);
+      var newArray = new Int32Array(newLength);
+      newArray.set(array);
+      return newArray;
     }
   }
 
@@ -195,9 +226,9 @@ module J2ME {
       return <(any) => void> new Function("value", "this[\"" + target + "\"] = value;");
     }
 
-    export function makeDebugForwardingSetter(target: string, checker: (x: any) => boolean): (any) => void {
+    export function makeDebugForwardingSetter(target: string, checker: (l: any, h: number) => boolean): (any) => void {
       return function (value) {
-        Debug.assert(checker(value), "Unexpected value for target " + target);
+        Debug.assert(checker(value, 0), "Unexpected value for target " + target);
         this[target] = value;
       }
     }
@@ -327,30 +358,30 @@ module J2ME {
       return h >>> 0;
     }
     // end of imported section
+
+    export function hashBytesTo32BitsAdler(data: Uint8Array, offset: number, length: number): number {
+      var a = 1;
+      var b = 0;
+      var end = offset + length;
+      for (var i = offset; i < end; ++i) {
+        a = (a + (data[i] & 0xff)) % 65521;
+        b = (b + a) % 65521;
+      }
+      return (b << 16) | a;
+    }
   }
 
-  export enum Numbers {
+  export const enum Numbers {
     MaxU16 = 0xFFFF,
     MaxI16 = 0x7FFF,
     MinI16 = -0x8000
   }
 
   export module IntegerUtilities {
-    var sharedBuffer = new ArrayBuffer(8);
+    var sharedBuffer = new ArrayBuffer(24);
     export var i32 = new Int32Array(sharedBuffer);
     export var f32 = new Float32Array(sharedBuffer);
     export var f64 = new Float64Array(sharedBuffer);
-
-    /**
-     * Convert 32 bits into a float.
-     */
-    export function int32ToFloat(i: number) {
-      i32[0] = i; return f32[0];
-    }
-
-    export function int64ToDouble(high: number, low: number) {
-      i32[0] = low; i32[1] = high; return f64[0];
-    }
 
     export function bitCount(i: number): number {
       i = i - ((i >> 1) & 0x55555555);
@@ -362,6 +393,11 @@ module J2ME {
       i = i - ((i >> 1) & 0x55555555);
       i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
       return ((i + (i >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+    }
+
+    export function toHEX(i: number) {
+      var i = (i < 0 ? 0xFFFFFFFF + i + 1 : i);
+      return "0x" + ("00000000" + i.toString(16)).substr(-8);
     }
 
     /**
@@ -394,7 +430,7 @@ module J2ME {
     }
   }
 
-  export enum LogLevel {
+  export const enum LogLevel {
     Error = 0x1,
     Warn = 0x2,
     Debug = 0x4,
@@ -866,6 +902,16 @@ module J2ME {
     Uint32ArrayBitSet.prototype.toString = toString;
     Uint32ArrayBitSet.prototype.toBitString = toBitString;
   }
+
+  export function parseManifest(fileContents: string): any {
+    var manifest = {};
+    var matches;
+    var reg = /([A-Za-z0-9\-_]+):\s([^\n\r$]+)/g;
+    while ((matches = reg.exec(fileContents)) !== null) {
+      manifest[matches[1]] = matches[2];
+    }
+    return manifest;
+  }
 }
 
 /**
@@ -922,3 +968,111 @@ module J2ME {
     return this.indexOf(str, this.length - str.length) !== -1;
   });
 })();
+
+module J2ME.Shell {
+  export class MicroTask {
+    runAt: number;
+    constructor(public id: number, public fn: () => any, public args: any[],
+                public interval: number, public repeat: boolean) {
+    }
+  }
+
+  export class MicroTasksQueue {
+    private tasks: MicroTask[] = [];
+    private nextId: number = 1;
+    private stopped: boolean = true;
+
+    constructor() {
+    }
+
+    public get isEmpty(): boolean {
+      return this.tasks.length === 0;
+    }
+
+    public scheduleInterval(fn: () => any, args: any[], interval: number, repeat: boolean) {
+      var MIN_INTERVAL = 4;
+      interval = Math.round((interval || 0)/10) * 10;
+      if (interval < MIN_INTERVAL) {
+        interval = MIN_INTERVAL;
+      }
+      var taskId = this.nextId++;
+      var task = new MicroTask(taskId, fn, args, interval, repeat);
+      this.enqueue(task);
+      return task;
+    }
+
+    public enqueue(task: MicroTask) {
+      var tasks = this.tasks;
+      task.runAt = dateNow() + task.interval;
+      var i = tasks.length;
+      while (i > 0 && tasks[i - 1].runAt > task.runAt) {
+        i--;
+      }
+      if (i === tasks.length) {
+        tasks.push(task);
+      } else {
+        tasks.splice(i, 0, task);
+      }
+    }
+
+    public dequeue(runAt: number): MicroTask {
+      if (this.tasks[0].runAt > runAt) {
+        return null;
+      }
+      var task = this.tasks.shift();
+      return task;
+    }
+
+    public remove(id: number) {
+      var tasks = this.tasks;
+      for (var i = 0; i < tasks.length; i++) {
+        if (tasks[i].id === id) {
+          tasks.splice(i, 1);
+          return;
+        }
+      }
+    }
+
+    public clear() {
+      this.tasks.length = 0;
+    }
+
+    /**
+     * Runs micro tasks for a certain |duration| and |count| whichever comes first. Optionally,
+     * if the |clear| option is specified, the micro task queue is cleared even if not all the
+     * tasks have been executed.
+     *
+     * If a |preCallback| function is specified, only continue execution if |preCallback()| returns true.
+     */
+    run(duration: number = 0, count: number = 0, clear: boolean = false, preCallback: Function = null) {
+      this.stopped = false;
+      var executedTasks = 0;
+      var stopAt = Date.now() + duration;
+      while (!this.isEmpty && !this.stopped) {
+        if (duration > 0 && Date.now() >= stopAt) {
+          break;
+        }
+        if (count > 0 && executedTasks >= count) {
+          break;
+        }
+        var task = null;
+        do {
+          task = this.dequeue(dateNow());
+        } while (!task);
+        if (preCallback && !preCallback(task)) {
+          return;
+        }
+        task.fn.apply(null, task.args);
+        executedTasks ++;
+      }
+      if (clear) {
+        this.clear();
+      }
+      this.stopped = true;
+    }
+
+    stop() {
+      this.stopped = true;
+    }
+  }
+}

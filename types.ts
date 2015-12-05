@@ -1,11 +1,11 @@
 module J2ME {
   import assert = Debug.assert;
-
+  import Bytecodes = Bytecode.Bytecodes;
 
   var writer = new IndentingWriter();
 
 
-  export enum Kind {
+  export const enum Kind {
     Boolean,
     Byte,
     Short,
@@ -17,7 +17,12 @@ module J2ME {
     Reference,
     Void,
     Illegal,
+    High,
     Store
+  }
+
+  export function getKindName(kind: Kind): string {
+    return (<any>J2ME).Kind[kind];
   }
 
   export function isTwoSlot(kind: Kind) {
@@ -35,6 +40,22 @@ module J2ME {
     Kind.Long
   ];
 
+  export function returnKind(op: Bytecodes): Kind {
+    switch (op) {
+      case Bytecodes.LRETURN:
+        return Kind.Long;
+      case Bytecodes.DRETURN:
+        return Kind.Double;
+      case Bytecodes.IRETURN:
+        return Kind.Int;
+      case Bytecodes.FRETURN:
+        return Kind.Float;
+      case Bytecodes.ARETURN:
+        return Kind.Reference;
+      case Bytecodes.RETURN:
+        return Kind.Void;
+    }
+  }
   export function stackKind(kind: Kind): Kind {
     switch (kind) {
       case Kind.Boolean: return Kind.Int;
@@ -47,6 +68,23 @@ module J2ME {
       case Kind.Double: return Kind.Double;
       case Kind.Reference: return Kind.Reference;
       default: throw Debug.unexpected("Unknown stack kind: " + kind);
+    }
+  }
+
+  export function kindCharacterToKind(kindCharacter: string): Kind {
+    switch (kindCharacter[0]) {
+      case 'Z': return Kind.Boolean;
+      case 'B': return Kind.Byte;
+      case 'S': return Kind.Short;
+      case 'C': return Kind.Char;
+      case 'I': return Kind.Int;
+      case 'F': return Kind.Float;
+      case 'J': return Kind.Long;
+      case 'D': return Kind.Double;
+      case 'V': return Kind.Void;
+      case '[': // Fallthrough
+      case 'L': return Kind.Reference;
+      default: throw Debug.unexpected("Unknown kind character: " + kindCharacter);
     }
   }
 
@@ -64,53 +102,35 @@ module J2ME {
     }
   }
 
-  export function kindCharacter(kind: Kind): string {
-    switch (kind) {
-      case Kind.Boolean:
-        return 'Z';
-      case Kind.Byte:
-        return 'B';
-      case Kind.Short:
-        return 'S';
-      case Kind.Char:
-        return 'C';
-      case Kind.Int:
-        return 'I';
-      case Kind.Float:
-        return 'F';
-      case Kind.Long:
-        return 'J';
-      case Kind.Double:
-        return 'D';
-      case Kind.Reference:
-        return 'R';
-      case Kind.Void:
-        return 'V';
+  export function kindSize(kind: Kind): number {
+    if (isTwoSlot(kind)) {
+      return 8;
     }
+    return 4;
   }
 
-  export function getKindCheck(kind: Kind): (x: any) => boolean {
+  export function getKindCheck(kind: Kind): (l: any, h: number) => boolean {
     switch (kind) {
       case Kind.Boolean:
-        return (x) => x === 0 || x === 1;
+        return (l, h) => l === 0 || l === 1;
       case Kind.Byte:
-        return (x) => (x | 0) === x && x >= Constants.BYTE_MIN && x <= Constants.BYTE_MAX;
+        return (l, h) => (l | 0) === l && l >= Constants.BYTE_MIN && l <= Constants.BYTE_MAX;
       case Kind.Short:
-        return (x) => (x | 0) === x && x >= Constants.SHORT_MIN && x <= Constants.SHORT_MAX;
+        return (l, h) => (l | 0) === l && l >= Constants.SHORT_MIN && l <= Constants.SHORT_MAX;
       case Kind.Char:
-        return (x) => (x | 0) === x && x >= Constants.CHAR_MIN && x <= Constants.CHAR_MAX;
+        return (l, h) => (l | 0) === l && l >= Constants.CHAR_MIN && l <= Constants.CHAR_MAX;
       case Kind.Int:
-        return (x) => (x | 0) === x;
+        return (l, h) => (l | 0) === l;
       case Kind.Float:
-        return (x) => isNaN(x) || Math.fround(x) === x;
+        return (l, h) => (l | 0) === l;
       case Kind.Long:
-        return (x) => x instanceof Long.constructor;
+        return (l, h) => ((l | 0) === l) && ((h | 0) === h);
       case Kind.Double:
-        return (x) => isNaN(x) || (+x) === x;
+        return (l, h) => ((l | 0) === l) && ((h | 0) === h);
       case Kind.Reference:
-        return (x) => x === null || x instanceof Object;
+        return (l, h) => l === null || l instanceof Object;
       case Kind.Void:
-        return (x) => typeof x === "undefined";
+        return (l, h) => typeof l === "undefined";
       default:
         throw Debug.unexpected("Unknown kind: " + kind);
     }

@@ -84,6 +84,7 @@ public class RunTests {
                 if (name == null)
                     break;
                 runTest(name);
+                Thread.yield();
             }
         }
         System.out.println("TOTALS: " + pass + " pass, " + fail + " fail, " + knownFail + " known fail, " +

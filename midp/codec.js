@@ -66,7 +66,7 @@ DataEncoder.prototype.getData = function() {
 }
 
 var DataDecoder = function(data, offset, length) {
-  this.data = JSON.parse(util.decodeUtf8(new Int8Array(data.buffer, offset, length)));
+  this.data = JSON.parse(util.decodeUtf8(data.subarray(offset, offset + length)));
   this.current = [];
 }
 
@@ -135,103 +135,104 @@ DataDecoder.prototype.getType = function() {
   return this.data[0].type || -1;
 }
 
-Native["com/nokia/mid/s40/codec/DataEncoder.init.()V"] = function() {
-  this.encoder = new DataEncoder();
+Native["com/nokia/mid/s40/codec/DataEncoder.init.()V"] = function(addr) {
+  setNative(addr, new DataEncoder());
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V"] = function(tag, name) {
-  this.encoder.putStart(tag, J2ME.fromJavaString(name));
+Native["com/nokia/mid/s40/codec/DataEncoder.putStart.(ILjava/lang/String;)V"] = function(addr, tag, nameAddr) {
+  NativeMap.get(addr).putStart(tag, J2ME.fromStringAddr(nameAddr));
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V"] = function(tag, name, value) {
-  this.encoder.put(tag, J2ME.fromJavaString(name), J2ME.fromJavaString(value));
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Ljava/lang/String;)V"] = function(addr, tag, nameAddr, valueAddr) {
+  NativeMap.get(addr).put(tag, J2ME.fromStringAddr(nameAddr), J2ME.fromStringAddr(valueAddr));
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(tag, name, value) {
-  this.encoder.put(tag, J2ME.fromJavaString(name), value.toNumber());
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;J)V"] = function(addr, tag, nameAddr, valueLow, valueHigh) {
+  NativeMap.get(addr).put(tag, J2ME.fromStringAddr(nameAddr), J2ME.longToNumber(valueLow, valueHigh));
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(tag, name, value) {
-  this.encoder.put(tag, J2ME.fromJavaString(name), value);
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(ILjava/lang/String;Z)V"] = function(addr, tag, nameAddr, value) {
+  NativeMap.get(addr).put(tag, J2ME.fromStringAddr(nameAddr), value);
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.put.(Ljava/lang/String;[BI)V"] = function(name, data, length) {
-  var array = Array.prototype.slice.call(data.subarray(0, length));
+Native["com/nokia/mid/s40/codec/DataEncoder.put.(Ljava/lang/String;[BI)V"] = function(addr, nameAddr, dataAddr, length) {
+  var array = Array.prototype.slice.call(J2ME.getArrayFromAddr(dataAddr).subarray(0, length));
   array.constructor = Array;
-  this.encoder.putNoTag(J2ME.fromJavaString(name), array);
+  NativeMap.get(addr).putNoTag(J2ME.fromStringAddr(nameAddr), array);
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = function(tag, name) {
-  this.encoder.putEnd(tag, J2ME.fromJavaString(name));
+Native["com/nokia/mid/s40/codec/DataEncoder.putEnd.(ILjava/lang/String;)V"] = function(addr, tag, nameAddr) {
+  NativeMap.get(addr).putEnd(tag, J2ME.fromStringAddr(nameAddr));
 };
 
-Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function() {
-  var data = this.encoder.getData();
+Native["com/nokia/mid/s40/codec/DataEncoder.getData.()[B"] = function(addr) {
+  var data = NativeMap.get(addr).getData();
 
-  var array = J2ME.newByteArray(data.length);
+  var arrayAddr = J2ME.newByteArray(data.length);
+  var array = J2ME.getArrayFromAddr(arrayAddr);
   for (var i = 0; i < data.length; i++) {
     array[i] = data.charCodeAt(i);
   }
 
-  return array;
+  return arrayAddr;
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(data, offset, length) {
-  this.decoder = new DataDecoder(data, offset, length);
+Native["com/nokia/mid/s40/codec/DataDecoder.init.([BII)V"] = function(addr, dataAddr, offset, length) {
+  setNative(addr, new DataDecoder(J2ME.getArrayFromAddr(dataAddr), offset, length));
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V"] = function(tag) {
-  if (!this.decoder.getStart(tag)) {
+Native["com/nokia/mid/s40/codec/DataDecoder.getStart.(I)V"] = function(addr, tag) {
+  if (!NativeMap.get(addr).getStart(tag)) {
     throw $.newIOException("no start found " + tag);
   }
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V"] = function(tag) {
-  if (!this.decoder.getEnd(tag)) {
+Native["com/nokia/mid/s40/codec/DataDecoder.getEnd.(I)V"] = function(addr, tag) {
+  if (!NativeMap.get(addr).getEnd(tag)) {
     throw $.newIOException("no end found " + tag);
   }
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = function(tag) {
-  var str = this.decoder.getValue(tag);
+Native["com/nokia/mid/s40/codec/DataDecoder.getString.(I)Ljava/lang/String;"] = function(addr, tag) {
+  var str = NativeMap.get(addr).getValue(tag);
   if (str === undefined) {
     throw $.newIOException("tag (" + tag + ") invalid");
   }
   return J2ME.newString(str);
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(tag) {
-  var num = this.decoder.getValue(tag);
+Native["com/nokia/mid/s40/codec/DataDecoder.getInteger.(I)J"] = function(addr, tag) {
+  var num = NativeMap.get(addr).getValue(tag);
   if (num === undefined) {
     throw $.newIOException("tag (" + tag + ") invalid");
   }
-  return Long.fromNumber(num);
+  return J2ME.returnLongValue(num);
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z"] = function() {
-  var val = this.decoder.getNextValue();
+Native["com/nokia/mid/s40/codec/DataDecoder.getBoolean.()Z"] = function(addr) {
+  var val = NativeMap.get(addr).getNextValue();
   if (val === undefined) {
     throw $.newIOException();
   }
   return val === 1 ? 1 : 0;
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = function() {
-  var name = this.decoder.getName();
+Native["com/nokia/mid/s40/codec/DataDecoder.getName.()Ljava/lang/String;"] = function(addr) {
+  var name = NativeMap.get(addr).getName();
   if (name === undefined) {
     throw $.newIOException();
   }
   return J2ME.newString(name);
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.getType.()I"] = function() {
-  var tag = this.decoder.getTag();
+Native["com/nokia/mid/s40/codec/DataDecoder.getType.()I"] = function(addr) {
+  var tag = NativeMap.get(addr).getTag();
   if (tag === undefined) {
     throw $.newIOException();
   }
   return tag;
 };
 
-Native["com/nokia/mid/s40/codec/DataDecoder.listHasMoreItems.()Z"] = function() {
-  return this.decoder.getType() != DataEncoder.END ? 1 : 0;
+Native["com/nokia/mid/s40/codec/DataDecoder.listHasMoreItems.()Z"] = function(addr) {
+  return NativeMap.get(addr).getType() != DataEncoder.END ? 1 : 0;
 };

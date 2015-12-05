@@ -178,7 +178,7 @@ function syncFS() {
     });
 }
 
-casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
+casper.test.begin("unit tests", 40 + gfxTests.length, function(test) {
     casper.start("data:text/plain,start");
 
     casper.page.onLongRunningScript = function(message) {
@@ -238,42 +238,10 @@ casper.test.begin("unit tests", 39 + gfxTests.length, function(test) {
     .thenOpen("http://localhost:8000/index.html?main=tests/isolate/TestIsolate&logLevel=info&logConsole=web,page,raw")
     .withFrame(0, function() {
         casper.waitForText("DONE", function() {
-          var output = this.fetchText('#raw-console');
-          var expectedOutput = ["I 0: m",
-            "I 3 0 a ma",
-            "I 1: ma",
-            "I 2: 3",
-            "I 3: 1 isolate",
-            "I 4: Isolate ID correct",
-            "I 5: 5",
-            "I 6: 6",
-            "I 7: 1 isolate",
-            "I 8: ma",
-            "I 9: ma",
-            "I 10: 3 isolates",
-            "I 6 0 2 m2",
-            "I 5 0 1 m1",
-            "I 11: ma",
-            "I 12: 1 isolate",
-            "I 13: Isolates terminated",
-            "I 3 1 r mar",
-            "I 14: mar",
-            "I 3 2 c marc",
-            "I 15: marc",
-            "I 16: Main isolate still running",
-            "I DONE",
-            ""];
-          output = output.split("\n").sort();
-          expectedOutput.sort();
-          test.assert(expectedOutput.length === output.length, "Same number of lines output.");
-          var allMatch = true;
-          for (var i = 0; i < expectedOutput.length; i++) {
-            if (expectedOutput[i] !== output[i]) {
-              allMatch = false;
-              break;
-            }
-          }
-          test.assert(allMatch, "All lines are contained within output.");
+          test.assertTextDoesntExist("FAIL");
+          // Two sanity checks to make sure the two isolates ran.
+          test.assertTextExists("PASS First isolate static value is correct.");
+          test.assertTextExists("PASS Second isolate static value is correct.");
         });
     });
 

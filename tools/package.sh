@@ -29,8 +29,8 @@ cp config/urlparams.js $PACKAGE_DIR/config/.
 cp libs/compiled-method-cache.js $PACKAGE_DIR/libs/.
 cp libs/load.js $PACKAGE_DIR/libs/.
 cp libs/promise-6.0.0.js $PACKAGE_DIR/libs/.
-cp libs/relooper.js $PACKAGE_DIR/libs/.
 cp polyfill/IndexedDB-getAll-shim.js $PACKAGE_DIR/polyfill/.
+cp bld/native.js $PACKAGE_DIR/bld/.
 cp bld/j2me.js $PACKAGE_DIR/bld/.
 cp bld/shumway.js $PACKAGE_DIR/bld/.
 cp bld/classes.jar.js $PACKAGE_DIR/bld/.

@@ -204,6 +204,8 @@ public abstract class TestHarness {
     public TestHarness(Display d) {
         display = d;
     }
+    public TestHarness() {
+    }
 
     public void setScreenAndWait(Displayable s) {
         display.setCurrent(s);

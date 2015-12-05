@@ -20,6 +20,8 @@ module J2ME {
      */
     sourceFiles: Map<string, string []>;
 
+    unwindMethodInfos:Map<Kind, MethodInfo>;
+
     /**
      * List of classes whose sources files were not found. We keep track
      * of them so we don't have to search for them over and over.
@@ -42,15 +44,16 @@ module J2ME {
 
       this.classes = Object.create(null);
       this.preInitializedClasses = [];
+      this.unwindMethodInfos = Object.create(null);
     }
 
     initializeBuiltinClasses() {
       // These classes are guaranteed to not have a static initializer.
       enterTimeline("initializeBuiltinClasses");
-      this.java_lang_Object = this.loadAndLinkClass("java/lang/Object");
-      this.java_lang_Class = this.loadAndLinkClass("java/lang/Class");
-      this.java_lang_String = this.loadAndLinkClass("java/lang/String");
-      this.java_lang_Thread = this.loadAndLinkClass("java/lang/Thread");
+      this.java_lang_Object = this.loadClass("java/lang/Object");
+      this.java_lang_Class = this.loadClass("java/lang/Class");
+      this.java_lang_String = this.loadClass("java/lang/String");
+      this.java_lang_Thread = this.loadClass("java/lang/Thread");
 
       this.preInitializedClasses.push(this.java_lang_Object);
       this.preInitializedClasses.push(this.java_lang_Class);
@@ -71,7 +74,7 @@ module J2ME {
         "java/util/Vector",
         "java/io/IOException",
         "java/lang/IllegalArgumentException",
-        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        // Preload the Isolate class, that is needed to start the VM (see context.ts)
         "com/sun/cldc/isolate/Isolate",
         "org/mozilla/internal/Sys",
         "java/lang/System",
@@ -82,18 +85,16 @@ module J2ME {
         "java/lang/Boolean",
         "java/util/Hashtable",
         "java/lang/IndexOutOfBoundsException",
+        "java/lang/StringIndexOutOfBoundsException",
+        // Preload the Isolate class, that is needed to start the VM (see jvm.ts)
+        "com/sun/cldc/isolate/Isolate",
       ];
 
       for (var i = 0; i < classNames.length; i++) {
-        this.preInitializedClasses.push(this.loadAndLinkClass(classNames[i]));
+        this.preInitializedClasses.push(this.loadClass(classNames[i]));
       }
 
-      // Link primitive values.
       var primitiveTypes = "ZCFDBSIJ";
-      for (var i = 0; i < primitiveTypes.length; i++) {
-        var typeName = primitiveTypes[i];
-        linkKlass(PrimitiveClassInfo[typeName]);
-      }
       // Link primitive arrays.
       PrimitiveArrayClassInfo.initialize();
       for (var i = 0; i < primitiveTypes.length; i++) {
@@ -103,6 +104,9 @@ module J2ME {
     }
 
     isPreInitializedClass(classInfo: ClassInfo) {
+      if (classInfo instanceof PrimitiveClassInfo) {
+        return true;
+      }
       return this.preInitializedClasses.indexOf(classInfo) >= 0;
     }
 
@@ -157,6 +161,7 @@ module J2ME {
       var classInfo = this.loadClassBytes(bytes);
       if (classInfo.superClassName) {
         classInfo.superClass = this.loadClass(classInfo.superClassName);
+        classInfo.depth = classInfo.superClass.depth + 1;
         var superClass = classInfo.superClass;
         superClass.subClasses.push(classInfo);
         while (superClass) {
@@ -175,12 +180,6 @@ module J2ME {
         return classInfo;
       }
       return this.loadClassFile(className + ".class");
-    }
-
-    loadAndLinkClass(className: string): ClassInfo {
-      var classInfo = this.loadClass(className);
-      linkKlass(classInfo);
-      return classInfo;
     }
 
     getEntryPoint(classInfo: ClassInfo): MethodInfo {
@@ -211,9 +210,8 @@ module J2ME {
 
     createArrayClass(typeName: string): ArrayClassInfo {
       var elementType = typeName.substr(1);
-      var constructor = getArrayConstructor(elementType);
       var classInfo;
-      if (constructor) {
+      if (PrimitiveArrayClassInfo[elementType]) {
         classInfo = PrimitiveArrayClassInfo[elementType];
       } else {
         if (elementType[0] === "L") {
@@ -221,12 +219,48 @@ module J2ME {
         }
         classInfo = new ObjectArrayClassInfo(this.getClass(elementType));
       }
-      if (J2ME.phase === J2ME.ExecutionPhase.Runtime) {
-        J2ME.linkKlass(classInfo);
-      }
       return this.classes[typeName] = classInfo;
     }
 
+    getUnwindMethodInfo(returnKind: Kind, opCode?: Bytecode.Bytecodes):MethodInfo {
+      var key = "" + returnKind + opCode;
+
+      if (this.unwindMethodInfos[key]) {
+        return this.unwindMethodInfos[key];
+      }
+      var classInfo = CLASSES.getClass("org/mozilla/internal/Sys");
+      var methodInfo;
+      var unwindMethodName = "unwind" + (opCode ? "FromInvoke" : "");
+      switch (returnKind) {
+        case Kind.Long:
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(J)J");
+          break;
+        case Kind.Double:
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(D)D");
+          break;
+        case Kind.Float:
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(F)F");
+          break;
+        case Kind.Int:
+        case Kind.Byte:
+        case Kind.Char:
+        case Kind.Short:
+        case Kind.Boolean:
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(I)I");
+          break;
+        case Kind.Reference:
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "(Ljava/lang/Object;)Ljava/lang/Object;");
+          break;
+        case Kind.Void:
+          methodInfo = classInfo.getMethodByNameString(unwindMethodName, "()V");
+          break;
+        default:
+          release || Debug.assert(false, "Invalid Kind: " + getKindName(returnKind));
+      }
+      release || Debug.assert(methodInfo, "Must find unwind method");
+      this.unwindMethodInfos[key] = methodInfo;
+      return methodInfo;
+    }
   }
 
   export var ClassNotFoundException = function(message) {

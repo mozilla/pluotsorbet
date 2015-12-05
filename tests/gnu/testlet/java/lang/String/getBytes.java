@@ -27,9 +27,9 @@ import java.io.UnsupportedEncodingException;
 
 public class getBytes implements Testlet
 {
-  public int getExpectedPass() { return 0; }
+  public int getExpectedPass() { return 5; }
   public int getExpectedFail() { return 0; }
-  public int getExpectedKnownFail() { return 1; }
+  public int getExpectedKnownFail() { return 0; }
 
   public void test (TestHarness harness)
   {
@@ -50,7 +50,7 @@ public class getBytes implements Testlet
 		.toString().substring(10,30);
 	b = s.getBytes("ISO-8859-1");
 	harness.check (b.length, 20);
-	b = s.getBytes("UTF8");
+	b = s.getBytes("UTF-8");
 	harness.check (b.length, 20);
       }
     catch (UnsupportedEncodingException e)

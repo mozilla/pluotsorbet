@@ -17,3 +17,4 @@
 /** @const */ var release: boolean = @RELEASE@;
 /** @const */ var profile: number = @PROFILE@;
 /** @const */ var profileFormat: string = "@PROFILE_FORMAT@";
+/** @const */ var asmJsTotalMemory: number = @ASMJS_TOTAL_MEMORY@;

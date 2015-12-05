@@ -9,7 +9,7 @@ module J2ME {
 
   export var yieldGraph = null; // Object.create(null);
 
-  export enum YieldReason {
+  export const enum YieldReason {
     None = 0,
     Root = 1,
     Synchronized = 2,
@@ -18,6 +18,10 @@ module J2ME {
     Cycle = 5,
     Yield = 6,
     Likely = 7
+  }
+
+  export function getYieldReasonName(yieldReason: YieldReason): string {
+    return (<any>J2ME).YieldReason[yieldReason];
   }
 
   /**
@@ -67,6 +71,7 @@ module J2ME {
     "java/lang/Thread.start0.()V": YieldReason.Root,
     "java/lang/Class.forName0.(Ljava/lang/String;)V": YieldReason.Root,
     "java/lang/Class.newInstance1.(Ljava/lang/Object;)V": YieldReason.Root,
+    "java/lang/Runtime.gc.()V": YieldReason.Root,
     // Test Files:
     "gnu/testlet/vm/NativeTest.throwExceptionAfterPause.()V": YieldReason.Root,
     "gnu/testlet/vm/NativeTest.returnAfterPause.()I": YieldReason.Root,
@@ -233,16 +238,16 @@ module J2ME {
     }
     yieldWriter && yieldWriter.enter("> " + methodInfo.implKey);
     if (yieldMap[methodInfo.implKey] !== undefined) {
-      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[yieldMap[methodInfo.implKey]] + " cached.");
+      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + getYieldReasonName(yieldMap[methodInfo.implKey]) + " cached.");
       return yieldMap[methodInfo.implKey];
     }
     if (methodInfo.isSynchronized) {
       yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because it is synchronized.");
-      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[YieldReason.Synchronized]);
+      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + getYieldReasonName(YieldReason.Synchronized));
       return yieldMap[methodInfo.implKey] = YieldReason.Synchronized;
     }
     if (checkingForCanYield[methodInfo.implKey]) {
-      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[YieldReason.Cycle]);
+      yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + getYieldReasonName(YieldReason.Cycle));
       return YieldReason.Cycle;
     }
     if (!methodInfo.codeAttribute) {
@@ -343,7 +348,7 @@ module J2ME {
       // stderrWriter.writeLns(e.stack);
     }
     checkingForCanYield[methodInfo.implKey] = false;
-    yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + YieldReason[result]);
+    yieldWriter && yieldWriter.leave("< " + methodInfo.implKey + " " + getYieldReasonName(result));
     return yieldMap[methodInfo.implKey] = result;
   }
 }

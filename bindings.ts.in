@@ -7,14 +7,21 @@ module J2ME {
           if (self._hashCode) {
             return self._hashCode;
           }
-          return self._hashCode = $.nextHashCode();
+
+          self._hashCode = i32[this._address + Constants.HASH_CODE_OFFSET >> 2];
+          if (self._hashCode) {
+            return self._hashCode;
+          }
+
+          return self._hashCode = i32[this._address + Constants.HASH_CODE_OFFSET >> 2] = $.nextHashCode();
         }
       }
     },
     "java/lang/Class": {
       fields: {
         instanceSymbols: {
-          "status": "I"
+          "status": "I",
+          "vmClass": "Ljava/lang/Object;"
         }
       },
       methods: {
@@ -23,16 +30,41 @@ module J2ME {
         }
       }
     },
+    "java/lang/String": {
+      fields: {
+        instanceSymbols: {
+          "value": "[C",
+          "offset": "I",
+          "count": "I"
+        }
+      }
+    },
     "java/lang/Thread": {
       fields: {
         instanceSymbols: {
-          "priority": "I"
+          "priority": "I",
+          "nativeAlive": "Z",
         }
       }
+    },
+    "java/lang/Throwable": {
+      fields: {
+        instanceSymbols: {
+          "detailMessage": "Ljava/lang/String;",
+        }
+      }
+    },
+    "java/lang/ref/WeakReference": {
+      fields: {
+        instanceSymbols: {
+          "holder": "Ljava/lang/Object;",
+        },
+      },
     },
     "com/sun/cldc/isolate/Isolate": {
       fields: {
         instanceSymbols: {
+          "_id": "I",
           "_mainArgs": "[Ljava/lang/String;",
           "_mainClass": "Ljava/lang/String;",
           "_priority": "I",
@@ -168,6 +200,7 @@ module J2ME {
       fields: {
         instanceSymbols: {
           "font": "Ljavax/microedition/lcdui/Font;",
+          "caretPosition": "I",
         }
       }
     },
@@ -252,6 +285,13 @@ module J2ME {
         }
       }
     },
+    "com/sun/midp/io/j2me/socket/Protocol": {
+      fields: {
+        instanceSymbols: {
+          "host": "Ljava/lang/String;",
+        }
+      }
+    },
     "com/sun/midp/main/CommandState": {
       fields: {
         instanceSymbols: {
@@ -297,7 +337,7 @@ module J2ME {
     },
   };
 
-  export var BindingsMap = new Uint8Hashtable(50);
+  export var BindingsMap = new TypedArrayHashtable(50);
 
   // Create a map of the classes that have bindings.
   for (var k in Bindings) {
@@ -307,9 +347,14 @@ module J2ME {
   export module java.lang {
     export interface Object {
       /**
-       * Reference to the runtime klass.
+       * Reference to the class info.
        */
-      klass: Klass
+      classInfo: ClassInfo
+
+      /**
+       * All objects have an address.
+       */
+      _address: number;
 
       /**
        * All objects have an internal hash code.
@@ -335,22 +380,22 @@ module J2ME {
     }
 
     export interface Class extends java.lang.Object {
-      /**
-       * RuntimeKlass associated with this Class object.
-       */
-      runtimeKlass: RuntimeKlass;
       status: number;
       initialize(): void;
+      vmClass: number;
     }
 
     export interface String extends java.lang.Object {
-      str: string;
+      value: number;
+      offset: number;
+      count: number;
     }
 
     export interface Thread extends java.lang.Object {
+      // XXX Thread.pid seems to be unused, so remove it.
       pid: number;
-      alive: boolean;
       priority: number;
+      nativeAlive: boolean;
     }
 
     export interface Exception extends java.lang.Object {
@@ -407,6 +452,15 @@ module J2ME {
 
   }
 
+  export module java.lang.ref {
+    export interface Reference extends java.lang.Object {
+    }
+
+    export interface WeakReference extends java.lang.ref.Reference {
+      holder: number;
+    }
+  }
+
   export module java.io {
 
     export interface IOException extends java.lang.Exception {
@@ -439,10 +493,9 @@ module J2ME {
 
   export module com.sun.cldc.isolate {
     export interface Isolate extends java.lang.Object {
-      id: number;
-      runtime: Runtime;
+      _id: number;
       _mainArgs: java.lang.String [];
-      _mainClass: java.lang.String;
+      _mainClass: number;
       _priority: number;
     }
   }

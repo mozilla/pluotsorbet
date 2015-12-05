@@ -15,7 +15,7 @@ module J2ME {
     }
   }
 
-  export enum CompilationTarget {
+  export const enum CompilationTarget {
     Runtime,
     Static
   }
@@ -28,59 +28,6 @@ module J2ME {
       klass = klass.superClass;
     }
     return list;
-  }
-
-  export function emitKlass(emitter: Emitter, classInfo: ClassInfo) {
-    var writer = emitter.writer;
-    var mangledClassName = classInfo.mangledName;
-    if (emitter.closure) {
-      writer.writeLn("/** @constructor */");
-    }
-
-    function emitFields(fields: FieldInfo [], emitStatic: boolean) {
-      for (var i = 0; i < fields.length; i++) {
-        var fieldInfo = fields[i];
-        if (fieldInfo.isStatic !== emitStatic) {
-          continue;
-        }
-        var kind = getSignatureKind(fieldInfo.utf8Signature);
-        var defaultValue;
-        switch (kind) {
-        case Kind.Reference:
-          defaultValue = "null";
-          break;
-        case Kind.Long:
-          defaultValue = "Long.ZERO";
-          break;
-        default:
-          defaultValue = "0";
-          break;
-        }
-        if (emitter.closure) {
-          writer.writeLn("this[" + quote(fieldInfo.mangledName) + "] = " + defaultValue + ";");
-        } else {
-          writer.writeLn("this." + fieldInfo.mangledName + " = " + defaultValue + ";");
-        }
-      }
-    }
-
-    // Emit class initializer.
-    writer.enter("function " + mangledClassName + "() {");
-    //
-    // Should we or should we not generate hash codes at this point? Eager or lazy, we should at least
-    // initialize it zero to keep object shapes fixed.
-    // writer.writeLn("this._hashCode = $.nextHashCode(this);");
-    writer.writeLn("this._hashCode = 0;");
-    emitFields(classInfo.fTable, false);
-    writer.leave("}");
-
-    if (emitter.klassHeaderOnly) {
-      return;
-    }
-
-    if (emitter.closure) {
-      writer.writeLn("window[" + quote(mangledClassName) + "] = " + mangledClassName + ";");
-    }
   }
 
   function classNameWithDots(classInfo: ClassInfo) {
@@ -121,8 +68,6 @@ module J2ME {
     }
 
     var classNameParts;
-
-    emitKlass(emitter, classInfo);
 
     var methods = classInfo.getMethods();
     var compiledMethods: CompiledMethodInfo [] = [];
