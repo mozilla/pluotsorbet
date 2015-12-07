@@ -7,7 +7,7 @@ addons: {apt: {sources: [ubuntu-toolchain-r-test], packages: [g++-4.9]}}
 before_script:
   - "sh -e /etc/init.d/xvfb start"
   - npm install casperjs
-  - npm install typescript
+  - npm install typescript@1.5.3
   - git clone --recursive https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk && ./emsdk activate latest && source ./emsdk_env.sh && cd ..
 script:
   - make test
