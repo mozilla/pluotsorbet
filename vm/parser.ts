@@ -181,7 +181,6 @@ module J2ME {
           case 0xB:
           case 0xF:
             throw new Error("Bad utf16 value.");
-            break;
           case 0xC:
           case 0xD:
             /* 110xxxxx  10xxxxxx */
@@ -1168,7 +1167,7 @@ module J2ME {
      */
     private getClassHierarchy(): ClassInfo [] {
       var classHierarchy = [];
-      var classInfo = this;
+      var classInfo: ClassInfo = this;
       do {
         classHierarchy.push(classInfo);
         classInfo = classInfo.superClass;
@@ -1372,7 +1371,7 @@ module J2ME {
     }
 
     getMethodByName(utf8Name: Uint8Array, utf8Signature: Uint8Array): MethodInfo {
-      var c = this;
+      var c: ClassInfo = this;
       do {
         var i = c.indexOfMethod(utf8Name, utf8Signature);
         if (i >= 0) {
@@ -1437,7 +1436,7 @@ module J2ME {
     }
 
     getFieldByName(utf8Name: Uint8Array, utf8Signature: Uint8Array, isStatic: boolean): FieldInfo {
-      var c = this;
+      var c: ClassInfo = this;
       do {
         var i = c.indexOfField(utf8Name, utf8Signature);
         if (i >= 0) {
@@ -1526,7 +1525,7 @@ module J2ME {
     }
 
     implementsInterface(i: ClassInfo): boolean {
-      var classInfo = this;
+      var classInfo: ClassInfo = this;
       do {
         var interfaces = classInfo.interfaces;
         for (var n = 0; n < interfaces.length; ++n) {
@@ -1563,7 +1562,7 @@ module J2ME {
       var display = this.display = new Array(32);
 
       var i = this.depth;
-      var classInfo = this;
+      var classInfo: ClassInfo = this;
       while (classInfo) {
         display[i--] = classInfo;
         classInfo = classInfo.superClass;
