@@ -469,7 +469,6 @@ module J2ME {
           case FrameType.ExitInterpreter:
             this.popMarkerFrame(FrameType.ExitInterpreter);
             throw e;
-            break;
           case FrameType.PushPendingFrames:
             this.frame.thread.pushPendingNativeFrames();
             break;
@@ -484,8 +483,6 @@ module J2ME {
             break;
         }
       }
-      release || traceWriter && traceWriter.writeLn("Cannot catch: " + toName(e));
-      throw e;
     }
 
     classInitAndUnwindCheck(fp: number, sp: number, pc: number, classInfo: ClassInfo) {
@@ -1931,7 +1928,6 @@ module J2ME {
               thread.throwException(fp, sp, opPC, ExceptionType.NullPointerException);
             }
             throw getHandle(address);
-            continue;
           case Bytecodes.MONITORENTER:
             thread.ctx.monitorEnter(getMonitor(i32[--sp]));
             release || assert(U !== VMState.Yielding, "Monitors should never yield.");
@@ -1984,7 +1980,6 @@ module J2ME {
                 var opName = Bytecode.getBytecodesName(op);
                 throw new Error("Wide opcode " + opName + " [" + op + "] not supported.");
             }
-            continue;
           case Bytecodes.NEWARRAY:
             type = code[pc++];
             size = i32[--sp];

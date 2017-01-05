@@ -1444,7 +1444,16 @@ module J2ME {
     return new handleConstructors[classId](address);
   }
 
-  var jStringEncoder = new TextEncoder('utf-16');
+  // TODO: TextEncoder('utf-16') was removed, this is some polyfil code,
+  // but there probably is a faster way to do this.
+  function encode_utf16(jsString: string, littleEndian: boolean) {
+    let a = new Uint8Array(jsString.length * 2);
+    let view = new DataView(a.buffer);
+    jsString.split('').forEach(function(c, i) {
+      view.setUint16(i * 2, c.charCodeAt(0), littleEndian);
+    });
+    return a;
+  }
 
   export function newString(jsString: string): number {
     if (jsString === null || jsString === undefined) {
@@ -1455,7 +1464,7 @@ module J2ME {
     setUncollectable(objectAddr);
     var object = <java.lang.String>getHandle(objectAddr);
 
-    var encoded = new Uint16Array(jStringEncoder.encode(jsString).buffer);
+    var encoded = new Uint16Array(encode_utf16(jsString, true).buffer);
     var arrayAddr = newCharArray(encoded.length);
     u16.set(encoded, Constants.ARRAY_HDR_SIZE + arrayAddr >> 1);
 
@@ -1614,7 +1623,7 @@ module J2ME {
 
   var jStringDecoder = new TextDecoder('utf-16');
 
-  export function fromJavaChars(charsAddr, offset, count) {
+  export function fromJavaChars(charsAddr, offset, count): string {
     release || assert(charsAddr !== Constants.NULL, "charsAddr !== Constants.NULL");
 
     var start = (Constants.ARRAY_HDR_SIZE + charsAddr >> 1) + offset;

@@ -310,18 +310,18 @@ module J2ME {
             if (!isStaticallyBound(op, callee)) {
               var callees = [];
               result = YieldReason.Virtual;
-              if (false) { // Checking all possible callees, disabled for now until fully tested.
-                result = YieldReason.None;
-                gatherCallees(callees, callee.classInfo, callee);
-                yieldWriter && yieldWriter.writeLn("Gather: " + callee.implKey + " " + callees.map(x => x.implKey).join(", "));
-                for (var i = 0; i < callees.length; i++) {
-                  if (canYield(callees[i])) {
-                    yieldWriter && yieldWriter.writeLn("Gathered Method: " + callees[i].implKey + " yields.");
-                    result = YieldReason.Virtual;
-                    break;
-                  }
-                }
-              }
+              // if (false) { // Checking all possible callees, disabled for now until fully tested.
+              //   result = YieldReason.None;
+              //   gatherCallees(callees, callee.classInfo, callee);
+              //   yieldWriter && yieldWriter.writeLn("Gather: " + callee.implKey + " " + callees.map(x => x.implKey).join(", "));
+              //   for (var i = 0; i < callees.length; i++) {
+              //     if (canYield(callees[i])) {
+              //       yieldWriter && yieldWriter.writeLn("Gathered Method: " + callees[i].implKey + " yields.");
+              //       result = YieldReason.Virtual;
+              //       break;
+              //     }
+              //   }
+              // }
               if (result !== YieldReason.None) {
                 yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " is not statically bound.");
                 addDependency(callee, methodInfo, YieldReason.Virtual);
