@@ -755,6 +755,28 @@ DumbPipe.registerOpener("mozActivity", function(message, sender) {
   activity.onerror = sender.bind(null, { type: "onerror" });
 });
 
+DumbPipe.registerOpener("mozActivityPick", function(message, sender) {
+  var activity = new MozActivity(message);
+
+  activity.onsuccess = function() {
+    var blob = this.result.blob;
+
+    var fileReader = new FileReader();
+
+    fileReader.onload = function(data) {
+      sender({
+        type: "onsuccess",
+        name: blob.name,
+        data: fileReader.result,
+      });
+    }
+
+    fileReader.readAsArrayBuffer(blob);
+  };
+
+  activity.onerror = sender.bind(null, { type: "onerror" });
+});
+
 DumbPipe.registerOpener("mozActivityHandler", function(message, sender) {
   if (!navigator.mozSetMessageHandler) {
     return;
