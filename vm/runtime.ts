@@ -950,7 +950,8 @@ module J2ME {
           release || assert(!object.hasOwnProperty(fieldName), "Should not overwrite existing properties.");
           var getter;
           var setter;
-          if (true || release) {
+          // TODO: re-enable debug checking
+          // if (true || release) {
             switch (field.kind) {
               case Kind.Reference:
                 setter = new Function("value", "i32[this._address + " + field.byteOffset + " >> 2] = value;");
@@ -990,9 +991,9 @@ module J2ME {
                 Debug.assert(false, getKindName(field.kind));
                 break;
             }
-          } else {
-            setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
-          }
+          // } else {
+          //   setter = FunctionUtilities.makeDebugForwardingSetter(field.mangledName, getKindCheck(field.kind));
+          // }
           Object.defineProperty(object, fieldName, {
             get: getter,
             set: setter,

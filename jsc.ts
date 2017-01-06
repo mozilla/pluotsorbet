@@ -1,6 +1,7 @@
 ///<reference path='bld/j2me-jsc.d.ts' />
 
-var jsGlobal = (function() { return this || (1, eval)('this'); })();
+// (eval||null) was (1, eval), but tsc has an issue with this https://github.com/Microsoft/TypeScript/issues/12978
+var jsGlobal = (function() { return this || (eval||null)('this'); })();
 
 if (!jsGlobal.performance) {
   jsGlobal.performance = {};
