@@ -126,7 +126,7 @@ for process in server_processes:
 for stream in server_output_streams:
     sys.stdout.write(stream.read())
 
-p = subprocess.Popen(['js', 'shell/pluot.js', '-cp', 'tests/tests.jar', 'Basic'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+p = subprocess.Popen(['node', 'shell/pluot.js', '-cp', 'tests/tests.jar', 'Basic'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 shell_success = False
 for line in iter(p.stdout.readline, b''):
     if "The end" in line:
@@ -137,7 +137,7 @@ if not shell_success:
     sys.stdout.write("FAIL - Basic shell test failed\n")
     exit_code = 1
 
-p = subprocess.Popen(['js', os.path.join('tests','gctests.js')], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+p = subprocess.Popen(['node', os.path.join('tests','gctests.js')], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 gc_tests_success = True
 for line in iter(p.stdout.readline, b''):
     if "fail" in line:
