@@ -137,7 +137,7 @@ if not shell_success:
     sys.stdout.write("FAIL - Basic shell test failed\n")
     exit_code = 1
 
-p = subprocess.Popen(['node', os.path.join('tests','gctests.js')], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+p = subprocess.Popen(['node', 'shell/pluot.js', '--startScript', os.path.join('tests','gctests.js')], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 gc_tests_success = True
 for line in iter(p.stdout.readline, b''):
     if "fail" in line:

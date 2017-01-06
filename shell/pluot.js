@@ -19,6 +19,12 @@
 var inSpiderMonkey = typeof pc2line !== "undefined";
 var startScript = "shell/shell.js";
 
+if (inSpiderMonkey && scriptArgs[0] === "--startScript") {
+  startScript = scriptArgs[1];
+} else if (!inSpiderMonkey && process.argv[2] === "--startScript") {
+  startScript = process.argv[3];
+}
+
 if (inSpiderMonkey) {
   try {
     load(startScript);
@@ -45,6 +51,7 @@ if (inSpiderMonkey) {
   global.dateNow = Date.now;
   global.scriptArgs = Array.prototype.slice.call(process.argv, 2);
   global.pc2line = function () {};
+  global.load = evalScript;
   global.snarf = function (path, type) {
     var buffer = fs.readFileSync(path);
     return type !== 'binary' ? buffer.toString() : new Uint8Array(buffer);
