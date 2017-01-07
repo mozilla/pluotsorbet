@@ -3,7 +3,7 @@
 import socket
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('', 50003))
+s.bind(('0.0.0.0', 50003))
 s.listen(5)
 
 while True:

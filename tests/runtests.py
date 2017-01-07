@@ -67,7 +67,7 @@ def wait_server(port):
     while True:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(('', port))
+            s.connect(('0.0.0.0', port))
             s.close()
             return
         except:
