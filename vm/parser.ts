@@ -1593,13 +1593,19 @@ module J2ME {
 
   export class ArrayClassInfo extends ClassInfo {
 
+    private _superClassName: string;
+
     // XXX: This constructor should not be called directly.
     constructor(elementClass: ClassInfo) {
       super(null);
       this.elementClass = elementClass;
       this.superClass = CLASSES.java_lang_Object;
-      this.superClassName = CLASSES.java_lang_Object.getClassNameSlow();
+      this._superClassName = CLASSES.java_lang_Object.getClassNameSlow();
       this.depth = 1;
+    }
+
+    get superClassName(): string {
+      return this._superClassName;
     }
   }
 

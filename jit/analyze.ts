@@ -322,10 +322,10 @@ module J2ME {
               //     }
               //   }
               // }
-              if (result !== YieldReason.None) {
-                yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " is not statically bound.");
-                addDependency(callee, methodInfo, YieldReason.Virtual);
-              }
+              // if (result !== YieldReason.None) {
+              //   yieldCounter && yieldCounter.count("Method: " + methodInfo.implKey + " yields because callee: " + callee.implKey + " is not statically bound.");
+              //   addDependency(callee, methodInfo, YieldReason.Virtual);
+              // }
               break;
             }
             result = canYield(callee);

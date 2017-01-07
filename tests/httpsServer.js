@@ -7,6 +7,7 @@ var options = {
   key: pem,
   cert: pem,
   secureProtocol: 'SSLv3_method',
+  hostname: '0.0.0.0'
 };
 
 https.createServer(options, function(req, res) {

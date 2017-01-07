@@ -13,7 +13,7 @@ CIPHERS = (
   '!eNULL:!MD5:!DSS:RC4'
 )
 
-httpd = BaseHTTPServer.HTTPServer(('localhost', 4443), SimpleHTTPServer.SimpleHTTPRequestHandler)
+httpd = BaseHTTPServer.HTTPServer(('0.0.0.0', 4443), SimpleHTTPServer.SimpleHTTPRequestHandler)
 httpd.socket = ssl.wrap_socket(httpd.socket,
                                server_side=True,
                                certfile='cert.pem',

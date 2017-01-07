@@ -1197,13 +1197,14 @@ module J2ME {
 
     private emitUnwind(emitter: Emitter, pc: string, forceInline: boolean = false) {
       // Only emit unwind throws if it saves on code size.
-      if (false && !forceInline && this.blockMap.invokeCount > 2 &&
-          this.methodInfo.codeAttribute.max_stack < 8) {
-        emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
-        this.hasUnwindThrow = true;
-      } else {
+      // TODO Figure out why the following is disabled
+      // if (false && !forceInline && this.blockMap.invokeCount > 2 &&
+      //     this.methodInfo.codeAttribute.max_stack < 8) {
+      //   emitter.writeLn("U&&B" + this.sp + "(" + pc + ");");
+      //   this.hasUnwindThrow = true;
+      // } else {
         this.emitBailout(emitter, pc, String(this.sp), this.sp);
-      }
+      // }
       baselineCounter && baselineCounter.count("emitUnwind");
     }
 
