@@ -4,10 +4,12 @@ node_js:
 env:
   - DISPLAY=:99.0
 addons: {apt: {sources: [ubuntu-toolchain-r-test], packages: [g++-4.9]}}
-before_script:
-  - "sh -e /etc/init.d/xvfb start"
+install:
+  - npm install
   - npm install casperjs
   - npm install typescript@1.5.3
+before_script:
+  - "sh -e /etc/init.d/xvfb start"
   - git clone --recursive https://github.com/marco-c/emscripten-sdk.git && cd emscripten-sdk && ./emsdk activate latest && source ./emsdk_env.sh && cd ..
 script:
   - make test
