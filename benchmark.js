@@ -200,6 +200,8 @@ var Benchmark = (function() {
         jsStringsSize: jsStringsSize.value,
         jsOtherSize: jsOtherSize.value,
         otherSize: otherSize.value,
+        USS: memoryReporter.residentUnique,
+        peakRSS: memoryReporter.residentPeak,
       };
 
       // residentUnique is not available on all platforms.
