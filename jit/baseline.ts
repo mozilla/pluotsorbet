@@ -378,7 +378,7 @@ module J2ME {
       }
 
       needsWhile && this.bodyEmitter.enter("while(1){");
-      needsTry && this.bodyEmitter.enter("try{");
+      this.bodyEmitter.enter("try{");
       this.bodyEmitter.writeLn("var label=0;");
 
       // Fill scaffolding with block bodies.
@@ -412,6 +412,10 @@ module J2ME {
           this.emitMonitorExit(this.bodyEmitter, this.lockObject);
         }
         this.bodyEmitter.writeLn("throw GH(" + this.peek(Kind.Reference) + ");");
+        this.bodyEmitter.leave("}");
+      } else {
+        this.bodyEmitter.leaveAndEnter("}catch(e){");
+        this.bodyEmitter.writeLn("throw e;");
         this.bodyEmitter.leave("}");
       }
       if (needsWhile) {
