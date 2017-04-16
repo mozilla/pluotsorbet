@@ -19,9 +19,7 @@
     loadingPromises.push(loadScript("polyfill/chrome_polyfills.js"));
   }
 
-  Promise.all(loadingPromises).then(function() {
-    document.getElementById("mozbrowser").src = "main.html" + location.search;
-  });
+  document.getElementById("mozbrowser").src = "main.html" + location.search;
 })();
 
 var childOrigin = document.location.origin;
