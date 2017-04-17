@@ -1541,7 +1541,23 @@ module J2ME {
       throwNegativeArraySizeException();
     }
 
-    var arrayClassInfo = CLASSES.getClass("[" + elementClassInfo.getClassNameSlow());
+    var arrayClassInfo;
+
+    // Fast-path for the most used primitive array types.
+    switch (elementClassInfo) {
+      case PrimitiveClassInfo.C:
+        arrayClassInfo = PrimitiveArrayClassInfo.C;
+        break;
+      case PrimitiveClassInfo.B:
+        arrayClassInfo = PrimitiveArrayClassInfo.B;
+        break;
+      case PrimitiveClassInfo.I:
+        arrayClassInfo = PrimitiveArrayClassInfo.I;
+        break;
+      default:
+        arrayClassInfo = CLASSES.getClass("[" + elementClassInfo.getClassNameSlow());
+    }
+
     var addr;
 
     if (elementClassInfo instanceof PrimitiveClassInfo) {
